@@ -22,252 +22,197 @@
         
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HYPRFRAME | Captured Works</title>
+        <title>HYPRFRAME — Captured Films</title>
+        <meta name="description" content="Captured by HYPRFRAME: a selection of films, campaigns and music videos made in the real world." />
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap"
             rel="stylesheet"
         />
-        <link href="styles/others.css" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="styles.css?v=9" />
+        <link rel="stylesheet" href="legacy.css" />
     </head>
     <body>
-        <div class="abstract-bg">
-            <div class="strip"></div>
-            <div class="strip"></div>
-            <div class="strip"></div>
-            <div class="strip"></div>
-        </div>
+        <a class="skip-link" href="#main">Skip to content</a>
+        <div class="grain" aria-hidden="true"></div>
+        <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 
-        <header class="top-nav">
-            <div class="container header-content">
-                <a href="index.html" class="logo">
-                    <img src="assets/logo_HYPRFRAME_03.png" alt="Logo" />
-                </a>
-                <nav>
-                    <ul>
-                        <li><a href="index.html#AI">Generated</a></li>
-                        <li><a href="#" class="active">Captured</a></li>
-                        <li><a href="index.html#about">About</a></li>
-                        <li><a href="index.html#services">DNAi</a></li>
-                        <li><a href="index.html#contact">Contact</a></li>
-                        <li class="lang-switch"><a href="es/legacy.html">es</a></li>
-                    </ul>
-                </nav>
+        <!-- Same header and fullscreen menu as the landing; internal links are relative to this repo. -->
+        <header class="site-header" id="siteHeader">
+            <a href="index.html#top" class="logo" aria-label="HYPRFRAME home">
+                <img src="assets/images/logo.png" alt="HYPRFRAME" />
+            </a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="index.html#work">Generated</a>
+                <a href="legacy.html" aria-current="page">Captured</a>
+                <a href="index.html#about">About</a>
+                <a href="index.html#services" class="keep-case">DNAi</a>
+                <a href="index.html#contact" class="nav-cta">Contact</a>
+            </nav>
+            <div class="header-meta">
+                <span class="lang-switch"><a href="https://hyprframe.com/es/legacy.html" lang="es">ES</a><i>/</i><span class="active">EN</span></span>
+                <button class="burger" id="burger" type="button" aria-label="Open menu" aria-controls="menuOverlay" aria-expanded="false">
+                    <span></span><span></span>
+                </button>
             </div>
         </header>
-        <div class="burger-menu" id="burgerMenu">
-            <div class="burger-line"></div>
-            <div class="burger-line"></div>
-            <div class="burger-line"></div>
+
+        <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+            <nav class="menu-links" aria-label="Mobile navigation">
+                <a href="index.html#work"><i>01</i> Generated</a>
+                <a href="legacy.html" aria-current="page"><i>02</i> Captured</a>
+                <a href="index.html#about"><i>03</i> About</a>
+                <a href="index.html#services" class="keep-case"><i>04</i> DNAi</a>
+                <a href="builder.html"><i>05</i> CLB</a>
+                <a href="index.html#contact"><i>06</i> Contact</a>
+            </nav>
+            <div class="menu-footer">
+                <span>Barcelona, ES</span>
+                <span><a href="https://www.linkedin.com/company/hyprframe/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://www.instagram.com/dommanuel/" target="_blank" rel="noopener">Instagram</a> · <a href="https://wa.me/34645795080" target="_blank" rel="noopener">WhatsApp</a></span>
+            </div>
         </div>
 
-        <div class="mobile-nav" id="mobileNav">
-            <ul>
-                <li><a href="index.html#AI">Generated</a></li>
-                <li><a href="#">Captured</a></li>
-                <li><a href="index.html#about">About</a></li>
-                <li><a href="index.html#services">Services</a></li>
-                <li><a href="index.html#contact">Contact</a></li>
-                <li><a href="es/legacy.html">ES</a></li>
-            </ul>
-        </div>
-        <main>
-            <section class="intro-section">
-                <p class="intro-subtitle"></p>
+        <main id="main">
+            <section class="legacy-hero" id="top" aria-labelledby="legacyTitle">
+                <div class="legacy-hero__topline">
+                    <p class="legacy-hero__label"><span class="pulse" aria-hidden="true"></span> HUMAN-MADE FILMS / SELECTED WORK</p>
+                    <span class="legacy-hero__edition">HYPRFRAME ARCHIVE — 002</span>
+                </div>
+                <div class="legacy-hero__content">
+                    <p class="legacy-hero__index">02 / THE REAL WORLD, THROUGH OUR LENS</p>
+                    <h1 class="legacy-hero__title" id="legacyTitle">CAPT<span>URED</span><b>.</b></h1>
+                    <div class="legacy-hero__bottom">
+                        <p>Real places. Real people.<br /><em>Stories worth keeping.</em></p>
+                        <a href="#films" class="legacy-hero__scroll">EXPLORE THE FILMS <span aria-hidden="true">↓</span></a>
+                    </div>
+                </div>
             </section>
 
-            <div class="portfolio-grid">
-                <a href="#" class="portfolio-item" data-video="video1">
-                    <img src="assets/images/insert05_1.jpg" alt="Work 1" />
-                </a>
-                <a href="#" class="portfolio-item" data-video="video2">
-                    <img src="assets/images/duelo.jpg" alt="Work 2" />
-                </a>
-                <a href="#" class="portfolio-item" data-video="video3">
-                    <img src="assets/images/insert03.jpg" alt="Work 3" />
-                </a>
-                <a href="#" class="portfolio-item" data-video="video4">
-                    <img src="assets/images/spark.jpg" alt="Work 4" />
-                </a>
-                <a href="#" class="portfolio-item" data-video="video5">
-                    <img src="assets/images/insert02.jpg" alt="Work 5" />
-                </a>
-                <a href="#" class="portfolio-item" data-video="video6">
-                    <img src="assets/images/groc2.jpg" alt="Work 6" />
-                </a>
+            <div class="legacy-band" aria-hidden="true">
+                <span>HUMAN STORIES</span><i>✳</i><span>MADE IN CAMERA</span><i>✳</i><span>REAL FEELING</span><i>✳</i><span>HUMAN STORIES</span>
             </div>
-        </main>
-        
-        <footer class="footer-bottom">
-            <p>&copy; 2025 Hyprframe. All rights reserved.</p>
-        </footer>
-        
-        <div id="videoModal" class="video-modal">
-            <div class="video-modal-content">
-                <span class="close">&times;</span>
-                <div class="video-wrapper">
-                    <iframe
-                        id="vimeoPlayer"
-                        src=""
-                        frameborder="0"
-                        allow="autoplay; fullscreen"
-                        allowfullscreen
-                    ></iframe>
+
+            <section class="legacy-work" id="films" aria-labelledby="filmsTitle">
+                <div class="legacy-work__heading">
+                    <div>
+                        <p class="legacy-eyebrow">01 / SELECTED FILMS</p>
+                        <h2 id="filmsTitle">THE FILM <span>ARCHIVE</span></h2>
+                    </div>
+                    <p class="legacy-work__intro">Six films. Six different worlds.<br />One human point of view.</p>
                 </div>
-                <div class="video-description"><p id="videoSynopsis"></p></div>
+
+                <div class="film-grid">
+                    <a class="film-card" href="https://vimeo.com/1131285757" data-vimeo="1131285757" data-title="INSERT / SEASON 05" data-synopsis="INSERT SEASON 5: Sounds frozen in time." aria-label="Watch INSERT / SEASON 05">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 01</span>
+                            <img src="https://hyprframe.com/assets/images/insert05_1.jpg" data-fallback-src="https://i.vimeocdn.com/video/2076685984-e6dbf30662eb1131e13d0bdbba1c8727fe766bb3758e888a7bf640a045f95d90-d_1280?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">01 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 01:31</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">01</span><span class="film-card__title">INSERT / SEASON 05</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">CAMPAIGN / MOTION</span>
+                    </a>
+
+                    <a class="film-card" href="https://vimeo.com/265730118" data-vimeo="265730118" data-title="BRUBAKER / NOSE DUEL" data-synopsis="BRUBAKER CO: Nose duel." aria-label="Watch BRUBAKER / NOSE DUEL">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 02</span>
+                            <img src="https://hyprframe.com/assets/images/duelo.jpg" data-fallback-src="https://i.vimeocdn.com/video/695818525-064e99dcf468e4226a8ff082c5d33d000515ddd4dabf809f1f3a8be0c871353c-d_1280?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">02 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 01:00</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">02</span><span class="film-card__title">BRUBAKER / NOSE DUEL</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">COMMERCIAL / FILM</span>
+                    </a>
+
+                    <a class="film-card" href="https://vimeo.com/1131285727" data-vimeo="1131285727" data-title="INSERT / SEASON 03" data-synopsis="INSERT SEASON 3: What you can't see." aria-label="Watch INSERT / SEASON 03">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 03</span>
+                            <img src="https://hyprframe.com/assets/images/insert03.jpg" data-fallback-src="https://i.vimeocdn.com/video/2075175857-0a33be16cc0355239a77310eef481ce98472f801270638527f85eb33f8566aa3-d_1280?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">03 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 01:10</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">03</span><span class="film-card__title">INSERT / SEASON 03</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">CAMPAIGN / FILM</span>
+                    </a>
+
+                    <a class="film-card" href="https://vimeo.com/1131285709" data-vimeo="1131285709" data-title="CHEVROLET / SPARK" data-synopsis="Chevrolet Spark: Get Inspired." aria-label="Watch CHEVROLET / SPARK">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 04</span>
+                            <img src="https://hyprframe.com/assets/images/spark.jpg" data-fallback-src="https://i.vimeocdn.com/video/2075175860-9507011b5c52844082ab6fce58801564c9356bffc3720cb6eec294dd8e19887a-d_1280?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">04 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 01:00</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">04</span><span class="film-card__title">CHEVROLET / SPARK</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">COMMERCIAL / FILM</span>
+                    </a>
+
+                    <a class="film-card" href="https://vimeo.com/1131285681" data-vimeo="1131285681" data-title="INSERT / THE SUNDAY" data-synopsis="INSERT 2.0: The Sunday." aria-label="Watch INSERT / THE SUNDAY">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 05</span>
+                            <img src="https://hyprframe.com/assets/images/insert02.jpg" data-fallback-src="https://i.vimeocdn.com/video/2075175777-c9fb7d6d5e7701b6eecac7c2864e6e6b25efd11a169e8104f5eeeeb357b457ba-d_1280?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">05 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 01:35</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">05</span><span class="film-card__title">INSERT / THE SUNDAY</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">CAMPAIGN / FILM</span>
+                    </a>
+
+                    <a class="film-card" href="https://vimeo.com/21087707" data-vimeo="21087707" data-title="DÁCIL / GROC" data-synopsis="Dácil: Groc Music Video." aria-label="Watch DÁCIL / GROC">
+                        <span class="film-card__poster">
+                            <span class="film-card__fallback" aria-hidden="true">HF / 06</span>
+                            <img src="https://hyprframe.com/assets/images/groc2.jpg" data-fallback-src="https://i.vimeocdn.com/video/135417710-e163e3d90aa27891c6e1fc6446443c1d675f60ca478556a46ec11c174578df0c-d_960?region=us" alt="" loading="lazy" decoding="async" />
+                            <span class="film-card__counter">06 / 06</span>
+                            <span class="film-card__play" aria-hidden="true">▶</span>
+                            <span class="film-card__watch">PLAY FILM — 06:00</span>
+                        </span>
+                        <span class="film-card__info"><span class="film-card__number">06</span><span class="film-card__title">DÁCIL / GROC</span><span class="film-card__arrow" aria-hidden="true">↗</span></span>
+                        <span class="film-card__type">MUSIC VIDEO / FILM</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="legacy-next" aria-labelledby="nextTitle">
+                <p class="legacy-eyebrow">THE NEXT FRAME / 007</p>
+                <div class="legacy-next__row">
+                    <h2 id="nextTitle">YOUR STORY<br /><span>GOES NEXT.</span></h2>
+                    <a href="index.html#contact">LET'S TALK <span aria-hidden="true">↗</span></a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-row">
+                <span>© 2026 HYPRFRAME. All rights reserved.</span>
+                <a href="index.html#top">BACK TO HOME ↗</a>
+            </div>
+        </footer>
+
+        <div class="film-modal" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="videoSynopsis" hidden>
+            <div class="film-modal__panel">
+                <div class="film-modal__top">
+                    <span>HYPRFRAME / CAPTURED</span>
+                    <button class="film-modal__close" id="modalClose" type="button" aria-label="Close video">CLOSE <span aria-hidden="true">×</span></button>
+                </div>
+                <div class="film-modal__video">
+                    <iframe id="vimeoPlayer" src="" title="Captured film" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="film-modal__info">
+                    <div>
+                        <span class="legacy-eyebrow">NOW PLAYING</span>
+                        <h2 id="modalTitle"></h2>
+                        <p id="videoSynopsis"></p>
+                    </div>
+                    <a id="modalExternal" href="https://vimeo.com" target="_blank" rel="noopener noreferrer">WATCH ON VIMEO ↗</a>
+                </div>
             </div>
         </div>
-
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // --- 1. MOTOR DE LAS BANDAS (LEE EL CSS Y FUERZA EL MOVIMIENTO) ---
-                const strips = document.querySelectorAll(".strip");
-
-                if (strips.length > 0) {
-                    const stripsConfig = Array.from(strips).map((strip) => {
-                        const styles = getComputedStyle(strip);
-                        return {
-                            el: strip,
-                            speed:
-                                parseFloat(
-                                    styles.getPropertyValue("--speed"),
-                                ) || 0.25,
-                            angle:
-                                styles.getPropertyValue("--angle").trim() ||
-                                "0deg",
-                        };
-                    });
-
-                    function updateParallax() {
-                        const scrollPos =
-                            window.pageYOffset ||
-                            window.scrollY ||
-                            document.documentElement.scrollTop ||
-                            document.body.scrollTop ||
-                            0;
-
-                        stripsConfig.forEach((strip) => {
-                            const moveY = scrollPos * strip.speed;
-                            strip.el.style.setProperty(
-                                "transform",
-                                `translate3d(0px, -${moveY}px, 0px) rotate(${strip.angle})`,
-                                "important",
-                            );
-                        });
-                    }
-
-                    window.addEventListener(
-                        "scroll",
-                        () => {
-                            requestAnimationFrame(updateParallax);
-                        },
-                        { passive: true },
-                    );
-
-                    updateParallax();
-                }
-
-                // --- GESTIÓN DEL MENÚ MÓVIL ---
-                const burger = document.getElementById("burgerMenu");
-                const mobileNav = document.getElementById("mobileNav");
-
-                if (burger && mobileNav) {
-                    burger.addEventListener("click", () => {
-                        burger.classList.toggle("active");
-                        mobileNav.classList.toggle("active");
-                        document.body.classList.toggle("menu-open");
-                    });
-
-                    mobileNav.querySelectorAll("a").forEach((link) => {
-                        link.addEventListener("click", () => {
-                            burger.classList.remove("active");
-                            mobileNav.classList.remove("active");
-                            document.body.classList.remove("menu-open");
-                        });
-                    });
-
-                    document.addEventListener("click", (e) => {
-                        if (
-                            !burger.contains(e.target) &&
-                            !mobileNav.contains(e.target)
-                        ) {
-                            burger.classList.remove("active");
-                            mobileNav.classList.remove("active");
-                            document.body.classList.remove("menu-open");
-                        }
-                    });
-                }
-
-                // --- 2. MODAL DE VIDEO ---
-                const modal = document.getElementById("videoModal");
-                const iframe = document.getElementById("vimeoPlayer");
-                const synopsis = document.getElementById("videoSynopsis");
-
-                const videos = {
-                    video1: {
-                        url: "https://player.vimeo.com/video/1131285757",
-                        text: "INSERT SEASON 5: Sounds frozen in time.",
-                    },
-                    video2: {
-                        url: "https://player.vimeo.com/video/265730118",
-                        text: "BRUBAKER CO: Nose duel.",
-                    },
-                    video3: {
-                        url: "https://player.vimeo.com/video/1131285727",
-                        text: "INSERT SEASON 3: What you can't see.",
-                    },
-                    video4: {
-                        url: "https://player.vimeo.com/video/1131285709",
-                        text: "Chevrolet Spark: Get Inspired.",
-                    },
-                    video5: {
-                        url: "https://player.vimeo.com/video/1131285681",
-                        text: "INSERT 2.0: The Sunday.",
-                    },
-                    video6: {
-                        url: "https://player.vimeo.com/video/21087707",
-                        text: "Dácil: Groc Music Video.",
-                    },
-                };
-
-                document.querySelectorAll(".portfolio-item").forEach((item) => {
-                    item.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        const id = item.getAttribute("data-video");
-                        if (videos[id]) {
-                            iframe.src = videos[id].url + "?autoplay=1";
-                            synopsis.innerText = videos[id].text;
-                            modal.style.display = "flex";
-                        }
-                    });
-                });
-
-                document.querySelector(".close").onclick = () => {
-                    modal.style.display = "none";
-                    iframe.src = "";
-                };
-
-                window.onclick = (e) => {
-                    if (e.target == modal) {
-                        modal.style.display = "none";
-                        iframe.src = "";
-                    }
-                };
-
-                // --- 3. SENSOR DE HOVER PARA DESATURAR LAS BANDAS ---
-                const portfolioGrid = document.querySelector(".portfolio-grid");
-
-                if (portfolioGrid) {
-                    // Cuando el ratón ENTRA en la caja del grid, encendemos el modo gris
-                    portfolioGrid.addEventListener("mouseenter", () => {
-                        document.body.classList.add("desaturate-strips");
-                    });
-
-                    // Cuando el ratón SALE del grid, apagamos el modo gris
-                    portfolioGrid.addEventListener("mouseleave", () => {
-                        document.body.classList.remove("desaturate-strips");
-                    });
-                }
-            }); // Y AQUÍ CERRAMOS TODO CORRECTAMENTE
-        </script>
+        <script src="legacy.js" defer></script>
     </body>
 </html>
