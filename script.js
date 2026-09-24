@@ -12,9 +12,15 @@
     const preCount = document.getElementById("preCount");
     const preBar = document.getElementById("preBar");
 
+    const heroReadyCbs = [];
+    let heroReady = false;
+    function onHeroReady(cb) { heroReady ? cb() : heroReadyCbs.push(cb); }
+
     function finishPreload() {
         preloader.classList.add("done");
         document.body.classList.add("loaded");
+        heroReady = true;
+        heroReadyCbs.splice(0).forEach((cb) => cb());
         preloader.addEventListener("transitionend", () => preloader.remove(), { once: true });
     }
 
@@ -98,20 +104,33 @@
     });
 
     /* ── 6. Hero word rotator ─────────────────────────────── */
+    // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).
     const rotItems = [...document.querySelectorAll("[data-rot]")];
-    if (rotItems.length && !reduced) {
-        let idx = 0;
-        setInterval(() => {
-            const current = rotItems[idx];
+    const ROT_INITIAL_DELAY = 2000;
+    const ROT_INTERVAL = 4000;
+    if (rotItems.length && reduced) {
+        rotItems.forEach((el, i) => el.classList.toggle("is-active", i === 0));
+    } else if (rotItems.length) {
+        let idx = -1; // -1 = blank (no word shown yet)
+        const advance = () => {
+            const current = idx >= 0 ? rotItems[idx] : null;
             idx = (idx + 1) % rotItems.length;
-            current.classList.remove("is-active");
-            current.classList.add("is-above");
-            rotItems[idx].classList.remove("is-above");
-            // force reflow so the entering word starts below
-            void rotItems[idx].offsetWidth;
-            rotItems[idx].classList.add("is-active");
-            setTimeout(() => current.classList.remove("is-above"), 900);
-        }, 2600);
+            const next = rotItems[idx];
+            if (current) {
+                current.classList.remove("is-active");
+                current.classList.add("is-above");
+                setTimeout(() => current.classList.remove("is-above"), 900);
+            }
+            next.classList.remove("is-above");
+            void next.offsetWidth; // reflow so the entering word starts below
+            next.classList.add("is-active");
+        };
+        onHeroReady(() => {
+            setTimeout(() => {
+                advance();
+                setInterval(advance, ROT_INTERVAL);
+            }, ROT_INITIAL_DELAY);
+        });
     }
 
     /* ── 6b. Auto-fit: guarantee the longest rotating word is never clipped ── */

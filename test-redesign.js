@@ -38,6 +38,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const errors = [];
     window.addEventListener("error", (e) => errors.push(e.message));
 
+    // record the moment body.loaded is set (hero ready)
+    let loadedAt = null;
+    new window.MutationObserver(() => {
+        if (loadedAt === null && window.document.body.classList.contains("loaded")) loadedAt = Date.now();
+    }).observe(window.document.body, { attributes: true, attributeFilter: ["class"] });
+
     // ── execute the real script ──
     try {
         window.eval(js);
@@ -79,15 +85,25 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     link.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
     check("mouseleave restores cursor", !doc.body.classList.contains("cursor-large"));
 
-    // rotator: first item active at start
+    // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];
-    check("rotator starts on first word", rots[0].classList.contains("is-active"));
-    await wait(2750); // one rotation interval
-    check("rotator advanced to word 2", !rots[0].classList.contains("is-active")
-        && rots[1].classList.contains("is-active"));
+    const activeIdx = () => rots.findIndex((r) => r.classList.contains("is-active"));
+    const activeCount = () => rots.filter((r) => r.classList.contains("is-active")).length;
+    check("rotator starts blank", activeCount() === 0);
+
+    // rotator timing relative to body.loaded: 2s blank → 4s per word → loop without blank
+    // wait for hero ready, then sample from that instant
+    while (loadedAt === null) await wait(10);
+    const at = async (ms) => { const d = loadedAt + ms - Date.now(); if (d > 0) await wait(d); };
+    const seq = [];
+    for (const t of [1000, 1800, 3000, 5800, 7000, 9800, 11000, 15000, 17800, 19000]) {
+        await at(t); seq.push(activeCount() === 1 ? activeIdx() : (activeCount() === 0 ? "-" : "x"));
+    }
+    // expected: blank, blank, S, S, F, F, M, SY, SY, S(loop)
+    check("rotator: 2s blank then 4s cycle, loops without blank",
+        loadedAt !== null && seq.join(",") === "-,-,0,0,1,1,2,3,3,0", seq.join(","));
 
     // count-up: 1400ms animation triggered by IO stub
-    await wait(1600);
     const counts = [...doc.querySelectorAll("[data-count]")].map((el) => el.textContent);
     check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",
         counts.join(", "));
