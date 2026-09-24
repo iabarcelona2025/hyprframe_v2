@@ -539,10 +539,11 @@ section { position: relative; }
     letter-spacing: 0.15em; color: var(--violet);
 }
 .service-body h3 {
-    font-family: var(--font-display); font-weight: 700;
-    font-size: clamp(1.3rem, 2.6vw, 2rem);
-    line-height: 1.15;
-    transition: transform 0.5s var(--ease-out), color 0.4s;
+-    font-family: var(--font-display);   /* Syne */
++    font-family: var(--font-body);      /* Space Grotesk */
+     font-weight: 700;                   /* intacto */
+     font-size: clamp(1.3rem, 2.6vw, 2rem);  /* intacto */
+     line-height: 1.15;                  /* intacto */
 }
 .service-row:hover .service-body h3 { transform: translateX(0.8rem); color: var(--violet); }
 .service-body p {
