@@ -1,9 +1,10 @@
 /* Smoke test: runs the REAL script.js against the REAL index.html in jsdom */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
+const path = require("path");
 
-const html = fs.readFileSync("/home/user/redesign/index.html", "utf8");
-const js = fs.readFileSync("/home/user/redesign/script.js", "utf8");
+const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+const js = fs.readFileSync(path.join(__dirname, "script.js"), "utf8");
 
 const dom = new JSDOM(html, {
     url: "http://localhost:8080/",
