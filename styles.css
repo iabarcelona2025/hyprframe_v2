@@ -478,8 +478,11 @@ section { position: relative; }
 }
 .work-row:hover .work-num { color: var(--violet); }
 .work-title {
-    font-family: var(--font-head); font-weight: 800;
-    font-size: clamp(1.9rem, 5.6vw, 4.4rem);
+    /* Ajuste pedido por el cliente (24/09/2026): bajada fuerte de tamaño.
+       Escala completa más pequeña (antes 70.4px en desktop y 30.4px en móvil):
+       ahora ~40px desktop / ~21px móvil, un ~43% menos. Bold intacto: 700. */
+    font-family: var(--font-head); font-weight: 700;
+    font-size: clamp(1.3rem, 3.2vw, 2.5rem);
     line-height: 1; text-transform: uppercase; letter-spacing: 0.04em;
     transition: transform 0.55s var(--ease-out), color 0.4s;
 }
