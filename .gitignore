@@ -1,0 +1,6 @@
+# Dependencias de Node (solo para los tests de desarrollo)
+node_modules/
+
+# Sistema
+.DS_Store
+Thumbs.db
