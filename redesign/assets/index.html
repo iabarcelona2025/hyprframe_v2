@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HYPRFRAME — AI Visual Storytelling Studio</title>
+    <meta name="description" content="HYPRFRAME is an AI visual storytelling studio. AI-generated video, motion design, art direction and creative consulting — where human intuition meets machine synthesis." />
+    <meta property="og:title" content="HYPRFRAME — AI Visual Storytelling Studio" />
+    <meta property="og:description" content="When ideas meet the machine, the impossible takes form." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hyprframe.com/" />
+    <meta name="theme-color" content="#050505" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+</head>
+
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- ══════════ PRELOADER ══════════ -->
+    <div class="preloader" id="preloader" aria-hidden="true">
+        <div class="preloader-inner">
+            <span class="preloader-count" id="preCount">0</span>
+        </div>
+        <div class="preloader-bar"><span id="preBar"></span></div>
+    </div>
+
+    <!-- grain overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- custom cursor -->
+    <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+    <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+    <!-- scroll progress -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <!-- ══════════ HEADER ══════════ -->
+    <header class="site-header" id="siteHeader">
+        <a href="#top" class="logo" aria-label="HYPRFRAME home">
+            <img src="assets/images/logo.png" alt="HYPRFRAME" />
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="#work">Generated</a>
+            <a href="https://hyprframe.com/legacy.html">Captured</a>
+            <a href="#about">About</a>
+            <a href="#services" class="keep-case">DNAi</a>
+            <a href="#contact" class="nav-cta">Contact</a>
+        </nav>
+        <div class="header-meta">
+            <span class="lang-switch"><a href="https://hyprframe.com/es/index.html">ES</a><i>/</i><span class="active">EN</span></span>
+            <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
+                <span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- fullscreen menu -->
+    <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+        <div class="menu-links">
+            <a href="#work"><i>01</i> Generated</a>
+            <a href="https://hyprframe.com/legacy.html"><i>02</i> Captured</a>
+            <a href="#about"><i>03</i> About</a>
+            <a href="#services" class="keep-case"><i>04</i> DNAi</a>
+            <a href="https://hyprframe.com/builder.html"><i>05</i> CLB</a>
+            <a href="#contact"><i>06</i> Contact</a>
+        </div>
+        <div class="menu-footer">
+            <span>Barcelona, ES</span>
+            <span><a href="https://www.linkedin.com/company/hyprframe/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://www.instagram.com/dommanuel/" target="_blank" rel="noopener">Instagram</a> · <a href="https://wa.me/34645795080" target="_blank" rel="noopener">WhatsApp</a></span>
+        </div>
+    </div>
+
+    <main id="main">
+        <!-- ══════════ HERO ══════════ -->
+        <section class="hero" id="top">
+            <video class="hero-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+                <source src="assets/videos/header-video_06.mp4" type="video/mp4" />
+            </video>
+            <div class="hero-veil" aria-hidden="true"></div>
+
+            <div class="hero-content">
+                <p class="kicker" data-reveal><span class="pulse"></span> AI VISUAL STORYTELLING STUDIO</p>
+                <h1 class="hero-title">
+                    <span class="line"><span class="line-inner">AI VISUAL</span></span>
+                    <span class="line"><span class="line-inner rotator">
+                        <span class="rotator-viewport">
+                            <span class="rotator-item is-active" data-rot>STORYTELLING</span>
+                            <span class="rotator-item" data-rot>FILMMAKING</span>
+                            <span class="rotator-item" data-rot>MOTION DESIGN</span>
+                            <span class="rotator-item" data-rot>SYNTHESIS</span>
+                        </span>
+                    </span></span>
+                </h1>
+                <p class="hero-sub" data-reveal data-reveal-delay="4">When ideas meet the machine,<br />the impossible takes form.</p>
+            </div>
+
+            <a href="#work" class="scroll-cue" aria-label="Scroll to work">
+                <span>SCROLL</span>
+                <span class="scroll-cue-line"></span>
+            </a>
+
+            <div class="hero-marquee" aria-hidden="true">
+                <div class="marquee-track">
+                    <span>AI-DRIVEN VIDEO ✳ MOTION DESIGN ✳ ART DIRECTION ✳ BRAND IDENTITY ✳ NARRATIVE ✳ CREATIVE CONSULTING ✳&nbsp;</span>
+                    <span>AI-DRIVEN VIDEO ✳ MOTION DESIGN ✳ ART DIRECTION ✳ BRAND IDENTITY ✳ NARRATIVE ✳ CREATIVE CONSULTING ✳&nbsp;</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ STATEMENT (word-by-word reveal) ══════════ -->
+        <section class="statement" id="statement">
+            <p class="statement-text" id="statementText">
+                <span>Exploring</span> <span>the</span> <span>intersection</span> <span>of</span>
+                <span>human</span> <span>intuition</span> <span class="accent">&amp;</span>
+                <span class="accent">machine</span> <span class="accent">synthesis</span> <span>—</span>
+                <span>creating</span> <span>visual</span> <span>narratives</span> <span>that</span>
+                <span>shape</span> <span>new</span> <span>perspectives.</span>
+            </p>
+        </section>
+
+        <!-- ══════════ WORK ══════════ -->
+        <section class="work" id="work">
+            <div class="section-head">
+                <h2 class="section-title">
+                    <span class="line"><span class="line-inner">SELECTED</span></span>
+                    <span class="line"><span class="line-inner">WORK</span></span>
+                </h2>
+                <p class="section-side" data-reveal>Generated worlds, films and campaigns — 2023 → now. Hover to explore.</p>
+            </div>
+
+            <div class="work-list" id="workList">
+                <a class="work-row" href="https://hyprframe.com/project-node.html" data-img="assets/images/node.jpg">
+                    <span class="work-num">01</span>
+                    <span class="work-title">NODE</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-deep.html" data-img="assets/images/deep.jpg">
+                    <span class="work-num">02</span>
+                    <span class="work-title">DEEP</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-polestar5.html" data-img="assets/images/polestar5.jpg">
+                    <span class="work-num">03</span>
+                    <span class="work-title">POLESTAR 5</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-distant.html" data-img="assets/images/distant.jpg">
+                    <span class="work-num">04</span>
+                    <span class="work-title">DISTANT</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-exit.html" data-img="assets/images/Hsbc.jpg">
+                    <span class="work-num">05</span>
+                    <span class="work-title">EXIT</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-stained.html" data-img="assets/images/Stained.jpg">
+                    <span class="work-num">06</span>
+                    <span class="work-title">STAINED</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-asics.html" data-img="assets/images/Asics.jpg">
+                    <span class="work-num">07</span>
+                    <span class="work-title">ASICS</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-farewell.html" data-img="assets/images/farewell.jpg">
+                    <span class="work-num">08</span>
+                    <span class="work-title">FAREWELL</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-iad.html" data-img="assets/images/iad.jpg">
+                    <span class="work-num">09</span>
+                    <span class="work-title">IAD</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="https://hyprframe.com/project-ryuu.html" data-img="assets/images/Ryuu.jpg">
+                    <span class="work-num">10</span>
+                    <span class="work-title">RYUU</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+            </div>
+
+            <!-- (fotograma flotante que seguía al cursor desactivado:
+                 el hover ahora usa el fotograma integrado en la fila vía ::after.
+                 Para recuperarlo, restaurar este bloque + está en CSS/JS guardado) -->
+        </section>
+
+        <!-- ══════════ MARQUEE STRIP ══════════ -->
+        <div class="strip-marquee" aria-hidden="true">
+            <div class="marquee-track reverse">
+                <span>NODE ✳ DEEP ✳ POLESTAR 5 ✳ DISTANT ✳ EXIT ✳ STAINED ✳ ASICS ✳ FAREWELL ✳ IAD ✳ RYUU ✳&nbsp;</span>
+                <span>NODE ✳ DEEP ✳ POLESTAR 5 ✳ DISTANT ✳ EXIT ✳ STAINED ✳ ASICS ✳ FAREWELL ✳ IAD ✳ RYUU ✳&nbsp;</span>
+            </div>
+        </div>
+
+        <!-- ══════════ SERVICES / DNAi ══════════ -->
+        <section class="services" id="services">
+            <div class="section-head">
+                <h2 class="section-title">
+                    <span class="line"><span class="line-inner keep-case">DNAi</span></span>
+                </h2>
+                <p class="section-side" data-reveal>The studio's DNA, decoded: branding, narrative and AI-powered production.</p>
+            </div>
+
+            <div class="service-list">
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(01)</span>
+                    <div class="service-body">
+                        <h3>Brand Concept &amp; Identity</h3>
+                        <p>Building visual and conceptual frameworks that define how a brand feels, speaks, and moves.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(02)</span>
+                    <div class="service-body">
+                        <h3>Creative Consulting</h3>
+                        <p>Guiding clients through the process of turning loose ideas into coherent, powerful visual statements.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(03)</span>
+                    <div class="service-body">
+                        <h3>Creative Concept Development</h3>
+                        <p>Transforming abstract ideas into strong, original creative concepts that connect with audiences.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(04)</span>
+                    <div class="service-body">
+                        <h3>Narrative Design</h3>
+                        <p>Crafting stories that merge human emotion with visual innovation.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(05)</span>
+                    <div class="service-body">
+                        <h3>Art Direction &amp; Visual Storytelling</h3>
+                        <p>Designing the aesthetic and narrative core of each project through image, rhythm, and emotion.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(06)</span>
+                    <div class="service-body">
+                        <h3>Video Direction &amp; Production</h3>
+                        <p>From ideation to final cut — directing, shooting, and crafting visual pieces with cinematic precision.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-num">(07)</span>
+                    <div class="service-body">
+                        <h3>AI-Driven Image &amp; Video Generation</h3>
+                        <p>Exploring new visual territories through artificial intelligence — merging technology and creative intuition.</p>
+                    </div>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ ABOUT + NUMBERS ══════════ -->
+        <section class="about" id="about">
+            <p class="kicker" data-reveal><span class="pulse"></span> THE STUDIO</p>
+            <h2 class="about-title">
+                <span class="line"><span class="line-inner">HUMAN</span></span>
+                <span class="line"><span class="line-inner">INTUITION<span class="accent">×</span></span></span>
+                <span class="line"><span class="line-inner">MACHINE SYNTHESIS</span></span>
+            </h2>
+            <div class="about-grid">
+                <p class="about-copy" data-reveal>HYPRFRAME explores the intersection of human intuition and machine synthesis. Specialized in AI-generated video and motion design, we create visual narratives that shape new perspectives and storytelling.</p>
+                <div class="stats">
+                    <div class="stat" data-reveal>
+                        <span class="stat-num"><span data-count="10">0</span>+</span>
+                        <span class="stat-label">AI FILMS &amp; CAMPAIGNS</span>
+                    </div>
+                    <div class="stat" data-reveal data-reveal-delay="1">
+                        <span class="stat-num"><span data-count="7">0</span></span>
+                        <span class="stat-label">CORE DISCIPLINES</span>
+                    </div>
+                    <div class="stat" data-reveal data-reveal-delay="2">
+                        <span class="stat-num">∞</span>
+                        <span class="stat-label">POSSIBLE WORLDS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ CONTACT ══════════ -->
+        <section class="contact" id="contact">
+            <div class="contact-head">
+                <p class="kicker" data-reveal><span class="pulse"></span> START A PROJECT</p>
+                <h2 class="contact-title">
+                    <span class="line"><span class="line-inner">LET'S BUILD</span></span>
+                    <span class="line"><span class="line-inner">THE <span class="accent">FUTURE</span></span></span>
+                </h2>
+            </div>
+
+            <div class="contact-grid">
+                <form class="contact-form" action="https://formspree.io/f/mzzkreow" method="POST">
+                    <div class="field">
+                        <input type="text" name="name" id="fName" placeholder=" " required />
+                        <label for="fName">Name</label>
+                    </div>
+                    <div class="field">
+                        <input type="email" name="email" id="fEmail" placeholder=" " required />
+                        <label for="fEmail">Email</label>
+                    </div>
+                    <div class="field">
+                        <textarea name="message" id="fMessage" rows="3" placeholder=" " required></textarea>
+                        <label for="fMessage">Message</label>
+                    </div>
+                    <button type="submit" class="send-btn magnetic">SEND MESSAGE <span aria-hidden="true">→</span></button>
+                </form>
+
+                <div class="contact-side">
+                    <a class="contact-link magnetic" href="https://www.linkedin.com/company/hyprframe/" target="_blank" rel="noopener">LINKEDIN <span aria-hidden="true">↗</span></a>
+                    <a class="contact-link magnetic" href="https://www.instagram.com/dommanuel/" target="_blank" rel="noopener">INSTAGRAM <span aria-hidden="true">↗</span></a>
+                    <a class="contact-link magnetic" href="https://wa.me/34645795080" target="_blank" rel="noopener">WHATSAPP <span aria-hidden="true">↗</span></a>
+                    <a class="contact-link magnetic" href="https://hyprframe.com/builder.html">CINEMATIC BUILDER <span aria-hidden="true">↗</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ══════════ FOOTER ══════════ -->
+    <footer class="site-footer">
+        <div class="footer-row">
+            <span>© 2026 HYPRFRAME. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <script>
+    /* LIVE-RELOAD — solo para el preview de desarrollo (localhost / e2b.app).
+       En producción (hyprframe.com) este bloque no hace nada. */
+    (function () {
+        if (!/(localhost|127\.0\.0\.1|e2b\.app)/.test(location.hostname)) return;
+        var es = new EventSource("/__livereload");
+        var first = true;
+        es.onmessage = function () {
+            if (first) { first = false; return; } // saludo inicial: no recargar
+            location.reload();
+        };
+    })();
+    </script>
+    <script src="script.js?v=2" defer></script>
+</body>
+</html>
