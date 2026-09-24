@@ -309,6 +309,7 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
     transition: transform 0.8s var(--ease-out);
     color: var(--violet);
     -webkit-text-stroke: 0;
+    opacity: 0.7; /* rotating words sit at 70% — same weight as the hero title */
 }
 .rotator-item.is-above { transform: translateY(-110%); }
 .rotator-item.is-active { transform: translateY(0); }
@@ -579,8 +580,11 @@ section { position: relative; }
 .about-copy { color: rgba(242, 241, 238, 0.72); font-weight: 300; max-width: 52ch; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
-    display: block; font-family: var(--font-display); font-weight: 800;
-    font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1;
+    display: block;
+    /* same bold face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title */
+    font-family: var(--font-head); font-weight: 800;
+    font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1.02;
+    letter-spacing: 0.04em; text-transform: uppercase;
     color: var(--fg); font-variant-numeric: tabular-nums;
 }
 .stat-num .accent, .stat-label { color: var(--muted); }
@@ -715,7 +719,7 @@ section { position: relative; }
     [data-reveal] { opacity: 1; transform: none; }
     .line-inner { transform: none; }
     .rotator-item { transform: none; opacity: 0; }
-    .rotator-item.is-active { opacity: 1; }
+    .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }
     .preloader { display: none; }
 }
