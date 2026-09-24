@@ -17,8 +17,10 @@ body.menu-open, body.modal-open { overflow: hidden; }
 
 /* ── Editorial opener ─────────────────────────────────────── */
 .legacy-hero {
-    display: flex; flex-direction: column; gap: clamp(1.25rem, 2.5vw, 2rem);
-    padding: clamp(7.5rem, 10vw, 9rem) var(--pad) clamp(2.5rem, 5vw, 4rem);
+    display: flex; flex-direction: column; justify-content: center;
+    gap: clamp(2.5rem, 4vw, 3.5rem);
+    min-height: min(560px, 64svh);
+    padding: clamp(8rem, 11vw, 9.5rem) var(--pad) clamp(3rem, 5vw, 5rem);
     border-bottom: 1px solid var(--line);
     background:
         radial-gradient(ellipse 48% 90% at 84% 38%, rgba(160, 100, 255, 0.18), transparent 75%),
@@ -62,7 +64,6 @@ body.menu-open, body.modal-open { overflow: hidden; }
     padding: clamp(5rem, 10vw, 9rem) var(--pad) clamp(2.5rem, 5vw, 4rem);
 }
 .legacy-work__heading h2 {
-    margin-top: 1rem;
     font: 800 clamp(2.8rem, 7vw, 7.5rem)/0.98 var(--font-head);
     letter-spacing: 0.015em; text-transform: uppercase;
 }
@@ -156,7 +157,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .legacy-next__row {
     display: flex; justify-content: space-between; align-items: flex-end;
-    flex-wrap: wrap; gap: 2.5rem; margin-top: 2rem;
+    flex-wrap: wrap; gap: 2.5rem;
 }
 .legacy-next h2 {
     font: 800 clamp(3.25rem, 9vw, 10rem)/0.97 var(--font-head);
@@ -167,12 +168,21 @@ body.menu-open, body.modal-open { overflow: hidden; }
     display: inline-flex; justify-content: space-between; align-items: center;
     min-width: 12rem; gap: 2rem; padding: 1rem 0;
     border-bottom: 1px solid var(--lime);
-    font: 400 0.72rem/1.5 var(--font-mono); letter-spacing: 0.15em;
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: 18.5px; line-height: 1.5; letter-spacing: 0.15em;
     transition: color 0.3s;
 }
 .legacy-next__row > a span { font-size: 1.5rem; line-height: 0.7; }
 .legacy-next__row > a:hover { color: var(--lime); }
-.site-footer .footer-row { justify-content: space-between; margin-top: 0; }
+/* El © hereda posición y tamaño de la landing (.footer-row en styles.css);
+   este enlace vive en su propia línea para no desplazarlo del centro. */
+.footer-back {
+    margin-top: 0.9rem; text-align: center;
+    font: 400 0.6rem/1.5 var(--font-mono);
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+}
+.footer-back a { transition: color 0.3s; }
+.footer-back a:hover { color: var(--fg); }
 
 /* ── Accessible film player ───────────────────────────────── */
 .film-modal {
@@ -224,7 +234,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     .film-card:nth-child(even) { margin-top: 0; }
 }
 @media (max-width: 560px) {
-    .legacy-hero { padding-top: 7rem; }
+    .legacy-hero { min-height: min(420px, 54svh); padding: 7rem var(--pad) 3rem; }
     .legacy-hero__topline { font-size: 0.58rem; }
     .legacy-work__heading h2 { font-size: clamp(2.7rem, 9vw, 4.5rem); }
     .film-card__counter { top: 1rem; left: 1rem; }
@@ -232,7 +242,6 @@ body.menu-open, body.modal-open { overflow: hidden; }
     .menu-footer { flex-direction: column; gap: 0.75rem; font-size: 0.62rem; }
     .film-modal__top, .film-modal__info { padding-inline: 1rem; }
     .film-modal__info { align-items: flex-start; flex-direction: column; }
-    .site-footer .footer-row { justify-content: center; }
 }
 @media (hover: none) {
     .film-card__poster img { filter: brightness(0.9); }
