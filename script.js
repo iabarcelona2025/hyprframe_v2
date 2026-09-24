@@ -8,6 +8,10 @@
     const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
     /* ── 1. Preloader ─────────────────────────────────────── */
+    // Se reproduce una sola vez por sesión (ver el script del <head> de index.html):
+    // al volver a la landing desde legacy.html / builder.html no se repite.
+    const INTRO_KEY = "hfIntroSeen";
+    const introSeen = document.documentElement.classList.contains("hf-skip-intro");
     const preloader = document.getElementById("preloader");
     const preCount = document.getElementById("preCount");
     const preBar = document.getElementById("preBar");
@@ -16,34 +20,44 @@
     let heroReady = false;
     function onHeroReady(cb) { heroReady ? cb() : heroReadyCbs.push(cb); }
 
-    function finishPreload() {
-        preloader.classList.add("done");
+    function finishPreload(withTransition) {
+        if (withTransition && preloader) {
+            preloader.classList.add("done");
+            preloader.addEventListener("transitionend", () => preloader.remove(), { once: true });
+        } else if (preloader) {
+            preloader.remove(); // intro ya vista: fuera del DOM, sin transición
+        }
         document.body.classList.add("loaded");
         heroReady = true;
         heroReadyCbs.splice(0).forEach((cb) => cb());
-        preloader.addEventListener("transitionend", () => preloader.remove(), { once: true });
     }
 
-    if (reduced) {
-        finishPreload();
+    if (introSeen) {
+        finishPreload(false);
     } else {
-        let n = 0;
-        const started = performance.now();
-        const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
-        const tick = setInterval(() => {
-            // ease-out curve toward 100
-            n += Math.max(1, Math.round((100 - n) * 0.06));
-            if (n >= 100 && performance.now() - started >= MIN_DURATION) {
-                n = 100;
-                clearInterval(tick);
-                preCount.textContent = "100";
-                preBar.style.width = "100%";
-                setTimeout(finishPreload, 260);
-            } else {
-                preCount.textContent = n;
-                preBar.style.width = n + "%";
-            }
-        }, 40);
+        try { sessionStorage.setItem(INTRO_KEY, "1"); } catch (e) { /* storage no disponible */ }
+
+        if (reduced) {
+            finishPreload(true);
+        } else {
+            let n = 0;
+            const started = performance.now();
+            const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
+            const tick = setInterval(() => {
+                // ease-out curve toward 100
+                n += Math.max(1, Math.round((100 - n) * 0.06));
+                if (n >= 100 && performance.now() - started >= MIN_DURATION) {
+                    n = 100;
+                    clearInterval(tick);
+                    preCount.textContent = "100";
+                    preBar.style.width = "100%";
+                    setTimeout(() => finishPreload(true), 260);
+                } else {
+                    preCount.textContent = n;
+                    preBar.style.width = n + "%";
+                }
+            }, 40);
+        }
     }
 
     /* ── 2. Custom cursor ─────────────────────────────────── */

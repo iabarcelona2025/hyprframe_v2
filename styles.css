@@ -100,6 +100,9 @@ body.cursor-large .cursor-dot { opacity: 0; }
     clip-path: inset(0 0 0 0);
 }
 .preloader.done { clip-path: inset(0 0 100% 0); pointer-events: none; }
+/* Intro ya vista en esta sesión (lo marca el script del <head> de index.html):
+   el preloader se oculta desde el primer frame, sin llegar a pintarse. */
+html.hf-skip-intro .preloader { display: none; }
 .preloader-inner {
     display: flex; align-items: baseline; gap: 1.5rem;
     font-family: var(--font-head);
@@ -382,6 +385,9 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 
 .accent { color: var(--violet); font-style: italic; }
 em { font-style: normal; color: var(--violet); }
+/* Palabra concreta en lila dentro de un titular (recta, sin cursiva).
+   El color es el mismo token de marca: --violet (#a064ff). */
+.violet { color: var(--violet); }
 
 /* ── Sections base ───────────────────────────────────────── */
 section { position: relative; }
