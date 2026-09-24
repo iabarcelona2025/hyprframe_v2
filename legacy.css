@@ -17,9 +17,8 @@ body.menu-open, body.modal-open { overflow: hidden; }
 
 /* ── Editorial opener ─────────────────────────────────────── */
 .legacy-hero {
-    display: flex; flex-direction: column; justify-content: space-between;
-    min-height: min(880px, 88svh);
-    padding: clamp(8.5rem, 12vw, 12rem) var(--pad) clamp(3.5rem, 6vw, 6rem);
+    display: flex; flex-direction: column; gap: clamp(1.25rem, 2.5vw, 2rem);
+    padding: clamp(7.5rem, 10vw, 9rem) var(--pad) clamp(2.5rem, 5vw, 4rem);
     border-bottom: 1px solid var(--line);
     background:
         radial-gradient(ellipse 48% 90% at 84% 38%, rgba(160, 100, 255, 0.18), transparent 75%),
@@ -32,14 +31,12 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .legacy-hero__label { display: flex; align-items: center; gap: 0.8rem; }
 .legacy-hero__label .pulse { flex: 0 0 8px; }
-.legacy-hero__content { margin-top: clamp(4rem, 10vh, 8rem); }
 .legacy-eyebrow {
     font: 400 0.68rem/1.6 var(--font-mono);
     letter-spacing: 0.24em; color: var(--violet);
 }
 .legacy-hero__bottom {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem;
-    margin-top: clamp(2rem, 4vw, 4rem);
 }
 .legacy-hero__bottom p {
     font-size: clamp(1.15rem, 2.1vw, 1.75rem); line-height: 1.4;
@@ -227,7 +224,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     .film-card:nth-child(even) { margin-top: 0; }
 }
 @media (max-width: 560px) {
-    .legacy-hero { min-height: 78svh; padding-top: 8.5rem; }
+    .legacy-hero { padding-top: 7rem; }
     .legacy-hero__topline { font-size: 0.58rem; }
     .legacy-work__heading h2 { font-size: clamp(2.7rem, 9vw, 4.5rem); }
     .film-card__counter { top: 1rem; left: 1rem; }
