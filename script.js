@@ -105,6 +105,10 @@
 
     /* ── 6. Hero word rotator ─────────────────────────────── */
     // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).
+    // Motion: words only ever travel upward — the outgoing one exits through the
+    // top, the incoming one rises from below. Every reset back to the resting
+    // spot is applied with the transition disabled, so nothing is ever seen
+    // moving downwards through the visible gap.
     const rotItems = [...document.querySelectorAll("[data-rot]")];
     const ROT_INITIAL_DELAY = 2000;
     const ROT_INTERVAL = 4000;
@@ -118,12 +122,19 @@
             const next = rotItems[idx];
             if (current) {
                 current.classList.remove("is-active");
-                current.classList.add("is-above");
-                setTimeout(() => current.classList.remove("is-above"), 900);
+                current.classList.add("is-above"); // exits upward (0 → -110%)
+                setTimeout(() => {
+                    current.style.transition = "none";
+                    current.classList.remove("is-above"); // snap below, no animation
+                    void current.offsetWidth;
+                    current.style.transition = "";
+                }, 900);
             }
-            next.classList.remove("is-above");
+            next.style.transition = "none";
+            next.classList.remove("is-above"); // snap to the resting spot below…
             void next.offsetWidth; // reflow so the entering word starts below
-            next.classList.add("is-active");
+            next.style.transition = "";
+            next.classList.add("is-active"); // …then rises from below (+110% → 0)
         };
         onHeroReady(() => {
             setTimeout(() => {
