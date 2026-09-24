@@ -298,10 +298,11 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 
 /* rotating word */
 .rotator-viewport {
-    display: inline-block; height: 0.95em; overflow: hidden; vertical-align: bottom;
+    display: inline-grid; height: 0.95em; overflow: hidden; vertical-align: bottom;
     position: relative;
 }
 .rotator-item {
+    grid-area: 1 / 1;
     display: block;
     font-style: italic;
     transform: translateY(110%);
@@ -713,7 +714,8 @@ section { position: relative; }
     html { scroll-behavior: auto; }
     [data-reveal] { opacity: 1; transform: none; }
     .line-inner { transform: none; }
-    .rotator-item { transform: none; }
+    .rotator-item { transform: none; opacity: 0; }
+    .rotator-item.is-active { opacity: 1; }
     .statement-text span { opacity: 1; }
     .preloader { display: none; }
 }
