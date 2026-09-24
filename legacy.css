@@ -99,12 +99,11 @@ body.menu-open, body.modal-open { overflow: hidden; }
     content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 32%, transparent 65%, rgba(0, 0, 0, 0.48));
 }
-.film-card__counter, .film-card__watch {
+.film-card__watch {
     position: absolute; z-index: 2;
     font: 400 0.64rem/1.4 var(--font-mono);
     letter-spacing: 0.2em; color: #fff;
 }
-.film-card__counter { top: 1.4rem; left: 1.5rem; }
 .film-card__watch { bottom: 1.4rem; left: 1.5rem; }
 .film-card__play {
     position: absolute; top: 50%; left: 50%; z-index: 2;
@@ -174,6 +173,24 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .legacy-next__row > a span { font-size: 1.5rem; line-height: 0.7; }
 .legacy-next__row > a:hover { color: var(--lime); }
+/* ── LET'S TALK — CTA en loop: brillo de neón + respiración + flecha viva ── */
+.legacy-next__row > a {
+    animation: letsTalkGlow 2.4s ease-in-out infinite;
+    will-change: transform, text-shadow;
+}
+.legacy-next__row > a span {
+    animation: letsTalkArrow 2.4s var(--ease-out) infinite;
+    will-change: transform;
+}
+@keyframes letsTalkGlow {
+    0%, 100% { transform: scale(1);    color: var(--fg);   text-shadow: 0 0 0 rgba(163, 223, 2, 0); }
+    50%      { transform: scale(1.04); color: var(--lime); text-shadow: 0 0 16px rgba(163, 223, 2, 0.6), 0 0 38px rgba(163, 223, 2, 0.28); }
+}
+@keyframes letsTalkArrow {
+    0%, 100% { transform: translate(0, 0); }
+    45%      { transform: translate(0.38rem, -0.38rem); }
+    60%      { transform: translate(0.3rem, -0.3rem); }
+}
 /* El © hereda posición y tamaño de la landing (.footer-row en styles.css);
    este enlace vive en su propia línea para no desplazarlo del centro. */
 /* Va ENCIMA del .footer-row: así la distancia del © al borde inferior de la
@@ -222,13 +239,6 @@ body.menu-open, body.modal-open { overflow: hidden; }
     text-transform: uppercase;
 }
 .film-modal__info p { margin-top: 0.4rem; font-size: 0.88rem; color: var(--muted); }
-.film-modal__info > a {
-    flex: 0 0 auto; padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--violet);
-    font: 400 0.65rem/1.4 var(--font-mono);
-    letter-spacing: 0.15em; white-space: nowrap;
-}
-.film-modal__info > a:hover { color: var(--lime); border-color: var(--lime); }
 
 @media (max-width: 800px) {
     .legacy-hero__bottom { align-items: flex-start; flex-direction: column; }
@@ -239,7 +249,6 @@ body.menu-open, body.modal-open { overflow: hidden; }
     .legacy-hero { min-height: min(420px, 54svh); padding: 7rem var(--pad) 3rem; }
     .legacy-hero__topline { font-size: 0.58rem; }
     .legacy-work__heading h2 { font-size: clamp(2.7rem, 9vw, 4.5rem); }
-    .film-card__counter { top: 1rem; left: 1rem; }
     .film-card__watch { bottom: 1rem; left: 1rem; }
     .menu-footer { flex-direction: column; gap: 0.75rem; font-size: 0.62rem; }
     .film-modal__top, .film-modal__info { padding-inline: 1rem; }
