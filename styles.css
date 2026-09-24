@@ -309,6 +309,7 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
     transition: transform 0.8s var(--ease-out);
     color: var(--violet);
     -webkit-text-stroke: 0;
+    opacity: 0.7; /* rotating words sit at 70% — same weight as the hero title */
 }
 .rotator-item.is-above { transform: translateY(-110%); }
 .rotator-item.is-active { transform: translateY(0); }
@@ -715,7 +716,7 @@ section { position: relative; }
     [data-reveal] { opacity: 1; transform: none; }
     .line-inner { transform: none; }
     .rotator-item { transform: none; opacity: 0; }
-    .rotator-item.is-active { opacity: 1; }
+    .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }
     .preloader { display: none; }
 }
