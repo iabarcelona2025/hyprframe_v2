@@ -11,7 +11,6 @@
     const closeButton = document.getElementById("modalClose");
     const title = document.getElementById("modalTitle");
     const synopsis = document.getElementById("videoSynopsis");
-    const externalLink = document.getElementById("modalExternal");
     let lastFilmLink = null;
 
     function updateScroll() {
@@ -42,7 +41,6 @@
         title.textContent = link.dataset.title;
         synopsis.textContent = link.dataset.synopsis;
         player.title = `${link.dataset.title} — Vimeo video`;
-        externalLink.href = link.href;
         modal.hidden = false;
         document.body.classList.add("modal-open");
         player.src = `https://player.vimeo.com/video/${id}?autoplay=1&dnt=1`;
@@ -98,7 +96,6 @@
     document.addEventListener("keydown", (event) => {
         if (!modal.hidden) {
             if (event.key === "Escape") { event.preventDefault(); closeFilm(); }
-            else trapFocus(event, [closeButton, player, externalLink]);
         } else if (document.body.classList.contains("menu-open")) {
             if (event.key === "Escape") { event.preventDefault(); setMenu(false, true); }
             else trapFocus(event, [burger, ...menu.querySelectorAll("a")]);

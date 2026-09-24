@@ -704,8 +704,8 @@ section { position: relative; }
     display: flex; justify-content: center; text-align: center; gap: 1rem; flex-wrap: wrap;
     margin-top: 1rem; padding-top: 1.5rem;
     border-top: 1px solid var(--line);
-    font-family: var(--font-mono); font-size: 0.6rem;
-    letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-mono); font-size: calc(0.6rem - 2px); /* 9.6px → 7.6px */
+    letter-spacing: 0.22em; text-transform: uppercase; color: #5a5a5a; /* más oscuro que --muted (#8b8b8b) */
 }
 .footer-row a:hover { color: var(--fg); }
 
