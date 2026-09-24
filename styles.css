@@ -320,11 +320,13 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 }
 
 .scroll-cue {
-    position: absolute; bottom: 5.5rem; left: var(--pad); z-index: 2;
+    position: absolute; bottom: 5.5rem; left: 50%; transform: translateX(-50%); z-index: 2;
     display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
     font-family: var(--font-mono); font-size: 0.62rem;
     letter-spacing: 0.3em; color: var(--muted);
 }
+/* compensa el letter-spacing final para que el texto comparta eje óptico con la línea */
+.scroll-cue > span:first-child { text-indent: 0.3em; }
 .scroll-cue-line {
     width: 1px; height: 56px; background: var(--line); position: relative; overflow: hidden;
 }
