@@ -146,11 +146,11 @@ body.cursor-large .cursor-dot { opacity: 0; }
 .logo { display: inline-flex; align-items: center; }
 .logo img {
     display: block;
-    height: clamp(36px, 3.9vw, 52px);
+    height: clamp(41.4px, 4.485vw, 59.8px); /* 15% más grande */
     width: auto; /* mantiene la proporción 4.35:1 del original */
     transition: height 0.4s var(--ease-out);
 }
-.site-header.scrolled .logo img { height: 40px; }
+.site-header.scrolled .logo img { height: 46px; }
 
 .main-nav { display: flex; gap: clamp(1rem, 2.5vw, 2.5rem); }
 .main-nav a {
