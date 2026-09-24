@@ -82,6 +82,37 @@
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
+    /* ── 4. Hero marquee: keep both halves wider than the viewport ── */
+    const heroMarquee = document.querySelector(".hero-marquee");
+    const marqueeTrack = heroMarquee && heroMarquee.querySelector(".marquee-track");
+    if (marqueeTrack && marqueeTrack.firstElementChild) {
+        const segment = marqueeTrack.firstElementChild.cloneNode(true);
+        let copiesPerHalf = 1; // the HTML starts with two identical segments
+
+        function sizeHeroMarquee() {
+            const segmentWidth = marqueeTrack.firstElementChild.getBoundingClientRect().width;
+            const viewportWidth = heroMarquee.clientWidth;
+            if (!segmentWidth || !viewportWidth) return;
+
+            // translateX(-50%) must land on an identical half. One segment may be
+            // narrower than the screen, so fill each half before duplicating it.
+            const needed = Math.ceil(viewportWidth / segmentWidth) + 1;
+            if (needed === copiesPerHalf) return;
+            marqueeTrack.replaceChildren(...Array.from(
+                { length: needed * 2 }, () => segment.cloneNode(true)
+            ));
+            copiesPerHalf = needed;
+            // Keep the speed per segment unchanged as the track grows.
+            marqueeTrack.style.animationDuration = `${28 * needed}s`;
+        }
+
+        sizeHeroMarquee();
+        addEventListener("resize", sizeHeroMarquee);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(sizeHeroMarquee).catch(() => {});
+        }
+    }
+
     /* ── 5. Reveal on scroll (generic) ────────────────────── */
     const revealIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
