@@ -385,6 +385,9 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 
 .accent { color: var(--violet); font-style: italic; }
 em { font-style: normal; color: var(--violet); }
+/* Palabra concreta en lila dentro de un titular (recta, sin cursiva).
+   El color es el mismo token de marca: --violet (#a064ff). */
+.violet { color: var(--violet); }
 
 /* ── Sections base ───────────────────────────────────────── */
 section { position: relative; }

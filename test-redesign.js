@@ -65,6 +65,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 4,
         `${doc.querySelectorAll(".reveal-lines.in").length}/4`);
 
+    // palabras sueltas destacadas en lila (--violet) dentro de los titulares
+    const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
+    check("palabras en lila: WORK, HUMAN, MACHINE y Ai (DNAi)",
+        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai", violetWords.join("|"));
+    check("cada palabra en lila vive dentro de su .line-inner",
+        [...doc.querySelectorAll(".violet")].every((el) => el.closest(".line-inner")),
+        [...doc.querySelectorAll(".violet")].map((el) => el.closest(".line-inner") ? "ok" : "fuera").join(","));
+
     // statement words lit (IO-independent scroll calc; rect.top=0 in jsdom → fully lit)
     const lit = doc.querySelectorAll("#statementText span.lit").length;
     check("statement words lit on scroll calc", lit > 0, `${lit} words lit`);
