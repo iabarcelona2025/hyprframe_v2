@@ -580,8 +580,11 @@ section { position: relative; }
 .about-copy { color: rgba(242, 241, 238, 0.72); font-weight: 300; max-width: 52ch; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
-    display: block; font-family: var(--font-display); font-weight: 800;
-    font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1;
+    display: block;
+    /* same bold face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title */
+    font-family: var(--font-head); font-weight: 800;
+    font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1.02;
+    letter-spacing: 0.04em; text-transform: uppercase;
     color: var(--fg); font-variant-numeric: tabular-nums;
 }
 .stat-num .accent, .stat-label { color: var(--muted); }
