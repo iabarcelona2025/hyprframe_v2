@@ -176,8 +176,10 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .legacy-next__row > a:hover { color: var(--lime); }
 /* El © hereda posición y tamaño de la landing (.footer-row en styles.css);
    este enlace vive en su propia línea para no desplazarlo del centro. */
+/* Va ENCIMA del .footer-row: así la distancia del © al borde inferior de la
+   página (padding-bottom 2rem de .site-footer) es la misma que en la landing. */
 .footer-back {
-    margin-top: 0.9rem; text-align: center;
+    text-align: center;
     font: 400 0.6rem/1.5 var(--font-mono);
     letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
 }
