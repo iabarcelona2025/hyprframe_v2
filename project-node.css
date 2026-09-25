@@ -63,10 +63,23 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: grid; place-items: center;
 }
 .node-player__circle {
-    display: grid; place-items: center; width: clamp(2.25rem, 4.5vw, 4rem); aspect-ratio: 1;
+    position: relative; display: block; width: clamp(2.25rem, 4.5vw, 4rem); aspect-ratio: 1;
     background: var(--lime); border: 1px solid var(--lime); border-radius: 50%;
-    color: var(--bg); font-size: clamp(1.15rem, 2vw, 1.7rem); text-indent: 0.22em;
+    color: var(--bg); font-size: clamp(1.15rem, 2vw, 1.7rem);
     transition: transform 0.4s var(--ease-out), box-shadow 0.3s;
+}
+/* The play triangle is drawn in CSS instead of the "▶" character: the site fonts
+   lack that glyph, so every system substituted its own symbol font (different
+   metrics) and the triangle drifted off centre. It is equilateral and its centre
+   — centroid and circumcentre at once — sits exactly on the circle's centre, so
+   its three corners are equidistant from the lime edge. Sized in em from the
+   font-size above, it keeps the scale of the former glyph. */
+.node-player__circle::before {
+    content: ""; position: absolute; inset: 0; background: currentColor;
+    clip-path: polygon(calc(50% + 0.48em) 50%, calc(50% - 0.24em) calc(50% - 0.4157em), calc(50% - 0.24em) calc(50% + 0.4157em));
+}
+@media (forced-colors: active) {
+    .node-player__circle::before { background: ButtonText; }
 }
 .node-player__play:hover .node-player__circle, .node-player__play:focus-visible .node-player__circle {
     transform: scale(1.09); box-shadow: 0 0 26px rgba(163, 223, 2, 0.5);
