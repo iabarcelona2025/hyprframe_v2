@@ -24,7 +24,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
 .node-hero h1 {
-    font: 800 clamp(4.2rem, 9vw, 9rem)/0.8 var(--font-head);
+    font: 700 clamp(4.2rem, 9vw, 9rem)/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
 /* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
@@ -52,7 +52,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
 .node-section-label span:first-child { color: var(--violet); }
 .node-story h2, .node-related h2 {
-    font: 800 clamp(3rem, 8vw, 8rem)/0.98 var(--font-head);
+    font: 700 clamp(3rem, 8vw, 8rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.025em; text-transform: uppercase;
 }
 .node-player { position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden; }
@@ -130,7 +130,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.2em; color: var(--muted);
 }
 .node-card__meta span:last-child { font-size: 1.25rem; line-height: 0.8; color: var(--violet); }
-.node-card__title { font: 700 clamp(1.35rem, 2.7vw, 2.65rem)/1.1 var(--font-head); letter-spacing: 0.025em; }
+.node-card__title { font: 600 clamp(1.35rem, 2.7vw, 2.65rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) */
 .node-card:hover .node-card__title { color: var(--violet); }
 
 @media (max-width: 850px) {

@@ -64,7 +64,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     padding: clamp(5rem, 10vw, 9rem) var(--pad) clamp(2.5rem, 5vw, 4rem);
 }
 .legacy-work__heading h2 {
-    font: 800 clamp(2.8rem, 7vw, 7.5rem)/0.98 var(--font-head);
+    font: 700 clamp(2.8rem, 7vw, 7.5rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.015em; text-transform: uppercase;
 }
 .legacy-work__heading h2 span { color: var(--violet); }
@@ -145,7 +145,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .film-card__title {
     min-width: 0; flex: 1;
-    font: 700 clamp(1.2rem, 2.3vw, 2.2rem)/1.12 var(--font-head);
+    font: 600 clamp(1.2rem, 2.3vw, 2.2rem)/1.12 var(--font-head); /* 700 → 600 (25/09/2026) */
     letter-spacing: 0.025em; text-transform: uppercase;
 }
 .film-card__arrow {
@@ -170,7 +170,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     flex-wrap: wrap; gap: 2.5rem;
 }
 .legacy-next h2 {
-    font: 800 clamp(3.25rem, 9vw, 10rem)/0.97 var(--font-head);
+    font: 700 clamp(3.25rem, 9vw, 10rem)/0.97 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.015em; text-transform: uppercase;
 }
 .legacy-next h2 span { color: var(--violet); }
