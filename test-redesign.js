@@ -65,13 +65,31 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 4,
         `${doc.querySelectorAll(".reveal-lines.in").length}/4`);
 
-    // palabras sueltas destacadas en lila (--violet) dentro de los titulares
+    // palabras sueltas destacadas en lila (--violet) dentro de los titulares, en cursiva
     const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
     check("palabras en lila: WORK, HUMAN, MACHINE y Ai (DNAi)",
         violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai", violetWords.join("|"));
     check("cada palabra en lila vive dentro de su .line-inner",
         [...doc.querySelectorAll(".violet")].every((el) => el.closest(".line-inner")),
         [...doc.querySelectorAll(".violet")].map((el) => el.closest(".line-inner") ? "ok" : "fuera").join(","));
+    check("las palabras en lila llevan cursiva (.italic)",
+        [...doc.querySelectorAll(".violet")].every((el) => el.classList.contains("italic")),
+        [...doc.querySelectorAll(".violet")].map((el) => el.classList.contains("italic") ? "ok" : "recta").join(","));
+    const cross = doc.querySelector(".about-title .accent");
+    check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
+        cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
+    const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
+    check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
+        /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
+        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?\s*\}\s*[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}/.test(css),
+        "ver @keyframes crossTurn / .cross-turn");
+    check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
+        /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.216em\s+0\.6105em/.test(css),
+        "ver transform-origin de .cross-turn");
+    check("cross-turn sin cursiva (font-style: normal) y con reduced-motion queda en ×",
+        /\.cross-turn\s*\{[^}]*font-style:\s*normal/.test(css) &&
+        /\.cross-turn\s*\{\s*animation:\s*none;\s*transform:\s*none;/.test(css),
+        "ver .cross-turn");
 
     // statement words lit (IO-independent scroll calc; rect.top=0 in jsdom → fully lit)
     const lit = doc.querySelectorAll("#statementText span.lit").length;

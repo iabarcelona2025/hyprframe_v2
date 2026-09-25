@@ -13,6 +13,11 @@ const dom = new JSDOM(html, {
 });
 const { window } = dom;
 const doc = window.document;
+window.matchMedia = (q) => ({
+    matches: false, media: q,
+    addEventListener() {}, removeEventListener() {},
+    addListener() {}, removeListener() {},
+});
 const indexDoc = new JSDOM(index).window.document;
 const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
@@ -52,12 +57,15 @@ try {
     }
     assert.equal(indexDoc.querySelector(".work-row .work-title").textContent, "N.O.D.E.");
     assert.equal(indexDoc.querySelector(".work-row").getAttribute("href"), "project-node.html");
-    assert.equal(doc.querySelector("h1").textContent, "N.O.D.E. (Teaser)");
+    assert.equal(doc.querySelector("h1").getAttribute("aria-label"), "N.O.D.E. (Teaser)");
+    assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "the title's four dots are uniform CSS boxes");
     assert.ok(!doc.querySelector(".node-hero__period"), "the title's period inherits the same colour as its letters");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /font-size: clamp\(1\.15rem, 2vw, 1\.7rem\); text-indent/);
     assert.ok(!doc.querySelector(".node-film__after"), "old film caption has been removed");
-    assert.ok(!doc.querySelector(".node-hero__image img"), "the opener uses a gradient, not a still image");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /radial-gradient\(ellipse 48% 90% at 84% 38%/);
+    const css = fs.readFileSync(path.join(root, "project-node.css"), "utf8");
+    assert.ok(!doc.querySelector(".node-hero__image img"), "the opener is a flat background, not a still image");
+    assert.ok(!/radial-gradient|linear-gradient/.test(css), "the opener gradient has been removed");
+    assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"), "custom cursor dot and ring exist");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /background: var\(--lime\); border: 1px solid var\(--lime\)/);
     assert.equal(doc.getElementById("playFilm").textContent.trim(), "▶");
     assert.ok(!doc.querySelector(".node-story__caption"));

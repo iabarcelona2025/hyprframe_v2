@@ -2,6 +2,32 @@
 (() => {
     "use strict";
 
+    /* ── Custom cursor (same behaviour as index.html) ────────── */
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const dot = document.getElementById("cursorDot");
+    const ring = document.getElementById("cursorRing");
+
+    if (!isTouch && !reduced && dot && ring) {
+        let mx = innerWidth / 2, my = innerHeight / 2;
+        let rx = mx, ry = my;
+
+        addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
+
+        (function cursorLoop() {
+            rx += (mx - rx) * 0.16;
+            ry += (my - ry) * 0.16;
+            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+            requestAnimationFrame(cursorLoop);
+        })();
+
+        document.querySelectorAll("a, button, .service-row, input, textarea").forEach((el) => {
+            el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
+            el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
+        });
+    }
+
     const header = document.getElementById("siteHeader");
     const progress = document.getElementById("scrollProgress");
     const burger = document.getElementById("burger");
