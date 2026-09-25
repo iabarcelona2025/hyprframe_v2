@@ -324,6 +324,7 @@
         const open = force !== undefined ? force : !document.body.classList.contains("menu-open");
         document.body.classList.toggle("menu-open", open);
         burger.setAttribute("aria-expanded", String(open));
+        burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         overlay.setAttribute("aria-hidden", String(!open));
         document.body.style.overflow = open ? "hidden" : "";
     }

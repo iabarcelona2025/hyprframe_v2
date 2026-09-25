@@ -212,6 +212,11 @@ html.hf-skip-intro .preloader { display: none; }
 .burger span:last-child { top: 20px; }
 body.menu-open .burger span:first-child { top: 16px; transform: rotate(45deg); }
 body.menu-open .burger span:last-child { top: 16px; transform: rotate(-45deg); }
+/* Same stacking as legacy.html / project-node.html: keep the two-line close
+   control above the fullscreen overlay so the × animation stays visible and
+   the button remains clickable while the menu is open. */
+body.menu-open .site-header { z-index: 900; }
+body.menu-open { overflow: hidden; }
 
 /* ── Fullscreen menu ─────────────────────────────────────── */
 .menu-overlay {
@@ -220,17 +225,17 @@ body.menu-open .burger span:last-child { top: 16px; transform: rotate(-45deg); }
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
     transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
-    padding: 6rem var(--pad) 2rem;
+    padding: 4.5rem var(--pad) 8rem;
     visibility: hidden;
 }
 body.menu-open .menu-overlay {
     clip-path: circle(150% at calc(100% - 3rem) 2.5rem);
     visibility: visible;
 }
-.menu-links { display: flex; flex-direction: column; gap: 0.35rem; }
+.menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
 .menu-links a {
     font-family: var(--font-head); font-weight: 800;
-    font-size: clamp(2.4rem, 9vw, 6rem); line-height: 1.05;
+    font-size: clamp(2.4rem, 9vw, 6rem); line-height: 1.12;
     text-transform: uppercase; letter-spacing: 0.03em;
     opacity: 0; transform: translateY(40px);
     transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out), color 0.3s;

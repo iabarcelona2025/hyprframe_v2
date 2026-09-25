@@ -97,12 +97,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // menu toggle
     const burger = doc.getElementById("burger");
+    check("burger markup matches legacy (type + aria-controls)",
+        burger.getAttribute("type") === "button" && burger.getAttribute("aria-controls") === "menuOverlay");
+    check("menu-open raises header above overlay so the two-line × stays visible",
+        /body\.menu-open\s+\.site-header\s*\{[^}]*z-index:\s*900/.test(css));
     burger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     check("burger click opens menu", doc.body.classList.contains("menu-open")
-        && burger.getAttribute("aria-expanded") === "true");
+        && burger.getAttribute("aria-expanded") === "true"
+        && burger.getAttribute("aria-label") === "Close menu");
     doc.querySelector(".menu-links a").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     check("menu link click closes menu", !doc.body.classList.contains("menu-open")
-        && doc.body.style.overflow === "");
+        && doc.body.style.overflow === ""
+        && burger.getAttribute("aria-label") === "Open menu");
 
     // cursor hover state
     const link = doc.querySelector(".work-row");
