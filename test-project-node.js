@@ -57,7 +57,7 @@ try {
     }
     assert.equal(indexDoc.querySelector(".work-row .work-title").textContent, "N.O.D.E.");
     assert.equal(indexDoc.querySelector(".work-row").getAttribute("href"), "project-node.html");
-    assert.equal(doc.querySelector("h1").getAttribute("aria-label"), "N.O.D.E. (Teaser)");
+    assert.equal(doc.querySelector("h1").getAttribute("aria-label"), "N.O.D.E. [Teaser]");
     assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "the title's four dots are uniform CSS boxes");
     assert.ok(!doc.querySelector(".node-hero__period"), "the title's period inherits the same colour as its letters");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /font-size: clamp\(1\.15rem, 2vw, 1\.7rem\);/);
