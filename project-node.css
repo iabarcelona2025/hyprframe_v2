@@ -20,14 +20,23 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero__image {
     position: relative; height: clamp(170px, 23svh, 250px);
     isolation: isolate; overflow: hidden;
-    background:
-        radial-gradient(ellipse 48% 90% at 84% 38%, rgba(160, 100, 255, 0.18), transparent 75%),
-        linear-gradient(125deg, var(--bg) 30%, #111016 80%, var(--bg));
+    background: var(--bg);
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
 .node-hero h1 {
     font: 800 clamp(4.2rem, 9vw, 9rem)/0.8 var(--font-head);
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
+}
+/* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
+   baseline-anchored like the letters — so the rhythm never depends on the
+   side bearings of the font's "." glyph (which vary per font and made the
+   last dot look detached). The ±0.025em margins cancel the h1's negative
+   letter-spacing, leaving each gap equal to the letter's own side bearing. */
+.node-hero__word { white-space: nowrap; }
+.node-hero__dot {
+    display: inline-block; width: 0.165em; height: 0.15em;
+    margin: 0 0.025em;
+    background: currentColor; vertical-align: baseline;
 }
 .node-hero__teaser { font-size: 0.4em; font-weight: 600; letter-spacing: 0.015em; }
 .node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
