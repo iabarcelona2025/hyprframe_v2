@@ -72,25 +72,34 @@
     });
 
     const play = document.getElementById("playFilm");
+    const playerBox = document.getElementById("nodePlayer");
+    const poster = [...playerBox.childNodes]; // opening still + play button, restored when the teaser ends
     play.addEventListener("click", () => {
         const iframe = document.createElement("iframe");
         iframe.title = "N.O.D.E. teaser — HYPRFRAME";
         // The iframe's load event may fire before Vimeo paints its player (white flash).
-        // Reveal it only when Vimeo itself reports that the player is ready.
+        // Reveal it only when Vimeo itself reports that the player is ready, and ask it to
+        // report the end as well: then the opening still and its play button come back.
         function onPlayerMessage(event) {
             if (event.origin !== "https://player.vimeo.com" || event.source !== iframe.contentWindow) return;
             let data;
             try { data = typeof event.data === "string" ? JSON.parse(event.data) : event.data; }
             catch { return; }
-            if (!data || data.event !== "ready") return;
-            iframe.classList.add("is-ready");
-            removeEventListener("message", onPlayerMessage);
+            if (data?.event === "ready") {
+                iframe.classList.add("is-ready");
+                iframe.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, "https://player.vimeo.com");
+            } else if (data?.event === "ended") {
+                removeEventListener("message", onPlayerMessage);
+                const hadFocus = document.activeElement === iframe;
+                playerBox.replaceChildren(...poster);
+                if (hadFocus) play.focus({ preventScroll: true });
+            }
         }
         addEventListener("message", onPlayerMessage);
         iframe.src = "https://player.vimeo.com/video/1227346538?autoplay=1&dnt=1&transparent=0";
         iframe.allow = "autoplay; fullscreen; picture-in-picture";
         iframe.setAttribute("allowfullscreen", "");
-        document.getElementById("nodePlayer").replaceChildren(iframe);
+        playerBox.replaceChildren(iframe);
         iframe.focus();
     });
 })();

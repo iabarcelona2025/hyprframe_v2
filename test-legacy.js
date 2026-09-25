@@ -92,10 +92,14 @@ try {
     assert.ok(doc.body.classList.contains("modal-open"));
     assert.match(player.src, /player\.vimeo\.com\/video\/1131285757\?autoplay=1&dnt=1/);
     assert.equal(doc.getElementById("modalTitle").textContent, firstCard.dataset.title);
-    assert.equal(doc.getElementById("modalExternal").href, firstCard.href);
+    assert.ok(!doc.getElementById("modalExternal") && !doc.body.textContent.includes("WATCH ON VIMEO"),
+        "the WATCH ON VIMEO link was removed from the modal on purpose");
     assert.equal(doc.activeElement, closeButton);
-    doc.getElementById("modalExternal").focus();
-    key("Tab");
+    key("Tab", true);
+    assert.equal(doc.activeElement, player, "Shift+Tab on CLOSE wraps to the player");
+    // Tabbing past the last control of the cross-origin Vimeo iframe happens inside the
+    // iframe, so this page only sees focus landing behind the modal: it must come back.
+    doc.querySelector(".footer-back a").focus();
     assert.equal(doc.activeElement, closeButton, "focus stays inside the modal");
     key("Escape");
     assert.equal(modal.hidden, true);
@@ -105,6 +109,32 @@ try {
     doc.querySelectorAll(".film-card")[1].click();
     modal.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     assert.equal(modal.hidden, true, "clicking backdrop closes the video");
+
+    // The pop-up closes by itself when the film ends: once Vimeo reports "ready", the page
+    // subscribes to "ended" through the player's postMessage API and closes on that event.
+    const endingCard = doc.querySelectorAll(".film-card")[2];
+    const sent = [];
+    const fromVimeo = (data, { origin = "https://player.vimeo.com", source = player.contentWindow } = {}) =>
+        window.dispatchEvent(new window.MessageEvent("message", { origin, source, data }));
+    endingCard.click();
+    player.contentWindow.postMessage = (message, targetOrigin) => sent.push({ message, targetOrigin });
+    fromVimeo(JSON.stringify({ event: "ready", player_id: "" }));
+    // (JSON round-trip: the message object was created in the page's realm, not Node's.)
+    assert.deepEqual(JSON.parse(JSON.stringify(sent)), [{ message: { method: "addEventListener", value: "ended" }, targetOrigin: "https://player.vimeo.com" }],
+        "the page asks the Vimeo player to report when the film ends");
+    fromVimeo({ event: "ended" }, { origin: "https://example.com" });
+    fromVimeo({ event: "ended" }, { source: window });
+    fromVimeo("not json");
+    assert.equal(modal.hidden, false, "only the Vimeo player in the pop-up can close it");
+    fromVimeo(JSON.stringify({ event: "ended", data: { seconds: 70, percent: 1, duration: 70 } }));
+    assert.equal(modal.hidden, true, "the pop-up closes as soon as the film ends");
+    assert.equal(player.getAttribute("src"), "", "the ended film is unloaded");
+    assert.ok(!doc.body.classList.contains("modal-open"));
+    assert.equal(doc.activeElement, endingCard, "focus returns to the film that just ended");
+    endingCard.click(); // the player may also send plain objects instead of JSON strings
+    fromVimeo({ event: "ready" });
+    fromVimeo({ event: "ended" });
+    assert.equal(modal.hidden, true, "object messages from Vimeo work too");
 
     const image = firstCard.querySelector("img");
     image.dispatchEvent(new window.Event("error"));
