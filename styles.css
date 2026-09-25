@@ -212,6 +212,11 @@ html.hf-skip-intro .preloader { display: none; }
 .burger span:last-child { top: 20px; }
 body.menu-open .burger span:first-child { top: 16px; transform: rotate(45deg); }
 body.menu-open .burger span:last-child { top: 16px; transform: rotate(-45deg); }
+/* Same stacking as legacy.html / project-node.html: keep the two-line close
+   control above the fullscreen overlay so the × animation stays visible and
+   the button remains clickable while the menu is open. */
+body.menu-open .site-header { z-index: 900; }
+body.menu-open { overflow: hidden; }
 
 /* ── Fullscreen menu ─────────────────────────────────────── */
 .menu-overlay {
