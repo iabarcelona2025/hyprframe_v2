@@ -10,7 +10,7 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-WATCH = ["index.html", "styles.css", "script.js"]
+WATCH = ["index.html", "styles.css", "script.js", "project-node.html", "project-node.css", "project-node.js"]
 
 _version = 0
 _last = 0.0
