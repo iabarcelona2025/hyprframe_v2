@@ -92,10 +92,14 @@ try {
     assert.ok(doc.body.classList.contains("modal-open"));
     assert.match(player.src, /player\.vimeo\.com\/video\/1131285757\?autoplay=1&dnt=1/);
     assert.equal(doc.getElementById("modalTitle").textContent, firstCard.dataset.title);
-    assert.equal(doc.getElementById("modalExternal").href, firstCard.href);
+    assert.ok(!doc.getElementById("modalExternal") && !doc.body.textContent.includes("WATCH ON VIMEO"),
+        "the WATCH ON VIMEO link was removed from the modal on purpose");
     assert.equal(doc.activeElement, closeButton);
-    doc.getElementById("modalExternal").focus();
-    key("Tab");
+    key("Tab", true);
+    assert.equal(doc.activeElement, player, "Shift+Tab on CLOSE wraps to the player");
+    // Tabbing past the last control of the cross-origin Vimeo iframe happens inside the
+    // iframe, so this page only sees focus landing behind the modal: it must come back.
+    doc.querySelector(".footer-back a").focus();
     assert.equal(doc.activeElement, closeButton, "focus stays inside the modal");
     key("Escape");
     assert.equal(modal.hidden, true);

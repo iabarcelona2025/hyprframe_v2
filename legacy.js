@@ -96,9 +96,15 @@
     document.addEventListener("keydown", (event) => {
         if (!modal.hidden) {
             if (event.key === "Escape") { event.preventDefault(); closeFilm(); }
+            else trapFocus(event, [closeButton, player]);
         } else if (document.body.classList.contains("menu-open")) {
             if (event.key === "Escape") { event.preventDefault(); setMenu(false, true); }
             else trapFocus(event, [burger, ...menu.querySelectorAll("a")]);
         }
+    });
+    // Key presses inside the cross-origin Vimeo iframe never reach this document, so
+    // tabbing past the player's last control would land behind the modal: bring it back.
+    document.addEventListener("focusin", (event) => {
+        if (!modal.hidden && !modal.contains(event.target)) closeButton.focus();
     });
 })();
