@@ -95,7 +95,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
     padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(7rem, 14vw, 14rem);
 }
-.node-story h2 { font-size: clamp(3rem, 6.4vw, 7rem); }
+.node-story h2 { font-size: clamp(calc(3rem - 12px), calc(6.4vw - 12px), calc(7rem - 12px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
 .node-story__copy p { font-size: clamp(1.15rem, 1.9vw, 1.85rem); line-height: 1.45; font-weight: 300; }
 .node-story__caption {
@@ -148,7 +148,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-hero__teaser { display: block; margin-top: 0.7rem; font-size: 0.45em; }
     .node-hero__explore { font-size: 0.56rem; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 10px), calc(10vw - 10px), calc(4.8rem - 10px)); }
-    .node-story h2 { font-size: clamp(2.75rem, 10vw, 5rem); }
+    .node-story h2 { font-size: clamp(calc(2.75rem - 12px), calc(10vw - 12px), calc(5rem - 12px)); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
 }
