@@ -68,6 +68,22 @@
         if (event.target === modal) closeFilm();
     });
 
+    // Close the pop-up as soon as the film ends. This is the postMessage protocol behind
+    // Vimeo's player.js: once the player reports "ready", ask it to report "ended" too.
+    const VIMEO_ORIGIN = "https://player.vimeo.com";
+    window.addEventListener("message", (event) => {
+        if (event.origin !== VIMEO_ORIGIN || event.source !== player.contentWindow) return;
+        let data = event.data;
+        if (typeof data === "string") {
+            try { data = JSON.parse(data); } catch { return; }
+        }
+        if (data?.event === "ready") {
+            player.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, VIMEO_ORIGIN);
+        } else if (data?.event === "ended") {
+            closeFilm();
+        }
+    });
+
     // The original stills are not in this repo. Fall back to the matching Vimeo
     // thumbnails, then to the CSS poster if neither host can be reached.
     document.querySelectorAll(".film-card__poster img").forEach((img) => {
