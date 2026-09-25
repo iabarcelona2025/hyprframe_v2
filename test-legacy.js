@@ -17,6 +17,14 @@ const indexDoc = new JSDOM(index).window.document;
 const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
 
+/* jsdom has no matchMedia; legacy.js reads it to keep the custom cursor off on
+   touch devices and with reduced motion (see test-legacy-cursor.js). */
+window.matchMedia = (query) => ({
+    matches: false, media: query,
+    addEventListener() {}, removeEventListener() {},
+    addListener() {}, removeListener() {},
+});
+
 try {
     assert.match(html, /gtag\('config', 'G-6MW201KGC9'\)/);
     assert.equal((html.match(/googletagmanager\.com\/gtag\/js/g) || []).length, 1);

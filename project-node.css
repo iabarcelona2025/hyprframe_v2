@@ -7,6 +7,14 @@ body.menu-open { overflow: hidden; }
 .menu-overlay a { visibility: hidden; }
 body.menu-open .menu-overlay a { visibility: visible; }
 
+/* ── Custom cursor ───────────────────────────────────────────
+   The dot and ring are styled in styles.css (shared with the landing) and
+   driven by project-node.js. Touch devices are already hidden by the
+   (hover: none) rule in styles.css; reduced motion hides them here. */
+@media (prefers-reduced-motion: reduce) {
+    .cursor-dot, .cursor-ring { display: none; }
+}
+
 .node-hero { padding: clamp(7.5rem, 11vw, 10rem) var(--pad) 0; }
 .node-hero__top, .node-section-label {
     display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
@@ -17,12 +25,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero__top .kicker { margin: 0; font-size: inherit; letter-spacing: inherit; }
 .node-back { color: var(--fg); white-space: nowrap; transition: color 0.3s; }
 .node-back:hover { color: var(--violet); }
+/* Flat opener band: the title sits on the solid page background, no gradient. */
 .node-hero__image {
     position: relative; height: clamp(170px, 23svh, 250px);
     isolation: isolate; overflow: hidden;
-    background:
-        radial-gradient(ellipse 48% 90% at 84% 38%, rgba(160, 100, 255, 0.18), transparent 75%),
-        linear-gradient(125deg, var(--bg) 30%, #111016 80%, var(--bg));
+    background: var(--bg);
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
 .node-hero h1 {
@@ -30,6 +37,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
 .node-hero__teaser { font-size: 0.4em; font-weight: 600; letter-spacing: 0.015em; }
+/* The four dots of "N.O.D.E." share one class: every period gets the same
+   0.22em inline box with the glyph centred, so the spacing between the
+   letters stays even and all four dots sit on the same baseline. */
+.node-hero__dot {
+    display: inline-block; width: 0.22em;
+    text-align: center;
+}
 .node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
 .node-hero__explore {
     display: inline-flex; align-items: center; gap: 1.75rem;

@@ -15,6 +15,17 @@
 body.menu-open .site-header { z-index: 900; }
 body.menu-open, body.modal-open { overflow: hidden; }
 
+/* ── Custom cursor ──────────────────────────────────────────
+   The dot and ring themselves are styled in styles.css (same as the landing);
+   here they only need to clear the film player, which sits at z-index 10000. */
+.cursor-dot, .cursor-ring { z-index: 10001; }
+
+/* No cursor animation for reduced motion; touch devices are already covered
+   by the (hover: none) rule in styles.css. */
+@media (prefers-reduced-motion: reduce) {
+    .cursor-dot, .cursor-ring { display: none; }
+}
+
 /* ── Editorial opener ─────────────────────────────────────── */
 .legacy-hero {
     display: flex; flex-direction: column; justify-content: center;

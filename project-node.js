@@ -7,6 +7,35 @@
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
 
+    /* ── Custom cursor ───────────────────────────────────────
+       Same behaviour as the landing (script.js): the dot tracks the pointer,
+       the ring chases it with easing and grows over interactive elements.
+       Off on touch devices and when the visitor prefers reduced motion. */
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isTouch = matchMedia("(hover: none), (pointer: coarse)").matches;
+    const cursorDot = document.getElementById("cursorDot");
+    const cursorRing = document.getElementById("cursorRing");
+
+    if (!isTouch && !reduced && cursorDot && cursorRing) {
+        let mx = innerWidth / 2, my = innerHeight / 2;
+        let rx = mx, ry = my;
+
+        addEventListener("mousemove", (event) => { mx = event.clientX; my = event.clientY; });
+
+        (function cursorLoop() {
+            rx += (mx - rx) * 0.16;
+            ry += (my - ry) * 0.16;
+            cursorDot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+            cursorRing.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+            requestAnimationFrame(cursorLoop);
+        })();
+
+        document.querySelectorAll("a, button").forEach((el) => {
+            el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
+            el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
+        });
+    }
+
     function onScroll() {
         header.classList.toggle("scrolled", scrollY > 40);
         const max = document.documentElement.scrollHeight - innerHeight;
