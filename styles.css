@@ -363,6 +363,14 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+/* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
+   separarlo del SCROLL. El cue y la marquee son absolutos y ocupan ~10.5rem
+   al fondo; reservarlos con padding-bottom sube el bloque centrado y evita
+   que en pantallas cortas el texto pise el cue. */
+@media (max-width: 900px) {
+    .hero { padding-bottom: 10.5rem; }
+}
+
 /* ── Generic reveal utilities ────────────────────────────── */
 [data-reveal] {
     opacity: 0; transform: translateY(36px);
