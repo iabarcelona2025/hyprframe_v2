@@ -38,7 +38,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     margin: 0 0.025em;
     background: currentColor; vertical-align: baseline;
 }
-.node-hero__teaser { font-size: 0.4em; font-weight: 600; letter-spacing: 0.015em; }
+.node-hero__teaser { font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
 .node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
 .node-hero__explore {
     display: inline-flex; align-items: center; gap: 1.75rem;
@@ -145,7 +145,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-hero__image { height: clamp(160px, 25svh, 210px); }
     .node-hero__title { left: 1rem; bottom: 1.5rem; }
     .node-hero h1 { font-size: clamp(3.7rem, 16vw, 6.5rem); white-space: normal; }
-    .node-hero__teaser { display: block; margin-top: 0.7rem; font-size: 0.45em; }
+    .node-hero__teaser { display: block; margin-top: 0.7rem; font-size: calc(0.45em + 10px); }
     .node-hero__explore { font-size: 0.56rem; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 10px), calc(10vw - 10px), calc(4.8rem - 10px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 12px), calc(10vw - 12px), calc(5rem - 12px)); }
