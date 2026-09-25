@@ -225,7 +225,7 @@ body.menu-open { overflow: hidden; }
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
     transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
-    padding: 6rem var(--pad) 2rem;
+    padding: 4.5rem var(--pad) 8rem;
     visibility: hidden;
 }
 body.menu-open .menu-overlay {
