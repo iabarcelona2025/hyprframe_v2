@@ -60,21 +60,33 @@ try {
     assert.equal(doc.querySelector("h1").getAttribute("aria-label"), "N.O.D.E. (Teaser)");
     assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "the title's four dots are uniform CSS boxes");
     assert.ok(!doc.querySelector(".node-hero__period"), "the title's period inherits the same colour as its letters");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /font-size: clamp\(1\.15rem, 2vw, 1\.7rem\); text-indent/);
+    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /font-size: clamp\(1\.15rem, 2vw, 1\.7rem\);/);
     assert.ok(!doc.querySelector(".node-film__after"), "old film caption has been removed");
     const css = fs.readFileSync(path.join(root, "project-node.css"), "utf8");
     assert.ok(!doc.querySelector(".node-hero__image img"), "the opener is a flat background, not a still image");
     assert.ok(!/radial-gradient|linear-gradient/.test(css), "the opener gradient has been removed");
     assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"), "custom cursor dot and ring exist");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /background: var\(--lime\); border: 1px solid var\(--lime\)/);
-    assert.equal(doc.getElementById("playFilm").textContent.trim(), "▶");
+    assert.equal(doc.getElementById("playFilm").textContent.trim(), "", "the play triangle is drawn in CSS, not with a font glyph");
+    const triangle = css.match(/\.node-player__circle::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
+        .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
+    assert.equal(triangle.length, 3);
+    for (const axis of [0, 1]) {
+        assert.ok(Math.abs(triangle.reduce((sum, point) => sum + point[axis], 0)) < 1e-3, "the triangle's centroid is the circle's centre");
+    }
+    const radii = triangle.map(([x, y]) => Math.hypot(x, y));
+    assert.ok(Math.max(...radii) - Math.min(...radii) < 1e-3, "the triangle's corners are equidistant from the lime edge");
     assert.ok(!doc.querySelector(".node-story__caption"));
     assert.equal(doc.querySelector(".node-hero__bottom > .node-hero__explore").getAttribute("href"), "#film");
     assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"));
-    for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "01 / SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51"]) {
+    for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "01 / SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51", "EXPLORE THE FILM", "01 / THE FILM", "02 / THE STORY", "03 / KEEP EXPLORING"]) {
         assert.ok(!doc.body.textContent.includes(removed), `removed copy is still visible: ${removed}`);
     }
-    assert.ok(!doc.querySelector(".node-film__heading"), "the video follows its label without a title block");
+    assert.equal(doc.querySelector(".node-hero__explore").firstChild.textContent.trim(), "EXPLORE");
+    assert.ok(!doc.querySelector(".node-film .node-section-label"), "the video opens its section without a label");
+    assert.deepEqual([...doc.querySelectorAll(".node-section-label span:first-child")].map((el) => el.textContent),
+        ["THE STORY", "KEEP EXPLORING"], "section labels carry no numbering");
+    assert.ok(!doc.querySelector(".node-film__heading"), "the video has no title block");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /height: clamp\(170px, 23svh, 250px\)/);
     assert.match(doc.querySelector(".node-story__copy p").textContent, /water rationing/);
     assert.equal(doc.querySelectorAll(".node-card").length, 2);

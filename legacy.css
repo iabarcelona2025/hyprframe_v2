@@ -107,12 +107,23 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-card__watch { bottom: 1.4rem; left: 1.5rem; }
 .film-card__play {
     position: absolute; top: 50%; left: 50%; z-index: 2;
-    display: grid; place-items: center;
     width: clamp(3.5rem, 6vw, 5rem); aspect-ratio: 1;
     border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
-    color: #fff; font-size: 1rem; text-indent: 0.2em;
-    transform: translate(-50%, -50%);
+    color: #fff; font-size: 1rem;
+    translate: -50% -50%;
     transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out);
+}
+/* Same CSS-drawn triangle as the N.O.D.E. player (see project-node.css): the site
+   fonts lack "▶", so each system drew its own glyph, off centre. Equilateral, with
+   its centroid exactly on the circle's centre; em-sized like the former glyph.
+   The circle is centred with `translate` rather than `transform`, so the hover
+   `scale` grows it around its own centre instead of drifting it up and left. */
+.film-card__play::before {
+    content: ""; position: absolute; inset: 0; background: currentColor;
+    clip-path: polygon(calc(50% + 0.48em) 50%, calc(50% - 0.24em) calc(50% - 0.4157em), calc(50% - 0.24em) calc(50% + 0.4157em));
+}
+@media (forced-colors: active) {
+    .film-card__play::before { background: LinkText; }
 }
 .film-card:hover .film-card__poster img,
 .film-card:focus-visible .film-card__poster img {
