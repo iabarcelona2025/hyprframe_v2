@@ -314,7 +314,7 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
 }
 
 .hero-title {
-    font-family: var(--font-head); font-weight: 800;
+    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     color: rgba(242, 241, 238, 0.7);
     font-size: clamp(2rem, 7vw, 7rem);
     line-height: 1.02; letter-spacing: 0.04em;
@@ -456,7 +456,7 @@ section { position: relative; }
     padding: clamp(5rem, 12vw, 9rem) var(--pad) clamp(2rem, 5vw, 3.5rem);
 }
 .section-title {
-    font-family: var(--font-head); font-weight: 800;
+    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(2.8rem, 8.5vw, 7.5rem);
     line-height: 1.0; letter-spacing: 0.04em; text-transform: uppercase;
 }
@@ -477,7 +477,7 @@ section { position: relative; }
 /* ── STATEMENT ───────────────────────────────────────────── */
 .statement { padding: clamp(7rem, 18vw, 14rem) var(--pad); }
 .statement-text {
-    font-family: var(--font-head); font-weight: 700;
+    font-family: var(--font-head); font-weight: 600; /* 700 → 600 (25/09/2026) */
     font-size: clamp(1.9rem, 5.4vw, 4.6rem);
     line-height: 1.2; letter-spacing: 0.02em;
     max-width: 22ch;
@@ -552,8 +552,10 @@ section { position: relative; }
 .work-title {
     /* Ajuste pedido por el cliente (24/09/2026): bajada fuerte de tamaño.
        Escala completa más pequeña (antes 70.4px en desktop y 30.4px en móvil):
-       ahora ~40px desktop / ~21px móvil, un ~43% menos. Bold intacto: 700. */
-    font-family: var(--font-head); font-weight: 700;
+       ahora ~40px desktop / ~21px móvil, un ~43% menos.
+       Ajuste (25/09/2026): peso bajado un paso, 700 → 600, para compensar con
+       el logo y con las cabeceras de sección (ahora a 700). */
+    font-family: var(--font-head); font-weight: 600;
     font-size: clamp(1.3rem, 3.2vw, 2.5rem);
     line-height: 1; text-transform: uppercase; letter-spacing: 0.04em;
     transition: transform 0.55s var(--ease-out), color 0.4s;
@@ -614,11 +616,10 @@ section { position: relative; }
     letter-spacing: 0.15em; color: var(--violet);
 }
 .service-body h3 {
--    font-family: var(--font-display);   /* Syne */
-+    font-family: var(--font-body);      /* Space Grotesk */
-     font-weight: 700;                   /* intacto */
-     font-size: clamp(1.3rem, 2.6vw, 2rem);  /* intacto */
-     line-height: 1.15;                  /* intacto */
+    font-family: var(--font-body);      /* Space Grotesk */
+    font-weight: 600;                   /* 700 → 600 (25/09/2026) */
+    font-size: clamp(1.3rem, 2.6vw, 2rem);  /* intacto */
+    line-height: 1.15;                  /* intacto */
 }
 .service-row:hover .service-body h3 { transform: translateX(0.8rem); color: var(--violet); }
 .service-body p {
@@ -644,7 +645,7 @@ section { position: relative; }
 /* ── ABOUT ───────────────────────────────────────────────── */
 .about { padding: clamp(6rem, 15vw, 11rem) var(--pad); }
 .about-title {
-    font-family: var(--font-head); font-weight: 800;
+    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(2.6rem, 8vw, 7rem);
     line-height: 1.02; letter-spacing: 0.04em; text-transform: uppercase;
     margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
@@ -657,8 +658,8 @@ section { position: relative; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
     display: block;
-    /* same bold face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title */
-    font-family: var(--font-head); font-weight: 800;
+    /* same face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title (now 700) */
+    font-family: var(--font-head); font-weight: 700;
     font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1.02;
     letter-spacing: 0.04em; text-transform: uppercase;
     color: var(--fg); font-variant-numeric: tabular-nums;
@@ -685,7 +686,7 @@ section { position: relative; }
 }
 .contact-head { margin-bottom: clamp(3rem, 7vw, 5rem); }
 .contact-title {
-    font-family: var(--font-head); font-weight: 800;
+    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(3rem, 9.5vw, 8.5rem);
     line-height: 1.0; letter-spacing: 0.04em; text-transform: uppercase;
 }
