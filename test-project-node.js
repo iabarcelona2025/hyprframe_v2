@@ -71,10 +71,14 @@ try {
     assert.ok(!doc.querySelector(".node-story__caption"));
     assert.equal(doc.querySelector(".node-hero__bottom > .node-hero__explore").getAttribute("href"), "#film");
     assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"));
-    for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "01 / SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51"]) {
+    for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "01 / SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51", "EXPLORE THE FILM", "01 / THE FILM", "02 / THE STORY", "03 / KEEP EXPLORING"]) {
         assert.ok(!doc.body.textContent.includes(removed), `removed copy is still visible: ${removed}`);
     }
-    assert.ok(!doc.querySelector(".node-film__heading"), "the video follows its label without a title block");
+    assert.equal(doc.querySelector(".node-hero__explore").firstChild.textContent.trim(), "EXPLORE");
+    assert.ok(!doc.querySelector(".node-film .node-section-label"), "the video opens its section without a label");
+    assert.deepEqual([...doc.querySelectorAll(".node-section-label span:first-child")].map((el) => el.textContent),
+        ["THE STORY", "KEEP EXPLORING"], "section labels carry no numbering");
+    assert.ok(!doc.querySelector(".node-film__heading"), "the video has no title block");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /height: clamp\(170px, 23svh, 250px\)/);
     assert.match(doc.querySelector(".node-story__copy p").textContent, /water rationing/);
     assert.equal(doc.querySelectorAll(".node-card").length, 2);
