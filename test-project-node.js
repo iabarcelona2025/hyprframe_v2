@@ -113,6 +113,8 @@ try {
     assert.equal(doc.querySelector(".node-player iframe"), null, "Vimeo is not loaded before playback");
     doc.getElementById("playFilm").click();
     const player = doc.querySelector(".node-player iframe");
+    const sent = [];
+    player.contentWindow.postMessage = (message, targetOrigin) => sent.push({ message, targetOrigin });
     assert.match(player.src, /player\.vimeo\.com\/video\/1227346538\?autoplay=1&dnt=1&transparent=0/);
     assert.equal(player.title, "N.O.D.E. teaser — HYPRFRAME");
     assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /\.node-player \{[^}]*background: #000/);
@@ -129,6 +131,30 @@ try {
         data: JSON.stringify({ event: "ready" }),
     }));
     assert.ok(player.classList.contains("is-ready"), "the player appears only when Vimeo is ready");
+
+    // When the teaser ends, the opening still and its play button come back (Vimeo "ended").
+    // (JSON round-trip: the message object was created in the page's realm, not Node's.)
+    assert.deepEqual(JSON.parse(JSON.stringify(sent)), [{ message: { method: "addEventListener", value: "ended" }, targetOrigin: "https://player.vimeo.com" }],
+        "the page asks Vimeo to report when the teaser ends");
+    const fromVimeo = (data, { origin = "https://player.vimeo.com", source = player.contentWindow } = {}) =>
+        window.dispatchEvent(new window.MessageEvent("message", { origin, source, data }));
+    fromVimeo(JSON.stringify({ event: "ended" }), { origin: "https://example.com" });
+    assert.ok(doc.querySelector(".node-player iframe"), "only Vimeo can end the teaser");
+    assert.equal(doc.activeElement, player);
+    fromVimeo(JSON.stringify({ event: "ended", data: { seconds: 171, percent: 1, duration: 171 } }));
+    assert.equal(doc.querySelector(".node-player iframe"), null, "the player is unloaded when the teaser ends");
+    assert.equal(doc.querySelector(".node-player > img").getAttribute("src"), "assets/images/node.jpg", "the opening still comes back");
+    assert.equal(doc.querySelector(".node-player > .node-player__play"), doc.getElementById("playFilm"), "with its play button");
+    assert.equal(doc.activeElement, doc.getElementById("playFilm"), "focus moves from the finished player to the play button");
+    doc.getElementById("playFilm").click();
+    const replay = doc.querySelector(".node-player iframe");
+    assert.match(replay.src, /player\.vimeo\.com\/video\/1227346538\?autoplay=1/, "the teaser can be played again");
+    replay.contentWindow.postMessage = () => {};
+    doc.querySelector(".node-back").focus(); // the viewer has moved on to another part of the page
+    fromVimeo(JSON.stringify({ event: "ready" }), { source: replay.contentWindow });
+    fromVimeo(JSON.stringify({ event: "ended" }), { source: replay.contentWindow });
+    assert.ok(doc.querySelector(".node-player > img"), "the still comes back after a replay too");
+    assert.equal(doc.activeElement, doc.querySelector(".node-back"), "focus elsewhere on the page is left alone");
     assert.deepEqual(errors, []);
     console.log("PASS  N.O.D.E.: header, working links, assets, story, video and mobile menu");
 } finally {
