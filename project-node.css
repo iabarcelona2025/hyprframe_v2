@@ -138,7 +138,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-story h2 { font-size: clamp(2.75rem, 10vw, 5rem); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
-    .menu-footer { flex-direction: column; gap: 0.75rem; font-size: 0.62rem; }
 }
 @media (prefers-reduced-motion: reduce) {
     .node-card__image img, .node-player > img { transition: none; }
