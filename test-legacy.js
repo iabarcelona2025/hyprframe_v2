@@ -45,6 +45,24 @@ try {
     assert.ok([...doc.querySelectorAll(".film-card")].every((link) =>
         link.href === `https://vimeo.com/${link.dataset.vimeo}` && link.querySelector("img[data-fallback-src]")));
 
+    // Play triangles are drawn in CSS (no "▶" glyph) and centred on their circle, which
+    // keeps its centre on hover (`translate`, not `transform`, so `scale` can't drift it).
+    const legacyCss = fs.readFileSync(path.join(root, "legacy.css"), "utf8");
+    const plays = [...doc.querySelectorAll(".film-card__play")];
+    assert.equal(plays.length, 6);
+    assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
+    const triangle = legacyCss.match(/\.film-card__play::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
+        .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
+    assert.equal(triangle.length, 3);
+    for (const axis of [0, 1]) {
+        assert.ok(Math.abs(triangle.reduce((sum, point) => sum + point[axis], 0)) < 1e-3, "the triangle's centroid is the circle's centre");
+    }
+    const radii = triangle.map(([x, y]) => Math.hypot(x, y));
+    assert.ok(Math.max(...radii) - Math.min(...radii) < 1e-3, "the triangle's corners are equidistant from the circle's edge");
+    const playRule = legacyCss.match(/\.film-card__play \{[^}]*\}/)[0];
+    assert.match(playRule, /translate: -50% -50%;/);
+    assert.doesNotMatch(playRule, /transform:/, "the hover scale must not drift the circle off the poster centre");
+
     window.eval(script);
     const burger = doc.getElementById("burger");
     const menu = doc.getElementById("menuOverlay");
