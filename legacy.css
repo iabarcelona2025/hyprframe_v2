@@ -250,7 +250,6 @@ body.menu-open, body.modal-open { overflow: hidden; }
     .legacy-hero__topline { font-size: 0.58rem; }
     .legacy-work__heading h2 { font-size: clamp(2.7rem, 9vw, 4.5rem); }
     .film-card__watch { bottom: 1rem; left: 1rem; }
-    .menu-footer { flex-direction: column; gap: 0.75rem; font-size: 0.62rem; }
     .film-modal__top, .film-modal__info { padding-inline: 1rem; }
     .film-modal__info { align-items: flex-start; flex-direction: column; }
 }
