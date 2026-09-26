@@ -55,7 +55,7 @@
          Va en la misma petición que el resto de familias para no abrir otra
          conexión; si no llega, cae a Fira Code / Roboto Mono / Courier New. -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Kanit:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=48" />
+    <link rel="stylesheet" href="styles.css?v=49" />
 </head>
 
 <body>
@@ -139,19 +139,19 @@
                 <p class="hero-sub">When ideas meet the machine,<br />the impossible takes form.</p>
             </div>
 
-            <!-- Volcado hexadecimal del "tensor buffer": decorativo, sangrado
-                 fuera del margen derecho (lo recorta el overflow del hero) y al
-                 50% de opacidad. Las filas las genera script.js (§6c); sin JS
-                 queda la caja vacía, nunca rompe el hero. -->
-            <div class="hero-hexdump" id="heroHexdump" aria-hidden="true">
-                <div class="hexdump-head">
-                    <span class="hexdump-dot"></span>
-                    <span class="hexdump-addr" data-hex-addr>0x0000</span>
+            <!-- Log de inferencia del modelo: decorativo, sangrado fuera del
+                 margen derecho (lo recorta el overflow del hero) y al 35% de
+                 opacidad. Las líneas las genera script.js (§6c); sin JS queda
+                 la caja vacía, nunca rompe el hero. -->
+            <div class="hero-log" id="heroLog" aria-hidden="true">
+                <div class="log-head">
+                    <span class="log-dot"></span>
+                    <span class="log-addr" data-log-addr>0x7f8a9a40</span>
                 </div>
-                <div class="hexdump-body" data-hex-rows></div>
-                <div class="hexdump-foot">
-                    <span data-hex-cycle>CYCLE 000</span>
-                    <span class="hexdump-bar"><i data-hex-bar></i></span>
+                <div class="log-body" data-log-lines></div>
+                <div class="log-foot">
+                    <span data-log-cycle>CYCLE 000</span>
+                    <span class="log-bar"><i data-log-bar></i></span>
                 </div>
             </div>
 
@@ -407,7 +407,7 @@
         };
     })();
     </script>
-    <script src="script.js?v=13" defer></script>
+    <script src="script.js?v=14" defer></script>
     <script src="cookies.js?v=2" defer></script>
 </body>
 </html>

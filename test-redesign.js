@@ -159,57 +159,64 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",
         counts.join(", "));
 
-    // ── hero hexdump (tensor buffer) ──
-    const hexdump = doc.getElementById("heroHexdump");
-    check("hero hexdump: dentro del .hero, decorativo (aria-hidden) e ignora el ratón",
-        !!hexdump && hexdump.parentElement === doc.querySelector(".hero") &&
-        hexdump.getAttribute("aria-hidden") === "true" &&
-        /\.hero-hexdump\s*\{[^}]*pointer-events:\s*none/.test(css));
-    check("hero hexdump: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
-        /\.hero-hexdump\s*\{[^}]*right:\s*-\d/.test(css) &&
+    // ── hero log (trace de inferencia del modelo) ──
+    const heroLog = doc.getElementById("heroLog");
+    check("hero log: dentro del .hero, decorativo (aria-hidden) e ignora el ratón",
+        !!heroLog && heroLog.parentElement === doc.querySelector(".hero") &&
+        heroLog.getAttribute("aria-hidden") === "true" &&
+        /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
+    check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
+        /\.hero-log\s*\{[^}]*right:\s*-\d/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
-    check("hero hexdump: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
-        /\.hero-hexdump\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
+    check("hero log: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-log\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
-        /\.hero-hexdump\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
-    const hexRows = hexdump ? [...hexdump.querySelectorAll(".hex-row")] : [];
-    check("hero hexdump: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
+        /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
+    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
         !/TENSOR BUFFER/.test(html) &&
-        /\.hero-hexdump\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
-    check("hero hexdump: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
-        /\.hero-hexdump\s*\{[^}]*top:\s*(calc\()?var\(--header-h\)/.test(css) &&
-        /\.hero-hexdump\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+    check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
+        /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
+        /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
         /--header-h:\s*calc\(clamp\(41\.4px/.test(css) && /--marquee-h:\s*calc\(/.test(css) &&
-        /\.hexdump-body\s*\{[^}]*flex:\s*1/.test(css));
-    check("hero hexdump: el nº de filas se mide en caliente y se reajusta al redimensionar",
-        /function measureRowHeight\(\)/.test(js) && /function fit\(\)/.test(js) &&
-        /Math\.floor\(avail \/ h\)/.test(js) &&
-        /addEventListener\("resize"[\s\S]{0,220}fit\(\)/.test(js) &&
-        /document\.fonts\.ready\.then\(fit\)/.test(js));
-    check("hero hexdump: filas con offset + 8 pares hex + valores a la derecha",
-        hexRows.length > 0 && hexRows.every((r) =>
-            r.querySelector(".hex-off") && r.querySelector(".hex-ascii") &&
-            r.querySelectorAll(".hex-byte").length === 8),
-        `${hexRows.length} filas`);
-    check("hero hexdump: los bytes son hexadecimales (0-9 A-F)",
-        hexRows.length > 0 &&
-        [...hexdump.querySelectorAll(".hex-byte")].every((c) => /^[0-9A-F]{2}$/.test(c.textContent)));
+        /\.log-body\s*\{[^}]*flex:\s*1/.test(css));
+    check("hero log: el font-size se calcula para que quepa el trace (--log-fs)",
+        /\.hero-log\s*\{[^}]*font-size:\s*var\(--log-fs/.test(css) &&
+        /const FS_MIN = 6, FS_MAX = 11;/.test(js) &&
+        /setProperty\("--log-fs"/.test(js) && /document\.fonts\.ready\.then\(fit\)/.test(js));
+    const logLines = heroLog ? [...heroLog.querySelectorAll(".log-line")] : [];
+    const logNums = heroLog ? [...heroLog.querySelectorAll(".log-num")] : [];
+    check("hero log: pinta el trace completo con sus campos numéricos",
+        logLines.length > 40 && logNums.length > 100 &&
+        /LAYER \d+\/32/.test(heroLog.textContent) && /NCCL MULTI-GPU/.test(heroLog.textContent),
+        `${logLines.length} líneas · ${logNums.length} campos`);
+    check("hero log: el texto estructural se respeta (formas de tensor, IDs, ε = 1e-05, θ=10000)",
+        /Q_Tensor \[1, 32, 128, 64\]/.test(heroLog.textContent) &&
+        /#15496 \(" tensor"\)/.test(heroLog.textContent) &&
+        /ε = 1e-05/.test(heroLog.textContent) && /θ=10000/.test(heroLog.textContent));
     // el barrido randomiza en caliente: dos muestras separadas 400 ms
-    const hexSnap = () => [...hexdump.querySelectorAll(".hex-byte")].map((b) => b.textContent).join("");
-    const hexBefore = hexSnap();
+    const logSnap = () => heroLog.querySelector(".log-body").textContent;
+    const logBefore = logSnap();
     await wait(400);
-    check("hero hexdump: randomiza los bytes a gran velocidad mientras barre",
-        hexSnap() !== hexBefore && /^[0-9A-F]+$/.test(hexSnap()),
-        hexSnap() === hexBefore ? "sin cambios en 400 ms" : "cambiando");
-    check("hero hexdump: ciclo de 5 s, rAF único y throttled a ~20 fps",
+    const logAfter = logSnap();
+    check("hero log: los valores numéricos cambian a gran velocidad mientras barre",
+        logAfter !== logBefore, logAfter === logBefore ? "sin cambios en 400 ms" : "cambiando");
+    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
+        logAfter.length === logBefore.length &&
+        heroLog.querySelectorAll(".log-line").length === logLines.length,
+        `${logBefore.length} → ${logAfter.length} caracteres`);
+    check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
         /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
         /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
-    check("hero hexdump: se detiene fuera de pantalla y con la pestaña oculta",
+    check("hero log: contadores de ciclo (capa, timestep, token, KV-cache) sobre el propio texto",
+        /\{\{24:layer\}\}/.test(js) && /\{\{450:timestep\}\}/.test(js) &&
+        /\{\{1025:token\}\}/.test(js) && /advanceCounters\(\)/.test(js));
+    check("hero log: se detiene fuera de pantalla y con la pestaña oculta",
         /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
         /cancelAnimationFrame\(raf\)/.test(js));
-    check("hero hexdump: quieto con reduced-motion y apagado en móvil",
-        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.hexdump-dot \{\s*animation: none/.test(css) &&
-        /@media \(max-width: 900px\)[\s\S]*\.hero-hexdump \{\s*display: none/.test(css));
+    check("hero log: quieto con reduced-motion y apagado en móvil",
+        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.log-dot \{\s*animation: none/.test(css) &&
+        /@media \(max-width: 900px\)[\s\S]*\.hero-log \{\s*display: none/.test(css));
 
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);

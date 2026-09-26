@@ -215,243 +215,349 @@
         }
     });
 
-    /* ── 6c. Hero hexdump: tensor buffer ──────────────────── */
-    // Volcado de memoria en hex sangrado por la derecha del hero (ver
-    // .hero-hexdump en styles.css). Ocupa el alto del hero de arriba abajo
-    // (debajo del ES/EN de la cabecera → marquesina horizontal del fondo) y el
-    // número de filas se mide en caliente para rellenar ese hueco.
+    /* ── 6c. Hero: log de inferencia del modelo ───────────── */
+    // Panel tipo terminal a la derecha del hero con el trace de un forward
+    // pass. El texto es literal: lo único que se mueve son los NÚMEROS, y cada
+    // campo conserva el ancho y los decimales del original, así que la
+    // maquetación nunca baila aunque los valores cambien 20 veces por segundo.
     //
-    // Un "cabezal de escritura" recorre las filas en ciclos de 5 s: las filas
-    // dentro de la banda se reescriben con bytes aleatorios a ~20 fps y, cuando
-    // el cabezal pasa de largo, la fila vuelve a sus bytes base. Así el bloque
-    // siempre es legible (el relleno es vocabulario de marca en ASCII) y el
-    // bucle no tiene ningún salto visible al reiniciar.
-    //
-    // Render:
-    // · un único rAF compartido, throttled a 20 fps (TICK): a 60 fps no se
-    //   aprecia más y se comería el presupuesto de frame del scroll.
-    // · solo se tocan las filas de la banda y solo su textContent: cada celda
-    //   mide lo mismo en `ch`, así que no hay reflow ni repaint de más.
-    // · la barra de ciclo va con transform: scaleX() (compositor) en vez de
-    //   width, y el contador de ciclo solo escribe cuando cambia.
-    // · se para solo (IntersectionObserver + visibilitychange) cuando el panel
-    //   sale de pantalla o la pestaña se oculta: cero trabajo en background.
-    // · con prefers-reduced-motion se pintan los bytes base una vez y no arranca.
-    const hexdump = document.getElementById("heroHexdump");
+    // · Nada de números aleatorios en el primer pintado: arranca con los
+    //   valores del propio texto y se van randomizando a medida que pasa el
+    //   cabezal, así el bloque es reconocible de entrada.
+    // · Campos: hex (0x…) y decimales se randomizan; los enteros (formas de
+    //   tensor, índices de capa, IDs de token) se quedan quietos porque son
+    //   estructura, no medida. {{muestra:contador}} avanza una vez por ciclo.
+    // · El font-size lo calcula el JS (--log-fs) para que quepa el log entero
+    //   en el alto disponible; si a ese tamaño sobra sitio, lo repite.
+    // · Un único rAF throttled a 20 fps, solo textContent, se para fuera de
+    //   pantalla, y con prefers-reduced-motion pinta el trace quieto.
+    const heroLog = document.getElementById("heroLog");
 
-    if (hexdump) {
-        const BYTES = 8;            // bytes por fila (pares hex)
-        const CYCLE = 5000;         // ms — duración de un barrido completo
-        const TICK = 50;            // ms entre repintados (~20 fps)
-        // El alto lo marca el CSS, no el número de filas: se miden en caliente
-        // y se acotan para pantallas diminutas, para cuando no hay layout
-        // (jsdom, panel oculto en móvil) y para no disparar el coste por frame.
-        const ROWS_MIN = 8, ROWS_FALLBACK = 14, ROWS_MAX = 64;
-        const HEX = "0123456789ABCDEF";
-        // Relleno: vocabulario de marca en ASCII reciclado por filas, así entre
-        // barridos se lee algo con sentido en la columna de la derecha.
-        const SEED = "HYPRFRAME TENSOR LATENT DIFFUSION SYNTHESIS VISION MACHINE ";
+    if (heroLog) {
+        const CYCLE = 5000;      // ms — vuelta completa del cabezal
+        const TICK = 50;         // ms entre repintados (~20 fps)
+        const LEAD = 1.3;        // line-height, el mismo que en el CSS
+        const FS_MIN = 6, FS_MAX = 11;
+        const HEX = "0123456789abcdef";
+        // Contadores: avanzan una vez por ciclo de 5 s (no con el barrido).
+        const COUNTERS = {
+            layer:    { v: 24,   min: 1,    max: 32,    step: 1 },
+            timestep: { v: 450,  min: 0,    max: 450,   step: -1 },
+            token:    { v: 1025, min: 1025, max: 99999, step: 1 },
+            kvtokens: { v: 128,  min: 8,    max: 512,   step: 8 },
+        };
+        const LOG = [
+`[LAYER {{24:layer}}/32 :: Self-Attention Multi-Head Matrix Multiplication]`,
+``,
+`Q_Tensor [1, 32, 128, 64] × K_Tensor^T [1, 32, 64, 128] -> Softmax Scaling (1/√d)`,
+``,
+`   -[0.0412  0.8921 -1.2043  0.0034] × [ 1.4120 -0.3312] = [ 0.9821 -0.0012]`,
+`   -[1.1042 -0.0023  0.4511  0.7812] × [-0.8812  0.2104] = [-0.4129  0.8831]`,
+`   -[0.0001  0.3341 -0.0092 -0.8812] × [ 0.0024  0.0000] = [ 0.1204 -0.5129]`,
+``,
+`[ACTIVATION: GELU Output Vectors]`,
+`[ 0.141201, -0.002931,  1.892014, -0.451200,  0.000012,  0.781923, -1.102341 ]`,
+`[ 0.000000,  0.512984, -0.000120,  0.003411, -0.891230,  1.204511,  0.041289 ]`,
+``,
+`[GRADIENT ACCUMULATION & FP16 WEIGHT SCALING]`,
+`W_proj:  0.00234  -0.12093   0.88412   0.00001  -0.45129   1.00234  -0.00891`,
+`Delta:  +0.00001  -0.00004  +0.00012  +0.00000  -0.00002  +0.00008  -0.00001`,
+`Norm:   ||v||_2 = 1.04821 | Loss: 0.23019 | Throughput: 142.8 TFLOPS`,
+``,
+`--------------------------------------------------------------------------------`,
+`[FORWARD PASS :: Layer Norm 25 & Residual Connection Sync]`,
+`Input_Res:  [1.0412, -0.8912,  0.3312,  0.0041, -1.2019,  0.5512,  0.0012]`,
+`LN_Gamma:   [0.9982,  1.0012,  0.9954,  1.0001,  0.9892,  1.0023,  0.9971]`,
+`LN_Beta:    [0.0012, -0.0004,  0.0008,  0.0000, -0.0011,  0.0002,  0.0005]`,
+`μ = -0.0124 | σ² = 0.8412 | ε = 1e-05 -> Normalized Scale Vector Output`,
+``,
+`[KV-CACHE MANAGEMENT :: FlashAttention-2 PagedMemory]`,
+`Block_ID: 0x7f8a9a40 | Allocation: {{128:kvtokens}}/512 tokens | Cache Hit Rate: 98.4%`,
+`Head_03: [0.12, -0.45, 0.88, 0.01] ... [Rotary Embedding (RoPE) applied: θ=10000]`,
+`Head_04: [0.00,  0.31,-0.12, 0.94] ... [Rotary Embedding (RoPE) applied: θ=10000]`,
+``,
+`[FEED-FORWARD NETWORK (FFN) :: SwiGLU Gate Projection]`,
+`Gate_Proj:  [ 2.412, -0.114,  0.891, -3.201] -> SiLU(x) -> [ 2.210, -0.053,  0.631, -0.124]`,
+`Up_Proj:    [-0.512,  1.204,  0.001,  0.881]`,
+`Product:    [-1.131, -0.063,  0.000, -0.109] -> Down_Proj Linear Mapping`,
+``,
+`[LOGITS DIVERSE SAMPLING :: Final Linear Layer (Vocab Size: 32,000)]`,
+`Token_IDs Top-5 Probabilities:`,
+`  #15496 (" tensor")  :: Logit: 14.82 -> Softmax: 68.4%`,
+`  #3211  (" data")    :: Logit: 12.11 -> Softmax: 18.2%`,
+`  #892   (" process") :: Logit: 10.04 -> Softmax:  7.1%`,
+`  #410   (" matrix")  :: Logit:  8.91 -> Softmax:  3.5%`,
+`  #1204  (" memory")  :: Logit:  7.23 -> Softmax:  1.2%`,
+``,
+`[SAMPLING CONFIG :: Temperature: 0.7 | Top-P: 0.9 | Top-K: 40]`,
+`Selected Token: #15496 (" tensor") -> Appended to Context Window [Seq Len: 1,024]`,
+``,
+`--------------------------------------------------------------------------------`,
+`[CROSS-ATTENTION & MULTI-MODAL EMBEDDING ALIGNMENT]`,
+`Vision_Encoder_Feature_Map: [1, 576, 1024] -> BFloat16 Projection`,
+`   Map_01: [ 0.0041, -0.9981,  0.4120,  1.1204] -> Cross-Attn Key  [0x8f3a2]`,
+`   Map_02: [-0.3120,  0.0012, -0.8912,  0.0000] -> Cross-Attn Value [0x8f3a3]`,
+`Cosine Similarity Score: 0.8914 (High Alignment with Prompt Tokens)`,
+``,
+`[QUANTIZATION RUNTIME :: INT4 AutoGPTQ Dequantization]`,
+`Pack_32bit [0xA5F12C09] -> Unpacked INT4: [ 10, -5, 15,  1,  2, -8,  0,  9 ]`,
+`Scale Factor: 0.00142 | Zero Point: -2`,
+`FP16 Recovered: [ 0.01704, -0.00426,  0.02414,  0.00426,  0.00568, -0.00852 ]`,
+``,
+`[GPU VRAM & SYSTEM METRICS :: TensorRT LLM Engine]`,
+`Allocated Memory: 14.82 GB / 24.00 GB (61.75%) | VRAM Bandwidth: 936 GB/s`,
+`SM Execution Efficiency: 94.2% | Tensor Core Utilization: 98.1%`,
+`Queue Delay: 0.12 ms | Decode Speed: 84.6 tokens/sec | CUDA Kernel: trt_fmha_v2`,
+``,
+`[AUTOREGRESSIVE LOOP NEXT TOKEN PREDICTION]`,
+`Context Token Window: [ ... 1021, 1022, 1023, 15496 ]`,
+`Generating Token #{{1025:token}}... Target Latency: 11.8ms | Status: COMPUTING LAYER 01/32`,
+``,
+`--------------------------------------------------------------------------------`,
+`[MOE ROUTING :: Mixture of Experts Sparsity Gating (8 Experts / Top-2 Active)]`,
+`Router Logits: [ e0: 0.12, e1: 3.89, e2: -1.02, e3: 0.04, e4: 2.11, e5: -0.44, e6: 0.00, e7: 0.82 ]`,
+`Gating Softmax Top-2 Selection:`,
+`  -> Expert 1 (Weight: 0.842) | Expert 4 (Weight: 0.158)`,
+`  -> Routing Tensor Payload [1, 4096] to Experts CUDA Sub-stream 1 & 4... DONE`,
+``,
+`[LATENT DIFFUSION / DENOISING STEP :: Scheduler: DPM++ 2M Karras]`,
+`Timestep: {{450:timestep}}/1000 (t={{0.45:tscale}}) | Noise Prediction Vector ε_θ(x_t, t)`,
+`   Latent Grid [1, 4, 64, 64]:`,
+`   [-0.0124,  0.8812, -1.4012,  0.0041 ...  0.3391]`,
+`   [ 1.1023, -0.0092,  0.4120, -0.8912 ... -0.1204]`,
+`Denoised Latent Estimate (x_0):`,
+`   x_0_hat = (x_t - σ_t * ε_θ) / α_t -> Variance Preserved (σ = 0.412)`,
+``,
+`[BACKPROP GRADIENT CHECKPOINTING :: Backward Pass Trace]`,
+`dL/dW_attn:  [ -0.00012,  0.00045, -0.00001,  0.00089,  0.00000, -0.00034 ]`,
+`AdamW Optimizer State:`,
+`  m_t (1st Moment):  0.00124 | v_t (2nd Moment):  0.00004`,
+`  Weight Decay: 0.01 applied -> Updated Weights Sync [0x7f8a9a00]`,
+``,
+`[NCCL MULTI-GPU INTERCONNECT :: Distributed Tensor Parallelism (TP=4)]`,
+`All-Reduce Collective Sync via NVLink (900 GB/s):`,
+`  GPU_0 -> GPU_1: Broadcast Partial Sums Tensor [1, 128, 4096]`,
+`  GPU_2 -> GPU_3: Reduction Operator (SUM) Completed in 1.42 μs`,
+`Pipeline Parallel Buffer Status: STAGE 3 READY`,
+        ];
 
-        const rowsEl = hexdump.querySelector("[data-hex-rows]");
-        const addrEl = hexdump.querySelector("[data-hex-addr]");
-        const cycleEl = hexdump.querySelector("[data-hex-cycle]");
-        const barEl = hexdump.querySelector("[data-hex-bar]");
+        const linesEl = heroLog.querySelector("[data-log-lines]");
+        const addrEl = heroLog.querySelector("[data-log-addr]");
+        const cycleEl = heroLog.querySelector("[data-log-cycle]");
+        const barEl = heroLog.querySelector("[data-log-bar]");
 
-        const hex2 = (v) => HEX[(v >> 4) & 15] + HEX[v & 15];
-        const hex4 = (v) => "0x" + hex2((v >> 8) & 255) + hex2(v & 255);
-        const ascii = (v) => (v > 31 && v < 127 ? String.fromCharCode(v) : ".");
+        // Contador {{muestra:nombre}} · hex 0x… · notación científica (1e-05)
+        // · números (-?d[,ddd][.ddd]). Lo que no encaja en un campo dinámico
+        // (enteros sueltos: formas, IDs, índices) se deja tal cual.
+        const TOKEN = /\{\{\S+?:\w+\}\}|0[xX][0-9a-fA-F]+|\d+e[+-]?\d+|-?\d[\d,]*(?:\.\d+)?/g;
 
-        if (rowsEl) {
-            let ROWS = 0;           // filas actuales del volcado
-            let BAND = 3;           // filas simultáneas dentro de la banda
-            let base = [];          // bytes "en reposo" de cada fila
-            let state = [];         // bytes actuales (= base salvo en la banda)
-            let rowEls = [];
-            let cellEls = [];
-            let asciiEls = [];
-            let dirty = [];         // fila pendiente de restaurar a sus bytes base
+        function makeSpec(tok) {
+            const counter = /^\{\{(\S+?):(\w+)\}\}$/.exec(tok);
+            if (counter) return { kind: "counter", name: counter[2], width: counter[1].length, sample: counter[1] };
+            if (/^0[xX][0-9a-fA-F]+$/.test(tok)) {
+                const digits = tok.slice(2);
+                return { kind: "hex", len: digits.length, upper: /[A-F]/.test(digits), sample: tok };
+            }
+            if (/e[+-]/i.test(tok)) return null;      // 1e-05: constante
+            if (tok.indexOf(".") < 0) return null;    // enteros: estructura, no medida
+            const neg = tok[0] === "-";
+            const body = neg ? tok.slice(1) : tok;
+            const dot = body.indexOf(".");
+            const intDigits = dot;
+            const dec = body.length - dot - 1;
+            const mag = Math.abs(parseFloat(tok));
+            // rango plausible: por debajo de 1 se mantiene en [0,1); por encima,
+            // hasta el doble de la muestra sin pasarse del ancho del campo
+            const hi = mag < 1 ? 1 : Math.min(Math.pow(10, intDigits), mag * 2);
+            return { kind: "float", dec, body: body.length, signed: neg, hi, sample: tok };
+        }
 
-            // Escribe una fila entera (bytes + columna de valores) solo si cambia.
-            // La columna derecha va entre barras, como en un hexdump de verdad.
-            function paintRow(r) {
-                const vals = state[r];
-                let text = "|";
-                for (let b = 0; b < BYTES; b++) {
-                    const hex = hex2(vals[b]);
-                    if (cellEls[r][b].textContent !== hex) cellEls[r][b].textContent = hex;
-                    text += ascii(vals[b]);
+        // random=false → el valor literal del texto (primer pintado)
+        function render(spec, random) {
+            if (spec.kind === "counter") {
+                const s = spec.name === "tscale"
+                    ? (COUNTERS.timestep.v / 1000).toFixed(2)
+                    : String(COUNTERS[spec.name].v);
+                return s.length >= spec.width ? s.slice(-spec.width) : s.padStart(spec.width, " ");
+            }
+            if (!random) return spec.sample;
+            if (spec.kind === "hex") {
+                let s = spec.upper ? "0X" : "0x";
+                for (let i = 0; i < spec.len; i++) {
+                    const c = HEX[(Math.random() * 16) | 0];
+                    s += spec.upper ? c.toUpperCase() : c;
                 }
-                text += "|";
-                if (asciiEls[r].textContent !== text) asciiEls[r].textContent = text;
+                return s;
             }
+            let v = Math.random() * (spec.hi - Math.pow(10, -spec.dec));
+            if (spec.signed && Math.random() < 0.5) v = -v;
+            let s = Math.abs(v).toFixed(spec.dec);
+            if (s.length > spec.body) s = s.slice(-spec.body);
+            while (s.length < spec.body) s = "0" + s;
+            return spec.signed ? (v < 0 ? "-" : " ") + s : s;
+        }
 
-            // (Re)construye el listado con `n` filas. La banda crece con el
-            // bloque para que el barrido tarde lo mismo con 14 filas que con 40.
-            function build(n) {
-                ROWS = n;
-                // ~18% del listado: con 20 filas son 4, con 45 son 8. Mantiene
-                // el barrido de 5 s y acota el trabajo por frame.
-                BAND = Math.max(3, Math.round(n * 0.18));
-                base = []; state = []; rowEls = []; cellEls = []; asciiEls = []; dirty = [];
-                const frag = document.createDocumentFragment();
-                for (let r = 0; r < n; r++) {
-                    const row = [];
-                    for (let b = 0; b < BYTES; b++) {
-                        row.push(SEED.charCodeAt((r * BYTES + b) % SEED.length) & 255);
-                    }
-                    base.push(row);
-                    state.push(row.slice());
+        const lines = [];   // [{ el, fields:[{ el, spec }] }]
 
-                    const rowEl = document.createElement("div");
-                    rowEl.className = "hex-row";
-                    const offEl = document.createElement("span");
-                    offEl.className = "hex-off";
-                    offEl.textContent = hex4(r * BYTES);
-                    const bytesEl = document.createElement("span");
-                    bytesEl.className = "hex-bytes";
-                    const cells = [];
-                    for (let b = 0; b < BYTES; b++) {
-                        const cell = document.createElement("span");
-                        cell.className = "hex-byte";
-                        bytesEl.appendChild(cell);
-                        cells.push(cell);
-                    }
-                    const asciiEl = document.createElement("span");
-                    asciiEl.className = "hex-ascii";
-                    rowEl.appendChild(offEl);
-                    rowEl.appendChild(bytesEl);
-                    rowEl.appendChild(asciiEl);
-                    frag.appendChild(rowEl);
-
-                    rowEls.push(rowEl);
-                    cellEls.push(cells);
-                    asciiEls.push(asciiEl);
-                    dirty.push(false);
+        function buildLine(text) {
+            const el = document.createElement("div");
+            el.className = "log-line";
+            const fields = [];
+            let last = 0, m;
+            TOKEN.lastIndex = 0;
+            while ((m = TOKEN.exec(text))) {
+                if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+                const spec = makeSpec(m[0]);
+                if (!spec) {
+                    el.appendChild(document.createTextNode(m[0]));
+                } else {
+                    const span = document.createElement("span");
+                    span.className = "log-num";
+                    span.textContent = render(spec, false);
+                    el.appendChild(span);
+                    fields.push({ el: span, spec });
                 }
-                rowsEl.textContent = "";
-                rowsEl.appendChild(frag);
-                for (let r = 0; r < n; r++) paintRow(r);
+                last = m.index + m[0].length;
             }
+            if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+            // las líneas en blanco necesitan algo de contenido para ocupar su alto
+            if (!text) el.appendChild(document.createTextNode(" "));
+            return { el, fields };
+        }
 
-            // Alto de una fila medido con una fila sonda (no depende de cuántas
-            // haya ya puestas), y alto disponible: el cuerpo es flex:1 dentro de
-            // un panel con top/bottom fijos, así que clientHeight ya es el hueco.
-            function measureRowHeight() {
-                const probe = document.createElement("div");
-                probe.className = "hex-row";
-                probe.innerHTML =
-                    '<span class="hex-off">0x0000</span><span class="hex-bytes"></span>' +
-                    '<span class="hex-ascii">|........|</span>';
-                rowsEl.appendChild(probe);
-                const h = probe.getBoundingClientRect().height;
-                rowsEl.removeChild(probe);
-                return h;
-            }
+        function addCopy() {
+            const frag = document.createDocumentFragment();
+            LOG.forEach((text) => {
+                const line = buildLine(text);
+                lines.push(line);
+                frag.appendChild(line.el);
+            });
+            linesEl.appendChild(frag);
+        }
 
-            function fit() {
-                const h = measureRowHeight();
-                // clientHeight incluiría el padding y el hueco útil es el del
-                // contenido: se resta para que la última fila no quede a medias.
-                const cs = getComputedStyle(rowsEl);
-                const avail = rowsEl.getBoundingClientRect().height
-                    - (parseFloat(cs.paddingTop) || 0)
-                    - (parseFloat(cs.paddingBottom) || 0);
-                const n = (h > 0 && avail > 0)
-                    ? Math.min(ROWS_MAX, Math.max(ROWS_MIN, Math.floor(avail / h)))
-                    : ROWS_FALLBACK;
-                if (n !== ROWS) build(n);
-            }
+        // Reescribe los números de una línea: todos en la cabeza del barrido,
+        // la mitad en la estela, para que el ruido no sea plano.
+        function randomize(line, all) {
+            line.fields.forEach((f) => {
+                if (f.spec.kind === "counter") return;   // lo mueve el ciclo
+                if (!all && Math.random() < 0.5) return;
+                const t = render(f.spec, true);
+                if (f.el.textContent !== t) f.el.textContent = t;
+            });
+        }
 
-            fit();
-            // la altura cambia al cargar la monoespaciada y al redimensionar
-            if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(fit).catch(() => {});
+        function paintCounters() {
+            lines.forEach((line) => {
+                line.fields.forEach((f) => {
+                    if (f.spec.kind !== "counter") return;
+                    const t = render(f.spec, false);
+                    if (f.el.textContent !== t) f.el.textContent = t;
+                });
+            });
+        }
+
+        function advanceCounters() {
+            Object.keys(COUNTERS).forEach((k) => {
+                const c = COUNTERS[k];
+                c.v += c.step;
+                if (c.v > c.max) c.v = c.min;
+                if (c.v < c.min) c.v = c.max;
+            });
+        }
+
+        function randomBlock() {
+            let s = "0x";
+            for (let i = 0; i < 8; i++) s += HEX[(Math.random() * 16) | 0];
+            return s;
+        }
+
+        // Ajusta el font-size al alto disponible (--log-fs) y añade copias del
+        // trace si, a ese tamaño, el bloque no llega a llenar el panel.
+        function fit() {
+            const cs = getComputedStyle(linesEl);
+            const avail = linesEl.getBoundingClientRect().height
+                - (parseFloat(cs.paddingTop) || 0)
+                - (parseFloat(cs.paddingBottom) || 0);
+            if (!lines.length) addCopy();
+            if (avail <= 0) return;
+            const fs = Math.min(FS_MAX, Math.max(FS_MIN, avail / (LOG.length * LEAD)));
+            heroLog.style.setProperty("--log-fs", fs.toFixed(2) + "px");
+            const copies = Math.min(3, Math.max(1, Math.floor(avail / (LOG.length * fs * LEAD))));
+            while (lines.length / LOG.length < copies) addCopy();
+        }
+
+        fit();
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(fit).catch(() => {});
+        }
+        let logFitTicking = false;
+        addEventListener("resize", () => {
+            if (!logFitTicking) {
+                logFitTicking = true;
+                requestAnimationFrame(() => { fit(); logFitTicking = false; });
             }
-            let hexFitTicking = false;
-            addEventListener("resize", () => {
-                if (!hexFitTicking) {
-                    hexFitTicking = true;
-                    requestAnimationFrame(() => { fit(); hexFitTicking = false; });
+        });
+
+        if (!reduced) {
+            let raf = 0, running = false, inView = false;
+            let elapsed = 0, t0 = 0, last = 0, cycle = -1;
+
+            function frame(now) {
+                raf = requestAnimationFrame(frame);
+                if (now - last < TICK) return;
+                last = now;
+
+                elapsed = now - t0;
+                const p = (elapsed % CYCLE) / CYCLE;
+                const n = lines.length;
+                const band = Math.max(2, Math.round(n * 0.18));   // estela del cabezal
+                const head = -band + p * (n + band);
+                const from = Math.max(0, Math.ceil(head - band));
+                const to = Math.min(n - 1, Math.floor(head));
+
+                for (let i = 0; i < n; i++) {
+                    const hot = i >= from && i <= to;
+                    lines[i].el.classList.toggle("is-hot", hot);
+                    lines[i].el.classList.toggle("is-head", hot && i === to);
+                    if (hot) randomize(lines[i], i === to);
                 }
+
+                if (barEl) barEl.style.transform = "scaleX(" + p.toFixed(3) + ")";
+                const c = Math.floor(elapsed / CYCLE);
+                if (c !== cycle) {
+                    cycle = c;
+                    advanceCounters();
+                    paintCounters();
+                    if (addrEl) addrEl.textContent = randomBlock();
+                    if (cycleEl) cycleEl.textContent = "CYCLE " + String(c % 1000).padStart(3, "0");
+                }
+            }
+
+            function start() {
+                if (running) return;
+                running = true;
+                t0 = performance.now() - elapsed;  // se reanuda donde estaba
+                last = 0;
+                raf = requestAnimationFrame(frame);
+            }
+            function stop() {
+                if (!running) return;
+                running = false;
+                cancelAnimationFrame(raf);
+            }
+
+            const io = new IntersectionObserver((entries) => {
+                inView = entries[0].isIntersecting;
+                if (inView && !document.hidden) start();
+                else stop();
+            }, { threshold: 0 });
+
+            document.addEventListener("visibilitychange", () => {
+                if (document.hidden) stop();
+                else if (inView) start();
             });
 
-            if (!reduced) {
-                let raf = 0, running = false, inView = false;
-                let elapsed = 0, t0 = 0, last = 0, cycle = -1;
-
-                function frame(now) {
-                    raf = requestAnimationFrame(frame);
-                    if (now - last < TICK) return;
-                    last = now;
-
-                    elapsed = now - t0;
-                    const p = (elapsed % CYCLE) / CYCLE;
-                    const span = ROWS + BAND;       // recorrido del cabezal
-                    const head = -BAND + p * span;  // fila por la que va
-                    const from = Math.max(0, Math.ceil(head - BAND));
-                    const to = Math.min(ROWS - 1, Math.floor(head));
-
-                    for (let r = 0; r < ROWS; r++) {
-                        const hot = r >= from && r <= to;
-                        rowEls[r].classList.toggle("is-hot", hot);
-                        rowEls[r].classList.toggle("is-head", hot && r === to);
-                        if (!hot) {
-                            // el cabezal ya pasó: la fila vuelve a sus bytes base
-                            if (dirty[r]) {
-                                state[r] = base[r].slice();
-                                paintRow(r);
-                                dirty[r] = false;
-                            }
-                            continue;
-                        }
-                        dirty[r] = true;
-                        // la fila del cabezal se reescribe entera; la estela,
-                        // solo un par de bytes, para que el ruido no sea plano
-                        const n = r === to ? BYTES : 1 + ((Math.random() * 3) | 0);
-                        for (let k = 0; k < n; k++) {
-                            state[r][(Math.random() * BYTES) | 0] = (Math.random() * 256) | 0;
-                        }
-                        paintRow(r);
-                    }
-
-                    if (barEl) barEl.style.transform = "scaleX(" + p.toFixed(3) + ")";
-                    if (addrEl) {
-                        const addr = hex4(Math.max(0, to) * BYTES);
-                        if (addrEl.textContent !== addr) addrEl.textContent = addr;
-                    }
-                    const c = Math.floor(elapsed / CYCLE);
-                    if (c !== cycle) {
-                        cycle = c;
-                        if (cycleEl) cycleEl.textContent = "CYCLE " + String(c % 1000).padStart(3, "0");
-                    }
-                }
-
-                function start() {
-                    if (running) return;
-                    running = true;
-                    t0 = performance.now() - elapsed;  // se reanuda donde estaba
-                    last = 0;
-                    raf = requestAnimationFrame(frame);
-                }
-                function stop() {
-                    if (!running) return;
-                    running = false;
-                    cancelAnimationFrame(raf);
-                }
-
-                const io = new IntersectionObserver((entries) => {
-                    inView = entries[0].isIntersecting;
-                    if (inView && !document.hidden) start();
-                    else stop();
-                }, { threshold: 0 });
-
-                document.addEventListener("visibilitychange", () => {
-                    if (document.hidden) stop();
-                    else if (inView) start();
-                });
-
-                onHeroReady(() => io.observe(hexdump)); // ni un frame tras el preloader
-            }
+            onHeroReady(() => io.observe(heroLog)); // ni un frame tras el preloader
         }
     }
 

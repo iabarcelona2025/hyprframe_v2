@@ -22,7 +22,7 @@
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
-    /* Altos de referencia para estirar el hexdump del hero de arriba abajo:
+    /* Altos de referencia para estirar el log del hero de arriba abajo:
        · --header-h: cabecera en reposo = alto del logo + su padding (1.4rem × 2).
        · --marquee-h: marquesina horizontal del hero = padding (0.9rem × 2) +
          una línea de texto (0.72rem × 1.65) + el filete superior de 1px. */
@@ -437,84 +437,79 @@ body.loaded .hero-sub {
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
-/* ── HERO · HEXDUMP (tensor buffer) ──────────────────────────
-   Volcado de memoria en hex a la derecha del hero: un "cabezal de escritura"
-   barre las filas en ciclos de 5 s randomizando los bytes (script.js §6c).
+/* ── HERO · LOG DE INFERENCIA (trace del modelo) ───────────────
+   Panel tipo terminal a la derecha del hero con el trace de un forward pass
+   (script.js §6c). El texto es literal: lo único que se mueve son los números,
+   reescritos por un "cabezal" que recorre las líneas en ciclos de 5 s.
    Ubicación/encuadre:
    · right NEGATIVO → el panel se sale por el margen derecho y lo recorta el
-     overflow:hidden del .hero, así que nunca se ve completo: solo entra en
-     cuadro la parte izquierda (offset + bytes, y el ASCII a medias).
-   · top: calc(50% + 3.5rem) acompaña al bloque de texto, que queda ~4rem por
-     debajo del centro por el padding-top de 8rem del hero.
-   · opacity .5 + máscara con degradado en el borde izquierdo: se funde con el
-     fondo en vez de recortarse en seco.
+     overflow:hidden del .hero, así que nunca se ve completo: de cada línea
+     entran en cuadro ~63 caracteres.
+   · top: var(--header-h) → la primera línea arranca donde acaba el ES/EN de la
+     cabecera, sin aire de más; bottom: calc(var(--marquee-h) + .75rem) → muere
+     donde empieza la marquesina horizontal del fondo.
+   · opacity .35 + máscara con degradado en el borde izquierdo (26% del ancho):
+     el bloque entra fundiéndose desde la nada en vez de mostrar un canto.
    · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
      para no robar ni clics ni hover al hero.
-   Anchos en `ch` y `white-space: pre` para que, al cambiar los bytes, no haya
-   el más mínimo reflow (los valores siempre ocupan lo mismo: 2 caracteres). */
-.hero-hexdump {
+   · el font-size NO está fijado aquí: el JS calcula --log-fs para que quepa el
+     log completo en el alto disponible (y lo repite si a ese tamaño sobra). */
+.hero-log {
     position: absolute; z-index: 1; pointer-events: none;
-    /* Ocupa el alto del hero de arriba abajo: arranca donde acaba el ES/EN de
-       la cabecera (sin aire de más, para que la primera fila suba lo máximo)
-       y muere donde empieza la marquesina horizontal del fondo. Cuántas filas
-       caben lo calcula script.js (§6c) midiendo el hueco real. */
     top: var(--header-h);
     bottom: calc(var(--marquee-h) + 0.75rem);
     display: flex; flex-direction: column;
-    /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size sí
-       escala con el viewport, el recorte es exactamente el mismo en cualquier
-       pantalla (siempre se pierden ~5ch de la columna ASCII por la derecha). */
-    right: -9.5em;
-    width: 32em;
+    /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size lo
+       escala el JS, el recorte lateral es siempre el mismo (~30% fuera). */
+    right: -16em;
+    width: 54em;
     opacity: 0.35;
     padding: 0.35rem 0 0.6rem;
     background: rgba(8, 8, 10, 0.55);
     border: 1px solid var(--line);
     border-radius: 2px;
     font-family: var(--font-code);
-    font-size: clamp(0.5rem, 0.78vw, 0.72rem);
-    line-height: 1.6; /* compacto: caben más filas en el mismo alto (~37 a 1440) */
+    font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
+    line-height: 1.3;
     letter-spacing: 0; font-variant-ligatures: none;
-    /* Degradado izquierdo ancho: el bloque entra fundiéndose desde la nada en
-       vez de aparecer con un canto recto (26% del ancho, ~8ch). */
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
             mask-image: linear-gradient(to right, transparent 0, #000 26%);
 }
-.hexdump-head, .hexdump-foot {
+/* Cabecera y pie en `rem`, no en `em`: el cuerpo usa un font-size diminuto
+   calculado por el JS y estas dos tiras deben seguir siendo legibles. */
+.log-head, .log-foot {
     display: flex; align-items: center; gap: 0.7em;
     padding: 0 0.9rem;
-    font-size: 0.78em; line-height: 1.2;
+    font-size: 0.6rem; line-height: 1.3;
     letter-spacing: 0.14em; text-transform: uppercase;
     color: rgba(242, 241, 238, 0.5);
     white-space: nowrap;
 }
-/* Tira de estado mínima (punto + dirección actual): sin el rótulo "TENSOR
-   BUFFER" y lo más baja posible, para que la primera fila de datos suba. */
-.hexdump-head { padding-bottom: 0.3rem; border-bottom: 1px solid var(--line); }
-.hexdump-foot { padding-top: 0.45rem; margin-top: 0.45rem; border-top: 1px solid var(--line); }
-.hexdump-addr { margin-left: auto; color: rgba(163, 223, 2, 0.7); }
-.hexdump-dot {
+/* Tira de estado mínima (punto + bloque de KV-cache actual). */
+.log-head { padding-bottom: 0.3rem; border-bottom: 1px solid var(--line); }
+.log-foot { padding-top: 0.45rem; margin-top: 0.45rem; border-top: 1px solid var(--line); }
+.log-addr { margin-left: auto; color: rgba(163, 223, 2, 0.7); }
+.log-dot {
     width: 5px; height: 5px; border-radius: 50%; flex: none;
     background: var(--lime);
-    animation: hexPulse 1.6s ease-in-out infinite;
+    animation: logPulse 1.6s ease-in-out infinite;
 }
-@keyframes hexPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes logPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 
 /* flex:1 + min-height:0 → el cuerpo se queda con todo el alto sobrante entre
-   cabecera y pie; overflow:hidden recorta las filas que no llegan a caber. */
-.hexdump-body { flex: 1; min-height: 0; padding: 0.5rem 0.9rem 0; overflow: hidden; }
-.hex-row { display: flex; gap: 0 1.25ch; white-space: pre; }
-.hex-off   { width: 6ch;  flex: none; color: rgba(242, 241, 238, 0.4); }
-.hex-bytes { display: flex; gap: 0 0.6ch; flex: none; }
-.hex-byte  { width: 2ch; flex: none; text-align: center; color: rgba(242, 241, 238, 0.9); }
-.hex-ascii { width: 10ch; flex: none; color: rgba(163, 223, 2, 0.75); }
-/* La banda que barre el cabezal: las filas "calientes" se iluminan y la fila
-   que se está escribiendo ahora (is-head) va en verde ácido. */
-.hex-row.is-hot  { background: rgba(163, 223, 2, 0.05); }
-.hex-row.is-hot .hex-byte { color: #fff; }
-.hex-row.is-head .hex-byte { color: var(--lime); }
-.hexdump-bar { flex: 1; height: 1px; background: var(--line); position: relative; overflow: hidden; }
-.hexdump-bar i {
+   cabecera y pie; overflow:hidden recorta lo que no llegue a caber. */
+.log-body { flex: 1; min-height: 0; padding: 0.2rem 0.9rem 0; overflow: hidden; }
+/* white-space: pre conserva la alineación de columnas del trace. Los números
+   van en verde ácido: son lo único que cambia. */
+.log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
+.log-num { color: rgba(163, 223, 2, 0.6); }
+/* La banda del cabezal: las líneas "calientes" se iluminan y la que se está
+   reescribiendo ahora (is-head) lleva sus números a pleno brillo. */
+.log-line.is-hot { background: rgba(163, 223, 2, 0.05); color: rgba(242, 241, 238, 0.95); }
+.log-line.is-hot .log-num { color: var(--lime); }
+.log-line.is-head .log-num { color: #fff; }
+.log-bar { flex: 1; height: 1px; background: var(--line); position: relative; overflow: hidden; }
+.log-bar i {
     position: absolute; inset: 0; display: block; background: var(--lime);
     transform: scaleX(0); transform-origin: left; /* lo escala el rAF, sin layout */
 }
@@ -525,9 +520,9 @@ body.loaded .hero-sub {
    que en pantallas cortas el texto pise el cue. */
 @media (max-width: 900px) {
     .hero { padding-bottom: 10.5rem; }
-    /* En móvil el hero es texto: el volcado se apaga (a 375px solo se verían
-       ~2 columnas y competiría con el titular). */
-    .hero-hexdump { display: none; }
+    /* En móvil el hero es texto: el log se apaga (a 375px solo se verían
+       un par de columnas y competiría con el titular). */
+    .hero-log { display: none; }
 }
 
 /* ── Generic reveal utilities ────────────────────────────── */
@@ -991,9 +986,9 @@ section { position: relative; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
-    /* El hexdump se queda quieto: script.js pinta los bytes base una vez y no
-       arranca el rAF. El punto se queda encendido y la barra, vacía. */
-    .hexdump-dot { animation: none; opacity: 0.7; }
+    /* El log se queda quieto: script.js pinta el trace con los valores de
+       partida y no arranca el rAF. El punto sigue encendido y la barra, vacía. */
+    .log-dot { animation: none; opacity: 0.7; }
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }
