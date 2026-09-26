@@ -465,23 +465,36 @@ em { font-style: normal; color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Kanit carga ital 800). */
 .italic { font-style: italic; }
 /* × de HUMAN INTUITION × MACHINE SYNTHESIS: ping-pong entre × (0°) y + (45°)
-   con ease-in-out y pausa en cada posición. font-style: normal para que el
-   glifo conserve su simetría de 4-fold (reposo × y + perfectos);
-   inline-block para el transform. alternate cierra el loop sin salto.
-   transform-origin: centro visual exacto de la tinta del × en Kanit 800
-   (ink x:[20,412] y:[55,449] @1000upm; con line-height 1.02 la baseline
-   cae a 0.8625em del top de la caja → centro de la tinta en 0.216em, 0.6105em).
-   Sin esto, el giro default orbita el centro de la caja, ~0.1em más arriba. */
+   con ease-in-out, pausa en cada posición y OVERSHOOT sutil en los dos extremos.
+   font-style: normal para que el glifo conserve su simetría de 4-fold
+   (reposo × y + perfectos); inline-block para el transform.
+   alternate cierra el loop sin salto; transform-origin: centro visual exacto
+   de la tinta del × en Kanit 800 (ink x:[20,412] y:[55,449] @1000upm; con
+   line-height 1.02 la baseline cae a 0.8625em del top de la caja → centro de
+   la tinta en 0.216em, 0.6105em). Sin esto, el giro default orbita el centro
+   de la caja, ~0.1em más arriba. */
 .cross-turn {
     display: inline-block;
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.216em 0.6105em;
-    animation: crossTurn 1.4s ease-in-out infinite alternate;
+    animation: crossTurn 1.6s ease-in-out infinite alternate;
 }
+/* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
+   se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
+   quita la sensación de movimiento mecánico):
+     · comienzo → wind-up a -4°: retrocede un pelo y de ahí arranca el barrido.
+     · tramo    → -4° → 49° con ease-in-out (velocidad 0 en ambos topes).
+     · final    → rebote de asentamiento: sobrepasa los 45° hasta 49° y vuelve.
+   ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
+   velocidad debe morir en el extremo; ease-in-out en el barrido largo.
+   `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
+   el de final se aplican igual al × (0°) y al + (45°). */
 @keyframes crossTurn {
-    0%, 15%   { transform: rotate(0deg); }
-    85%, 100% { transform: rotate(45deg); }
+    0%, 14%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
+    21%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
+    79%       { transform: rotate(49deg); animation-timing-function: ease-out; }
+    86%, 100% { transform: rotate(45deg); }
 }
 
 /* ── Sections base ───────────────────────────────────────── */

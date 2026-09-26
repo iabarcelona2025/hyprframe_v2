@@ -89,8 +89,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
     check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
         /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
-        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?\s*\}\s*[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}/.test(css),
+        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
+        /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
         "ver @keyframes crossTurn / .cross-turn");
+    // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
+    // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
+    const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
+    const crossDegs = [...crossKf.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1]));
+    check("cross-turn: overshoot sutil de comienzo (wind-up < 0°) y de final (pasa de 45° y vuelve)",
+        crossDegs.length >= 4 &&
+        crossDegs[0] === 0 && crossDegs[crossDegs.length - 1] === 45 &&
+        Math.min(...crossDegs) < 0 && Math.min(...crossDegs) >= -8 &&
+        Math.max(...crossDegs) > 45 && Math.max(...crossDegs) <= 53,
+        `grados: ${crossDegs.join(", ") || "no encontrados"}`);
     check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
         /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.216em\s+0\.6105em/.test(css),
         "ver transform-origin de .cross-turn");
