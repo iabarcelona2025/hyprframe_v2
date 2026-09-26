@@ -159,6 +159,45 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",
         counts.join(", "));
 
+    // ── hero hexdump (tensor buffer) ──
+    const hexdump = doc.getElementById("heroHexdump");
+    check("hero hexdump: dentro del .hero, decorativo (aria-hidden) e ignora el ratón",
+        !!hexdump && hexdump.parentElement === doc.querySelector(".hero") &&
+        hexdump.getAttribute("aria-hidden") === "true" &&
+        /\.hero-hexdump\s*\{[^}]*pointer-events:\s*none/.test(css));
+    check("hero hexdump: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
+        /\.hero-hexdump\s*\{[^}]*right:\s*-\d/.test(css) &&
+        /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
+    check("hero hexdump: opacidad 0.5 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-hexdump\s*\{[^}]*opacity:\s*0?\.5\b/.test(css) &&
+        /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
+        /\.hero-hexdump\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
+    const hexRows = hexdump ? [...hexdump.querySelectorAll(".hex-row")] : [];
+    check("hero hexdump: filas con offset + 8 pares hex + valores a la derecha",
+        hexRows.length > 0 && hexRows.every((r) =>
+            r.querySelector(".hex-off") && r.querySelector(".hex-ascii") &&
+            r.querySelectorAll(".hex-byte").length === 8),
+        `${hexRows.length} filas`);
+    check("hero hexdump: los bytes son hexadecimales (0-9 A-F)",
+        hexRows.length > 0 &&
+        [...hexdump.querySelectorAll(".hex-byte")].every((c) => /^[0-9A-F]{2}$/.test(c.textContent)));
+    // el barrido randomiza en caliente: dos muestras separadas 400 ms
+    const hexSnap = () => [...hexdump.querySelectorAll(".hex-byte")].map((b) => b.textContent).join("");
+    const hexBefore = hexSnap();
+    await wait(400);
+    check("hero hexdump: randomiza los bytes a gran velocidad mientras barre",
+        hexSnap() !== hexBefore && /^[0-9A-F]+$/.test(hexSnap()),
+        hexSnap() === hexBefore ? "sin cambios en 400 ms" : "cambiando");
+    check("hero hexdump: ciclo de 5 s, rAF único y throttled a ~20 fps",
+        /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
+        /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
+    check("hero hexdump: se detiene fuera de pantalla y con la pestaña oculta",
+        /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
+        /cancelAnimationFrame\(raf\)/.test(js));
+    check("hero hexdump: quieto con reduced-motion y apagado en móvil",
+        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.hexdump-dot \{\s*animation: none/.test(css) &&
+        /@media \(max-width: 900px\)[\s\S]*\.hero-hexdump \{\s*display: none/.test(css));
+
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);
     check("preloader reached ~100%", parseInt(doc.getElementById("preCount").textContent, 10) > 85,

@@ -17,6 +17,8 @@
     --font-head: "Kanit", "Syne", sans-serif;
     --font-body: "Space Grotesk", sans-serif;
     --font-mono: "Space Mono", monospace;
+    /* Monoespaciada de código para el volcado hexadecimal del hero. */
+    --font-code: "JetBrains Mono", "Fira Code", "Roboto Mono", "Courier New", ui-monospace, monospace;
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
@@ -429,12 +431,84 @@ body.loaded .hero-sub {
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+/* ── HERO · HEXDUMP (tensor buffer) ──────────────────────────
+   Volcado de memoria en hex a la derecha del hero: un "cabezal de escritura"
+   barre las filas en ciclos de 5 s randomizando los bytes (script.js §6c).
+   Ubicación/encuadre:
+   · right NEGATIVO → el panel se sale por el margen derecho y lo recorta el
+     overflow:hidden del .hero, así que nunca se ve completo: solo entra en
+     cuadro la parte izquierda (offset + bytes, y el ASCII a medias).
+   · top: calc(50% + 3.5rem) acompaña al bloque de texto, que queda ~4rem por
+     debajo del centro por el padding-top de 8rem del hero.
+   · opacity .5 + máscara con degradado en el borde izquierdo: se funde con el
+     fondo en vez de recortarse en seco.
+   · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
+     para no robar ni clics ni hover al hero.
+   Anchos en `ch` y `white-space: pre` para que, al cambiar los bytes, no haya
+   el más mínimo reflow (los valores siempre ocupan lo mismo: 2 caracteres). */
+.hero-hexdump {
+    position: absolute; z-index: 1; pointer-events: none;
+    top: calc(50% + 3.5rem); transform: translateY(-50%);
+    /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size sí
+       escala con el viewport, el recorte es exactamente el mismo en cualquier
+       pantalla (siempre se pierden ~5ch de la columna ASCII por la derecha). */
+    right: -9.5em;
+    width: 32em;
+    opacity: 0.5;
+    padding: 0.8rem 0 0.85rem;
+    background: rgba(8, 8, 10, 0.55);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-family: var(--font-code);
+    font-size: clamp(0.5rem, 0.78vw, 0.72rem);
+    line-height: 1.85;
+    letter-spacing: 0; font-variant-ligatures: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%);
+            mask-image: linear-gradient(to right, transparent 0, #000 12%);
+}
+.hexdump-head, .hexdump-foot {
+    display: flex; align-items: center; gap: 0.7em;
+    padding: 0 0.9rem;
+    font-size: 0.92em; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(242, 241, 238, 0.5);
+    white-space: nowrap;
+}
+.hexdump-head { padding-bottom: 0.55rem; border-bottom: 1px solid var(--line); }
+.hexdump-foot { padding-top: 0.55rem; margin-top: 0.55rem; border-top: 1px solid var(--line); }
+.hexdump-addr { margin-left: auto; color: rgba(163, 223, 2, 0.7); }
+.hexdump-dot {
+    width: 5px; height: 5px; border-radius: 50%; flex: none;
+    background: var(--lime);
+    animation: hexPulse 1.6s ease-in-out infinite;
+}
+@keyframes hexPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+.hexdump-body { padding: 0.5rem 0.9rem 0; overflow: hidden; }
+.hex-row { display: flex; gap: 0 1.25ch; white-space: pre; }
+.hex-off   { width: 6ch;  flex: none; color: rgba(242, 241, 238, 0.4); }
+.hex-bytes { display: flex; gap: 0 0.6ch; flex: none; }
+.hex-byte  { width: 2ch; flex: none; text-align: center; color: rgba(242, 241, 238, 0.9); }
+.hex-ascii { width: 10ch; flex: none; color: rgba(163, 223, 2, 0.75); }
+/* La banda que barre el cabezal: las filas "calientes" se iluminan y la fila
+   que se está escribiendo ahora (is-head) va en verde ácido. */
+.hex-row.is-hot  { background: rgba(163, 223, 2, 0.05); }
+.hex-row.is-hot .hex-byte { color: #fff; }
+.hex-row.is-head .hex-byte { color: var(--lime); }
+.hexdump-bar { flex: 1; height: 1px; background: var(--line); position: relative; overflow: hidden; }
+.hexdump-bar i {
+    position: absolute; inset: 0; display: block; background: var(--lime);
+    transform: scaleX(0); transform-origin: left; /* lo escala el rAF, sin layout */
+}
+
 /* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
    separarlo del SCROLL. El cue y la marquee son absolutos y ocupan ~10.5rem
    al fondo; reservarlos con padding-bottom sube el bloque centrado y evita
    que en pantallas cortas el texto pise el cue. */
 @media (max-width: 900px) {
     .hero { padding-bottom: 10.5rem; }
+    /* En móvil el hero es texto: el volcado se apaga (a 375px solo se verían
+       ~2 columnas y competiría con el titular). */
+    .hero-hexdump { display: none; }
 }
 
 /* ── Generic reveal utilities ────────────────────────────── */
@@ -898,6 +972,9 @@ section { position: relative; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
+    /* El hexdump se queda quieto: script.js pinta los bytes base una vez y no
+       arranca el rAF. El punto se queda encendido y la barra, vacía. */
+    .hexdump-dot { animation: none; opacity: 0.7; }
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }

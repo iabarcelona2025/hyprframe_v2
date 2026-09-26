@@ -215,6 +215,186 @@
         }
     });
 
+    /* ── 6c. Hero hexdump: tensor buffer ──────────────────── */
+    // Volcado de memoria en hex sangrado por la derecha del hero (ver
+    // .hero-hexdump en styles.css). Un "cabezal de escritura" recorre las 14
+    // filas en ciclos de 5 s: las filas dentro de la banda se reescriben con
+    // bytes aleatorios a ~20 fps y, cuando el cabezal pasa de largo, la fila
+    // vuelve a sus bytes base. Así el bloque siempre es legible (las palabras
+    // semilla en ASCII) y el bucle no tiene ningún salto visible al reiniciar.
+    //
+    // Render:
+    // · un único rAF compartido, throttled a 20 fps (TICK): a 60 fps no se
+    //   aprecia más y se comería el presupuesto de frame del scroll.
+    // · solo se tocan las filas de la banda (3) y solo su textContent: cada
+    //   celda mide lo mismo en `ch`, así que no hay reflow ni repaint de más.
+    // · la barra de ciclo va con transform: scaleX() (compositor) en vez de
+    //   width, y el contador de ciclo solo escribe cuando cambia.
+    // · se para solo (IntersectionObserver + visibilitychange) cuando el panel
+    //   sale de pantalla o la pestaña se oculta: cero trabajo en background.
+    // · con prefers-reduced-motion se pintan los bytes base una vez y no arranca.
+    const hexdump = document.getElementById("heroHexdump");
+
+    if (hexdump) {
+        const ROWS = 14;            // filas del volcado
+        const BYTES = 8;            // bytes por fila (pares hex)
+        const CYCLE = 5000;         // ms — duración de un barrido completo
+        const BAND = 3;             // filas simultáneas dentro de la banda
+        const TICK = 50;            // ms entre repintados (~20 fps)
+        const HEX = "0123456789ABCDEF";
+        // Relleno: 112 bytes de vocabulario de marca en ASCII, así entre
+        // barridos se lee algo con sentido en la columna de la derecha.
+        const SEED = "HYPRFRAME TENSOR LATENT DIFFUSION SYNTHESIS VISION MACHINE ";
+
+        const rowsEl = hexdump.querySelector("[data-hex-rows]");
+        const addrEl = hexdump.querySelector("[data-hex-addr]");
+        const cycleEl = hexdump.querySelector("[data-hex-cycle]");
+        const barEl = hexdump.querySelector("[data-hex-bar]");
+
+        const hex2 = (v) => HEX[(v >> 4) & 15] + HEX[v & 15];
+        const hex4 = (v) => "0x" + hex2((v >> 8) & 255) + hex2(v & 255);
+        const ascii = (v) => (v > 31 && v < 127 ? String.fromCharCode(v) : ".");
+
+        if (rowsEl) {
+            const base = [];    // bytes "en reposo" de cada fila
+            const state = [];   // bytes actuales (= base salvo en la banda)
+            const rowEls = [];
+            const cellEls = [];
+            const asciiEls = [];
+            const dirty = [];   // fila pendiente de restaurar a sus bytes base
+            const frag = document.createDocumentFragment();
+
+            for (let r = 0; r < ROWS; r++) {
+                const row = [];
+                for (let b = 0; b < BYTES; b++) {
+                    row.push(SEED.charCodeAt((r * BYTES + b) % SEED.length) & 255);
+                }
+                base.push(row);
+                state.push(row.slice());
+
+                const rowEl = document.createElement("div");
+                rowEl.className = "hex-row";
+                const offEl = document.createElement("span");
+                offEl.className = "hex-off";
+                offEl.textContent = hex4(r * BYTES);
+                const bytesEl = document.createElement("span");
+                bytesEl.className = "hex-bytes";
+                const cells = [];
+                for (let b = 0; b < BYTES; b++) {
+                    const cell = document.createElement("span");
+                    cell.className = "hex-byte";
+                    bytesEl.appendChild(cell);
+                    cells.push(cell);
+                }
+                const asciiEl = document.createElement("span");
+                asciiEl.className = "hex-ascii";
+                rowEl.appendChild(offEl);
+                rowEl.appendChild(bytesEl);
+                rowEl.appendChild(asciiEl);
+                frag.appendChild(rowEl);
+
+                rowEls.push(rowEl);
+                cellEls.push(cells);
+                asciiEls.push(asciiEl);
+                dirty.push(false);
+            }
+            rowsEl.appendChild(frag);
+
+            // Escribe una fila entera (bytes + columna de valores) solo si cambia.
+            // La columna derecha va entre barras, como en un hexdump de verdad.
+            function paintRow(r) {
+                const vals = state[r];
+                let text = "|";
+                for (let b = 0; b < BYTES; b++) {
+                    const hex = hex2(vals[b]);
+                    if (cellEls[r][b].textContent !== hex) cellEls[r][b].textContent = hex;
+                    text += ascii(vals[b]);
+                }
+                text += "|";
+                if (asciiEls[r].textContent !== text) asciiEls[r].textContent = text;
+            }
+            for (let r = 0; r < ROWS; r++) paintRow(r);
+
+            if (!reduced) {
+                const SPAN = ROWS + BAND;   // recorrido del cabezal (entra y sale)
+                let raf = 0, running = false, inView = false;
+                let elapsed = 0, t0 = 0, last = 0, cycle = -1;
+
+                function frame(now) {
+                    raf = requestAnimationFrame(frame);
+                    if (now - last < TICK) return;
+                    last = now;
+
+                    elapsed = now - t0;
+                    const p = (elapsed % CYCLE) / CYCLE;
+                    const head = -BAND + p * SPAN;          // fila por la que va
+                    const from = Math.max(0, Math.ceil(head - BAND));
+                    const to = Math.min(ROWS - 1, Math.floor(head));
+
+                    for (let r = 0; r < ROWS; r++) {
+                        const hot = r >= from && r <= to;
+                        rowEls[r].classList.toggle("is-hot", hot);
+                        rowEls[r].classList.toggle("is-head", hot && r === to);
+                        if (!hot) {
+                            // el cabezal ya pasó: la fila vuelve a sus bytes base
+                            if (dirty[r]) {
+                                state[r] = base[r].slice();
+                                paintRow(r);
+                                dirty[r] = false;
+                            }
+                            continue;
+                        }
+                        dirty[r] = true;
+                        // la fila del cabezal se reescribe entera; la estela,
+                        // solo un par de bytes, para que el ruido no sea plano
+                        const n = r === to ? BYTES : 1 + ((Math.random() * 3) | 0);
+                        for (let k = 0; k < n; k++) {
+                            state[r][(Math.random() * BYTES) | 0] = (Math.random() * 256) | 0;
+                        }
+                        paintRow(r);
+                    }
+
+                    if (barEl) barEl.style.transform = "scaleX(" + p.toFixed(3) + ")";
+                    if (addrEl) {
+                        const addr = hex4(Math.max(0, to) * BYTES);
+                        if (addrEl.textContent !== addr) addrEl.textContent = addr;
+                    }
+                    const c = Math.floor(elapsed / CYCLE);
+                    if (c !== cycle) {
+                        cycle = c;
+                        if (cycleEl) cycleEl.textContent = "CYCLE " + String(c % 1000).padStart(3, "0");
+                    }
+                }
+
+                function start() {
+                    if (running) return;
+                    running = true;
+                    t0 = performance.now() - elapsed;  // se reanuda donde estaba
+                    last = 0;
+                    raf = requestAnimationFrame(frame);
+                }
+                function stop() {
+                    if (!running) return;
+                    running = false;
+                    cancelAnimationFrame(raf);
+                }
+
+                const io = new IntersectionObserver((entries) => {
+                    inView = entries[0].isIntersecting;
+                    if (inView && !document.hidden) start();
+                    else stop();
+                }, { threshold: 0 });
+
+                document.addEventListener("visibilitychange", () => {
+                    if (document.hidden) stop();
+                    else if (inView) start();
+                });
+
+                onHeroReady(() => io.observe(hexdump)); // ni un frame tras el preloader
+            }
+        }
+    }
+
     /* ── 7. Statement: word-by-word light-up on scroll ────── */
     const statement = document.getElementById("statementText");
     if (statement) {
