@@ -1,18 +1,17 @@
 /* ═══════════════════════════════════════════════════════════
    HYPRFRAME — consentimiento de cookies
-   Widget autónomo (vanilla JS, sin dependencias). Inyecta el banner,
-   guarda la decisión en localStorage y solo carga Google Analytics
-   si el visitante acepta.
+   Widget autónomo (vanilla JS, sin dependencias). Inyecta el banner y
+   guarda la decisión del visitante en localStorage.
 
-   Sustituye al gtag.js que legacy.html y project-node.html cargaban
-   de forma incondicional en el <head>: ahora no se pide nada a
-   Google hasta que hay un consentimiento explícito.
+   NO toca Google Analytics: el gtag.js de legacy.html y project-node.html
+   se mantiene tal cual, y este widget nunca inyecta un segundo gtag.
+   Aquí solo se registra la preferencia (window.HFCookies.consent), lista
+   para cablearla a lo que se decida (p. ej. Consent Mode de Google).
    ═══════════════════════════════════════════════════════════ */
 (() => {
     "use strict";
 
     const STORAGE_KEY = "hfCookieConsent";
-    const GA_ID = "G-6MW201KGC9";
     const REMEMBER_MS = 180 * 24 * 60 * 60 * 1000; // se vuelve a preguntar a los 6 meses
 
     /* ── Persistencia de la decisión ──────────────────────── */
@@ -39,24 +38,6 @@
                 until: Date.now() + REMEMBER_MS,
             }));
         } catch (e) { /* storage bloqueado: se preguntará en la próxima visita */ }
-    }
-
-    /* ── Google Analytics, solo tras aceptar ──────────────── */
-    let analyticsRequested = false;
-
-    function loadAnalytics() {
-        if (analyticsRequested) return;
-        analyticsRequested = true;
-
-        const script = document.createElement("script");
-        script.async = true;
-        script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-        document.head.appendChild(script);
-
-        window.dataLayer = window.dataLayer || [];
-        window.gtag = function gtag() { window.dataLayer.push(arguments); };
-        window.gtag("js", new Date());
-        window.gtag("config", GA_ID);
     }
 
     /* ── Banner ───────────────────────────────────────────── */
@@ -115,17 +96,13 @@
 
     function decide(value, banner) {
         writeConsent(value);
-        if (value === "granted") loadAnalytics();
         hide(banner);
         window.HFCookies.consent = value;
     }
 
     /* ── Arranque ─────────────────────────────────────────── */
-    let consent = readConsent();
-
-    // Decisión previa: se aplica sin mostrar nada.
-    if (consent === "granted") loadAnalytics();
-
+    // Si ya hay una decisión vigente no se muestra nada.
+    const consent = readConsent();
     const banner = consent ? null : buildBanner();
     if (banner) {
         banner.addEventListener("click", (event) => {
@@ -138,5 +115,5 @@
     }
 
     // API mínima, útil para depurar y para los tests.
-    window.HFCookies = { consent, STORAGE_KEY, GA_ID, loadAnalytics };
+    window.HFCookies = { consent, STORAGE_KEY };
 })();

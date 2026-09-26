@@ -1,6 +1,7 @@
 /* Smoke test: banner de consentimiento de cookies.
    Ejecuta cookies.js real sobre páginas reales en jsdom y comprueba que
-   Google Analytics solo se carga cuando el visitante acepta. */
+   registra la decisión del visitante sin tocar el Google Analytics que
+   ya cargan legacy.html y project-node.html. */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -52,7 +53,8 @@ function boot(page, storage = null, blockStorage = false) {
 }
 
 const bannerOf = (doc) => doc.getElementById("cookieBanner");
-const gtagOf = (doc) => doc.querySelector('script[src*="googletagmanager.com/gtag/js"]');
+// El gtag original de la página. cookies.js no debe añadir ninguno más.
+const gtagCount = (doc) => doc.querySelectorAll('script[src*="googletagmanager.com/gtag/js"]').length;
 const consentOf = (window) => {
     const raw = window.localStorage.getItem("hfCookieConsent");
     return raw ? JSON.parse(raw).value : null;
@@ -61,11 +63,11 @@ const consentOf = (window) => {
 (async () => {
     /* ── 1. Primera visita en Captured (no tiene preloader) ── */
     let ctx = boot("legacy.html");
+    check("1ª visita: el gtag original de la página sigue ahí", gtagCount(ctx.doc) === 1);
     ctx.window.eval(cookiesJs);
     await wait(60);
     check("1ª visita: el banner aparece", !!bannerOf(ctx.doc));
     check("1ª visita: el banner entra visible", bannerOf(ctx.doc).classList.contains("show"));
-    check("1ª visita: NO se ha pedido nada a Google", !gtagOf(ctx.doc));
     check("1ª visita: sin decisión guardada todavía", consentOf(ctx.window) === null);
     check("1ª visita: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
 
@@ -73,8 +75,8 @@ const consentOf = (window) => {
     ctx.doc.querySelector(".cookie-accept").click();
     await wait(700);
     check("Aceptar: decisión guardada como granted", consentOf(ctx.window) === "granted");
-    check("Aceptar: gtag se inyecta tras aceptar", !!gtagOf(ctx.doc));
-    check("Aceptar: gtag apunta al ID correcto", /id=G-6MW201KGC9/.test(gtagOf(ctx.doc).src));
+    check("Aceptar: NO se inyecta un segundo gtag", gtagCount(ctx.doc) === 1,
+        "encontrados " + gtagCount(ctx.doc));
     check("Aceptar: el banner se retira del DOM", !bannerOf(ctx.doc));
 
     /* ── 3. Volver con el consentimiento ya concedido ── */
@@ -84,7 +86,7 @@ const consentOf = (window) => {
     ctx.window.eval(cookiesJs);
     await wait(60);
     check("Concedido: no vuelve a salir el banner", !bannerOf(ctx.doc));
-    check("Concedido: gtag se carga automáticamente", !!gtagOf(ctx.doc));
+    check("Concedido: el gtag original intacto y sin duplicar", gtagCount(ctx.doc) === 1);
 
     /* ── 4. Rechazar ── */
     ctx = boot("legacy.html");
@@ -93,7 +95,7 @@ const consentOf = (window) => {
     ctx.doc.querySelector(".cookie-reject").click();
     await wait(700);
     check("Rechazar: decisión guardada como denied", consentOf(ctx.window) === "denied");
-    check("Rechazar: NO se carga gtag", !gtagOf(ctx.doc));
+    check("Rechazar: no se altera el gtag de la página", gtagCount(ctx.doc) === 1);
     check("Rechazar: el banner se retira del DOM", !bannerOf(ctx.doc));
 
     /* ── 5. Volver habiendo rechazado ── */
@@ -103,7 +105,6 @@ const consentOf = (window) => {
     ctx.window.eval(cookiesJs);
     await wait(60);
     check("Denegado: no vuelve a salir el banner", !bannerOf(ctx.doc));
-    check("Denegado: sigue sin cargarse gtag", !gtagOf(ctx.doc));
 
     /* ── 6. Consentimiento caducado ── */
     ctx = boot("legacy.html", {
@@ -112,7 +113,7 @@ const consentOf = (window) => {
     ctx.window.eval(cookiesJs);
     await wait(60);
     check("Caducado: el banner vuelve a aparecer", !!bannerOf(ctx.doc));
-    check("Caducado: no se carga gtag sin un consentimiento vigente", !gtagOf(ctx.doc));
+    check("Caducado: se limpia el registro vencido", consentOf(ctx.window) === null);
 
     /* ── 7. Almacenamiento bloqueado ── */
     ctx = boot("legacy.html", null, true);
@@ -121,7 +122,14 @@ const consentOf = (window) => {
     check("Storage bloqueado: no rompe", ctx.errors.length === 0, ctx.errors.join("; "));
     check("Storage bloqueado: el banner se muestra igualmente", !!bannerOf(ctx.doc));
 
-    /* ── 8. En la landing el banner no interrumpe la intro ── */
+    /* ── 8. N.O.D.E. mantiene su analytics y gana el banner ── */
+    ctx = boot("project-node.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    check("N.O.D.E.: gtag original presente", gtagCount(ctx.doc) === 1);
+    check("N.O.D.E.: banner mostrado", !!bannerOf(ctx.doc));
+
+    /* ── 9. En la landing el banner no interrumpe la intro ── */
     ctx = boot("index.html");
     ctx.window.eval(indexJs);   // arranca el preloader (contador 0→100)
     ctx.window.eval(cookiesJs);
@@ -131,6 +139,10 @@ const consentOf = (window) => {
     await wait(2600);
     check("Landing: aparece cuando body.loaded", bannerOf(ctx.doc).classList.contains("show"));
     check("Landing: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
+
+    /* ── 10. El widget no vuelve a tocar Google Analytics ── */
+    check("cookies.js no referencia googletagmanager",
+        !/googletagmanager/.test(cookiesJs));
 
     console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAIL`);
     process.exit(failures === 0 ? 0 : 1);

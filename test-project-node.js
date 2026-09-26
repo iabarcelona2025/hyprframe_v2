@@ -23,14 +23,8 @@ const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
 
 try {
-    // Analytics ya no se carga de forma incondicional: lo gestiona el banner
-    // de consentimiento, que solo inyecta gtag si el visitante acepta.
-    assert.ok(!/googletagmanager\.com\/gtag\/js/.test(html),
-        "gtag must not be loaded unconditionally from the HTML");
-    assert.ok(doc.querySelector('script[src^="cookies.js"]'), "cookies.js must be loaded");
-    const cookiesSrc = fs.readFileSync(path.join(root, "cookies.js"), "utf8");
-    assert.match(cookiesSrc, /G-6MW201KGC9/);
-    assert.match(cookiesSrc, /googletagmanager\.com\/gtag\/js/);
+    assert.match(html, /gtag\('config', 'G-6MW201KGC9'\)/);
+    assert.equal(doc.querySelectorAll('script[src*="googletagmanager.com/gtag/js"]').length, 1);
     assert.equal(doc.title, "AI Visual Storytelling Studio – Generative Image & Video | HYPRFRAME");
     assert.match(doc.querySelector('meta[name="description"]').content, /algorithmic mega-corporation/);
     for (const icon of JSON.parse(fs.readFileSync(path.join(root, "assets/favicons/site.webmanifest"), "utf8")).icons) {
