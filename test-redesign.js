@@ -84,6 +84,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         .filter((link) => link.textContent.trim().endsWith("CLB"));
     check("CLB links in the top and mobile menus point to the landing section",
         clbNavLinks.length === 2 && clbNavLinks.every((link) => link.getAttribute("href") === "#clb"));
+    check("CLB occupies a full viewport so Contact does not appear when the anchor opens",
+        /\.clb\s*\{[^}]*min-height:\s*100svh/.test(css));
     const contactSection = doc.getElementById("contact");
     const pageFooter = doc.querySelector(".site-footer");
     check("Contact is compacted so the footer follows closely and can be seen sooner",

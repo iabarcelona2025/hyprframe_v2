@@ -797,6 +797,7 @@ section { position: relative; }
 
 /* ── CLB / CINEMATIC LOOK BUILDER ───────────────────────── */
 .clb {
+    min-height: 100svh;
     padding-bottom: clamp(5rem, 12vw, 9rem);
     border-top: 1px solid var(--line);
     background:
