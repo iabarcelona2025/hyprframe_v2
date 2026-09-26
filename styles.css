@@ -17,9 +17,17 @@
     --font-head: "Kanit", "Syne", sans-serif;
     --font-body: "Space Grotesk", sans-serif;
     --font-mono: "Space Mono", monospace;
+    /* Monoespaciada de código para el volcado hexadecimal del hero. */
+    --font-code: "JetBrains Mono", "Fira Code", "Roboto Mono", "Courier New", ui-monospace, monospace;
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
+    /* Altos de referencia para estirar el log del hero de arriba abajo:
+       · --header-h: cabecera en reposo = alto del logo + su padding (1.4rem × 2).
+       · --marquee-h: marquesina horizontal del hero = padding (0.9rem × 2) +
+         una línea de texto (0.72rem × 1.65) + el filete superior de 1px. */
+    --header-h: calc(clamp(41.4px, 4.485vw, 59.8px) + 2.8rem);
+    --marquee-h: calc(1.8rem + 1.2rem + 1px);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -278,6 +286,9 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
     display: flex; flex-direction: column; justify-content: center;
     padding: 8rem var(--pad) 0;
     overflow: hidden;
+    /* Grupo de fusión cerrado: el log del hero (mix-blend-mode: screen) se
+       mezcla con el vídeo y el velo de esta sección, y con nada más. */
+    isolation: isolate;
 }
 .hero-video {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -429,12 +440,86 @@ body.loaded .hero-sub {
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+/* ── HERO · LOG DE INFERENCIA (trace del modelo) ───────────────
+   Panel tipo terminal a la derecha del hero con el trace de un forward pass
+   (script.js §6c). El texto es literal: lo único que se mueve son los números,
+   reescritos por un "cabezal" que recorre las líneas en ciclos de 5 s.
+   Ubicación/encuadre:
+   · right NEGATIVO → el panel se sale por el margen derecho y lo recorta el
+     overflow:hidden del .hero, así que nunca se ve completo: de cada línea
+     entran en cuadro ~63 caracteres.
+   · top: var(--header-h) → la primera línea arranca donde acaba el ES/EN de la
+     cabecera, sin aire de más; bottom: calc(var(--marquee-h) + .75rem) → muere
+     donde empieza la marquesina horizontal del fondo.
+   · SIN CAJA: ni fondo, ni borde, ni tiras de Estado (cabecera con la dirección
+     y pie con CYCLE/barra). Es solo texto flotando sobre el vídeo; lo único que
+     lo integra en el fondo es la opacity .35 y la máscara con degradado en el
+     borde izquierdo (26% del ancho), que lo funde desde la nada.
+   · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
+     para no robar ni clics ni hover al hero.
+   · el font-size NO está fijado aquí: el JS calcula --log-fs para que quepa el
+     log completo en el alto disponible (y lo repite si a ese tamaño sobra). */
+.hero-log {
+    position: absolute; z-index: 1; pointer-events: none;
+    top: var(--header-h);
+    bottom: calc(var(--marquee-h) + 0.75rem);
+    display: flex; flex-direction: column;
+    /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size lo
+       escala el JS, el recorte lateral es siempre el mismo. Los 40 px extra
+       empujan el bloque fuera de cuadro: se ve menos y baja un punto su
+       presencia (estaba demasiado presente pegado al margen). */
+    right: calc(-16em - 40px);
+    width: 54em;
+    opacity: 0.35;
+    /* Fusión con el vídeo del hero en lugar de pintar encima: `screen` aclara
+       el fondo con la tinta de las letras (los números en verde ácido dejan un
+       rastro luminoso). `multiply` no sirve aquí: sobre un fondo casi negro
+       apagaría el texto en vez de integrarlo. */
+    mix-blend-mode: screen;
+    padding: 0 0.9rem;
+    font-family: var(--font-code);
+    font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
+    line-height: 1.3;
+    letter-spacing: 0; font-variant-ligatures: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
+            mask-image: linear-gradient(to right, transparent 0, #000 26%);
+}
+/* min-height:0 → el cuerpo ocupa todo el alto del panel; overflow:hidden
+   recorta lo que no llegue a caber.
+   Degradado superior: las primeras líneas se disuelven bajo la cabecera en vez
+   de empezar de golpe. Va aquí y no en el panel porque .hero-log ya gasta su
+   máscara en el degradado izquierdo y CSS no compone dos direcciones en una
+   sola capa: anidando, las dos máscaras se multiplican solas.
+   Es MENOR que el lateral (4.5rem frente al 26% del ancho, ~14em). */
+.log-body {
+    flex: 1; min-height: 0; padding: 0; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
+}
+/* white-space: pre conserva la alineación de columnas del trace. Los números
+   van en verde ácido: son lo único que cambia. */
+.log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
+.log-num { color: rgba(163, 223, 2, 0.6); }
+/* Cursor de escritura: bloque verde ácido parpadeando justo donde se está
+   escribiendo. Viaja al final de la línea activa; no hay ninguna franja ni
+   barrido, el único foco del bloque es este cursor. */
+.log-caret {
+    display: inline-block; vertical-align: text-bottom;
+    width: 0.6em; height: 1em; margin-left: 0.15em;
+    background: var(--lime);
+    animation: logCaret 1.1s steps(1, end) infinite;
+}
+@keyframes logCaret { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
 /* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
    separarlo del SCROLL. El cue y la marquee son absolutos y ocupan ~10.5rem
    al fondo; reservarlos con padding-bottom sube el bloque centrado y evita
    que en pantallas cortas el texto pise el cue. */
 @media (max-width: 900px) {
     .hero { padding-bottom: 10.5rem; }
+    /* En móvil el hero es texto: el log se apaga (a 375px solo se verían
+       un par de columnas y competiría con el titular). */
+    .hero-log { display: none; }
 }
 
 /* ── Generic reveal utilities ────────────────────────────── */
@@ -465,23 +550,36 @@ em { font-style: normal; color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Kanit carga ital 800). */
 .italic { font-style: italic; }
 /* × de HUMAN INTUITION × MACHINE SYNTHESIS: ping-pong entre × (0°) y + (45°)
-   con ease-in-out y pausa en cada posición. font-style: normal para que el
-   glifo conserve su simetría de 4-fold (reposo × y + perfectos);
-   inline-block para el transform. alternate cierra el loop sin salto.
-   transform-origin: centro visual exacto de la tinta del × en Kanit 800
-   (ink x:[20,412] y:[55,449] @1000upm; con line-height 1.02 la baseline
-   cae a 0.8625em del top de la caja → centro de la tinta en 0.216em, 0.6105em).
-   Sin esto, el giro default orbita el centro de la caja, ~0.1em más arriba. */
+   con ease-in-out, pausa en cada posición y OVERSHOOT sutil en los dos extremos.
+   font-style: normal para que el glifo conserve su simetría de 4-fold
+   (reposo × y + perfectos); inline-block para el transform.
+   alternate cierra el loop sin salto; transform-origin: centro visual exacto
+   de la tinta del × en Kanit 800 (ink x:[20,412] y:[55,449] @1000upm; con
+   line-height 1.02 la baseline cae a 0.8625em del top de la caja → centro de
+   la tinta en 0.216em, 0.6105em). Sin esto, el giro default orbita el centro
+   de la caja, ~0.1em más arriba. */
 .cross-turn {
     display: inline-block;
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.216em 0.6105em;
-    animation: crossTurn 1.4s ease-in-out infinite alternate;
+    animation: crossTurn 1.6s ease-in-out infinite alternate;
 }
+/* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
+   se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
+   quita la sensación de movimiento mecánico):
+     · comienzo → wind-up a -4°: retrocede un pelo y de ahí arranca el barrido.
+     · tramo    → -4° → 49° con ease-in-out (velocidad 0 en ambos topes).
+     · final    → rebote de asentamiento: sobrepasa los 45° hasta 49° y vuelve.
+   ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
+   velocidad debe morir en el extremo; ease-in-out en el barrido largo.
+   `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
+   el de final se aplican igual al × (0°) y al + (45°). */
 @keyframes crossTurn {
-    0%, 15%   { transform: rotate(0deg); }
-    85%, 100% { transform: rotate(45deg); }
+    0%, 14%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
+    21%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
+    79%       { transform: rotate(49deg); animation-timing-function: ease-out; }
+    86%, 100% { transform: rotate(45deg); }
 }
 
 /* ── Sections base ───────────────────────────────────────── */
@@ -885,6 +983,8 @@ section { position: relative; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
+    /* El log se queda quieto: script.js pinta el trace con los valores de
+       partida y no arranca el rAF (el bloque global ya corta las animations). */
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }

@@ -89,8 +89,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
     check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
         /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
-        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?\s*\}\s*[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}/.test(css),
+        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
+        /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
         "ver @keyframes crossTurn / .cross-turn");
+    // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
+    // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
+    const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
+    const crossDegs = [...crossKf.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1]));
+    check("cross-turn: overshoot sutil de comienzo (wind-up < 0°) y de final (pasa de 45° y vuelve)",
+        crossDegs.length >= 4 &&
+        crossDegs[0] === 0 && crossDegs[crossDegs.length - 1] === 45 &&
+        Math.min(...crossDegs) < 0 && Math.min(...crossDegs) >= -8 &&
+        Math.max(...crossDegs) > 45 && Math.max(...crossDegs) <= 53,
+        `grados: ${crossDegs.join(", ") || "no encontrados"}`);
     check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
         /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.216em\s+0\.6105em/.test(css),
         "ver transform-origin de .cross-turn");
@@ -147,6 +158,110 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const counts = [...doc.querySelectorAll("[data-count]")].map((el) => el.textContent);
     check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",
         counts.join(", "));
+
+    // ── hero log (trace de inferencia del modelo) ──
+    const heroLog = doc.getElementById("heroLog");
+    check("hero log: dentro del .hero, decorativo (aria-hidden) e ignora el ratón",
+        !!heroLog && heroLog.parentElement === doc.querySelector(".hero") &&
+        heroLog.getAttribute("aria-hidden") === "true" &&
+        /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
+    check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
+        /\.hero-log\s*\{[^}]*right:\s*calc\(-[\d.]+em - 40px\)/.test(css) &&
+        /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
+    check("hero log: 40 px más a la derecha y fundido con el vídeo (mix-blend-mode: screen)",
+        /\.hero-log\s*\{[^}]*mix-blend-mode:\s*screen/.test(css));
+    check("hero log: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-log\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
+        /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
+        /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
+    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
+        !/TENSOR BUFFER/.test(html) &&
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+    check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
+        /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
+        /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
+        /--header-h:\s*calc\(clamp\(41\.4px/.test(css) && /--marquee-h:\s*calc\(/.test(css) &&
+        /\.log-body\s*\{[^}]*flex:\s*1/.test(css));
+    check("hero log: el font-size se calcula para que quepa el trace (--log-fs)",
+        /\.hero-log\s*\{[^}]*font-size:\s*var\(--log-fs/.test(css) &&
+        /const FS_MIN = 6, FS_MAX = 11;/.test(js) &&
+        /setProperty\("--log-fs"/.test(js) && /document\.fonts\.ready\.then\(fit\)/.test(js));
+    // el trace se escribe en bucle: esperar a que la ventana esté llena
+    for (let i = 0; i < 30 && !/NCCL MULTI-GPU/.test(heroLog.textContent); i++) await wait(400);
+    const logLines = heroLog ? [...heroLog.querySelectorAll(".log-line")] : [];
+    const logNums = heroLog ? [...heroLog.querySelectorAll(".log-num")] : [];
+    check("hero log: pinta el trace completo con sus campos numéricos",
+        logLines.length > 40 && logNums.length > 100 &&
+        /LAYER \d+\/32/.test(heroLog.textContent) && /NCCL MULTI-GPU/.test(heroLog.textContent),
+        `${logLines.length} líneas · ${logNums.length} campos`);
+    check("hero log: el texto estructural se respeta (formas de tensor, IDs, ε = 1e-05, θ=10000)",
+        /Q_Tensor \[1, 32, 128, 64\]/.test(heroLog.textContent) &&
+        /#15496 \(" tensor"\)/.test(heroLog.textContent) &&
+        /ε = 1e-05/.test(heroLog.textContent) && /θ=10000/.test(heroLog.textContent));
+    // el bloque está vivo: dos muestras separadas 400 ms
+    const logSnap = () => heroLog.querySelector(".log-body").textContent;
+    const logBefore = logSnap();
+    await wait(400);
+    const logAfter = logSnap();
+    check("hero log: los valores numéricos cambian a gran velocidad mientras se escribe",
+        logAfter !== logBefore, logAfter === logBefore ? "sin cambios en 400 ms" : "cambiando");
+    // invariante: en las líneas YA escritas solo cambian los números, nunca el
+    // ancho de un campo (la línea en curso no cuenta: se está escribiendo)
+    const widthsByLog = () => {
+        const map = {};
+        heroLog.querySelectorAll(".log-line.is-done").forEach((l) => { map[l.dataset.log] = l.textContent.length; });
+        return map;
+    };
+    const wBefore = widthsByLog();
+    await wait(400);
+    const wAfter = widthsByLog();
+    const sameWidth = Object.keys(wBefore).every((k) => wAfter[k] === undefined || wAfter[k] === wBefore[k]);
+    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
+        Object.keys(wBefore).length > 20 && sameWidth,
+        `${Object.keys(wBefore).length} líneas escritas, anchos idénticos`);
+    // sin franja: los números se mueven en todas las líneas ya escritas
+    const doneSnap = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
+    await wait(400);
+    const doneNow = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
+    const moved = doneSnap.filter((txt, i) => doneNow[i] !== undefined && txt !== doneNow[i]).length;
+    check("hero log: los números cambian en todo el bloque escrito, sin depender de ninguna franja",
+        moved > 3 && !/is-hot|is-head/.test(js) && !/is-hot|is-head/.test(css),
+        `${moved} líneas cambiando en 400 ms`);
+    check("hero log: se escribe carácter a carácter, con cursor al final de la línea activa",
+        /const CHARS_MIN = 8, CHARS_VAR = 24;/.test(js) && /function typeChars/.test(js) &&
+        /\.log-caret\s*\{[^}]*animation:\s*logCaret/.test(css) &&
+        heroLog.querySelectorAll(".log-caret").length === 1 &&
+        heroLog.querySelector(".log-caret").parentElement === heroLog.querySelectorAll(".log-line:not(.is-done)")[0],
+        `cursor en ${heroLog.querySelector(".log-caret").parentElement ? "línea activa" : "ninguna"}`);
+    const head0 = [...heroLog.querySelectorAll(".log-line")].slice(0, 5).map((l) => l.textContent).join("|");
+    await wait(2500);
+    const head1 = [...heroLog.querySelectorAll(".log-line")].slice(0, 5).map((l) => l.textContent).join("|");
+    check("hero log: con la pantalla llena la información scrollea (ventana deslizante)",
+        head0 !== head1 &&
+        heroLog.querySelectorAll(".log-line").length === logLines.length &&
+        /while \(lines\.length > maxLines\)/.test(js),
+        `${logLines.length} líneas en ventana, la cabecera del bloque avanza`);
+    check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
+        /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+    check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
+        /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
+        /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
+    check("hero log: contadores de ciclo (capa, timestep, token, KV-cache) sobre el propio texto",
+        /\{\{24:layer\}\}/.test(js) && /\{\{450:timestep\}\}/.test(js) &&
+        /\{\{1025:token\}\}/.test(js) && /advanceCounters\(\)/.test(js));
+    check("hero log: se detiene fuera de pantalla y con la pestaña oculta",
+        /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
+        /cancelAnimationFrame\(raf\)/.test(js));
+    check("hero log: quieto con reduced-motion y apagado en móvil",
+        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\*,\s*\*::before,\s*\*::after \{\s*animation-duration/.test(css) &&
+        /@media \(max-width: 900px\)[\s\S]*\.hero-log \{\s*display: none/.test(css));
+    check("hero log: sin caja, ni cabecera, ni pie — solo el trace flotando",
+        !/log-head|log-foot|log-dot|log-bar|data-log-addr|data-log-cycle/.test(html) &&
+        !/log-head|log-foot|log-dot|log-bar|@keyframes logPulse/.test(css) &&
+        !/\.hero-log\s*\{[^}]*background:/.test(css) &&
+        !/\.hero-log\s*\{[^}]*border:/.test(css) &&
+        heroLog.children.length === 1 && heroLog.firstElementChild.hasAttribute("data-log-lines"));
 
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);
