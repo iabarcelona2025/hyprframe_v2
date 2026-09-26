@@ -340,19 +340,54 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
     display: block;
     font-style: italic;
     transform: translateY(110%);
-    transition: transform 0.8s var(--ease-out);
+    transition: transform 0.8s cubic-bezier(0.33, 0.66, 0.67, 1);
     color: var(--violet);
     -webkit-text-stroke: 0;
     opacity: 0.7; /* rotating words sit at 70% — same weight as the hero title */
 }
-.rotator-item.is-above { transform: translateY(-110%); }
-.rotator-item.is-active { transform: translateY(0); }
+.rotator-item.is-above {
+    transform: translateY(-110%);
+    animation: rotatorExit 0.8s cubic-bezier(0.33, 0.66, 0.67, 1);
+}
+@keyframes rotatorExit {
+    from {
+        transform: translateY(0);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    /* Mirror the arrival's gentle 1% overshoot over the first 0.1 s. */
+    12.5% { transform: translateY(1%); }
+    to { transform: translateY(-110%); }
+}
+.rotator-item.is-active {
+    transform: translateY(0);
+    /* Gentler deceleration; keep the overshoot at 0.7 s and its 0.1 s recovery unchanged. */
+    animation: rotatorEnter 0.8s cubic-bezier(0.33, 0.66, 0.67, 1);
+}
+@keyframes rotatorEnter {
+    from { transform: translateY(110%); }
+    /* 87.5% of 0.8 s: same overshoot onset at 0.7 s. */
+    87.5% {
+        transform: translateY(-1%);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    /* Recovery still takes 0.1 s. */
+    to { transform: translateY(0); }
+}
 
 .hero-sub {
     margin-top: clamp(1.5rem, 3vw, 2.25rem);
     font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
     color: rgba(242, 241, 238, 0.75); font-weight: 300;
     max-width: 34ch;
+    opacity: 0;
+}
+/* Start the delay when the hero is ready, not behind the preloader. */
+body.loaded .hero-sub {
+    animation: heroSubtitleFade 0.8s ease 3s both;
+}
+@keyframes heroSubtitleFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .scroll-cue {
@@ -847,6 +882,7 @@ section { position: relative; }
     }
     html { scroll-behavior: auto; }
     [data-reveal] { opacity: 1; transform: none; }
+    .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     .rotator-item { transform: none; opacity: 0; }
