@@ -79,6 +79,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
     const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
+    const heroSub = doc.querySelector(".hero-sub");
+    check("hero subtitle is independent of the generic sliding reveal",
+        heroSub && !heroSub.hasAttribute("data-reveal") && !heroSub.hasAttribute("data-reveal-delay"));
+    check("hero subtitle fades for 0.8s after a 3s delay anchored to hero readiness",
+        /body\.loaded\s+\.hero-sub\s*\{\s*animation:\s*heroSubtitleFade\s+0\.8s\s+ease\s+3s\s+both;/.test(css) &&
+        /@keyframes heroSubtitleFade\s*\{\s*from\s*\{\s*opacity:\s*0;\s*\}\s*to\s*\{\s*opacity:\s*1;\s*\}/.test(css));
+    check("hero subtitle is immediately visible with reduced motion",
+        /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
     check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
         /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
         /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?\s*\}\s*[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}/.test(css),

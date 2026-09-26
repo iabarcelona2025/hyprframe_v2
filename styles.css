@@ -379,6 +379,15 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
     font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
     color: rgba(242, 241, 238, 0.75); font-weight: 300;
     max-width: 34ch;
+    opacity: 0;
+}
+/* Start the delay when the hero is ready, not behind the preloader. */
+body.loaded .hero-sub {
+    animation: heroSubtitleFade 0.8s ease 3s both;
+}
+@keyframes heroSubtitleFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .scroll-cue {
@@ -873,6 +882,7 @@ section { position: relative; }
     }
     html { scroll-behavior: auto; }
     [data-reveal] { opacity: 1; transform: none; }
+    .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     .rotator-item { transform: none; opacity: 0; }
