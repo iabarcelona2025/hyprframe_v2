@@ -87,7 +87,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-card__fallback {
     position: absolute; inset: 0; display: grid; place-items: center;
     font: 800 clamp(3rem, 9vw, 9rem)/1 var(--font-head);
-    letter-spacing: -0.06em; color: rgba(242, 241, 238, 0.12);
+    letter-spacing: -0.06em; color: rgba(239, 238, 233, 0.12);
 }
 .film-card__poster img {
     position: absolute; inset: 0; width: 100%; height: 100%; max-width: none;
@@ -102,14 +102,14 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-card__watch {
     position: absolute; z-index: 2;
     font: 400 0.64rem/1.4 var(--font-mono);
-    letter-spacing: 0.2em; color: #fff;
+    letter-spacing: 0.2em; color: var(--fg);
 }
 .film-card__watch { bottom: 1.4rem; left: 1.5rem; }
 .film-card__play {
     position: absolute; top: 50%; left: 50%; z-index: 2;
     width: clamp(3.5rem, 6vw, 5rem); aspect-ratio: 1;
     border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
-    color: #fff; font-size: 1rem;
+    color: var(--fg); font-size: 1rem;
     translate: -50% -50%;
     transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out);
 }

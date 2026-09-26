@@ -79,6 +79,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
     const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
+    check("white typography uses a subtly warm off-white instead of pure white",
+        /--fg:\s*#efeee9;/.test(css) &&
+        /\.hero-title\s*\{[^}]*font-weight:\s*700[^}]*color:\s*rgba\(239, 238, 233, 0\.7\)/.test(css));
     const heroSub = doc.querySelector(".hero-sub");
     check("hero subtitle is independent of the generic sliding reveal",
         heroSub && !heroSub.hasAttribute("data-reveal") && !heroSub.hasAttribute("data-reveal-delay"));
