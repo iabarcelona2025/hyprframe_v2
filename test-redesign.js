@@ -292,9 +292,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("hero log: se detiene fuera de pantalla y con la pestaña oculta",
         /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
         /cancelAnimationFrame\(raf\)/.test(js));
-    check("hero log: quieto con reduced-motion y apagado en móvil",
+    check("hero log: quieto con reduced-motion y desplazado a la derecha en móvil",
         /@media \(prefers-reduced-motion: reduce\)[\s\S]*\*,\s*\*::before,\s*\*::after \{\s*animation-duration/.test(css) &&
-        /@media \(max-width: 900px\)[\s\S]*\.hero-log \{\s*display: none/.test(css));
+        /@media \(max-width: 900px\)[\s\S]*\.hero-log,\s*\.hero-log-blend \{\s*right:\s*calc\(-24em - 40px\)/.test(css));
     check("hero log: sin caja, ni cabecera, ni pie — solo el trace flotando",
         !/log-head|log-foot|log-dot|log-bar|data-log-addr|data-log-cycle/.test(html) &&
         !/log-head|log-foot|log-dot|log-bar|@keyframes logPulse/.test(css) &&
