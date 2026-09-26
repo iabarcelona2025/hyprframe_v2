@@ -2,6 +2,25 @@
 <html lang="en">
     <head>
 
+        <!-- ─── Consent Mode v2 de Google — APAGADO ─────────────────────────
+             Para activarlo al pasar a producción, cambia false por true en la
+             primera línea. Con true, Google no deja cookies de analítica hasta
+             que el visitante acepte en el banner, y cookies.js comunica la
+             decisión con gtag('consent','update').
+             El gtag.js de debajo NO se toca: con false este bloque no hace nada. -->
+        <script>
+            window.HYPRFRAME_CONSENT_MODE = false;
+            window.dataLayer = window.dataLayer || [];
+            if (window.HYPRFRAME_CONSENT_MODE) {
+                window.gtag = function gtag() { dataLayer.push(arguments); };
+                window.gtag('consent', 'default', {
+                    'analytics_storage': 'denied',
+                    'ad_storage': 'denied',
+                    'region': ['ES']
+                });
+            }
+        </script>
+
                 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MW201KGC9"></script>
 <script>
@@ -31,7 +50,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="styles.css?v=26" />
+        <link rel="stylesheet" href="styles.css?v=30" />
         <link rel="stylesheet" href="legacy.css?v=3" />
     </head>
     <body>
@@ -198,5 +217,6 @@
             </div>
         </div>
         <script src="legacy.js?v=2" defer></script>
+        <script src="cookies.js?v=2" defer></script>
     </body>
 </html>

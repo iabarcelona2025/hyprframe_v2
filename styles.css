@@ -108,7 +108,7 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-head);
 }
 .preloader-count {
-    font-size: clamp(3rem, 10vw, 7rem); font-weight: 800;
+    font-size: clamp(2.2rem, 7.32vw, 5.125rem); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--violet);
     letter-spacing: 0.04em;
 }
@@ -170,7 +170,8 @@ html.hf-skip-intro .preloader { display: none; }
 }
 .main-nav a:hover { color: var(--fg); }
 .main-nav a:hover::after { transform: scaleX(1); transform-origin: left; }
-.main-nav .nav-cta { color: var(--fg); }
+/* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
+   lo único que lo distingue es el color de la línea al pasar por encima. */
 .main-nav .nav-cta::after { background: var(--lime); }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
@@ -786,6 +787,56 @@ section { position: relative; }
 
 /* Utilidad: respeta el case exacto del texto de marca (DNAi) */
 .keep-case { text-transform: none; }
+
+/* ── Cookie consent ──────────────────────────────────────── */
+/* Mismo lenguaje que el header al hacer scroll: fondo semitransparente
+   + backdrop-blur + hairline. Se ancla a la retícula de --pad. */
+.cookie-banner {
+    position: fixed; left: var(--pad); bottom: var(--pad);
+    z-index: 960; /* sobre el nav (800), el menú (850) y el grain (900);
+                     bajo el cursor (980) y el preloader (9500) */
+    width: min(380px, calc(100vw - 2 * var(--pad)));
+    padding: 1rem 1.15rem 1.1rem;
+    background: rgba(5, 5, 5, 0.68);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--line);
+    opacity: 0; transform: translateY(14px);
+    transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
+}
+.cookie-banner.show { opacity: 1; transform: none; }
+.cookie-title {
+    font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.28em; text-transform: uppercase; color: var(--violet);
+    margin-bottom: 0.5rem;
+}
+.cookie-text {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.72rem; line-height: 1.6; letter-spacing: 0.01em;
+    color: rgba(242, 241, 238, 0.72);
+    margin-bottom: 0.95rem;
+}
+.cookie-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cookie-btn {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.6rem 1.1rem; border-radius: 100px;
+    border: 1px solid var(--line);
+    transition: background 0.35s, color 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.cookie-accept { background: var(--lime); color: #0a0a0a; border-color: transparent; }
+.cookie-accept:hover {
+    background: var(--violet); color: #fff;
+    box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
+}
+.cookie-reject { color: rgba(242, 241, 238, 0.6); }
+.cookie-reject:hover { color: var(--fg); border-color: rgba(242, 241, 238, 0.4); }
+
+/* Móvil: barra a lo ancho, pegada al borde inferior */
+@media (max-width: 640px) {
+    .cookie-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; }
+    .cookie-actions .cookie-btn { flex: 1 1 auto; }
+}
 
 /* ── Reduced motion ──────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

@@ -16,14 +16,34 @@
        Si ya se ha reproducido en esta pestaña, marcamos <html> con .hf-skip-intro
        antes del primer frame: así el preloader nunca se llega a pintar (sin
        parpadeo) al volver a la landing desde legacy.html, builder.html, etc.
+       ?intro=1 fuerza la reproducción aunque ya se haya visto (para revisarla).
        Si el almacenamiento está bloqueado, se comporta como siempre. */
     (function () {
         try {
-            if (sessionStorage.getItem("hfIntroSeen") === "1") {
+            if (/[?&]intro=1(?:&|$)/.test(location.search)) {
+                sessionStorage.removeItem("hfIntroSeen");
+            } else if (sessionStorage.getItem("hfIntroSeen") === "1") {
                 document.documentElement.classList.add("hf-skip-intro");
             }
         } catch (e) { /* storage no disponible */ }
     })();
+    </script>
+
+    <!-- ─── Consent Mode v2 de Google — APAGADO ─────────────────────────────
+         Mismo interruptor que en legacy.html y project-node.html, para que el
+         comportamiento sea uniforme. Esta página aún no carga gtag.js: si se
+         añade, hay que ponerlo DESPUÉS de este bloque. -->
+    <script>
+        window.HYPRFRAME_CONSENT_MODE = false;
+        window.dataLayer = window.dataLayer || [];
+        if (window.HYPRFRAME_CONSENT_MODE) {
+            window.gtag = function gtag() { dataLayer.push(arguments); };
+            window.gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+                'region': ['ES']
+            });
+        }
     </script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
@@ -31,8 +51,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=26" />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=30" />
 </head>
 
 <body>
@@ -369,5 +389,6 @@
     })();
     </script>
     <script src="script.js?v=7" defer></script>
+    <script src="cookies.js?v=2" defer></script>
 </body>
 </html>
