@@ -135,6 +135,21 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("rotator: 2s blank then 4s cycle, loops without blank",
         loadedAt !== null && seq.join(",") === "-,-,0,0,1,1,2,3,3,0", seq.join(","));
 
+    // rotator: la palabra entrante asienta con un overshoot sutil (solo en la entrada)
+    const back = css.match(/--ease-back:\s*cubic-bezier\(([^)]+)\)/);
+    const backY1 = back ? parseFloat(back[1].split(",")[1]) : NaN;
+    check("rotator: --ease-back existe y su overshoot es sutil (1 < y1 <= 1.4)",
+        !!back && backY1 > 1 && backY1 <= 1.4, back ? back[1] : "falta --ease-back");
+    check("rotator: el overshoot solo se aplica a la palabra entrante (.is-active)",
+        /\.rotator-item\.is-active\s*\{[^}]*transform:\s*translateY\(0\)[^}]*transition:\s*transform\s+[\d.]+s\s+var\(--ease-back\)/.test(css),
+        "ver .rotator-item.is-active");
+    check("rotator: la salida sigue en ease-out (sin overshoot recortado por la máscara)",
+        /\.rotator-item\s*\{[^}]*transition:\s*transform\s+[\d.]+s\s+var\(--ease-out\)/.test(css),
+        "ver .rotator-item");
+    check("rotator: el snap post-salida del JS espera más que la transición de salida",
+        /ROT_EXIT_MS\s*=\s*(\d+)/.test(js) && /ROT_EXIT_MS\s*\+\s*\d+/.test(js),
+        "ver ROT_EXIT_MS en script.js");
+
     // count-up: 1400ms animation triggered by IO stub
     const counts = [...doc.querySelectorAll("[data-count]")].map((el) => el.textContent);
     check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",

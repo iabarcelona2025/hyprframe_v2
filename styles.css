@@ -19,6 +19,10 @@
     --font-mono: "Space Mono", monospace;
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    /* La misma curva que --ease-out pero con un overshoot sutil (~4,3% del
+       recorrido): el elemento pasa de largo y asienta. Solo para entradas
+       verticales medidas donde el exceso no se recorta contra la máscara. */
+    --ease-back: cubic-bezier(0.22, 1.36, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
 }
 
@@ -340,13 +344,23 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
     display: block;
     font-style: italic;
     transform: translateY(110%);
+    /* Salida hacia arriba: ease-out puro, sin overshoot — la palabra ya se va y
+       cualquier exceso quedaría recortado contra la máscara. */
     transition: transform 0.8s var(--ease-out);
     color: var(--violet);
     -webkit-text-stroke: 0;
     opacity: 0.7; /* rotating words sit at 70% — same weight as the hero title */
 }
 .rotator-item.is-above { transform: translateY(-110%); }
-.rotator-item.is-active { transform: translateY(0); }
+/* Entrada: sube desde abajo y asienta con un overshoot sutil — se pasa ~4,3% del
+   recorrido (≈5 px en escritorio, ≈1,5 px en móvil) y vuelve a 0 en el último
+   tramo. La curva va en el estado de llegada para que solo afecte a la entrada.
+   Sin riesgo de recorte: con Kanit la máscara deja ~0,22em de aire por encima de
+   las mayúsculas en reposo, muy por encima del exceso de la curva. */
+.rotator-item.is-active {
+    transform: translateY(0);
+    transition: transform 0.85s var(--ease-back);
+}
 
 .hero-sub {
     margin-top: clamp(1.5rem, 3vw, 2.25rem);
