@@ -170,7 +170,8 @@ html.hf-skip-intro .preloader { display: none; }
 }
 .main-nav a:hover { color: var(--fg); }
 .main-nav a:hover::after { transform: scaleX(1); transform-origin: left; }
-.main-nav .nav-cta { color: var(--fg); }
+/* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
+   lo único que lo distingue es el color de la línea al pasar por encima. */
 .main-nav .nav-cta::after { background: var(--lime); }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
