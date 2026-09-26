@@ -62,13 +62,28 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const revealIn = doc.querySelectorAll("[data-reveal].in").length;
     check("data-reveal elements got .in", revealIn === revealTotal, `${revealIn}/${revealTotal}`);
     check("section titles got reveal-lines + .in",
-        doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 4,
-        `${doc.querySelectorAll(".reveal-lines.in").length}/4`);
+        doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 5,
+        `${doc.querySelectorAll(".reveal-lines.in").length}/5`);
+    const clbSection = doc.getElementById("clb");
+    const clbCta = clbSection && clbSection.querySelector(".clb-cta");
+    const clbCopy = clbSection ? clbSection.textContent : "";
+    check("CLB: section beneath DNAi and before Contact, using the shared section heading",
+        !!clbSection && doc.getElementById("services").nextElementSibling === clbSection &&
+        clbSection.nextElementSibling === doc.getElementById("contact") &&
+        !!clbSection.querySelector(".section-head .section-title"));
+    check("CLB: includes the overview, technical setup and dual-format output details",
+        /filmmakers, cinematographers, and AI creators/.test(clbCopy) &&
+        /LLM-ready prompts/.test(clbCopy) && /Precise Technical Setup/.test(clbCopy) &&
+        /grain, halation, and saturation/.test(clbCopy) && /Dual-Format Generation/.test(clbCopy) &&
+        /Semantic Prompt/.test(clbCopy) && /Technical JSON/.test(clbCopy));
+    check("CLB: TEST NOW opens builder.html",
+        clbCta && clbCta.getAttribute("href") === "builder.html" &&
+        clbCta.textContent.trim().startsWith("TEST NOW"));
 
     // palabras sueltas destacadas en lila (--violet) dentro de los titulares, en cursiva
     const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
-    check("palabras en lila: WORK, HUMAN, MACHINE y Ai (DNAi)",
-        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai", violetWords.join("|"));
+    check("palabras en lila: WORK, HUMAN, MACHINE, Ai (DNAi) y Cinematic (CLB)",
+        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai|Cinematic", violetWords.join("|"));
     check("cada palabra en lila vive dentro de su .line-inner",
         [...doc.querySelectorAll(".violet")].every((el) => el.closest(".line-inner")),
         [...doc.querySelectorAll(".violet")].map((el) => el.closest(".line-inner") ? "ok" : "fuera").join(","));

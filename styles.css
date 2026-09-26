@@ -795,6 +795,69 @@ section { position: relative; }
     .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
 }
 
+/* ── CLB / CINEMATIC LOOK BUILDER ───────────────────────── */
+.clb {
+    padding-bottom: clamp(5rem, 12vw, 9rem);
+    border-top: 1px solid var(--line);
+    background:
+        radial-gradient(80% 65% at 100% 48%, rgba(160, 100, 255, 0.1), transparent 72%),
+        var(--bg);
+}
+.clb-grid {
+    display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start; gap: clamp(2.5rem, 7vw, 7rem);
+    padding: 0 var(--pad);
+}
+.clb-intro { max-width: 52ch; }
+.clb-intro > p {
+    color: rgba(239, 238, 233, 0.78); font-weight: 300;
+    font-size: clamp(1.15rem, 1.7vw, 1.5rem); line-height: 1.55;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+.clb-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 1.2rem;
+    padding: 1.05rem 2rem; border-radius: 100px;
+    background: var(--lime); color: #0a0a0a;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+    transition: background 0.4s, color 0.4s, box-shadow 0.4s;
+}
+.clb-cta:hover {
+    background: var(--violet); color: var(--fg);
+    box-shadow: 0 0 32px rgba(160, 100, 255, 0.38);
+}
+.clb-cta span {
+    font-size: 1.3rem; line-height: 0.8;
+    transition: transform 0.4s var(--ease-out);
+}
+.clb-cta:hover span { transform: translate(4px, -4px); }
+.clb-kicker { margin-bottom: 1rem; }
+.clb-feature-list { border-top: 1px solid var(--line); }
+.clb-feature {
+    display: grid; grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem; padding: 1.4rem 0;
+    border-bottom: 1px solid var(--line);
+}
+.clb-num {
+    padding-top: 0.2rem;
+    font-family: var(--font-mono); font-size: 0.68rem;
+    letter-spacing: 0.16em; color: var(--violet);
+}
+.clb-feature h3 {
+    margin-bottom: 0.55rem;
+    font-family: var(--font-body); font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+    font-weight: 600; line-height: 1.2;
+}
+.clb-feature p {
+    max-width: 60ch; color: var(--muted);
+    font-size: 0.92rem; font-weight: 300; line-height: 1.7;
+}
+.clb-feature strong { color: var(--fg); font-weight: 600; }
+@media (max-width: 860px) {
+    .clb-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .clb-intro { max-width: 60ch; }
+}
+
 /* ── ABOUT ───────────────────────────────────────────────── */
 .about { padding: clamp(6rem, 15vw, 11rem) var(--pad); }
 .about-title {
