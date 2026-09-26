@@ -39,6 +39,9 @@ function boot(page, storage = null, blockStorage = false) {
     };
     window.Image = class { set src(v) { this._src = v; } get src() { return this._src; } };
     window.EventSource = class { constructor() {} };
+    // builder.html llama a lucide.createIcons() en su window.onload; el CDN no
+    // se descarga en jsdom, así que se stubbea igual que los otros globales.
+    window.lucide = { createIcons() {} };
 
     if (blockStorage) {
         Object.defineProperty(window, "localStorage", { configurable: true, get() { throw new Error("blocked"); } });
@@ -141,8 +144,81 @@ const consentOf = (window) => {
     check("Landing: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
 
     /* ── 10. El widget no vuelve a tocar Google Analytics ── */
-    check("cookies.js no referencia googletagmanager",
-        !/googletagmanager/.test(cookiesJs));
+    check("cookies.js no inyecta googletagmanager por su cuenta",
+        !/googletagmanager\.com/.test(cookiesJs));
+
+    /* ── 11. Consent Mode APAGADO (estado por defecto) ── */
+    const consentUpdates = (w) => (w.dataLayer || [])
+        .filter((a) => a[0] === "consent" && a[1] === "update")
+        .map((a) => a[2]);
+
+    check("El interruptor se envía apagado en legacy.html",
+        /window\.HYPRFRAME_CONSENT_MODE\s*=\s*false/.test(fs.readFileSync(path.join(root, "legacy.html"), "utf8")));
+    check("El interruptor se envía apagado en project-node.html",
+        /window\.HYPRFRAME_CONSENT_MODE\s*=\s*false/.test(fs.readFileSync(path.join(root, "project-node.html"), "utf8")));
+
+    // El bloque de consent defaults tiene que ir ANTES que el gtag.js.
+    for (const page of ["legacy.html", "project-node.html"]) {
+        const src = fs.readFileSync(path.join(root, page), "utf8");
+        const flagAt = src.indexOf("window.HYPRFRAME_CONSENT_MODE");
+        const gtagAt = src.indexOf("googletagmanager.com/gtag/js");
+        check(`${page}: el interruptor va antes que gtag.js`,
+            flagAt !== -1 && gtagAt !== -1 && flagAt < gtagAt);
+    }
+
+    ctx = boot("legacy.html");
+    check("Consent Mode: apagado por defecto", ctx.window.HYPRFRAME_CONSENT_MODE === false);
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    ctx.doc.querySelector(".cookie-accept").click();
+    await wait(50);
+    check("Consent Mode OFF: aceptar NO emite consent update",
+        consentUpdates(ctx.window).length === 0,
+        JSON.stringify(consentUpdates(ctx.window)));
+
+    /* ── 12. Consent Mode ENCENDIDO (simula el paso a producción) ── */
+    ctx = boot("legacy.html");
+    ctx.window.HYPRFRAME_CONSENT_MODE = true;
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    ctx.doc.querySelector(".cookie-accept").click();
+    await wait(50);
+    check("Consent Mode ON: aceptar emite consent update",
+        consentUpdates(ctx.window).length === 1);
+    check("Consent Mode ON: analytics_storage queda granted",
+        consentUpdates(ctx.window)[0]?.analytics_storage === "granted");
+
+    ctx = boot("legacy.html");
+    ctx.window.HYPRFRAME_CONSENT_MODE = true;
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    ctx.doc.querySelector(".cookie-reject").click();
+    await wait(50);
+    check("Consent Mode ON: rechazar deja analytics_storage en denied",
+        consentUpdates(ctx.window)[0]?.analytics_storage === "denied");
+
+    ctx = boot("legacy.html", {
+        hfCookieConsent: JSON.stringify({ value: "granted", until: Date.now() + 864e5 }),
+    });
+    ctx.window.HYPRFRAME_CONSENT_MODE = true;
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    check("Consent Mode ON: la decisión guardada se comunica al volver",
+        consentUpdates(ctx.window).length === 1 &&
+        consentUpdates(ctx.window)[0].analytics_storage === "granted");
+
+    /* ── 13. builder.html (CLB) también lleva el banner ── */
+    ctx = boot("builder.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    check("CLB: el banner aparece", !!bannerOf(ctx.doc));
+    check("CLB: tiene los dos botones",
+        !!ctx.doc.querySelector(".cookie-accept") && !!ctx.doc.querySelector(".cookie-reject"));
+    check("CLB: incluye cookies.js",
+        /cookies\.js\?v=/.test(fs.readFileSync(path.join(root, "builder.html"), "utf8")));
+    check("CLB: define sus propios estilos del banner",
+        /\.cookie-banner\s*\{/.test(fs.readFileSync(path.join(root, "builder.html"), "utf8")));
+    check("CLB: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
 
     console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAIL`);
     process.exit(failures === 0 ? 0 : 1);

@@ -14,6 +14,23 @@
     const STORAGE_KEY = "hfCookieConsent";
     const REMEMBER_MS = 180 * 24 * 60 * 60 * 1000; // se vuelve a preguntar a los 6 meses
 
+    /* ── Consent Mode v2 de Google — APAGADO ────────────────
+       El interruptor vive en el <head> de cada página, justo encima del
+       gtag.js: `window.HYPRFRAME_CONSENT_MODE = false`.
+       Para activarlo al pasar a producción basta con ponerlo a true: los
+       consent defaults se declararán antes de cargar gtag y este widget
+       comunicará la decisión del visitante. El gtag.js no se modifica. */
+    const CONSENT_MODE = window.HYPRFRAME_CONSENT_MODE === true;
+
+    function applyConsent(value) {
+        if (!CONSENT_MODE || typeof window.gtag !== "function") return;
+        const state = value === "granted" ? "granted" : "denied";
+        window.gtag("consent", "update", {
+            analytics_storage: state,
+            ad_storage: state,
+        });
+    }
+
     /* ── Persistencia de la decisión ──────────────────────── */
     function readConsent() {
         try {
@@ -96,13 +113,16 @@
 
     function decide(value, banner) {
         writeConsent(value);
+        applyConsent(value);
         hide(banner);
         window.HFCookies.consent = value;
     }
 
     /* ── Arranque ─────────────────────────────────────────── */
-    // Si ya hay una decisión vigente no se muestra nada.
+    // Si ya hay una decisión vigente no se muestra nada, pero se comunica
+    // igual a Google (solo cuando el Consent Mode está activado).
     const consent = readConsent();
+    if (consent) applyConsent(consent);
     const banner = consent ? null : buildBanner();
     if (banner) {
         banner.addEventListener("click", (event) => {
@@ -115,5 +135,5 @@
     }
 
     // API mínima, útil para depurar y para los tests.
-    window.HFCookies = { consent, STORAGE_KEY };
+    window.HFCookies = { consent, STORAGE_KEY, CONSENT_MODE };
 })();

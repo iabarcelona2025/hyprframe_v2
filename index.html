@@ -29,6 +29,23 @@
     })();
     </script>
 
+    <!-- ─── Consent Mode v2 de Google — APAGADO ─────────────────────────────
+         Mismo interruptor que en legacy.html y project-node.html, para que el
+         comportamiento sea uniforme. Esta página aún no carga gtag.js: si se
+         añade, hay que ponerlo DESPUÉS de este bloque. -->
+    <script>
+        window.HYPRFRAME_CONSENT_MODE = false;
+        window.dataLayer = window.dataLayer || [];
+        if (window.HYPRFRAME_CONSENT_MODE) {
+            window.gtag = function gtag() { dataLayer.push(arguments); };
+            window.gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+                'region': ['ES']
+            });
+        }
+    </script>
+
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png" />
 
@@ -372,6 +389,6 @@
     })();
     </script>
     <script src="script.js?v=7" defer></script>
-    <script src="cookies.js?v=1" defer></script>
+    <script src="cookies.js?v=2" defer></script>
 </body>
 </html>
