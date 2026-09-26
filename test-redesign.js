@@ -146,6 +146,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("rotator: la salida sigue en ease-out (sin overshoot recortado por la máscara)",
         /\.rotator-item\s*\{[^}]*transition:\s*transform\s+[\d.]+s\s+var\(--ease-out\)/.test(css),
         "ver .rotator-item");
+    const durIn = (css.match(/\.rotator-item\.is-active\s*\{[^}]*transition:\s*transform\s+([\d.]+)s/) || [])[1];
+    const durOut = (css.match(/\.rotator-item\s*\{[^}]*transition:\s*transform\s+([\d.]+)s/) || [])[1];
+    check("rotator: la entrada asienta rápido (<= 0,25 s y más corta que la salida)",
+        durIn && durOut && parseFloat(durIn) <= 0.25 && parseFloat(durIn) < parseFloat(durOut),
+        `entrada ${durIn}s / salida ${durOut}s`);
     check("rotator: el snap post-salida del JS espera más que la transición de salida",
         /ROT_EXIT_MS\s*=\s*(\d+)/.test(js) && /ROT_EXIT_MS\s*\+\s*\d+/.test(js),
         "ver ROT_EXIT_MS en script.js");
