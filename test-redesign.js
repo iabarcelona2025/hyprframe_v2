@@ -207,6 +207,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         logAfter.length === logBefore.length &&
         heroLog.querySelectorAll(".log-line").length === logLines.length,
         `${logBefore.length} → ${logAfter.length} caracteres`);
+    // los números se mueven en todo el bloque, no solo al pasar la franja clara
+    const coldSnap = [...heroLog.querySelectorAll(".log-line")].map((l) => ({
+        t: l.textContent, hot: l.classList.contains("is-hot"),
+    }));
+    await wait(400);
+    const coldNow = [...heroLog.querySelectorAll(".log-line")].map((l) => l.textContent);
+    const coldMoved = coldSnap.filter((s, i) => !s.hot && s.t !== coldNow[i]).length;
+    check("hero log: los números cambian en todo el bloque, no solo al pasar la franja",
+        coldMoved > 3, `${coldMoved} líneas fuera de la franja cambiaron en 400 ms`);
+    check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
+        /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
     check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
         /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
         /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));

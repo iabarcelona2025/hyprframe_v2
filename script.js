@@ -222,8 +222,12 @@
     // maquetación nunca baila aunque los valores cambien 20 veces por segundo.
     //
     // · Nada de números aleatorios en el primer pintado: arranca con los
-    //   valores del propio texto y se van randomizando a medida que pasa el
-    //   cabezal, así el bloque es reconocible de entrada.
+    //   valores del propio texto y se van randomizando enseguida, así el bloque
+    //   es reconocible de entrada.
+    // · TODO el bloque está vivo: cada tick (20 fps) se reescribe una parte de
+    //   los campos de TODAS las líneas (CHURN), no solo las de la franja. La
+    //   franja del cabezal es un énfasis encima (ratio 100% + iluminado), no la
+    //   única fuente de movimiento. Coste acotado: ~100 escrituras por tick.
     // · Campos: hex (0x…) y decimales se randomizan; los enteros (formas de
     //   tensor, índices de capa, IDs de token) se quedan quietos porque son
     //   estructura, no medida. {{muestra:contador}} avanza una vez por ciclo.
@@ -413,7 +417,9 @@
                     span.className = "log-num";
                     span.textContent = render(spec, false);
                     el.appendChild(span);
-                    fields.push({ el: span, spec });
+                    // se guarda el nodo de texto: escribir en .data es más
+                    // barato que reasignar textContent (que crea un nodo nuevo)
+                    fields.push({ node: span.firstChild, spec });
                 }
                 last = m.index + m[0].length;
             }
@@ -433,14 +439,17 @@
             linesEl.appendChild(frag);
         }
 
-        // Reescribe los números de una línea: todos en la cabeza del barrido,
-        // la mitad en la estela, para que el ruido no sea plano.
-        function randomize(line, all) {
+        // Reescribe los números de una línea. Todo el bloque está vivo: cada
+        // tick se mueve una parte de los campos de TODAS las líneas (ratio 0-1),
+        // no solo las que toca la franja. La franja solo sube el ratio al 100%
+        // y las ilumina: así el movimiento no depende de que pase por ahí.
+        const CHURN = 0.45;   // fracción de campos que cambia por tick fuera de la franja
+        function randomize(line, ratio) {
             line.fields.forEach((f) => {
                 if (f.spec.kind === "counter") return;   // lo mueve el ciclo
-                if (!all && Math.random() < 0.5) return;
+                if (ratio < 1 && Math.random() > ratio) return;
                 const t = render(f.spec, true);
-                if (f.el.textContent !== t) f.el.textContent = t;
+                if (f.node.data !== t) f.node.data = t;
             });
         }
 
@@ -449,7 +458,7 @@
                 line.fields.forEach((f) => {
                     if (f.spec.kind !== "counter") return;
                     const t = render(f.spec, false);
-                    if (f.el.textContent !== t) f.el.textContent = t;
+                    if (f.node.data !== t) f.node.data = t;
                 });
             });
         }
@@ -511,7 +520,9 @@
                     const hot = i >= from && i <= to;
                     lines[i].el.classList.toggle("is-hot", hot);
                     lines[i].el.classList.toggle("is-head", hot && i === to);
-                    if (hot) randomize(lines[i], i === to);
+                    // dentro de la franja cambian todos los campos; fuera,
+                    // CHURN de ellos en cada tick (el bloque entero está vivo)
+                    randomize(lines[i], hot ? 1 : CHURN);
                 }
 
                 // los contadores (capa, timestep, token, KV-cache) avanzan una

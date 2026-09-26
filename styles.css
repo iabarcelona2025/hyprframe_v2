@@ -485,8 +485,17 @@ body.loaded .hero-sub {
             mask-image: linear-gradient(to right, transparent 0, #000 26%);
 }
 /* min-height:0 → el cuerpo ocupa todo el alto del panel; overflow:hidden
-   recorta lo que no llegue a caber. */
-.log-body { flex: 1; min-height: 0; padding: 0; overflow: hidden; }
+   recorta lo que no llegue a caber.
+   Degradado superior: las primeras líneas se disuelven bajo la cabecera en vez
+   de empezar de golpe. Va aquí y no en el panel porque .hero-log ya gasta su
+   máscara en el degradado izquierdo y CSS no compone dos direcciones en una
+   sola capa: anidando, las dos máscaras se multiplican solas.
+   Es MENOR que el lateral (4.5rem frente al 26% del ancho, ~14em). */
+.log-body {
+    flex: 1; min-height: 0; padding: 0; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
+}
 /* white-space: pre conserva la alineación de columnas del trace. Los números
    van en verde ácido: son lo único que cambia. */
 .log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
