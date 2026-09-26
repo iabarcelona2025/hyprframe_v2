@@ -18,8 +18,14 @@ const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
 
 try {
-    assert.match(html, /gtag\('config', 'G-6MW201KGC9'\)/);
-    assert.equal((html.match(/googletagmanager\.com\/gtag\/js/g) || []).length, 1);
+    // Analytics ya no se carga de forma incondicional: lo gestiona el banner
+    // de consentimiento, que solo inyecta gtag si el visitante acepta.
+    assert.ok(!/googletagmanager\.com\/gtag\/js/.test(html),
+        "gtag must not be loaded unconditionally from the HTML");
+    assert.ok(doc.querySelector('script[src^="cookies.js"]'), "cookies.js must be loaded");
+    const cookiesSrc = fs.readFileSync(path.join(root, "cookies.js"), "utf8");
+    assert.match(cookiesSrc, /G-6MW201KGC9/);
+    assert.match(cookiesSrc, /googletagmanager\.com\/gtag\/js/);
     for (const css of ["styles.css", "legacy.css"]) {
         assert.ok(fs.existsSync(path.join(root, css)), `${css} must exist`);
         assert.ok(doc.querySelector(`link[href^="${css}"]`), `${css} must be loaded`);
