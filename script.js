@@ -231,6 +231,7 @@
     //   en el alto disponible; si a ese tamaño sobra sitio, lo repite.
     // · Un único rAF throttled a 20 fps, solo textContent, se para fuera de
     //   pantalla, y con prefers-reduced-motion pinta el trace quieto.
+    // · Sin caja ni cromo: el panel es solo el trace, sangrado por la derecha.
     const heroLog = document.getElementById("heroLog");
 
     if (heroLog) {
@@ -342,9 +343,6 @@
         ];
 
         const linesEl = heroLog.querySelector("[data-log-lines]");
-        const addrEl = heroLog.querySelector("[data-log-addr]");
-        const cycleEl = heroLog.querySelector("[data-log-cycle]");
-        const barEl = heroLog.querySelector("[data-log-bar]");
 
         // Contador {{muestra:nombre}} · hex 0x… · notación científica (1e-05)
         // · números (-?d[,ddd][.ddd]). Lo que no encaja en un campo dinámico
@@ -465,12 +463,6 @@
             });
         }
 
-        function randomBlock() {
-            let s = "0x";
-            for (let i = 0; i < 8; i++) s += HEX[(Math.random() * 16) | 0];
-            return s;
-        }
-
         // Ajusta el font-size al alto disponible (--log-fs) y añade copias del
         // trace si, a ese tamaño, el bloque no llega a llenar el panel.
         function fit() {
@@ -522,14 +514,13 @@
                     if (hot) randomize(lines[i], i === to);
                 }
 
-                if (barEl) barEl.style.transform = "scaleX(" + p.toFixed(3) + ")";
+                // los contadores (capa, timestep, token, KV-cache) avanzan una
+                // vez por ciclo; los números, con el barrido
                 const c = Math.floor(elapsed / CYCLE);
                 if (c !== cycle) {
                     cycle = c;
                     advanceCounters();
                     paintCounters();
-                    if (addrEl) addrEl.textContent = randomBlock();
-                    if (cycleEl) cycleEl.textContent = "CYCLE " + String(c % 1000).padStart(3, "0");
                 }
             }
 

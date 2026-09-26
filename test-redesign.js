@@ -215,8 +215,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
         /cancelAnimationFrame\(raf\)/.test(js));
     check("hero log: quieto con reduced-motion y apagado en móvil",
-        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.log-dot \{\s*animation: none/.test(css) &&
+        /@media \(prefers-reduced-motion: reduce\)[\s\S]*\*,\s*\*::before,\s*\*::after \{\s*animation-duration/.test(css) &&
         /@media \(max-width: 900px\)[\s\S]*\.hero-log \{\s*display: none/.test(css));
+    check("hero log: sin caja, ni cabecera, ni pie — solo el trace flotando",
+        !/log-head|log-foot|log-dot|log-bar|data-log-addr|data-log-cycle/.test(html) &&
+        !/log-head|log-foot|log-dot|log-bar|@keyframes logPulse/.test(css) &&
+        !/\.hero-log\s*\{[^}]*background:/.test(css) &&
+        !/\.hero-log\s*\{[^}]*border:/.test(css) &&
+        heroLog.children.length === 1 && heroLog.firstElementChild.hasAttribute("data-log-lines"));
 
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);

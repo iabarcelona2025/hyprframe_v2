@@ -448,8 +448,10 @@ body.loaded .hero-sub {
    · top: var(--header-h) → la primera línea arranca donde acaba el ES/EN de la
      cabecera, sin aire de más; bottom: calc(var(--marquee-h) + .75rem) → muere
      donde empieza la marquesina horizontal del fondo.
-   · opacity .35 + máscara con degradado en el borde izquierdo (26% del ancho):
-     el bloque entra fundiéndose desde la nada en vez de mostrar un canto.
+   · SIN CAJA: ni fondo, ni borde, ni tiras de Estado (cabecera con la dirección
+     y pie con CYCLE/barra). Es solo texto flotando sobre el vídeo; lo único que
+     lo integra en el fondo es la opacity .35 y la máscara con degradado en el
+     borde izquierdo (26% del ancho), que lo funde desde la nada.
    · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
      para no robar ni clics ni hover al hero.
    · el font-size NO está fijado aquí: el JS calcula --log-fs para que quepa el
@@ -464,10 +466,7 @@ body.loaded .hero-sub {
     right: -16em;
     width: 54em;
     opacity: 0.35;
-    padding: 0.35rem 0 0.6rem;
-    background: rgba(8, 8, 10, 0.55);
-    border: 1px solid var(--line);
-    border-radius: 2px;
+    padding: 0 0.9rem;
     font-family: var(--font-code);
     font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
     line-height: 1.3;
@@ -475,30 +474,9 @@ body.loaded .hero-sub {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
             mask-image: linear-gradient(to right, transparent 0, #000 26%);
 }
-/* Cabecera y pie en `rem`, no en `em`: el cuerpo usa un font-size diminuto
-   calculado por el JS y estas dos tiras deben seguir siendo legibles. */
-.log-head, .log-foot {
-    display: flex; align-items: center; gap: 0.7em;
-    padding: 0 0.9rem;
-    font-size: 0.6rem; line-height: 1.3;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(242, 241, 238, 0.5);
-    white-space: nowrap;
-}
-/* Tira de estado mínima (punto + bloque de KV-cache actual). */
-.log-head { padding-bottom: 0.3rem; border-bottom: 1px solid var(--line); }
-.log-foot { padding-top: 0.45rem; margin-top: 0.45rem; border-top: 1px solid var(--line); }
-.log-addr { margin-left: auto; color: rgba(163, 223, 2, 0.7); }
-.log-dot {
-    width: 5px; height: 5px; border-radius: 50%; flex: none;
-    background: var(--lime);
-    animation: logPulse 1.6s ease-in-out infinite;
-}
-@keyframes logPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
-
-/* flex:1 + min-height:0 → el cuerpo se queda con todo el alto sobrante entre
-   cabecera y pie; overflow:hidden recorta lo que no llegue a caber. */
-.log-body { flex: 1; min-height: 0; padding: 0.2rem 0.9rem 0; overflow: hidden; }
+/* min-height:0 → el cuerpo ocupa todo el alto del panel; overflow:hidden
+   recorta lo que no llegue a caber. */
+.log-body { flex: 1; min-height: 0; padding: 0; overflow: hidden; }
 /* white-space: pre conserva la alineación de columnas del trace. Los números
    van en verde ácido: son lo único que cambia. */
 .log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
@@ -508,11 +486,6 @@ body.loaded .hero-sub {
 .log-line.is-hot { background: rgba(163, 223, 2, 0.05); color: rgba(242, 241, 238, 0.95); }
 .log-line.is-hot .log-num { color: var(--lime); }
 .log-line.is-head .log-num { color: #fff; }
-.log-bar { flex: 1; height: 1px; background: var(--line); position: relative; overflow: hidden; }
-.log-bar i {
-    position: absolute; inset: 0; display: block; background: var(--lime);
-    transform: scaleX(0); transform-origin: left; /* lo escala el rAF, sin layout */
-}
 
 /* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
    separarlo del SCROLL. El cue y la marquee son absolutos y ocupan ~10.5rem
@@ -987,8 +960,7 @@ section { position: relative; }
     .line-inner { transform: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     /* El log se queda quieto: script.js pinta el trace con los valores de
-       partida y no arranca el rAF. El punto sigue encendido y la barra, vacía. */
-    .log-dot { animation: none; opacity: 0.7; }
+       partida y no arranca el rAF (el bloque global ya corta las animations). */
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .statement-text span { opacity: 1; }
