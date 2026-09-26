@@ -173,6 +173,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-hexdump\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
     const hexRows = hexdump ? [...hexdump.querySelectorAll(".hex-row")] : [];
+    check("hero hexdump: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
+        /\.hero-hexdump\s*\{[^}]*top:\s*calc\(var\(--header-h\)/.test(css) &&
+        /\.hero-hexdump\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
+        /--header-h:\s*calc\(clamp\(41\.4px/.test(css) && /--marquee-h:\s*calc\(/.test(css) &&
+        /\.hexdump-body\s*\{[^}]*flex:\s*1/.test(css));
+    check("hero hexdump: el nº de filas se mide en caliente y se reajusta al redimensionar",
+        /function measureRowHeight\(\)/.test(js) && /function fit\(\)/.test(js) &&
+        /Math\.floor\(avail \/ h\)/.test(js) &&
+        /addEventListener\("resize"[\s\S]{0,220}fit\(\)/.test(js) &&
+        /document\.fonts\.ready\.then\(fit\)/.test(js));
     check("hero hexdump: filas con offset + 8 pares hex + valores a la derecha",
         hexRows.length > 0 && hexRows.every((r) =>
             r.querySelector(".hex-off") && r.querySelector(".hex-ascii") &&

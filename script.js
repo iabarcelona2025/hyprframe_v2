@@ -217,17 +217,21 @@
 
     /* ── 6c. Hero hexdump: tensor buffer ──────────────────── */
     // Volcado de memoria en hex sangrado por la derecha del hero (ver
-    // .hero-hexdump en styles.css). Un "cabezal de escritura" recorre las 14
-    // filas en ciclos de 5 s: las filas dentro de la banda se reescriben con
-    // bytes aleatorios a ~20 fps y, cuando el cabezal pasa de largo, la fila
-    // vuelve a sus bytes base. Así el bloque siempre es legible (las palabras
-    // semilla en ASCII) y el bucle no tiene ningún salto visible al reiniciar.
+    // .hero-hexdump en styles.css). Ocupa el alto del hero de arriba abajo
+    // (debajo del ES/EN de la cabecera → marquesina horizontal del fondo) y el
+    // número de filas se mide en caliente para rellenar ese hueco.
+    //
+    // Un "cabezal de escritura" recorre las filas en ciclos de 5 s: las filas
+    // dentro de la banda se reescriben con bytes aleatorios a ~20 fps y, cuando
+    // el cabezal pasa de largo, la fila vuelve a sus bytes base. Así el bloque
+    // siempre es legible (el relleno es vocabulario de marca en ASCII) y el
+    // bucle no tiene ningún salto visible al reiniciar.
     //
     // Render:
     // · un único rAF compartido, throttled a 20 fps (TICK): a 60 fps no se
     //   aprecia más y se comería el presupuesto de frame del scroll.
-    // · solo se tocan las filas de la banda (3) y solo su textContent: cada
-    //   celda mide lo mismo en `ch`, así que no hay reflow ni repaint de más.
+    // · solo se tocan las filas de la banda y solo su textContent: cada celda
+    //   mide lo mismo en `ch`, así que no hay reflow ni repaint de más.
     // · la barra de ciclo va con transform: scaleX() (compositor) en vez de
     //   width, y el contador de ciclo solo escribe cuando cambia.
     // · se para solo (IntersectionObserver + visibilitychange) cuando el panel
@@ -236,13 +240,15 @@
     const hexdump = document.getElementById("heroHexdump");
 
     if (hexdump) {
-        const ROWS = 14;            // filas del volcado
         const BYTES = 8;            // bytes por fila (pares hex)
         const CYCLE = 5000;         // ms — duración de un barrido completo
-        const BAND = 3;             // filas simultáneas dentro de la banda
         const TICK = 50;            // ms entre repintados (~20 fps)
+        // El alto lo marca el CSS, no el número de filas: se miden en caliente
+        // y se acotan para pantallas diminutas, para cuando no hay layout
+        // (jsdom, panel oculto en móvil) y para no disparar el coste por frame.
+        const ROWS_MIN = 8, ROWS_FALLBACK = 14, ROWS_MAX = 64;
         const HEX = "0123456789ABCDEF";
-        // Relleno: 112 bytes de vocabulario de marca en ASCII, así entre
+        // Relleno: vocabulario de marca en ASCII reciclado por filas, así entre
         // barridos se lee algo con sentido en la columna de la derecha.
         const SEED = "HYPRFRAME TENSOR LATENT DIFFUSION SYNTHESIS VISION MACHINE ";
 
@@ -256,49 +262,14 @@
         const ascii = (v) => (v > 31 && v < 127 ? String.fromCharCode(v) : ".");
 
         if (rowsEl) {
-            const base = [];    // bytes "en reposo" de cada fila
-            const state = [];   // bytes actuales (= base salvo en la banda)
-            const rowEls = [];
-            const cellEls = [];
-            const asciiEls = [];
-            const dirty = [];   // fila pendiente de restaurar a sus bytes base
-            const frag = document.createDocumentFragment();
-
-            for (let r = 0; r < ROWS; r++) {
-                const row = [];
-                for (let b = 0; b < BYTES; b++) {
-                    row.push(SEED.charCodeAt((r * BYTES + b) % SEED.length) & 255);
-                }
-                base.push(row);
-                state.push(row.slice());
-
-                const rowEl = document.createElement("div");
-                rowEl.className = "hex-row";
-                const offEl = document.createElement("span");
-                offEl.className = "hex-off";
-                offEl.textContent = hex4(r * BYTES);
-                const bytesEl = document.createElement("span");
-                bytesEl.className = "hex-bytes";
-                const cells = [];
-                for (let b = 0; b < BYTES; b++) {
-                    const cell = document.createElement("span");
-                    cell.className = "hex-byte";
-                    bytesEl.appendChild(cell);
-                    cells.push(cell);
-                }
-                const asciiEl = document.createElement("span");
-                asciiEl.className = "hex-ascii";
-                rowEl.appendChild(offEl);
-                rowEl.appendChild(bytesEl);
-                rowEl.appendChild(asciiEl);
-                frag.appendChild(rowEl);
-
-                rowEls.push(rowEl);
-                cellEls.push(cells);
-                asciiEls.push(asciiEl);
-                dirty.push(false);
-            }
-            rowsEl.appendChild(frag);
+            let ROWS = 0;           // filas actuales del volcado
+            let BAND = 3;           // filas simultáneas dentro de la banda
+            let base = [];          // bytes "en reposo" de cada fila
+            let state = [];         // bytes actuales (= base salvo en la banda)
+            let rowEls = [];
+            let cellEls = [];
+            let asciiEls = [];
+            let dirty = [];         // fila pendiente de restaurar a sus bytes base
 
             // Escribe una fila entera (bytes + columna de valores) solo si cambia.
             // La columna derecha va entre barras, como en un hexdump de verdad.
@@ -313,10 +284,96 @@
                 text += "|";
                 if (asciiEls[r].textContent !== text) asciiEls[r].textContent = text;
             }
-            for (let r = 0; r < ROWS; r++) paintRow(r);
+
+            // (Re)construye el listado con `n` filas. La banda crece con el
+            // bloque para que el barrido tarde lo mismo con 14 filas que con 40.
+            function build(n) {
+                ROWS = n;
+                BAND = Math.max(3, Math.round(n * 0.22));
+                base = []; state = []; rowEls = []; cellEls = []; asciiEls = []; dirty = [];
+                const frag = document.createDocumentFragment();
+                for (let r = 0; r < n; r++) {
+                    const row = [];
+                    for (let b = 0; b < BYTES; b++) {
+                        row.push(SEED.charCodeAt((r * BYTES + b) % SEED.length) & 255);
+                    }
+                    base.push(row);
+                    state.push(row.slice());
+
+                    const rowEl = document.createElement("div");
+                    rowEl.className = "hex-row";
+                    const offEl = document.createElement("span");
+                    offEl.className = "hex-off";
+                    offEl.textContent = hex4(r * BYTES);
+                    const bytesEl = document.createElement("span");
+                    bytesEl.className = "hex-bytes";
+                    const cells = [];
+                    for (let b = 0; b < BYTES; b++) {
+                        const cell = document.createElement("span");
+                        cell.className = "hex-byte";
+                        bytesEl.appendChild(cell);
+                        cells.push(cell);
+                    }
+                    const asciiEl = document.createElement("span");
+                    asciiEl.className = "hex-ascii";
+                    rowEl.appendChild(offEl);
+                    rowEl.appendChild(bytesEl);
+                    rowEl.appendChild(asciiEl);
+                    frag.appendChild(rowEl);
+
+                    rowEls.push(rowEl);
+                    cellEls.push(cells);
+                    asciiEls.push(asciiEl);
+                    dirty.push(false);
+                }
+                rowsEl.textContent = "";
+                rowsEl.appendChild(frag);
+                for (let r = 0; r < n; r++) paintRow(r);
+            }
+
+            // Alto de una fila medido con una fila sonda (no depende de cuántas
+            // haya ya puestas), y alto disponible: el cuerpo es flex:1 dentro de
+            // un panel con top/bottom fijos, así que clientHeight ya es el hueco.
+            function measureRowHeight() {
+                const probe = document.createElement("div");
+                probe.className = "hex-row";
+                probe.innerHTML =
+                    '<span class="hex-off">0x0000</span><span class="hex-bytes"></span>' +
+                    '<span class="hex-ascii">|........|</span>';
+                rowsEl.appendChild(probe);
+                const h = probe.getBoundingClientRect().height;
+                rowsEl.removeChild(probe);
+                return h;
+            }
+
+            function fit() {
+                const h = measureRowHeight();
+                // clientHeight incluiría el padding y el hueco útil es el del
+                // contenido: se resta para que la última fila no quede a medias.
+                const cs = getComputedStyle(rowsEl);
+                const avail = rowsEl.getBoundingClientRect().height
+                    - (parseFloat(cs.paddingTop) || 0)
+                    - (parseFloat(cs.paddingBottom) || 0);
+                const n = (h > 0 && avail > 0)
+                    ? Math.min(ROWS_MAX, Math.max(ROWS_MIN, Math.floor(avail / h)))
+                    : ROWS_FALLBACK;
+                if (n !== ROWS) build(n);
+            }
+
+            fit();
+            // la altura cambia al cargar la monoespaciada y al redimensionar
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(fit).catch(() => {});
+            }
+            let hexFitTicking = false;
+            addEventListener("resize", () => {
+                if (!hexFitTicking) {
+                    hexFitTicking = true;
+                    requestAnimationFrame(() => { fit(); hexFitTicking = false; });
+                }
+            });
 
             if (!reduced) {
-                const SPAN = ROWS + BAND;   // recorrido del cabezal (entra y sale)
                 let raf = 0, running = false, inView = false;
                 let elapsed = 0, t0 = 0, last = 0, cycle = -1;
 
@@ -327,7 +384,8 @@
 
                     elapsed = now - t0;
                     const p = (elapsed % CYCLE) / CYCLE;
-                    const head = -BAND + p * SPAN;          // fila por la que va
+                    const span = ROWS + BAND;       // recorrido del cabezal
+                    const head = -BAND + p * span;  // fila por la que va
                     const from = Math.max(0, Math.ceil(head - BAND));
                     const to = Math.min(ROWS - 1, Math.floor(head));
 

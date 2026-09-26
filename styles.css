@@ -22,6 +22,12 @@
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
+    /* Altos de referencia para estirar el hexdump del hero de arriba abajo:
+       · --header-h: cabecera en reposo = alto del logo + su padding (1.4rem × 2).
+       · --marquee-h: marquesina horizontal del hero = padding (0.9rem × 2) +
+         una línea de texto (0.72rem × 1.65) + el filete superior de 1px. */
+    --header-h: calc(clamp(41.4px, 4.485vw, 59.8px) + 2.8rem);
+    --marquee-h: calc(1.8rem + 1.2rem + 1px);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -448,7 +454,13 @@ body.loaded .hero-sub {
    el más mínimo reflow (los valores siempre ocupan lo mismo: 2 caracteres). */
 .hero-hexdump {
     position: absolute; z-index: 1; pointer-events: none;
-    top: calc(50% + 3.5rem); transform: translateY(-50%);
+    /* Ocupa el alto del hero de arriba abajo: arranca justo debajo del ES/EN
+       de la cabecera y muere donde empieza la marquesina horizontal del fondo.
+       Cuántas filas caben lo calcula script.js (§6c) midiendo el hueco real,
+       así que el listado se estira o se recorta con la altura de la ventana. */
+    top: calc(var(--header-h) + 0.75rem);
+    bottom: calc(var(--marquee-h) + 0.75rem);
+    display: flex; flex-direction: column;
     /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size sí
        escala con el viewport, el recorte es exactamente el mismo en cualquier
        pantalla (siempre se pierden ~5ch de la columna ASCII por la derecha). */
@@ -483,7 +495,9 @@ body.loaded .hero-sub {
 }
 @keyframes hexPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 
-.hexdump-body { padding: 0.5rem 0.9rem 0; overflow: hidden; }
+/* flex:1 + min-height:0 → el cuerpo se queda con todo el alto sobrante entre
+   cabecera y pie; overflow:hidden recorta las filas que no llegan a caber. */
+.hexdump-body { flex: 1; min-height: 0; padding: 0.5rem 0.9rem 0; overflow: hidden; }
 .hex-row { display: flex; gap: 0 1.25ch; white-space: pre; }
 .hex-off   { width: 6ch;  flex: none; color: rgba(242, 241, 238, 0.4); }
 .hex-bytes { display: flex; gap: 0 0.6ch; flex: none; }
