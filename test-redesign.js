@@ -165,18 +165,27 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         !!heroLog && heroLog.parentElement === doc.querySelector(".hero") &&
         heroLog.getAttribute("aria-hidden") === "true" &&
         /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
+    const heroLogBlend = doc.querySelector(".hero-log-blend");
+    check("hero log: capa de mezcla overlay independiente que tiñe el vídeo",
+        !!heroLogBlend && heroLogBlend.parentElement === heroLog.parentElement &&
+        heroLogBlend.nextElementSibling === heroLog &&
+        /\.hero-log-blend\s*\{[^}]*background:\s*radial-gradient/.test(css) &&
+        /\.hero-log-blend\s*\{[^}]*mix-blend-mode:\s*overlay/.test(css));
     check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
         /\.hero-log\s*\{[^}]*right:\s*calc\(-[\d.]+em - 40px\)/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
     check("hero log: 40 px más a la derecha y fundido con el vídeo (mix-blend-mode: screen)",
         /\.hero-log\s*\{[^}]*mix-blend-mode:\s*screen/.test(css));
-    check("hero log: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
-        /\.hero-log\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
+    check("hero log: opacidad 0.25 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-log\s*\{[^}]*opacity:\s*0?\.25\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
-    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
+    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo más amplio (38%)",
         !/TENSOR BUFFER/.test(html) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
+    check("DNAi: el rollover desplaza suavemente los títulos de los servicios",
+        /\.service-body h3\s*\{[^}]*transform:\s*translateX\(0\)[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css) &&
+        /\.service-row:hover \.service-body h3\s*\{[^}]*transform:\s*translateX\(0\.8rem\)/.test(css));
     check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
         /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
         /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
@@ -243,7 +252,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         `${logLines.length} líneas en ventana, la cabecera del bloque avanza`);
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
     check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
         /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
         /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));

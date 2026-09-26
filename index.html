@@ -139,8 +139,12 @@
                 <p class="hero-sub">When ideas meet the machine,<br />the impossible takes form.</p>
             </div>
 
+            <!-- Capa cromática independiente: funde el terminal con el vídeo
+                 sin afectar la opacidad del texto. -->
+            <div class="hero-log-blend" aria-hidden="true"></div>
+
             <!-- Log de inferencia del modelo: decorativo, sangrado fuera del
-                 margen derecho (lo recorta el overflow del hero) y al 35% de
+                 margen derecho (lo recorta el overflow del hero) y al 25% de
                  opacidad. Sin caja, ni cabecera, ni pie: solo el trace. Las
                  líneas las genera script.js (§6c). -->
             <div class="hero-log" id="heroLog" aria-hidden="true">
