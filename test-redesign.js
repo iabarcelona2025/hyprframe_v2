@@ -53,6 +53,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     }
 
     const doc = window.document;
+    const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
 
     check("clock removed from header", doc.getElementById("clock") === null);
 
@@ -79,6 +80,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("CLB: TEST NOW opens builder.html",
         clbCta && clbCta.getAttribute("href") === "builder.html" &&
         clbCta.textContent.trim().startsWith("TEST NOW"));
+    const clbNavLinks = [...doc.querySelectorAll(".main-nav a, .menu-links a")]
+        .filter((link) => link.textContent.trim().endsWith("CLB"));
+    check("CLB links in the top and mobile menus point to the landing section",
+        clbNavLinks.length === 2 && clbNavLinks.every((link) => link.getAttribute("href") === "#clb"));
+    const contactSection = doc.getElementById("contact");
+    const pageFooter = doc.querySelector(".site-footer");
+    check("Contact is compacted so the footer follows closely and can be seen sooner",
+        !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
+        /\.contact\s*\{[^}]*padding:\s*clamp\(4\.5rem, 8vw, 7rem\) var\(--pad\) clamp\(2\.5rem, 4vw, 3\.5rem\)/.test(css) &&
+        /\.site-footer\s*\{\s*padding:\s*clamp\(2rem, 4vw, 3rem\) var\(--pad\) 1\.5rem;/.test(css));
 
     // palabras sueltas destacadas en lila (--violet) dentro de los titulares, en cursiva
     const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
@@ -93,7 +104,6 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
-    const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
     check("white typography uses a subtly warm off-white instead of pure white",
         /--fg:\s*#efeee9;/.test(css) &&
         /\.hero-title\s*\{[^}]*font-weight:\s*700[^}]*color:\s*rgba\(239, 238, 233, 0\.7\)/.test(css));

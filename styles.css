@@ -894,13 +894,13 @@ section { position: relative; }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
 .contact {
-    padding: clamp(6rem, 14vw, 10rem) var(--pad);
+    padding: clamp(4.5rem, 8vw, 7rem) var(--pad) clamp(2.5rem, 4vw, 3.5rem);
     background:
         radial-gradient(80% 60% at 85% 110%, rgba(160, 100, 255, 0.16), transparent 60%),
         var(--bg);
     border-top: 1px solid var(--line);
 }
-.contact-head { margin-bottom: clamp(3rem, 7vw, 5rem); }
+.contact-head { margin-bottom: clamp(2rem, 4vw, 3.5rem); }
 .contact-title {
     font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(3rem, 9.5vw, 8.5rem);
@@ -969,7 +969,7 @@ section { position: relative; }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
-.site-footer { padding: clamp(3rem, 8vw, 6rem) var(--pad) 2rem; }
+.site-footer { padding: clamp(2rem, 4vw, 3rem) var(--pad) 1.5rem; }
 .wordmark {
     display: block; text-align: center;
     font-family: var(--font-head); font-weight: 800;
