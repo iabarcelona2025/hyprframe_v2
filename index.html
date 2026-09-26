@@ -55,7 +55,7 @@
          Va en la misma petición que el resto de familias para no abrir otra
          conexión; si no llega, cae a Fira Code / Roboto Mono / Courier New. -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Kanit:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=53" />
+    <link rel="stylesheet" href="styles.css?v=56" />
 </head>
 
 <body>
@@ -89,7 +89,7 @@
             <a href="legacy.html">Captured</a>
             <a href="#about">About</a>
             <a href="#services" class="keep-case">DNAi</a>
-            <a href="builder.html">CLB</a>
+            <a href="#clb">CLB</a>
             <a href="#contact" class="nav-cta">Contact</a>
         </nav>
         <div class="header-meta">
@@ -107,7 +107,7 @@
             <a href="legacy.html"><span class="pulse" aria-hidden="true"></span> Captured</a>
             <a href="#about"><span class="pulse" aria-hidden="true"></span> About</a>
             <a href="#services" class="keep-case"><span class="pulse" aria-hidden="true"></span> DNAi</a>
-            <a href="builder.html"><span class="pulse" aria-hidden="true"></span> CLB</a>
+            <a href="#clb"><span class="pulse" aria-hidden="true"></span> CLB</a>
             <a href="#contact"><span class="pulse" aria-hidden="true"></span> Contact</a>
         </div>
         <div class="menu-lang">
@@ -139,8 +139,12 @@
                 <p class="hero-sub">When ideas meet the machine,<br />the impossible takes form.</p>
             </div>
 
+            <!-- Capa cromática independiente: funde el terminal con el vídeo
+                 sin afectar la opacidad del texto. -->
+            <div class="hero-log-blend" aria-hidden="true"></div>
+
             <!-- Log de inferencia del modelo: decorativo, sangrado fuera del
-                 margen derecho (lo recorta el overflow del hero) y al 35% de
+                 margen derecho (lo recorta el overflow del hero) y al 25% de
                  opacidad. Sin caja, ni cabecera, ni pie: solo el trace. Las
                  líneas las genera script.js (§6c). -->
             <div class="hero-log" id="heroLog" aria-hidden="true">
@@ -342,6 +346,46 @@
         </section>
 
 
+
+        <!-- ══════════ CLB / CINEMATIC LOOK BUILDER ══════════ -->
+        <section class="clb" id="clb" aria-labelledby="clb-title">
+            <div class="section-head">
+                <h2 class="section-title" id="clb-title">
+                    <span class="line"><span class="line-inner"><span class="violet italic">Cinematic</span></span></span>
+                    <span class="line"><span class="line-inner">Look Builder</span></span>
+                </h2>
+                <p class="section-side" data-reveal>CLB / A tool for turning camera craft into AI-ready visual prompts.</p>
+            </div>
+
+            <div class="clb-grid">
+                <div class="clb-intro" data-reveal>
+                    <p>Cinematic Look Builder is an interactive web tool designed for filmmakers, cinematographers, and AI creators to translate real-world camera packages into LLM-ready prompts.</p>
+                    <a class="clb-cta magnetic" href="builder.html">
+                        TEST NOW <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+
+                <div class="clb-capabilities">
+                    <p class="kicker clb-kicker" data-reveal><span class="pulse" aria-hidden="true"></span> Key Capabilities</p>
+                    <div class="clb-feature-list">
+                        <article class="clb-feature" data-reveal>
+                            <span class="clb-num">(01)</span>
+                            <div>
+                                <h3>Precise Technical Setup</h3>
+                                <p>Select industry-standard cameras, anamorphic or vintage lenses, focal lengths, aperture, white balance, contrast ratios, and film emulation elements such as grain, halation, and saturation.</p>
+                            </div>
+                        </article>
+                        <article class="clb-feature" data-reveal data-reveal-delay="1">
+                            <span class="clb-num">(02)</span>
+                            <div>
+                                <h3>Dual-Format Generation</h3>
+                                <p>Outputs both a <strong>Semantic Prompt</strong> optimized for AI text-to-image/video tools and a <strong>Technical JSON</strong> for structured data pipelines.</p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- ══════════ CONTACT ══════════ -->
         <section class="contact" id="contact">

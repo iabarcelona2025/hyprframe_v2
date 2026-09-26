@@ -53,6 +53,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     }
 
     const doc = window.document;
+    const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
 
     check("clock removed from header", doc.getElementById("clock") === null);
 
@@ -62,13 +63,40 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const revealIn = doc.querySelectorAll("[data-reveal].in").length;
     check("data-reveal elements got .in", revealIn === revealTotal, `${revealIn}/${revealTotal}`);
     check("section titles got reveal-lines + .in",
-        doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 4,
-        `${doc.querySelectorAll(".reveal-lines.in").length}/4`);
+        doc.querySelectorAll(".section-title.in, .about-title.in, .contact-title.in").length === 5,
+        `${doc.querySelectorAll(".reveal-lines.in").length}/5`);
+    const clbSection = doc.getElementById("clb");
+    const clbCta = clbSection && clbSection.querySelector(".clb-cta");
+    const clbCopy = clbSection ? clbSection.textContent : "";
+    check("CLB: section beneath DNAi and before Contact, using the shared section heading",
+        !!clbSection && doc.getElementById("services").nextElementSibling === clbSection &&
+        clbSection.nextElementSibling === doc.getElementById("contact") &&
+        !!clbSection.querySelector(".section-head .section-title"));
+    check("CLB: includes the overview, technical setup and dual-format output details",
+        /filmmakers, cinematographers, and AI creators/.test(clbCopy) &&
+        /LLM-ready prompts/.test(clbCopy) && /Precise Technical Setup/.test(clbCopy) &&
+        /grain, halation, and saturation/.test(clbCopy) && /Dual-Format Generation/.test(clbCopy) &&
+        /Semantic Prompt/.test(clbCopy) && /Technical JSON/.test(clbCopy));
+    check("CLB: TEST NOW opens builder.html",
+        clbCta && clbCta.getAttribute("href") === "builder.html" &&
+        clbCta.textContent.trim().startsWith("TEST NOW"));
+    const clbNavLinks = [...doc.querySelectorAll(".main-nav a, .menu-links a")]
+        .filter((link) => link.textContent.trim().endsWith("CLB"));
+    check("CLB links in the top and mobile menus point to the landing section",
+        clbNavLinks.length === 2 && clbNavLinks.every((link) => link.getAttribute("href") === "#clb"));
+    check("CLB occupies a full viewport so Contact does not appear when the anchor opens",
+        /\.clb\s*\{[^}]*min-height:\s*100svh/.test(css));
+    const contactSection = doc.getElementById("contact");
+    const pageFooter = doc.querySelector(".site-footer");
+    check("Contact is compacted so the footer follows closely and can be seen sooner",
+        !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
+        /\.contact\s*\{[^}]*padding:\s*clamp\(4\.5rem, 8vw, 7rem\) var\(--pad\) clamp\(2\.5rem, 4vw, 3\.5rem\)/.test(css) &&
+        /\.site-footer\s*\{\s*padding:\s*clamp\(2rem, 4vw, 3rem\) var\(--pad\) 1\.5rem;/.test(css));
 
     // palabras sueltas destacadas en lila (--violet) dentro de los titulares, en cursiva
     const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
-    check("palabras en lila: WORK, HUMAN, MACHINE y Ai (DNAi)",
-        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai", violetWords.join("|"));
+    check("palabras en lila: WORK, HUMAN, MACHINE, Ai (DNAi) y Cinematic (CLB)",
+        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai|Cinematic", violetWords.join("|"));
     check("cada palabra en lila vive dentro de su .line-inner",
         [...doc.querySelectorAll(".violet")].every((el) => el.closest(".line-inner")),
         [...doc.querySelectorAll(".violet")].map((el) => el.closest(".line-inner") ? "ok" : "fuera").join(","));
@@ -78,7 +106,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
-    const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
+    check("white typography uses a subtly warm off-white instead of pure white",
+        /--fg:\s*#efeee9;/.test(css) &&
+        /\.hero-title\s*\{[^}]*font-weight:\s*700[^}]*color:\s*rgba\(239, 238, 233, 0\.7\)/.test(css));
     const heroSub = doc.querySelector(".hero-sub");
     check("hero subtitle is independent of the generic sliding reveal",
         heroSub && !heroSub.hasAttribute("data-reveal") && !heroSub.hasAttribute("data-reveal-delay"));
@@ -165,18 +195,27 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         !!heroLog && heroLog.parentElement === doc.querySelector(".hero") &&
         heroLog.getAttribute("aria-hidden") === "true" &&
         /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
+    const heroLogBlend = doc.querySelector(".hero-log-blend");
+    check("hero log: capa de mezcla overlay independiente que tiñe el vídeo",
+        !!heroLogBlend && heroLogBlend.parentElement === heroLog.parentElement &&
+        heroLogBlend.nextElementSibling === heroLog &&
+        /\.hero-log-blend\s*\{[^}]*background:\s*radial-gradient/.test(css) &&
+        /\.hero-log-blend\s*\{[^}]*mix-blend-mode:\s*overlay/.test(css));
     check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
         /\.hero-log\s*\{[^}]*right:\s*calc\(-[\d.]+em - 40px\)/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
     check("hero log: 40 px más a la derecha y fundido con el vídeo (mix-blend-mode: screen)",
         /\.hero-log\s*\{[^}]*mix-blend-mode:\s*screen/.test(css));
-    check("hero log: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
-        /\.hero-log\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
+    check("hero log: opacidad 0.25 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-log\s*\{[^}]*opacity:\s*0?\.25\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
-    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
+    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo más amplio (38%)",
         !/TENSOR BUFFER/.test(html) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
+    check("DNAi: el rollover desplaza suavemente los títulos de los servicios",
+        /\.service-body h3\s*\{[^}]*transform:\s*translateX\(0\)[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css) &&
+        /\.service-row:hover \.service-body h3\s*\{[^}]*transform:\s*translateX\(0\.8rem\)/.test(css));
     check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
         /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
         /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
@@ -243,7 +282,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         `${logLines.length} líneas en ventana, la cabecera del bloque avanza`);
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
     check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
         /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
         /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));

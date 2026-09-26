@@ -7,7 +7,7 @@
 :root {
     --bg: #050505;
     --bg-soft: #0c0c0e;
-    --fg: #f2f1ee;
+    --fg: #efeee9;
     --muted: #8b8b8b;
     --violet: #a064ff;
     --lime: #a3df02;
@@ -47,7 +47,7 @@ body {
     overflow-x: hidden;
 }
 
-::selection { background: var(--violet); color: #fff; }
+::selection { background: var(--violet); color: var(--fg); }
 
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
@@ -55,7 +55,7 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
 
 .skip-link {
     position: fixed; top: -100px; left: 1rem; z-index: 10000;
-    background: var(--violet); color: #fff; padding: 0.75rem 1.25rem;
+    background: var(--violet); color: var(--fg); padding: 0.75rem 1.25rem;
     font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em;
     transition: top 0.3s;
 }
@@ -286,8 +286,8 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
     display: flex; flex-direction: column; justify-content: center;
     padding: 8rem var(--pad) 0;
     overflow: hidden;
-    /* Grupo de fusión cerrado: el log del hero (mix-blend-mode: screen) se
-       mezcla con el vídeo y el velo de esta sección, y con nada más. */
+    /* Grupo de fusión cerrado: el lavado overlay y el texto screen del terminal
+       solo se mezclan con el vídeo y el velo de esta sección. */
     isolation: isolate;
 }
 .hero-video {
@@ -327,7 +327,7 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
 
 .hero-title {
     font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
-    color: rgba(242, 241, 238, 0.7);
+    color: rgba(239, 238, 233, 0.7);
     font-size: clamp(2rem, 7vw, 7rem);
     line-height: 1.02; letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -388,7 +388,7 @@ body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0
 .hero-sub {
     margin-top: clamp(1.5rem, 3vw, 2.25rem);
     font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
-    color: rgba(242, 241, 238, 0.75); font-weight: 300;
+    color: rgba(239, 238, 233, 0.75); font-weight: 300;
     max-width: 34ch;
     opacity: 0;
 }
@@ -452,13 +452,30 @@ body.loaded .hero-sub {
      cabecera, sin aire de más; bottom: calc(var(--marquee-h) + .75rem) → muere
      donde empieza la marquesina horizontal del fondo.
    · SIN CAJA: ni fondo, ni borde, ni tiras de Estado (cabecera con la dirección
-     y pie con CYCLE/barra). Es solo texto flotando sobre el vídeo; lo único que
-     lo integra en el fondo es la opacity .35 y la máscara con degradado en el
-     borde izquierdo (26% del ancho), que lo funde desde la nada.
+     y pie con CYCLE/barra). Es solo texto flotando sobre el vídeo; lo integran
+     la opacity .25, el modo screen y la máscara izquierda (38%). Un lavado
+     overlay independiente tiñe el vídeo por detrás del trace.
    · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
      para no robar ni clics ni hover al hero.
    · el font-size NO está fijado aquí: el JS calcula --log-fs para que quepa el
      log completo en el alto disponible (y lo repite si a ese tamaño sobra). */
+/* Capa atmosférica independiente del texto: el degradado se mezcla con el
+   vídeo para teñir y modular el fondo, sin subir la opacidad del trace. */
+.hero-log-blend {
+    position: absolute; z-index: 1; pointer-events: none;
+    top: var(--header-h);
+    bottom: calc(var(--marquee-h) + 0.75rem);
+    right: calc(-16em - 40px);
+    width: 54em;
+    background: radial-gradient(ellipse 76% 70% at 62% 48%,
+        rgba(160, 100, 255, 0.34) 0,
+        rgba(163, 223, 2, 0.16) 38%,
+        transparent 72%);
+    opacity: 0.65;
+    mix-blend-mode: overlay;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 38%);
+            mask-image: linear-gradient(to right, transparent 0, #000 38%);
+}
 .hero-log {
     position: absolute; z-index: 1; pointer-events: none;
     top: var(--header-h);
@@ -470,7 +487,7 @@ body.loaded .hero-sub {
        presencia (estaba demasiado presente pegado al margen). */
     right: calc(-16em - 40px);
     width: 54em;
-    opacity: 0.35;
+    opacity: 0.25;
     /* Fusión con el vídeo del hero en lugar de pintar encima: `screen` aclara
        el fondo con la tinta de las letras (los números en verde ácido dejan un
        rastro luminoso). `multiply` no sirve aquí: sobre un fondo casi negro
@@ -481,8 +498,8 @@ body.loaded .hero-sub {
     font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
     line-height: 1.3;
     letter-spacing: 0; font-variant-ligatures: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
-            mask-image: linear-gradient(to right, transparent 0, #000 26%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 38%);
+            mask-image: linear-gradient(to right, transparent 0, #000 38%);
 }
 /* min-height:0 → el cuerpo ocupa todo el alto del panel; overflow:hidden
    recorta lo que no llegue a caber.
@@ -490,7 +507,7 @@ body.loaded .hero-sub {
    de empezar de golpe. Va aquí y no en el panel porque .hero-log ya gasta su
    máscara en el degradado izquierdo y CSS no compone dos direcciones en una
    sola capa: anidando, las dos máscaras se multiplican solas.
-   Es MENOR que el lateral (4.5rem frente al 26% del ancho, ~14em). */
+   Es MENOR que el lateral (4.5rem frente al 38% del ancho, ~21em). */
 .log-body {
     flex: 1; min-height: 0; padding: 0; overflow: hidden;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
@@ -498,7 +515,7 @@ body.loaded .hero-sub {
 }
 /* white-space: pre conserva la alineación de columnas del trace. Los números
    van en verde ácido: son lo único que cambia. */
-.log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
+.log-line { display: block; white-space: pre; color: rgba(239, 238, 233, 0.5); }
 .log-num { color: rgba(163, 223, 2, 0.6); }
 /* Cursor de escritura: bloque verde ácido parpadeando justo donde se está
    escribiendo. Viaja al final de la línea activa; no hay ninguna franja ni
@@ -728,7 +745,7 @@ section { position: relative; }
     font-size: clamp(2.2rem, 6.5vw, 5.5rem);
     letter-spacing: 0; text-transform: uppercase;
     color: transparent;
-    -webkit-text-stroke: 1px rgba(242, 241, 238, 0.35);
+    -webkit-text-stroke: 1px rgba(239, 238, 233, 0.35);
     animation-duration: 36s;
 }
 .strip-marquee .marquee-track span { padding-right: 0.2em; }
@@ -741,7 +758,7 @@ section { position: relative; }
     align-items: center; gap: 1.5rem;
     padding: clamp(1.5rem, 3vw, 2.2rem) var(--pad);
     border-bottom: 1px solid var(--line);
-    transition: background 0.5s;
+    transition: background 0.6s var(--ease-out);
     cursor: default;
 }
 .service-row:hover { background: rgba(160, 100, 255, 0.06); }
@@ -754,19 +771,21 @@ section { position: relative; }
     font-weight: 600;                   /* 700 → 600 (25/09/2026) */
     font-size: clamp(1.3rem, 2.6vw, 2rem);  /* intacto */
     line-height: 1.15;                  /* intacto */
+    transform: translateX(0);
+    transition: transform 0.7s var(--ease-out), color 0.5s var(--ease-out);
 }
 .service-row:hover .service-body h3 { transform: translateX(0.8rem); color: var(--violet); }
 .service-body p {
     color: var(--muted); max-width: 60ch; font-weight: 300;
     max-height: 0; opacity: 0; overflow: hidden;
-    transition: max-height 0.6s var(--ease-out), opacity 0.5s, margin 0.5s;
+    transition: max-height 0.7s var(--ease-out), opacity 0.5s var(--ease-out), margin 0.7s var(--ease-out);
     margin-top: 0;
 }
 .service-row:hover .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
 .service-plus {
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
     text-align: right;
-    transition: transform 0.5s var(--ease-out), color 0.4s;
+    transition: transform 0.7s var(--ease-out), color 0.5s var(--ease-out);
 }
 .service-row:hover .service-plus { transform: rotate(135deg); color: var(--lime); }
 
@@ -774,6 +793,70 @@ section { position: relative; }
     .service-row { grid-template-columns: 3.5rem 1fr; }
     .service-plus { display: none; }
     .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
+}
+
+/* ── CLB / CINEMATIC LOOK BUILDER ───────────────────────── */
+.clb {
+    min-height: 100svh;
+    padding-bottom: clamp(5rem, 12vw, 9rem);
+    border-top: 1px solid var(--line);
+    background:
+        radial-gradient(80% 65% at 100% 48%, rgba(160, 100, 255, 0.1), transparent 72%),
+        var(--bg);
+}
+.clb-grid {
+    display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start; gap: clamp(2.5rem, 7vw, 7rem);
+    padding: 0 var(--pad);
+}
+.clb-intro { max-width: 52ch; }
+.clb-intro > p {
+    color: rgba(239, 238, 233, 0.78); font-weight: 300;
+    font-size: clamp(1.15rem, 1.7vw, 1.5rem); line-height: 1.55;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+.clb-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 1.2rem;
+    padding: 1.05rem 2rem; border-radius: 100px;
+    background: var(--lime); color: #0a0a0a;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+    transition: background 0.4s, color 0.4s, box-shadow 0.4s;
+}
+.clb-cta:hover {
+    background: var(--violet); color: var(--fg);
+    box-shadow: 0 0 32px rgba(160, 100, 255, 0.38);
+}
+.clb-cta span {
+    font-size: 1.3rem; line-height: 0.8;
+    transition: transform 0.4s var(--ease-out);
+}
+.clb-cta:hover span { transform: translate(4px, -4px); }
+.clb-kicker { margin-bottom: 1rem; }
+.clb-feature-list { border-top: 1px solid var(--line); }
+.clb-feature {
+    display: grid; grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem; padding: 1.4rem 0;
+    border-bottom: 1px solid var(--line);
+}
+.clb-num {
+    padding-top: 0.2rem;
+    font-family: var(--font-mono); font-size: 0.68rem;
+    letter-spacing: 0.16em; color: var(--violet);
+}
+.clb-feature h3 {
+    margin-bottom: 0.55rem;
+    font-family: var(--font-body); font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+    font-weight: 600; line-height: 1.2;
+}
+.clb-feature p {
+    max-width: 60ch; color: var(--muted);
+    font-size: 0.92rem; font-weight: 300; line-height: 1.7;
+}
+.clb-feature strong { color: var(--fg); font-weight: 600; }
+@media (max-width: 860px) {
+    .clb-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .clb-intro { max-width: 60ch; }
 }
 
 /* ── ABOUT ───────────────────────────────────────────────── */
@@ -788,7 +871,7 @@ section { position: relative; }
     display: grid; grid-template-columns: 1.2fr 1fr;
     gap: clamp(2rem, 6vw, 5rem); align-items: start;
 }
-.about-copy { color: rgba(242, 241, 238, 0.72); font-weight: 300; max-width: 52ch; }
+.about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
     display: block;
@@ -812,13 +895,13 @@ section { position: relative; }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
 .contact {
-    padding: clamp(6rem, 14vw, 10rem) var(--pad);
+    padding: clamp(4.5rem, 8vw, 7rem) var(--pad) clamp(2.5rem, 4vw, 3.5rem);
     background:
         radial-gradient(80% 60% at 85% 110%, rgba(160, 100, 255, 0.16), transparent 60%),
         var(--bg);
     border-top: 1px solid var(--line);
 }
-.contact-head { margin-bottom: clamp(3rem, 7vw, 5rem); }
+.contact-head { margin-bottom: clamp(2rem, 4vw, 3.5rem); }
 .contact-title {
     font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(3rem, 9.5vw, 8.5rem);
@@ -862,7 +945,7 @@ section { position: relative; }
     transition: background 0.4s, color 0.4s, box-shadow 0.4s;
 }
 .send-btn:hover {
-    background: var(--violet); color: #fff;
+    background: var(--violet); color: var(--fg);
     box-shadow: 0 0 42px rgba(160, 100, 255, 0.45);
 }
 
@@ -880,21 +963,21 @@ section { position: relative; }
     color: var(--fg); padding-left: 1rem; border-color: var(--violet);
 }
 .contact-link span { color: var(--violet); }
-.contact-icon { display: block; width: 1.4em; height: 1.4em; color: #fff; flex-shrink: 0; }
+.contact-icon { display: block; width: 1.4em; height: 1.4em; color: var(--fg); flex-shrink: 0; }
 
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
-.site-footer { padding: clamp(3rem, 8vw, 6rem) var(--pad) 2rem; }
+.site-footer { padding: clamp(2rem, 4vw, 3rem) var(--pad) 1.5rem; }
 .wordmark {
     display: block; text-align: center;
     font-family: var(--font-head); font-weight: 800;
     font-size: clamp(3rem, 14.5vw, 13rem);
     line-height: 1; text-transform: uppercase; letter-spacing: 0.04em;
     color: transparent;
-    -webkit-text-stroke: 1px rgba(242, 241, 238, 0.28);
+    -webkit-text-stroke: 1px rgba(239, 238, 233, 0.28);
     transition: color 0.6s var(--ease-out), -webkit-text-stroke-color 0.6s;
     user-select: none;
 }
@@ -946,7 +1029,7 @@ section { position: relative; }
 .cookie-text {
     font-family: var(--font-body); font-weight: 300;
     font-size: 0.72rem; line-height: 1.6; letter-spacing: 0.01em;
-    color: rgba(242, 241, 238, 0.72);
+    color: rgba(239, 238, 233, 0.72);
     margin-bottom: 0.95rem;
 }
 .cookie-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -959,11 +1042,11 @@ section { position: relative; }
 }
 .cookie-accept { background: var(--lime); color: #0a0a0a; border-color: transparent; }
 .cookie-accept:hover {
-    background: var(--violet); color: #fff;
+    background: var(--violet); color: var(--fg);
     box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
 }
-.cookie-reject { color: rgba(242, 241, 238, 0.6); }
-.cookie-reject:hover { color: var(--fg); border-color: rgba(242, 241, 238, 0.4); }
+.cookie-reject { color: rgba(239, 238, 233, 0.6); }
+.cookie-reject:hover { color: var(--fg); border-color: rgba(239, 238, 233, 0.4); }
 
 /* Móvil: barra a lo ancho, pegada al borde inferior */
 @media (max-width: 640px) {
