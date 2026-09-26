@@ -289,7 +289,9 @@
             // bloque para que el barrido tarde lo mismo con 14 filas que con 40.
             function build(n) {
                 ROWS = n;
-                BAND = Math.max(3, Math.round(n * 0.22));
+                // ~18% del listado: con 20 filas son 4, con 45 son 8. Mantiene
+                // el barrido de 5 s y acota el trabajo por frame.
+                BAND = Math.max(3, Math.round(n * 0.18));
                 base = []; state = []; rowEls = []; cellEls = []; asciiEls = []; dirty = [];
                 const frag = document.createDocumentFragment();
                 for (let r = 0; r < n; r++) {

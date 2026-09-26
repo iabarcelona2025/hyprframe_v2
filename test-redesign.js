@@ -168,13 +168,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("hero hexdump: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
         /\.hero-hexdump\s*\{[^}]*right:\s*-\d/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
-    check("hero hexdump: opacidad 0.5 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
-        /\.hero-hexdump\s*\{[^}]*opacity:\s*0?\.5\b/.test(css) &&
+    check("hero hexdump: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        /\.hero-hexdump\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-hexdump\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
     const hexRows = hexdump ? [...hexdump.querySelectorAll(".hex-row")] : [];
+    check("hero hexdump: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo ancho",
+        !/TENSOR BUFFER/.test(html) &&
+        /\.hero-hexdump\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
     check("hero hexdump: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
-        /\.hero-hexdump\s*\{[^}]*top:\s*calc\(var\(--header-h\)/.test(css) &&
+        /\.hero-hexdump\s*\{[^}]*top:\s*(calc\()?var\(--header-h\)/.test(css) &&
         /\.hero-hexdump\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
         /--header-h:\s*calc\(clamp\(41\.4px/.test(css) && /--marquee-h:\s*calc\(/.test(css) &&
         /\.hexdump-body\s*\{[^}]*flex:\s*1/.test(css));

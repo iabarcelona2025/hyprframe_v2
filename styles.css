@@ -454,11 +454,11 @@ body.loaded .hero-sub {
    el más mínimo reflow (los valores siempre ocupan lo mismo: 2 caracteres). */
 .hero-hexdump {
     position: absolute; z-index: 1; pointer-events: none;
-    /* Ocupa el alto del hero de arriba abajo: arranca justo debajo del ES/EN
-       de la cabecera y muere donde empieza la marquesina horizontal del fondo.
-       Cuántas filas caben lo calcula script.js (§6c) midiendo el hueco real,
-       así que el listado se estira o se recorta con la altura de la ventana. */
-    top: calc(var(--header-h) + 0.75rem);
+    /* Ocupa el alto del hero de arriba abajo: arranca donde acaba el ES/EN de
+       la cabecera (sin aire de más, para que la primera fila suba lo máximo)
+       y muere donde empieza la marquesina horizontal del fondo. Cuántas filas
+       caben lo calcula script.js (§6c) midiendo el hueco real. */
+    top: var(--header-h);
     bottom: calc(var(--marquee-h) + 0.75rem);
     display: flex; flex-direction: column;
     /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size sí
@@ -466,27 +466,32 @@ body.loaded .hero-sub {
        pantalla (siempre se pierden ~5ch de la columna ASCII por la derecha). */
     right: -9.5em;
     width: 32em;
-    opacity: 0.5;
-    padding: 0.8rem 0 0.85rem;
+    opacity: 0.35;
+    padding: 0.35rem 0 0.6rem;
     background: rgba(8, 8, 10, 0.55);
     border: 1px solid var(--line);
     border-radius: 2px;
     font-family: var(--font-code);
     font-size: clamp(0.5rem, 0.78vw, 0.72rem);
-    line-height: 1.85;
+    line-height: 1.6; /* compacto: caben más filas en el mismo alto (~37 a 1440) */
     letter-spacing: 0; font-variant-ligatures: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%);
-            mask-image: linear-gradient(to right, transparent 0, #000 12%);
+    /* Degradado izquierdo ancho: el bloque entra fundiéndose desde la nada en
+       vez de aparecer con un canto recto (26% del ancho, ~8ch). */
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
+            mask-image: linear-gradient(to right, transparent 0, #000 26%);
 }
 .hexdump-head, .hexdump-foot {
     display: flex; align-items: center; gap: 0.7em;
     padding: 0 0.9rem;
-    font-size: 0.92em; letter-spacing: 0.14em; text-transform: uppercase;
+    font-size: 0.78em; line-height: 1.2;
+    letter-spacing: 0.14em; text-transform: uppercase;
     color: rgba(242, 241, 238, 0.5);
     white-space: nowrap;
 }
-.hexdump-head { padding-bottom: 0.55rem; border-bottom: 1px solid var(--line); }
-.hexdump-foot { padding-top: 0.55rem; margin-top: 0.55rem; border-top: 1px solid var(--line); }
+/* Tira de estado mínima (punto + dirección actual): sin el rótulo "TENSOR
+   BUFFER" y lo más baja posible, para que la primera fila de datos suba. */
+.hexdump-head { padding-bottom: 0.3rem; border-bottom: 1px solid var(--line); }
+.hexdump-foot { padding-top: 0.45rem; margin-top: 0.45rem; border-top: 1px solid var(--line); }
 .hexdump-addr { margin-left: auto; color: rgba(163, 223, 2, 0.7); }
 .hexdump-dot {
     width: 5px; height: 5px; border-radius: 50%; flex: none;
