@@ -9,11 +9,12 @@ const root = __dirname;
 const doc = new JSDOM(fs.readFileSync(path.join(root, "index.html"), "utf8")).window.document;
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
-test("CLB gallery follows TEST NOW and precedes Key Capabilities", () => {
+test("CLB gallery precedes Key Capabilities and TEST NOW follows them on mobile", () => {
     const grid = doc.querySelector("#clb .clb-grid");
     assert.deepEqual([...grid.children].map(el => el.className),
-        ["clb-intro", "clb-showcase", "clb-capabilities"]);
-    assert.equal(grid.querySelector(".clb-intro .clb-cta").getAttribute("href"), "builder.html");
+        ["clb-intro", "clb-showcase", "clb-capabilities", "clb-cta magnetic"]);
+    assert.equal(grid.querySelector(".clb-cta").getAttribute("href"), "builder.html");
+    assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"\s*"cta"/);
 });
 
 test("four distinct frames plus a hidden copy of the first for a seamless loop", () => {
@@ -57,7 +58,7 @@ test("right edge recedes 10 degrees and the reflection is short and faint", () =
     assert.ok(doc.querySelector("#clb .clb-showcase > .clb-gallery-reflection"));
 });
 
-test("only the screen's top and bottom bow inward; sides and reflection remain unchanged", () => {
+test("the screen and its reflection share the same inward bow", () => {
     const frameRule = css.match(/\.clb-gallery-frame\s*\{[^}]*\}/)?.[0] || "";
     const reflectionRule = css.match(/\.clb-gallery-reflection\s*\{[^}]*\}/)?.[0] || "";
     assert.match(frameRule, /clip-path:\s*polygon\(\s*0 0,/);
@@ -65,7 +66,8 @@ test("only the screen's top and bottom bow inward; sides and reflection remain u
     assert.match(frameRule, /100% 0,\s*100% 100%/); // right side stays straight
     assert.match(frameRule, /50% 97%/); // bottom center curves inward
     assert.match(frameRule, /0 100%\s*\)/); // left side stays straight
-    assert.doesNotMatch(reflectionRule, /clip-path:/);
+    assert.match(css, /\.clb-gallery-frame,\s*\.clb-gallery-reflection\s*\{[\s\S]*--clb-curve:\s*polygon/);
+    assert.match(reflectionRule, /clip-path:\s*var\(--clb-curve\)/);
 });
 
 test("gallery stacks between intro and features on mobile and stays still with reduced motion", () => {

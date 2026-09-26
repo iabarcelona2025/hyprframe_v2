@@ -116,7 +116,8 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-head);
 }
 .preloader-count {
-    font-size: clamp(2.2rem, 7.32vw, 5.125rem); font-weight: 400;
+    /* 20 px smaller than the original intro counter at every breakpoint. */
+    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px)); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--violet);
     letter-spacing: 0.04em;
 }
@@ -534,9 +535,11 @@ body.loaded .hero-sub {
    que en pantallas cortas el texto pise el cue. */
 @media (max-width: 900px) {
     .hero { padding-bottom: 10.5rem; }
-    /* En móvil el hero es texto: el log se apaga (a 375px solo se verían
-       un par de columnas y competiría con el titular). */
-    .hero-log { display: none; }
+    /* En móvil mantenemos el trace sobre el vídeo, pero lo desplazamos más
+       hacia la derecha para que funcione como textura lateral y no compita
+       con el titular. El halo acompaña al mismo encuadre. */
+    .hero-log,
+    .hero-log-blend { right: calc(-24em - 40px); }
 }
 
 /* ── Generic reveal utilities ────────────────────────────── */
@@ -805,10 +808,16 @@ section { position: relative; }
 .clb-grid {
     display: grid;
     grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr) minmax(0, 1.15fr);
+    grid-template-areas:
+        "intro showcase capabilities"
+        "cta showcase capabilities";
     align-items: start; gap: clamp(1.25rem, 2.5vw, 2.75rem);
     padding: 0 var(--pad);
 }
-.clb-intro { max-width: 52ch; }
+.clb-intro { grid-area: intro; max-width: 52ch; }
+.clb-showcase { grid-area: showcase; }
+.clb-capabilities { grid-area: capabilities; }
+.clb-cta { grid-area: cta; align-self: start; justify-self: start; }
 .clb-intro > p {
     color: rgba(239, 238, 233, 0.78); font-weight: 300;
     font-size: clamp(1.15rem, 1.7vw, 1.5rem); line-height: 1.55;
@@ -838,6 +847,16 @@ section { position: relative; }
     /* Pivot from the left: the right edge recedes by 10°, reflection included. */
     transform: perspective(1100px) rotateY(10deg);
     transform-origin: left center;
+}
+.clb-gallery-frame, .clb-gallery-reflection {
+    /* A single shared curve keeps the reflection locked to the gallery edges. */
+    --clb-curve: polygon(
+        0 0, 10% 1.08%, 20% 1.92%, 30% 2.52%, 40% 2.88%, 50% 3%,
+        60% 2.88%, 70% 2.52%, 80% 1.92%, 90% 1.08%, 100% 0,
+        100% 100%, 90% 98.92%, 80% 98.08%, 70% 97.48%, 60% 97.12%, 50% 97%,
+        40% 97.12%, 30% 97.48%, 20% 98.08%, 10% 98.92%, 0 100%
+    );
+    clip-path: var(--clb-curve);
 }
 .clb-gallery-frame {
     position: relative; overflow: hidden;
@@ -911,21 +930,27 @@ section { position: relative; }
 @media (max-width: 1180px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-areas: "intro capabilities" "showcase capabilities";
+        grid-template-areas:
+            "intro capabilities"
+            "showcase capabilities"
+            "cta capabilities";
         gap: 2rem clamp(2rem, 4vw, 3.5rem);
     }
     .clb-intro { grid-area: intro; }
     .clb-showcase { grid-area: showcase; width: 100%; }
     .clb-capabilities { grid-area: capabilities; }
+    .clb-cta { grid-area: cta; }
 }
 @media (max-width: 700px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "intro" "showcase" "capabilities";
+        /* On mobile the CTA follows the complete capabilities block. */
+        grid-template-areas: "intro" "showcase" "capabilities" "cta";
         gap: 2.5rem;
     }
     .clb-intro { max-width: 60ch; }
     .clb-showcase { max-width: 580px; }
+    .clb-cta { margin-top: -0.5rem; }
 }
 
 /* ── ABOUT ───────────────────────────────────────────────── */

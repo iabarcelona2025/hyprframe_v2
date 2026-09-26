@@ -405,6 +405,9 @@
         let maxLines = LOG.length; // líneas que caben en el panel
         let logIndex = 0;        // siguiente línea del trace
         let cur = null;          // línea en curso (null → toca abrir otra)
+        let persistedElapsed = 0;
+        let currentElapsed = 0;
+        const LOG_STATE_KEY = "hfHeroLogState";
 
         // Construye la línea con toda su estructura (texto + spans de números)
         // pero con los textos VACÍOS: "escribir" es ir revelando caracteres.
@@ -441,6 +444,83 @@
             if (!parts.length) addText(" ");
             return { el: el, parts: parts, fields: fields, pi: 0, done: false };
         }
+
+        /* El landing es una página estática, así que al volver desde otra página
+           el documento se crea de nuevo. Guardamos el estado visual del trace en
+           sessionStorage para que el terminal continúe donde estaba, en vez de
+           volver a aparecer vacío y empezar desde la primera línea. */
+        function restoreLogState() {
+            let state;
+            try {
+                state = JSON.parse(sessionStorage.getItem(LOG_STATE_KEY) || "null");
+            } catch (e) {
+                return;
+            }
+            if (!state || state.version !== 1 || !Array.isArray(state.lines)) return;
+
+            Object.keys(COUNTERS).forEach((name) => {
+                const saved = state.counters && state.counters[name];
+                if (Number.isFinite(saved)) COUNTERS[name].v = saved;
+            });
+            if (Number.isFinite(state.elapsed)) {
+                persistedElapsed = Math.max(0, state.elapsed);
+                currentElapsed = persistedElapsed;
+            }
+            if (Number.isFinite(state.logIndex)) logIndex = Math.max(0, state.logIndex);
+
+            state.lines.forEach((saved) => {
+                const index = Number(saved && saved.index);
+                if (!Number.isInteger(index) || index < 0 || index >= LOG.length) return;
+                const line = buildLine(LOG[index]);
+                line.el.dataset.log = String(index);
+                const savedParts = Array.isArray(saved.parts) ? saved.parts : [];
+                line.parts.forEach((part, partIndex) => {
+                    if (typeof savedParts[partIndex] === "string") {
+                        part.node.data = savedParts[partIndex];
+                    } else {
+                        part.node.data = part.full;
+                    }
+                });
+                line.pi = line.parts.findIndex((part) => part.node.data.length < part.full.length);
+                if (line.pi < 0) line.pi = line.parts.length;
+                line.done = saved.done !== false && line.pi >= line.parts.length;
+                if (line.done) line.el.classList.add("is-done");
+                lines.push(line);
+                linesEl.appendChild(line.el);
+                if (!line.done) cur = line;
+            });
+
+            while (lines.length > maxLines) {
+                const old = lines.shift();
+                if (old === cur) cur = null;
+                old.el.remove();
+            }
+            if (cur && !reduced) cur.el.appendChild(caret);
+        }
+
+        function persistLogState() {
+            if (!lines.length) return;
+            try {
+                sessionStorage.setItem(LOG_STATE_KEY, JSON.stringify({
+                    version: 1,
+                    savedAt: Date.now(),
+                    elapsed: currentElapsed,
+                    logIndex: logIndex,
+                    counters: Object.fromEntries(Object.entries(COUNTERS).map(([name, counter]) => [name, counter.v])),
+                    lines: lines.map((line) => ({
+                        index: Number(line.el.dataset.log),
+                        done: line.done,
+                        parts: line.parts.map((part) => part.node.data),
+                    })),
+                }));
+            } catch (e) {
+                // sessionStorage puede estar bloqueado o lleno; el terminal sigue funcionando.
+            }
+        }
+
+        // pagehide cubre los enlaces a otras páginas y también el cierre de la pestaña.
+        addEventListener("pagehide", persistLogState);
+        addEventListener("beforeunload", persistLogState);
 
         // Abre la línea siguiente del trace. Si el panel ya está lleno, la más
         // vieja sale del DOM: eso es lo que hace "scrollear" el bloque hacia
@@ -530,6 +610,7 @@
         }
 
         fit();
+        restoreLogState();
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(fit).catch(() => {});
         }
@@ -553,13 +634,14 @@
             }
         } else {
             let raf = 0, running = false, inView = false;
-            let elapsed = 0, t0 = 0, last = 0, cycle = -1;
+            let elapsed = currentElapsed, t0 = 0, last = 0, cycle = -1;
 
             function frame(now) {
                 raf = requestAnimationFrame(frame);
                 if (now - last < TICK) return;
                 last = now;
                 elapsed = now - t0;
+                currentElapsed = elapsed;
 
                 // 1) escribir: un golpe de teclas por paso, con cadencia viva
                 let budget = CHARS_MIN + ((Math.random() * CHARS_VAR) | 0);
