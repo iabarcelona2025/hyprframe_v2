@@ -166,8 +166,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         heroLog.getAttribute("aria-hidden") === "true" &&
         /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
     check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
-        /\.hero-log\s*\{[^}]*right:\s*-\d/.test(css) &&
+        /\.hero-log\s*\{[^}]*right:\s*calc\(-[\d.]+em - 40px\)/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
+    check("hero log: 40 px más a la derecha y fundido con el vídeo (mix-blend-mode: screen)",
+        /\.hero-log\s*\{[^}]*mix-blend-mode:\s*screen/.test(css));
     check("hero log: opacidad 0.35 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
         /\.hero-log\s*\{[^}]*opacity:\s*0?\.35\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&

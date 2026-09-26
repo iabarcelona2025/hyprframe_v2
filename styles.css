@@ -286,6 +286,9 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
     display: flex; flex-direction: column; justify-content: center;
     padding: 8rem var(--pad) 0;
     overflow: hidden;
+    /* Grupo de fusión cerrado: el log del hero (mix-blend-mode: screen) se
+       mezcla con el vídeo y el velo de esta sección, y con nada más. */
+    isolation: isolate;
 }
 .hero-video {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -462,10 +465,17 @@ body.loaded .hero-sub {
     bottom: calc(var(--marquee-h) + 0.75rem);
     display: flex; flex-direction: column;
     /* Ancho y sangrado en `em` —no en vw— a propósito: como el font-size lo
-       escala el JS, el recorte lateral es siempre el mismo (~30% fuera). */
-    right: -16em;
+       escala el JS, el recorte lateral es siempre el mismo. Los 40 px extra
+       empujan el bloque fuera de cuadro: se ve menos y baja un punto su
+       presencia (estaba demasiado presente pegado al margen). */
+    right: calc(-16em - 40px);
     width: 54em;
     opacity: 0.35;
+    /* Fusión con el vídeo del hero en lugar de pintar encima: `screen` aclara
+       el fondo con la tinta de las letras (los números en verde ácido dejan un
+       rastro luminoso). `multiply` no sirve aquí: sobre un fondo casi negro
+       apagaría el texto en vez de integrarlo. */
+    mix-blend-mode: screen;
     padding: 0 0.9rem;
     font-family: var(--font-code);
     font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
