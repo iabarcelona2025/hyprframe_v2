@@ -16,10 +16,13 @@
        Si ya se ha reproducido en esta pestaña, marcamos <html> con .hf-skip-intro
        antes del primer frame: así el preloader nunca se llega a pintar (sin
        parpadeo) al volver a la landing desde legacy.html, builder.html, etc.
+       ?intro=1 fuerza la reproducción aunque ya se haya visto (para revisarla).
        Si el almacenamiento está bloqueado, se comporta como siempre. */
     (function () {
         try {
-            if (sessionStorage.getItem("hfIntroSeen") === "1") {
+            if (/[?&]intro=1(?:&|$)/.test(location.search)) {
+                sessionStorage.removeItem("hfIntroSeen");
+            } else if (sessionStorage.getItem("hfIntroSeen") === "1") {
                 document.documentElement.classList.add("hf-skip-intro");
             }
         } catch (e) { /* storage no disponible */ }
@@ -31,8 +34,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=26" />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=28" />
 </head>
 
 <body>

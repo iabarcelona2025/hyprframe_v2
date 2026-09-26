@@ -108,7 +108,7 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-head);
 }
 .preloader-count {
-    font-size: clamp(3rem, 10vw, 7rem); font-weight: 800;
+    font-size: clamp(2.2rem, 7.32vw, 5.125rem); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--violet);
     letter-spacing: 0.04em;
 }
