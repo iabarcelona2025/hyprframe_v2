@@ -216,33 +216,31 @@
     });
 
     /* ── 6c. Hero: log de inferencia del modelo ───────────── */
-    // Panel tipo terminal a la derecha del hero con el trace de un forward
-    // pass. El texto es literal: lo único que se mueve son los NÚMEROS, y cada
-    // campo conserva el ancho y los decimales del original, así que la
-    // maquetación nunca baila aunque los valores cambien 20 veces por segundo.
+    // Terminal de inferencia a la derecha del hero: el trace se ESCRIBE solo,
+    // carácter a carácter y en bucle, como si el modelo estuviera escupiendo su
+    // traza por consola.
     //
-    // · Nada de números aleatorios en el primer pintado: arranca con los
-    //   valores del propio texto y se van randomizando enseguida, así el bloque
-    //   es reconocible de entrada.
-    // · TODO el bloque está vivo: cada tick (20 fps) se reescribe una parte de
-    //   los campos de TODAS las líneas (CHURN), no solo las de la franja. La
-    //   franja del cabezal es un énfasis encima (ratio 100% + iluminado), no la
-    //   única fuente de movimiento. Coste acotado: ~100 escrituras por tick.
-    // · Campos: hex (0x…) y decimales se randomizan; los enteros (formas de
-    //   tensor, índices de capa, IDs de token) se quedan quietos porque son
-    //   estructura, no medida. {{muestra:contador}} avanza una vez por ciclo.
-    // · El font-size lo calcula el JS (--log-fs) para que quepa el log entero
-    //   en el alto disponible; si a ese tamaño sobra sitio, lo repite.
-    // · Un único rAF throttled a 20 fps, solo textContent, se para fuera de
-    //   pantalla, y con prefers-reduced-motion pinta el trace quieto.
-    // · Sin caja ni cromo: el panel es solo el trace, sangrado por la derecha.
+    // · Fase de llenado: arranca vacío y va escribiendo líneas hacia abajo.
+    // · Pantalla llena: al llegar al final del panel, cada línea nueva empuja
+    //   la más vieja fuera del DOM (ventana deslizante) → el bloque se queda
+    //   lleno y la información sigue fluyendo, como un terminal de verdad.
+    // · Sin franja ni barrido: el único foco es el cursor, que parpadea al
+    //   final de la línea que se está escribiendo ahora mismo.
+    // · Los números de las líneas ya escritas siguen cambiando (CHURN).
+    // · El texto es literal y los campos numéricos conservan el ancho y los
+    //   decimales del original, así que la maquetación nunca baila.
+    // · Un único rAF throttled escribiendo sobre nodos de texto (node.data, no
+    //   textContent), se para fuera de pantalla, y con prefers-reduced-motion
+    //   pinta el bloque ya escrito y quieto.
     const heroLog = document.getElementById("heroLog");
 
     if (heroLog) {
-        const CYCLE = 5000;      // ms — vuelta completa del cabezal
-        const TICK = 50;         // ms entre repintados (~20 fps)
+        const CYCLE = 5000;      // ms — los contadores avanzan una vez por ciclo
+        const TICK = 50;         // ms entre pasos de escritura (~20 fps)
         const LEAD = 1.3;        // line-height, el mismo que en el CSS
         const FS_MIN = 6, FS_MAX = 11;
+        const CHARS_MIN = 8, CHARS_VAR = 24;   // caracteres por paso (8-32)
+        const CHURN = 0.45;      // fracción de campos que cambia por paso
         const HEX = "0123456789abcdef";
         // Contadores: avanzan una vez por ciclo de 5 s (no con el barrido).
         const COUNTERS = {
@@ -399,51 +397,89 @@
             return spec.signed ? (v < 0 ? "-" : " ") + s : s;
         }
 
-        const lines = [];   // [{ el, fields:[{ el, spec }] }]
+        // Cursor de escritura: viaja al final de la línea que se está escribiendo.
+        const caret = document.createElement("span");
+        caret.className = "log-caret";
 
+        const lines = [];        // ventana deslizante: [{ el, parts, fields, done }]
+        let maxLines = LOG.length; // líneas que caben en el panel
+        let logIndex = 0;        // siguiente línea del trace
+        let cur = null;          // línea en curso (null → toca abrir otra)
+
+        // Construye la línea con toda su estructura (texto + spans de números)
+        // pero con los textos VACÍOS: "escribir" es ir revelando caracteres.
         function buildLine(text) {
             const el = document.createElement("div");
             el.className = "log-line";
+            const parts = [];
             const fields = [];
             let last = 0, m;
             TOKEN.lastIndex = 0;
+            const addText = (str) => {
+                const node = document.createTextNode("");
+                el.appendChild(node);
+                parts.push({ node: node, full: str });
+            };
             while ((m = TOKEN.exec(text))) {
-                if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+                if (m.index > last) addText(text.slice(last, m.index));
                 const spec = makeSpec(m[0]);
                 if (!spec) {
-                    el.appendChild(document.createTextNode(m[0]));
+                    addText(m[0]);
                 } else {
                     const span = document.createElement("span");
                     span.className = "log-num";
-                    span.textContent = render(spec, false);
+                    const node = document.createTextNode("");
+                    span.appendChild(node);
                     el.appendChild(span);
-                    // se guarda el nodo de texto: escribir en .data es más
-                    // barato que reasignar textContent (que crea un nodo nuevo)
-                    fields.push({ node: span.firstChild, spec });
+                    parts.push({ node: node, full: render(spec, false) });
+                    fields.push({ node: node, spec: spec });
                 }
                 last = m.index + m[0].length;
             }
-            if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
-            // las líneas en blanco necesitan algo de contenido para ocupar su alto
-            if (!text) el.appendChild(document.createTextNode(" "));
-            return { el, fields };
+            if (last < text.length) addText(text.slice(last));
+            // las líneas en blanco necesitan contenido para ocupar su alto
+            if (!parts.length) addText(" ");
+            return { el: el, parts: parts, fields: fields, pi: 0, done: false };
         }
 
-        function addCopy() {
-            const frag = document.createDocumentFragment();
-            LOG.forEach((text) => {
-                const line = buildLine(text);
-                lines.push(line);
-                frag.appendChild(line.el);
-            });
-            linesEl.appendChild(frag);
+        // Abre la línea siguiente del trace. Si el panel ya está lleno, la más
+        // vieja sale del DOM: eso es lo que hace "scrollear" el bloque hacia
+        // abajo, como un terminal real cuando llegas al final de la pantalla.
+        function nextLine() {
+            const idx = logIndex % LOG.length;
+            cur = buildLine(LOG[idx]);
+            cur.el.dataset.log = String(idx);   // de qué línea del trace viene
+            logIndex++;
+            lines.push(cur);
+            linesEl.appendChild(cur.el);
+            if (!reduced) cur.el.appendChild(caret);
+            while (lines.length > maxLines) {
+                const old = lines.shift();
+                if (old === cur) cur = null;   // solo pasa al reducir la ventana
+                old.el.remove();
+            }
         }
 
-        // Reescribe los números de una línea. Todo el bloque está vivo: cada
-        // tick se mueve una parte de los campos de TODAS las líneas (ratio 0-1),
-        // no solo las que toca la franja. La franja solo sube el ratio al 100%
-        // y las ilumina: así el movimiento no depende de que pase por ahí.
-        const CHURN = 0.45;   // fracción de campos que cambia por tick fuera de la franja
+        // Escribe hasta `n` caracteres de la línea; devuelve los que no gasta.
+        function typeChars(line, n) {
+            while (n > 0 && line.pi < line.parts.length) {
+                const part = line.parts[line.pi];
+                const written = part.node.data.length;
+                const take = Math.min(n, part.full.length - written);
+                part.node.data = part.full.slice(0, written + take);
+                n -= take;
+                if (part.node.data.length >= part.full.length) line.pi++;
+            }
+            return n;
+        }
+
+        function finishLine(line) {
+            line.done = true;
+            line.el.classList.add("is-done");
+        }
+
+        // Los números de las líneas ya escritas siguen vivos: en cada paso se
+        // mueve una parte de sus campos (ratio 0-1).
         function randomize(line, ratio) {
             line.fields.forEach((f) => {
                 if (f.spec.kind === "counter") return;   // lo mueve el ciclo
@@ -457,6 +493,8 @@
             lines.forEach((line) => {
                 line.fields.forEach((f) => {
                     if (f.spec.kind !== "counter") return;
+                    // si el campo aún se está escribiendo, no se adelanta
+                    if (f.node.data.length < f.spec.width) return;
                     const t = render(f.spec, false);
                     if (f.node.data !== t) f.node.data = t;
                 });
@@ -472,19 +510,23 @@
             });
         }
 
-        // Ajusta el font-size al alto disponible (--log-fs) y añade copias del
-        // trace si, a ese tamaño, el bloque no llega a llenar el panel.
+        // Ajusta el font-size al alto disponible y deriva cuántas líneas caben
+        // (esa es la ventana: una vez llena, el bloque ya solo scrollea).
         function fit() {
             const cs = getComputedStyle(linesEl);
             const avail = linesEl.getBoundingClientRect().height
                 - (parseFloat(cs.paddingTop) || 0)
                 - (parseFloat(cs.paddingBottom) || 0);
-            if (!lines.length) addCopy();
-            if (avail <= 0) return;
-            const fs = Math.min(FS_MAX, Math.max(FS_MIN, avail / (LOG.length * LEAD)));
-            heroLog.style.setProperty("--log-fs", fs.toFixed(2) + "px");
-            const copies = Math.min(3, Math.max(1, Math.floor(avail / (LOG.length * fs * LEAD))));
-            while (lines.length / LOG.length < copies) addCopy();
+            if (avail > 0) {
+                const fs = Math.min(FS_MAX, Math.max(FS_MIN, avail / (LOG.length * LEAD)));
+                heroLog.style.setProperty("--log-fs", fs.toFixed(2) + "px");
+                maxLines = Math.max(4, Math.floor(avail / (fs * LEAD)));
+            }
+            while (lines.length > maxLines) {
+                const old = lines.shift();
+                if (old === cur) cur = null;
+                old.el.remove();
+            }
         }
 
         fit();
@@ -499,7 +541,17 @@
             }
         });
 
-        if (!reduced) {
+        if (reduced) {
+            // sin animación: el bloque aparece ya escrito y quieto, sin cursor
+            while (lines.length < maxLines) {
+                nextLine();
+                if (!cur) break;
+                cur.parts.forEach((p) => { p.node.data = p.full; });
+                cur.pi = cur.parts.length;
+                finishLine(cur);
+                cur = null;
+            }
+        } else {
             let raf = 0, running = false, inView = false;
             let elapsed = 0, t0 = 0, last = 0, cycle = -1;
 
@@ -507,26 +559,23 @@
                 raf = requestAnimationFrame(frame);
                 if (now - last < TICK) return;
                 last = now;
-
                 elapsed = now - t0;
-                const p = (elapsed % CYCLE) / CYCLE;
-                const n = lines.length;
-                const band = Math.max(2, Math.round(n * 0.18));   // estela del cabezal
-                const head = -band + p * (n + band);
-                const from = Math.max(0, Math.ceil(head - band));
-                const to = Math.min(n - 1, Math.floor(head));
 
-                for (let i = 0; i < n; i++) {
-                    const hot = i >= from && i <= to;
-                    lines[i].el.classList.toggle("is-hot", hot);
-                    lines[i].el.classList.toggle("is-head", hot && i === to);
-                    // dentro de la franja cambian todos los campos; fuera,
-                    // CHURN de ellos en cada tick (el bloque entero está vivo)
-                    randomize(lines[i], hot ? 1 : CHURN);
+                // 1) escribir: un golpe de teclas por paso, con cadencia viva
+                let budget = CHARS_MIN + ((Math.random() * CHARS_VAR) | 0);
+                let guard = 0;
+                while (budget > 0 && guard++ < 64) {
+                    if (!cur) nextLine();
+                    if (!cur) break;
+                    budget = typeChars(cur, budget);
+                    if (cur.pi >= cur.parts.length) { finishLine(cur); cur = null; }
                 }
 
-                // los contadores (capa, timestep, token, KV-cache) avanzan una
-                // vez por ciclo; los números, con el barrido
+                // 2) los números de las líneas ya escritas siguen cambiando
+                lines.forEach((l) => { if (l.done) randomize(l, CHURN); });
+
+                // 3) los contadores (capa, timestep, token, KV-cache) avanzan
+                //    una vez por ciclo, sobre el texto ya escrito
                 const c = Math.floor(elapsed / CYCLE);
                 if (c !== cycle) {
                     cycle = c;

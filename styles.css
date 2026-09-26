@@ -500,11 +500,16 @@ body.loaded .hero-sub {
    van en verde ácido: son lo único que cambia. */
 .log-line { display: block; white-space: pre; color: rgba(242, 241, 238, 0.5); }
 .log-num { color: rgba(163, 223, 2, 0.6); }
-/* La banda del cabezal: las líneas "calientes" se iluminan y la que se está
-   reescribiendo ahora (is-head) lleva sus números a pleno brillo. */
-.log-line.is-hot { background: rgba(163, 223, 2, 0.05); color: rgba(242, 241, 238, 0.95); }
-.log-line.is-hot .log-num { color: var(--lime); }
-.log-line.is-head .log-num { color: #fff; }
+/* Cursor de escritura: bloque verde ácido parpadeando justo donde se está
+   escribiendo. Viaja al final de la línea activa; no hay ninguna franja ni
+   barrido, el único foco del bloque es este cursor. */
+.log-caret {
+    display: inline-block; vertical-align: text-bottom;
+    width: 0.6em; height: 1em; margin-left: 0.15em;
+    background: var(--lime);
+    animation: logCaret 1.1s steps(1, end) infinite;
+}
+@keyframes logCaret { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
 /* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
    separarlo del SCROLL. El cue y la marquee son absolutos y ocupan ~10.5rem

@@ -186,6 +186,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.hero-log\s*\{[^}]*font-size:\s*var\(--log-fs/.test(css) &&
         /const FS_MIN = 6, FS_MAX = 11;/.test(js) &&
         /setProperty\("--log-fs"/.test(js) && /document\.fonts\.ready\.then\(fit\)/.test(js));
+    // el trace se escribe en bucle: esperar a que la ventana esté llena
+    for (let i = 0; i < 30 && !/NCCL MULTI-GPU/.test(heroLog.textContent); i++) await wait(400);
     const logLines = heroLog ? [...heroLog.querySelectorAll(".log-line")] : [];
     const logNums = heroLog ? [...heroLog.querySelectorAll(".log-num")] : [];
     check("hero log: pinta el trace completo con sus campos numéricos",
@@ -196,26 +198,49 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /Q_Tensor \[1, 32, 128, 64\]/.test(heroLog.textContent) &&
         /#15496 \(" tensor"\)/.test(heroLog.textContent) &&
         /ε = 1e-05/.test(heroLog.textContent) && /θ=10000/.test(heroLog.textContent));
-    // el barrido randomiza en caliente: dos muestras separadas 400 ms
+    // el bloque está vivo: dos muestras separadas 400 ms
     const logSnap = () => heroLog.querySelector(".log-body").textContent;
     const logBefore = logSnap();
     await wait(400);
     const logAfter = logSnap();
-    check("hero log: los valores numéricos cambian a gran velocidad mientras barre",
+    check("hero log: los valores numéricos cambian a gran velocidad mientras se escribe",
         logAfter !== logBefore, logAfter === logBefore ? "sin cambios en 400 ms" : "cambiando");
-    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
-        logAfter.length === logBefore.length &&
-        heroLog.querySelectorAll(".log-line").length === logLines.length,
-        `${logBefore.length} → ${logAfter.length} caracteres`);
-    // los números se mueven en todo el bloque, no solo al pasar la franja clara
-    const coldSnap = [...heroLog.querySelectorAll(".log-line")].map((l) => ({
-        t: l.textContent, hot: l.classList.contains("is-hot"),
-    }));
+    // invariante: en las líneas YA escritas solo cambian los números, nunca el
+    // ancho de un campo (la línea en curso no cuenta: se está escribiendo)
+    const widthsByLog = () => {
+        const map = {};
+        heroLog.querySelectorAll(".log-line.is-done").forEach((l) => { map[l.dataset.log] = l.textContent.length; });
+        return map;
+    };
+    const wBefore = widthsByLog();
     await wait(400);
-    const coldNow = [...heroLog.querySelectorAll(".log-line")].map((l) => l.textContent);
-    const coldMoved = coldSnap.filter((s, i) => !s.hot && s.t !== coldNow[i]).length;
-    check("hero log: los números cambian en todo el bloque, no solo al pasar la franja",
-        coldMoved > 3, `${coldMoved} líneas fuera de la franja cambiaron en 400 ms`);
+    const wAfter = widthsByLog();
+    const sameWidth = Object.keys(wBefore).every((k) => wAfter[k] === undefined || wAfter[k] === wBefore[k]);
+    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
+        Object.keys(wBefore).length > 20 && sameWidth,
+        `${Object.keys(wBefore).length} líneas escritas, anchos idénticos`);
+    // sin franja: los números se mueven en todas las líneas ya escritas
+    const doneSnap = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
+    await wait(400);
+    const doneNow = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
+    const moved = doneSnap.filter((txt, i) => doneNow[i] !== undefined && txt !== doneNow[i]).length;
+    check("hero log: los números cambian en todo el bloque escrito, sin depender de ninguna franja",
+        moved > 3 && !/is-hot|is-head/.test(js) && !/is-hot|is-head/.test(css),
+        `${moved} líneas cambiando en 400 ms`);
+    check("hero log: se escribe carácter a carácter, con cursor al final de la línea activa",
+        /const CHARS_MIN = 8, CHARS_VAR = 24;/.test(js) && /function typeChars/.test(js) &&
+        /\.log-caret\s*\{[^}]*animation:\s*logCaret/.test(css) &&
+        heroLog.querySelectorAll(".log-caret").length === 1 &&
+        heroLog.querySelector(".log-caret").parentElement === heroLog.querySelectorAll(".log-line:not(.is-done)")[0],
+        `cursor en ${heroLog.querySelector(".log-caret").parentElement ? "línea activa" : "ninguna"}`);
+    const head0 = [...heroLog.querySelectorAll(".log-line")].slice(0, 5).map((l) => l.textContent).join("|");
+    await wait(2500);
+    const head1 = [...heroLog.querySelectorAll(".log-line")].slice(0, 5).map((l) => l.textContent).join("|");
+    check("hero log: con la pantalla llena la información scrollea (ventana deslizante)",
+        head0 !== head1 &&
+        heroLog.querySelectorAll(".log-line").length === logLines.length &&
+        /while \(lines\.length > maxLines\)/.test(js),
+        `${logLines.length} líneas en ventana, la cabecera del bloque avanza`);
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
         /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 2\d%\)/.test(css));
