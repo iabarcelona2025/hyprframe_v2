@@ -232,6 +232,9 @@
     // · Un único rAF throttled escribiendo sobre nodos de texto (node.data, no
     //   textContent), se para fuera de pantalla, y con prefers-reduced-motion
     //   pinta el bloque ya escrito y quieto.
+    // · PERSISTENCIA: el estado se guarda en sessionStorage para que al volver
+    //   de otras páginas (legacy.html, builder.html, etc.) el terminal no
+    //   reinicie desde cero, sino que continúe desde donde se quedó.
     const heroLog = document.getElementById("heroLog");
 
     if (heroLog) {
@@ -541,6 +544,153 @@
             }
         });
 
+        // ── Persistencia del terminal (sessionStorage) ─────────────────
+        // Guarda el estado para que al volver de otras páginas no reinicie.
+        const STORAGE_KEY = "hfHeroLogState";
+        let saveTimer = 0;
+
+        function getLineStates() {
+            return lines.map((l) => ({
+                pi: l.pi,
+                done: l.done,
+                parts: l.parts.map((p) => p.node.data),
+                fields: l.fields.map((f) => f.node.data),
+            }));
+        }
+
+        function saveState() {
+            try {
+                const state = {
+                    logIndex,
+                    elapsed,
+                    cycle,
+                    lines: getLineStates(),
+                    counters: Object.fromEntries(
+                        Object.entries(COUNTERS).map(([k, v]) => [k, v.v])
+                    ),
+                    timestamp: Date.now(),
+                };
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                // storage no disponible o quota excedida
+            }
+        }
+
+        function restoreState() {
+            try {
+                const raw = sessionStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const state = JSON.parse(raw);
+                // Solo restaurar si el estado es reciente (últimos 30 min)
+                if (Date.now() - state.timestamp > 30 * 60 * 1000) {
+                    sessionStorage.removeItem(STORAGE_KEY);
+                    return null;
+                }
+                return state;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function applyRestoredState(state) {
+            if (!state) return false;
+
+            // Restaurar contadores
+            Object.entries(state.counters || {}).forEach(([k, v]) => {
+                if (COUNTERS[k]) COUNTERS[k].v = v;
+            });
+
+            // Restaurar líneas escritas hasta el momento
+            logIndex = state.logIndex || 0;
+            // Avanzar líneas hasta logIndex (sin animación, directo)
+            while (lines.length < Math.min(logIndex, maxLines)) {
+                nextLine();
+                if (!cur) break;
+                cur.parts.forEach((p) => { p.node.data = p.full; });
+                cur.pi = cur.parts.length;
+                finishLine(cur);
+                cur = null;
+            }
+
+            // Si hay estado de líneas guardado, aplicarlo
+            if (state.lines && state.lines.length) {
+                state.lines.forEach((savedLine, i) => {
+                    if (i >= lines.length) return;
+                    const line = lines[i];
+                    // Restaurar partes de texto
+                    savedLine.parts.forEach((text, pi) => {
+                        if (pi < line.parts.length) {
+                            line.parts[pi].node.data = text;
+                        }
+                    });
+                    line.pi = savedLine.pi;
+                    // Restaurar campos numéricos
+                    savedLine.fields.forEach((text, fi) => {
+                        if (fi < line.fields.length) {
+                            line.fields[fi].node.data = text;
+                        }
+                    });
+                    line.done = savedLine.done;
+                    if (savedLine.done) line.el.classList.add("is-done");
+                });
+            }
+
+            // Restaurar tiempo y ciclo
+            elapsed = state.elapsed || 0;
+            cycle = state.cycle || -1;
+
+            // Actualizar contadores en pantalla
+            paintCounters();
+
+            return true;
+        }
+
+        // Guardar estado periódicamente (cada 2s) y al salir
+        function scheduleSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                saveState();
+                scheduleSave();
+            }, 2000);
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                saveState();
+                clearTimeout(saveTimer);
+            } else {
+                scheduleSave();
+            }
+        });
+        addEventListener("pagehide", saveState);
+        addEventListener("beforeunload", saveState);
+
+        // Intentar restaurar estado al cargar
+        const restored = restoreState();
+        const hasRestored = applyRestoredState(restored);
+
+        if (reduced) {
+            // sin animación: el bloque aparece ya escrito y quieto, sin cursor
+            while (lines.length < maxLines) {
+                nextLine();
+                if (!cur) break;
+                cur.parts.forEach((p) => { p.node.data = p.full; });
+                cur.pi = cur.parts.length;
+                finishLine(cur);
+                cur = null;
+            }
+        fit();
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(fit).catch(() => {});
+        }
+        let fitTicking = false;
+        addEventListener("resize", () => {
+            if (!logFitTicking) {
+                logFitTicking = true;
+                requestAnimationFrame(() => { fit(); logFitTicking = false; });
+            }
+        });
+
         if (reduced) {
             // sin animación: el bloque aparece ya escrito y quieto, sin cursor
             while (lines.length < maxLines) {
@@ -553,7 +703,7 @@
             }
         } else {
             let raf = 0, running = false, inView = false;
-            let elapsed = 0, t0 = 0, last = 0, cycle = -1;
+            let t0 = 0, last = 0;
 
             function frame(now) {
                 raf = requestAnimationFrame(frame);
@@ -608,7 +758,10 @@
                 else if (inView) start();
             });
 
-            onHeroReady(() => io.observe(heroLog)); // ni un frame tras el preloader
+            onHeroReady(() => {
+            io.observe(heroLog); // ni un frame tras el preloader
+            scheduleSave(); // start periodic state saving
+        });
         }
     }
 
