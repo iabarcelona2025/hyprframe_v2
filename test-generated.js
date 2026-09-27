@@ -186,11 +186,41 @@ for (const page of PAGES) {
 }
 
 /* ── La landing enlaza todas las piezas de la sección ── */
-const linkedFromIndex = new Set([...indexDoc.querySelectorAll('.work-row')].map((el) =>
-    new URL(el.getAttribute("href"), "http://localhost:8080/index.html").pathname.slice(1)));
-for (const page of [...PAGES.map((p) => p.file), "project-node.html"]) {
-    assert.ok(linkedFromIndex.has(page), `index.html no enlaza ${page}`);
-}
-assert.ok(css.includes(".node-hero--long h1"), "generated.css cubre los titulares largos");
+const workRows = [...indexDoc.querySelectorAll(".work-row")];
+const workOrder = workRows.map((el) =>
+    new URL(el.getAttribute("href"), "http://localhost:8080/index.html").pathname.slice(1));
+const workTitles = Object.fromEntries(workRows.map((el) => [
+    new URL(el.getAttribute("href"), "http://localhost:8080/index.html").pathname.slice(1),
+    el.querySelector(".work-title").textContent.trim(),
+]));
+const ALL = ["project-node.html", ...PAGES.map((page) => page.file)];
+assert.deepEqual(workOrder, ALL, "el paginador sigue el orden de SELECTED WORK");
 
-console.log(`\n✅ ALL PASS — ${PAGES.length} páginas GENERATED con el estilo de project-node.html`);
+/* ── Paginador anterior / siguiente: un ciclo cerrado por toda la sección ── */
+assert.ok(css.includes(".node-pager"), "generated.css da estilo al paginador");
+for (const [i, file] of ALL.entries()) {
+    const doc = new JSDOM(read(file)).window.document;
+    const pager = doc.querySelector(".node-pager");
+    assert.ok(pager && pager.tagName === "NAV", `${file}: falta el <nav> del paginador`);
+    assert.ok(pager.getAttribute("aria-label"), `${file}: el paginador no se anuncia`);
+    assert.ok(doc.querySelector(".node-related + .node-pager"), `${file}: el paginador cierra la página`);
+    const prev = pager.querySelector('a[rel="prev"]');
+    const next = pager.querySelector('a[rel="next"]');
+    assert.equal(pager.querySelectorAll("a").length, 2, `${file}: solo anterior y siguiente`);
+    const expected = [ALL[(i - 1 + ALL.length) % ALL.length], ALL[(i + 1) % ALL.length]];
+    assert.deepEqual([prev.getAttribute("href"), next.getAttribute("href")], expected,
+        `${file}: el ciclo no respeta el orden de la landing`);
+    assert.equal(pager.querySelector(".node-pager__count").textContent.trim(),
+        `${String(i + 1).padStart(2, "0")} / ${ALL.length}`, `${file}: contador fuera de sitio`);
+    for (const [link, href] of [[prev, expected[0]], [next, expected[1]]]) {
+        assert.ok(fs.existsSync(path.join(root, href)), `${file}: destino roto ${href}`);
+        const name = link.querySelector(".node-pager__name").textContent.trim();
+        assert.equal(name, workTitles[href], `${file}: «${name}» no es el título de ${href}`);
+        assert.ok(link.textContent.includes(link.querySelector(".node-pager__kicker").textContent),
+            `${file}: el enlace anuncia si va a la pieza anterior o a la siguiente`);
+        assert.equal(link.querySelector(".node-pager__arrow").getAttribute("aria-hidden"), "true",
+            `${file}: la flecha es decorativa`);
+    }
+}
+
+console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);

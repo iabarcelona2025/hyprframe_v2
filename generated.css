@@ -57,7 +57,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-hero__explore span { font-size: 1.3rem; }
 .node-hero__explore:hover { color: var(--lime); }
-.node-film, .node-story, .node-related { padding-inline: var(--pad); }
+.node-film, .node-story, .node-related, .node-pager { padding-inline: var(--pad); }
 .node-film { padding-top: clamp(3rem, 6vw, 5rem); scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
 .node-section-label span:first-child { color: var(--violet); }
@@ -122,7 +122,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
     letter-spacing: 0.19em; color: var(--muted);
 }
 
-.node-related { padding-bottom: clamp(6rem, 11vw, 10rem); }
+/* The bottom air of the section now belongs to the pager: the related grid only
+   keeps the gap up to its hairline. */
+.node-related { padding-bottom: clamp(3rem, 6vw, 5rem); }
 .node-related__heading {
     display: flex; justify-content: space-between; align-items: end; gap: 2rem;
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
@@ -152,6 +154,49 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-card__title { font: 600 clamp(1.35rem, 2.7vw, 2.65rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) */
 .node-card:hover .node-card__title { color: var(--violet); }
 
+/* ── Prev / next ──────────────────────────────────────────────
+   The old template paged through the portfolio with a bare "<  ::  >". The
+   section keeps that triad — previous, position in the list, next — but in the
+   brand's own language: hairline rule, mono kickers, Kanit names and arrows that
+   slide outwards on hover. The order is the one of SELECTED WORK on the landing
+   and it closes as a cycle, so the last piece always leads back to the first. */
+.node-pager {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(0.75rem, 2.5vw, 2.5rem);
+    border-top: 1px solid var(--line);
+    padding-top: clamp(1.25rem, 2.5vw, 2rem);
+    padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+.node-pager__link {
+    flex: 1 1 0; min-width: 0;
+    display: flex; align-items: center; gap: clamp(0.9rem, 2vw, 1.6rem);
+}
+.node-pager__link--next { justify-content: flex-end; }
+.node-pager__arrow {
+    flex: none; font-size: 1.3rem; line-height: 1; color: var(--violet);
+    transition: transform 0.45s var(--ease-out), color 0.3s;
+}
+.node-pager__text { display: grid; gap: 0.45rem; min-width: 0; }
+.node-pager__link--next .node-pager__text { justify-items: end; }
+.node-pager__kicker {
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
+    text-transform: uppercase; color: var(--muted); transition: color 0.3s;
+}
+.node-pager__name {
+    display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font: 600 clamp(1.05rem, 2.1vw, 2rem)/1.1 var(--font-head); /* same 600 as the related cards */
+    letter-spacing: 0.025em; text-transform: uppercase; transition: color 0.3s;
+}
+.node-pager__count {
+    flex: none; padding-top: 0.4rem;
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
+    font-variant-numeric: tabular-nums; color: var(--muted);
+}
+.node-pager__link:hover .node-pager__name, .node-pager__link:focus-visible .node-pager__name { color: var(--violet); }
+.node-pager__link:hover .node-pager__kicker { color: var(--fg); }
+.node-pager__link:hover .node-pager__arrow { color: var(--lime); transform: translateX(-0.45rem); }
+.node-pager__link--next:hover .node-pager__arrow { transform: translateX(0.45rem); }
+
 @media (max-width: 850px) {
     .node-story__grid { grid-template-columns: 1fr; gap: 2.75rem; }
     .node-story__copy { max-width: 48ch; margin-left: auto; }
@@ -170,7 +215,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
+    .node-pager { gap: 0.75rem; padding-top: 1.1rem; }
+    .node-pager__link { gap: 0.6rem; }
+    .node-pager__kicker, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
+    .node-pager__arrow { font-size: 1.05rem; }
+    .node-pager__name { font-size: 0.95rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .node-card__image img, .node-player > img { transition: none; }
+    .node-card__image img, .node-player > img, .node-pager__arrow { transition: none; }
 }
