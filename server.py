@@ -88,11 +88,17 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         if self.path in ("/", ""):
-            self.send_response(302)
-            self.send_header("Location", "/404.html")
-            self.send_header("Content-Length", "0")
-            self.end_headers()
-            return
+            page_404 = os.path.join(ROOT, "404.html")
+            try:
+                with open(page_404, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                return
+            except Exception:
+                pass
         super().do_HEAD()
 
     def do_GET(self):
@@ -123,13 +129,20 @@ class Handler(SimpleHTTPRequestHandler):
                         _clients.remove(q)
             return
 
-        # Redirect root to 404.html for immediate preview
+        # Serve 404.html directly on root for immediate preview
         if self.path in ("/", ""):
-            self.send_response(302)
-            self.send_header("Location", "/404.html")
-            self.send_header("Content-Length", "0")
-            self.end_headers()
-            return
+            page_404 = os.path.join(ROOT, "404.html")
+            try:
+                with open(page_404, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            except Exception:
+                pass
 
         super().do_GET()
 
