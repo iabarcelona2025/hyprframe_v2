@@ -179,7 +179,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: flex; justify-content: space-between; align-items: end; gap: 2rem;
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
 }
-.node-related h2 { font-size: clamp(calc(3rem - 25px), calc(6.5vw - 25px), calc(7rem - 25px)); }
+.node-related h2 { font-size: clamp(calc(3rem - 25px), calc(6.5vw - 40px), calc(7rem - 40px)); } /* -15px (27/09/2026) · el mínimo se queda en 3rem-25px: restarle los 15px dejaría el titular en 8px entre 561 y 738px */
 .node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(clamp(1.25rem, 3.5vw, 4rem) * 0.85); width: 85%; margin-inline: auto; } /* 100% → 85% (27/09/2026) · los 2 cuadros de RELATED PROJECTS se reducen un 15%; el gap baja al 85% para que la reducción de cada cuadro sea exacta */
 .node-card { min-width: 0; display: flex; flex-direction: column; }
 .node-card__image { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #151416; }
@@ -195,7 +195,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.2em; color: var(--muted);
 }
 .node-card__meta span:last-child { font-size: 1.25rem; line-height: 0.8; color: var(--violet); }
-.node-card__title { font: 600 clamp(1.1rem, 2.2vw, 2.1rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) · reducido para RELATED PROJECTS (28/09/2026) */
+.node-card__title { font: 600 clamp(0.935rem, 1.87vw, 1.785rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) · reducido para RELATED PROJECTS (28/09/2026) · -15% con los cuadros (27/09/2026) */
 .node-card:hover .node-card__title { color: var(--violet); }
 @media (max-width: 850px) {
     .node-story__grid { grid-template-columns: 1fr; gap: 2.75rem; }
