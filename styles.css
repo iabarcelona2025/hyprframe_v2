@@ -117,8 +117,11 @@ html.hf-skip-intro .preloader { display: none; }
 }
 .preloader-count {
     /* 20 px smaller than the original intro counter at every breakpoint. */
-    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px)); font-weight: 300;
-    font-variant-numeric: tabular-nums; color: var(--violet);
+    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px));
+    /* Misma tipografía que el menú fijo superior (Space Mono), en blanco.
+       Space Mono solo se carga en 400/700: 400 es el peso del menú. */
+    font-family: var(--font-mono); font-weight: 400;
+    font-variant-numeric: tabular-nums; color: var(--fg);
     letter-spacing: 0.04em;
 }
 .preloader-word {
@@ -845,9 +848,10 @@ section { position: relative; }
    The fifth frame repeats the first so the 12s loop has no visible jump. */
 .clb-showcase {
     position: relative; align-self: center; min-width: 0;
-    /* Pivot from the left: the right edge recedes by 10°, reflection included. */
-    transform: perspective(1100px) rotateY(10deg);
-    transform-origin: left center;
+    /* Cuadro del carrusel 20px más estrecho que su columna (el alto baja en proporción). */
+    width: calc(100% - 20px);
+    /* Totalmente frontal: sin perspectiva ni giro en ningún eje. */
+    transform: none;
 }
 .clb-gallery-frame, .clb-gallery-reflection {
     /* A single shared curve keeps the reflection locked to the gallery edges. */
@@ -920,7 +924,8 @@ section { position: relative; }
 .clb-feature p {
     margin-left: clamp(0.75rem, 1.5vw, 1.25rem);
     max-width: 60ch; color: var(--muted);
-    font-size: 0.92rem; font-weight: 300; line-height: 1.7;
+    /* Mismo tamaño que .about-copy (hereda el font-size del body). */
+    font-size: inherit; font-weight: 300; line-height: 1.7;
 }
 .clb-feature strong { color: var(--fg); font-weight: 600; }
 /* Escritorio: galería ancha a la izquierda; capacidades y CTA juntos a la derecha. */
@@ -931,13 +936,32 @@ section { position: relative; }
         row-gap: clamp(1rem, 2vw, 1.75rem);
     }
     .clb-intro > p { margin-bottom: 0; }
+    /* Solo web/escritorio: carrusel 250px más estrecho que su columna.
+       El alto sigue el aspect-ratio 1.85 del marco. */
+    .clb-showcase { width: calc(100% - 250px); }
+    /* El reflejo (sombra) también escala en proporción: su alto es un % fijo del
+       ancho, en vez de un alto fijo, así mantiene la relación con el marco. */
+    .clb-gallery-reflection { height: auto; aspect-ratio: 23 / 1; }
+    /* El borde inferior del carrusel coincide con el del botón TEST NOW:
+       ambos se alinean al final de la fila; el reflejo queda por debajo. */
+    .clb-showcase { align-self: end; }
+    .clb-side { align-self: end; }
+    /* Margen negativo = alto del reflejo (ancho/23; el % de margin se calcula sobre
+       el ancho) + su margin-top, para que no cuente en la alineación. */
+    .clb-gallery-reflection { margin-bottom: calc(-100% / 23 - 0.35rem); }
+    /* Texto de intro justificado, siempre en 3 líneas con su tamaño original.
+       Es más ancho que el carrusel: el texto mide ~85em en una sola línea
+       (Space Grotesk 300) y necesita ≥30em por línea para caber en 3; con 31em hay
+       margen. Al estar en `em`, el ancho acompaña al tamaño de letra. */
+    .clb-intro { max-width: none; }
+    .clb-intro > p { width: 31em; max-width: 100%; text-align: justify; }
 }
 @media (max-width: 1180px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 2rem clamp(2rem, 4vw, 3.5rem);
     }
-    .clb-showcase { width: 100%; }
+    .clb-showcase { width: calc(100% - 20px); }
 }
 @media (max-width: 700px) {
     .clb-grid {
@@ -947,7 +971,8 @@ section { position: relative; }
         gap: 2.5rem;
     }
     .clb-intro { max-width: 60ch; }
-    .clb-showcase { max-width: 580px; }
+    /* Móvil: tamaño original (sin la reducción de 20px). */
+    .clb-showcase { width: 100%; max-width: 580px; }
     .clb-cta { margin-top: 2rem; }
 }
 

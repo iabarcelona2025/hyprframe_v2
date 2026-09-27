@@ -69,9 +69,10 @@ test("only mirrored photos appear beneath the gallery; no violet glow", () => {
     assert.doesNotMatch(css, /\.clb-gallery-frame\s*\{[^}]*box-shadow:/);
 });
 
-test("right edge recedes 10 degrees and the reflection is short and faint", () => {
+test("gallery faces the viewer head-on and the reflection is short and faint", () => {
     assert.match(css, /\.clb-gallery-frame\s*\{[^}]*border:\s*1px solid #111114;/);
-    assert.match(css, /\.clb-showcase\s*\{[^}]*transform:\s*perspective\(1100px\) rotateY\(10deg\);\s*transform-origin:\s*left center;/);
+    assert.match(css, /\.clb-showcase\s*\{[^}]*transform:\s*none;/);
+    assert.doesNotMatch(css, /\.clb-showcase\s*\{[^}]*(perspective|rotate[XYZ]?)\(/);
     assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*height:\s*clamp\(1\.1rem, 2\.8vw, 2rem\);/);
     assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*opacity:\s*0\.16;/);
     assert.ok(doc.querySelector("#clb .clb-showcase > .clb-gallery-reflection"));
