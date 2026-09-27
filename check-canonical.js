@@ -31,8 +31,17 @@ const locs = [...sm.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
 const canon = pages.map(f => f === "index.html" ? "https://hyprframe.com/" : `https://hyprframe.com/${f}`);
 const missingInSitemap = canon.filter(c => !locs.includes(c));
 console.log(`${missingInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap cubre los 13 canonical EN; faltan: ${missingInSitemap.length ? missingInSitemap.join(", ") : "ninguna"}`);
-console.log(`     sitemap: ${locs.length} URLs, ${locs.filter(l => l.includes("/es/")).length} en /es/`);
 if (missingInSitemap.length) fail++;
+
+// Sin <loc> repetidos. Este check no existía y por eso el merge de la PR #45
+// coló un project-node.html duplicado: el commit 6e8f5e1 lo había añadido por
+// su cuenta y el mío también, y al caer en regiones distintas del fichero git
+// se quedó los dos sin dar conflicto.
+const dupes = [...new Set(locs.filter((l, i) => locs.indexOf(l) !== i))];
+console.log(`${dupes.length === 0 ? "OK  " : "FAIL"} sitemap sin URLs duplicadas${dupes.length ? ": " + dupes.join(", ") : ""}`);
+if (dupes.length) fail++;
+
+console.log(`     sitemap: ${locs.length} URLs, ${locs.filter(l => l.includes("/es/")).length} en /es/`);
 
 console.log(fail === 0 ? "\nRESULTADO: TODO OK" : `\nRESULTADO: ${fail} FALLOS`);
 process.exit(fail === 0 ? 0 : 1);
