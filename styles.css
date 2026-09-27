@@ -1044,7 +1044,7 @@ section { position: relative; }
     min-height: calc(100svh - 8.5rem);
     padding: clamp(4.5rem, 8vw, 7rem) var(--pad) clamp(2.5rem, 4vw, 3.5rem);
     background:
-        radial-gradient(80% 60% at 85% 110%, rgba(160, 100, 255, 0.16), transparent 60%),
+        radial-gradient(80% 60% at 85% 65%, rgba(160, 100, 255, 0.16), transparent 60%), /* 110% → 65% (27/09/2026) · a la altura de los iconos de social media */
         var(--bg);
     border-top: 1px solid var(--line);
 }
@@ -1125,6 +1125,9 @@ section { position: relative; }
 
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
+    /* La rejilla se apila: los iconos de social media quedan bajo el formulario,
+       así que el degradado baja con ellos (65% → 84%). */
+    .contact { background: radial-gradient(80% 60% at 85% 84%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
