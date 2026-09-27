@@ -124,8 +124,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@keyframes heroSubtitleFade\s*\{\s*from\s*\{\s*opacity:\s*0;\s*\}\s*to\s*\{\s*opacity:\s*1;\s*\}/.test(css));
     check("hero subtitle is immediately visible with reduced motion",
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
-    check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
-        /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
+    check("cross-turn: ping-pong ×(0°) ↔ +(45°) más rápido, alternate y hold en cada extremo",
+        /crossTurn\s+1\.1s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
         /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
         /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
         "ver @keyframes crossTurn / .cross-turn");

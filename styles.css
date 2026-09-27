@@ -583,7 +583,7 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.216em 0.6105em;
-    animation: crossTurn 1.6s ease-in-out infinite alternate;
+    animation: crossTurn 1.1s ease-in-out infinite alternate;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
