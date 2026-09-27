@@ -66,6 +66,16 @@ try {
     assert.ok(!/radial-gradient|linear-gradient/.test(css), "the opener gradient has been removed");
     assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"), "custom cursor dot and ring exist");
     const legacyCss = fs.readFileSync(path.join(root, "legacy.css"), "utf8");
+    const nodeStill = css.match(/\.node-player > img \{[^}]*\}/)[0];
+    const legacyStill = legacyCss.match(/\.film-card__poster img \{[^}]*\}/)[0];
+    const nodeRollover = css.match(/\.node-player:hover > img, \.node-player:focus-within > img \{[^}]*\}/)[0];
+    const legacyRollover = legacyCss.match(/\.film-card:hover \.film-card__poster img,\s*\.film-card:focus-visible \.film-card__poster img \{[^}]*\}/)[0];
+    const valueOf = (rule, property) => rule.match(new RegExp(`(?:^|[;{]\\s*)${property}: ([^;]+);`))[1];
+    assert.equal(valueOf(nodeStill, "filter"), valueOf(legacyStill, "filter"), "the still starts with Captured's muted look");
+    assert.match(nodeStill, /transition: transform 0\.9s var\(--ease-out\), filter 0\.6s;/);
+    for (const property of ["transform", "filter"]) {
+        assert.equal(valueOf(nodeRollover, property), valueOf(legacyRollover, property), `the still matches Captured's hover ${property}`);
+    }
     const nodeCircle = css.match(/\.node-player__circle \{[^}]*\}/)[0];
     const legacyCircle = legacyCss.match(/\.film-card__play \{[^}]*\}/)[0];
     for (const declaration of ["width", "border", "border-radius", "color", "font-size", "transition"]) {
