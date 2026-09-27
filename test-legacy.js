@@ -24,6 +24,11 @@ try {
         assert.ok(fs.existsSync(path.join(root, css)), `${css} must exist`);
         assert.ok(doc.querySelector(`link[href^="${css}"]`), `${css} must be loaded`);
     }
+    // Kanit → Montserrat en las dos páginas que comparten styles.css
+    for (const [name, src] of [["legacy.html", html], ["index.html", index]]) {
+        assert.ok(!/family=Kanit/.test(src), `${name} todavía carga Kanit`);
+        assert.match(src, /family=Montserrat:ital,wght@/, `${name} no carga Montserrat`);
+    }
     assert.ok(fs.existsSync(path.join(root, doc.querySelector(".logo img").getAttribute("src"))));
 
     const headerLinks = [...doc.querySelectorAll(".main-nav a")];

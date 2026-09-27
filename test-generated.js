@@ -60,6 +60,10 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
+        // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
+        assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
+        assert.match(html, /family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800/,
+            `${page.file}: no carga Montserrat con los pesos de la sección`);
         for (const legacy of ["pieza.css", "burger-menu", "mobile-nav", "projects-navigation", "related-item", "video-container", "fade-in"]) {
             assert.ok(!html.includes(legacy), `${page.file}: queda el resto de plantilla antigua «${legacy}»`);
         }
@@ -262,11 +266,15 @@ for (const [i, file] of ALL.entries()) {
 
 /* ── El titular del opener tiene una talla única, fijada por el más largo ── */
 assert.ok(!/node-hero--long/.test(css), "generated.css conserva la talla especial para titulares largos");
+// Kanit sólo puede quedar en los comentarios que explican por qué cambió la talla:
+// como familia declarada tiene que haber desaparecido.
+assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
+    "generated.css sigue declarando Kanit como familia");
 assert.match(css,
-    /\.node-hero h1 \{\s*font: 700 clamp\(calc\(3\.36rem - 15px\), calc\(7\.2vw - 15px\), calc\(7\.2rem - 15px\)\)\/0\.8 var\(--font-head\);/,
+    /\.node-hero h1 \{\s*font: 700 clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)\/0\.8 var\(--font-head\);/,
     "las diez páginas comparten la misma clamp del titular");
 assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match(/(?:font|font-size): ([^;]+);/)[1]),
-    ["700 clamp(calc(3.36rem - 15px), calc(7.2vw - 15px), calc(7.2rem - 15px))/0.8 var(--font-head)",
+    ["700 clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px))/0.8 var(--font-head)",
      "clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px))"],
     "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
 assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,

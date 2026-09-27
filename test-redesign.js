@@ -146,12 +146,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         Math.max(...crossDegs) > 45 && Math.max(...crossDegs) <= 53,
         `grados: ${crossDegs.join(", ") || "no encontrados"}`);
     check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
-        /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.216em\s+0\.6105em/.test(css),
+        /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.3em\s+0\.5185em/.test(css),
         "ver transform-origin de .cross-turn");
     check("cross-turn sin cursiva (font-style: normal) y con reduced-motion queda en ×",
         /\.cross-turn\s*\{[^}]*font-style:\s*normal/.test(css) &&
         /\.cross-turn\s*\{\s*animation:\s*none;\s*transform:\s*none;/.test(css),
         "ver .cross-turn");
+
+    // Kanit → Montserrat (SIL Open Font License), mismos ejes y pesos
+    check("--font-head es Montserrat y no queda Kanit en styles.css",
+        /--font-head:\s*"Montserrat", "Syne", sans-serif;/.test(css) && !/Kanit/i.test(css));
+    check("el landing carga Montserrat con los ejes que cargaba Kanit",
+        /family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800/.test(html)
+        && !/family=Kanit/.test(html));
 
     // statement words lit (IO-independent scroll calc; rect.top=0 in jsdom → fully lit)
     const lit = doc.querySelectorAll("#statementText span.lit").length;
