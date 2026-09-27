@@ -270,15 +270,24 @@ assert.ok(!/node-hero--long/.test(css), "generated.css conserva la talla especia
 // como familia declarada tiene que haber desaparecido.
 assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
     "generated.css sigue declarando Kanit como familia");
+// Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
+// font-family/weight separados para que N.O.D.E. respete Montserrat.
 assert.match(css,
-    /\.node-hero h1 \{\s*font: 700 clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)\/0\.8 var\(--font-head\);/,
-    "las diez páginas comparten la misma clamp del titular");
-assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match(/(?:font|font-size): ([^;]+);/)[1]),
-    ["700 clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px))/0.8 var(--font-head)",
-     "clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px))"],
-    "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
-assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,
-    "por debajo de 560px el titular parte en líneas, como antes");
+    /\.node-hero h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)/,
+    "las diez páginas comparten la misma clamp del titular en Montserrat");
+const h1Rules = css.match(/\.node-hero h1 \{[^}]*\}/g);
+assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
+const desktopRule = h1Rules[0];
+const mobileRule = h1Rules[1];
+assert.match(desktopRule, /white-space: nowrap/, "desktop: una sola línea");
+assert.match(desktopRule, /var\(--font-head\)/, "desktop: Montserrat");
+// Mobile: título adaptable en una sola línea — nunca se corta, siempre nowrap.
+assert.match(mobileRule, /font-size: clamp\(1\.125rem, 5\.5vw, 2\.6rem\)/, "móvil: clamp adaptable para que entre en una línea");
+assert.match(mobileRule, /white-space: nowrap/, "móvil: una sola línea, no se corta");
+assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líneas");
+// N.O.D.E. respeta Montserrat igual que las otras 9.
+assert.match(css, /\.node-hero__word \{[^}]*font-family: var\(--font-head\)/, "N.O.D.E. usa Montserrat");
+assert.match(css, /\.node-hero__teaser \{[^}]*font-family: var\(--font-head\)/, "el teaser usa Montserrat");
 
 /* ── ← ALL WORK fuera: la salida de la sección vive en otros dos sitios ── */
 assert.ok(!/\.node-back/.test(css), "generated.css conserva las reglas de .node-back");
