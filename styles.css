@@ -919,6 +919,7 @@ section { position: relative; }
     font-weight: 600; line-height: 1.2;
 }
 .clb-feature p {
+    margin-left: clamp(0.75rem, 1.5vw, 1.25rem);
     max-width: 60ch; color: var(--muted);
     font-size: 0.92rem; font-weight: 300; line-height: 1.7;
 }

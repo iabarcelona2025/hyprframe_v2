@@ -17,12 +17,13 @@ test("CLB gallery precedes Key Capabilities and TEST NOW follows them on mobile"
     assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"\s*"cta"/);
 });
 
-test("capability headings start at the left edge without numbering", () => {
+test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
     const features = [...doc.querySelectorAll("#clb .clb-feature")];
     assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),
         ["Precise Technical Setup", "Dual-Format Generation"]);
     assert.ok(features.every(feature => !feature.querySelector(".clb-num")));
     assert.doesNotMatch(css.match(/\.clb-feature\s*\{[^}]*\}/)[0], /grid-template-columns|padding-left/);
+    assert.match(css.match(/\.clb-feature p\s*\{[^}]*\}/)[0], /margin-left:\s*clamp\(0\.75rem, 1\.5vw, 1\.25rem\)/);
 });
 
 test("four distinct frames plus a hidden copy of the first for a seamless loop", () => {
