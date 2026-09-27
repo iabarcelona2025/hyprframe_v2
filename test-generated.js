@@ -165,8 +165,11 @@ for (const page of PAGES) {
         assert.equal(doc.querySelectorAll(".node-story h2 .violet").length, 1);
         const cards = [...doc.querySelectorAll(".node-card")];
         assert.equal(cards.length, 2);
-        cards.forEach((card, i) => {
-            assert.match(card.querySelector(".node-card__meta span").textContent, new RegExp(`^0${i + 1} / `));
+        cards.forEach((card) => {
+            // Numeraciones quitadas en RELATED PROJECTS (28/09/2026)
+            const meta = card.querySelector(".node-card__meta span").textContent.trim();
+            assert.ok(!/^\d+\s*\/\s*/.test(meta), `${page.file}: RELATED PROJECTS sigue con numeración «${meta}»`);
+            assert.ok(meta.length > 2, `${page.file}: meta vacía`);
             assert.ok(card.querySelector(".node-card__title").textContent.trim().length > 2);
             assert.notEqual(card.getAttribute("href"), page.file, `${page.file}: se enlaza a sí misma`);
         });
@@ -255,10 +258,10 @@ for (const [i, file] of ALL.entries()) {
             `${file}: la flecha es decorativa`);
         assert.ok(!link.querySelector(".node-pager__name"), `${file}: el paginador vuelve a enseñar nombres`);
         const visible = link.textContent.replace(/[\u2190\u2192]/g, "").trim();
-        assert.match(visible, /^(Previous|Next)$/, `${file}: «${visible}» no es solo Previous/Next`);
+        assert.match(visible, /^(Back|Next)$/, `${file}: «${visible}» no es solo Back/Next`);
         // El destino se anuncia por aria-label, ya que en pantalla no se ve.
         const label = link.getAttribute("aria-label") || "";
-        assert.match(label, new RegExp(`^${visible} project: .+`), `${file}: aria-label ${label}`);
+        assert.match(label, new RegExp(`^(Back|Previous|Next) project: .+`, 'i'), `${file}: aria-label ${label}`);
         assert.ok(label.toLowerCase().includes(workTitles[href].toLowerCase()),
             `${file}: «${label}» no nombra ${href}`);
     }

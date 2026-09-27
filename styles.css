@@ -85,7 +85,7 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
     transform: translate(-50%, -50%);
     mix-blend-mode: difference;
 }
-.cursor-dot { width: 7px; height: 7px; background: #fff; border-radius: 50%; }
+.cursor-dot { width: 3px; height: 3px; background: #fff; border-radius: 50%; }
 /* Cruceta en lugar del aro: dos trazos cruzados de 1px —mismo grosor, mismo
    color y mismo modo de fusión (difference) que tenía el círculo— centrados en
    el cursor y creciendo con él hasta 88px sobre los elementos interactivos. */
@@ -98,9 +98,9 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
     background: rgba(255, 255, 255, 0.7);
     /* la máscara abre un hueco redondo en el centro: los brazos no deben pasar
        por encima del punto (.cursor-dot), porque dos capas en difference se
-       restan y el cruce se mancharía de negro */
-    -webkit-mask: radial-gradient(circle at center, transparent 4.5px, #000 5px);
-            mask: radial-gradient(circle at center, transparent 4.5px, #000 5px);
+       restan y el cruce se mancharía de negro — 3px de punto → hueco de 2px */
+    -webkit-mask: radial-gradient(circle at center, transparent 2px, #000 2.5px);
+            mask: radial-gradient(circle at center, transparent 2px, #000 2.5px);
     transition: background 0.35s;
 }
 /* Los brazos no cruzan la caja entera: miden el 60% del otro eje, así que la
@@ -275,7 +275,7 @@ body.menu-open .menu-overlay {
 }
 .menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
 .menu-links a {
-    font-family: var(--font-head); font-weight: 800;
+    font-family: "Montserrat", var(--font-head), sans-serif; font-weight: 800;
     font-size: clamp(2.4rem, 9vw, 6rem); line-height: 1.12;
     text-transform: uppercase; letter-spacing: 0.03em;
     opacity: 0; transform: translateY(40px);
