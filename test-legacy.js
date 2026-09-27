@@ -118,6 +118,19 @@ try {
     modal.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     assert.equal(modal.hidden, true, "clicking backdrop closes the video");
 
+    // Cast credit: the pop-up shows data-cast, and says nothing for the films that don't carry it.
+    const castLine = doc.getElementById("videoCast");
+    // Its rule must stay more specific than ".film-modal__info p", which sets font-size
+    // and colour for the synopsis and would otherwise win on the same element.
+    assert.match(legacyCss, /\.film-modal__info \.film-modal__cast\s*\{[^}]*margin-top:/);
+    doc.querySelectorAll(".film-card")[1].click();
+    assert.equal(castLine.hidden, false, "BRUBAKER / NOSE DUEL shows its cast in the pop-up");
+    assert.equal(castLine.textContent, "With Jordi Roca, Andrés Velencoso");
+    doc.querySelectorAll(".film-card")[0].click();
+    assert.equal(castLine.hidden, true, "films without data-cast keep the cast line hidden");
+    assert.equal(castLine.textContent, "");
+    key("Escape");
+
     // The pop-up closes by itself when the film ends: once Vimeo reports "ready", the page
     // subscribes to "ended" through the player's postMessage API and closes on that event.
     const endingCard = doc.querySelectorAll(".film-card")[2];
