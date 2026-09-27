@@ -693,6 +693,8 @@ section { position: relative; }
 .work-row[href*="project-distant"]::after  { background-position: center 42%; }
 .work-row[href*="project-exit"]::after     { background-position: center 30%; }
 .work-row[href*="project-farewell"]::after { background-position: center 40%; }
+/* Desplazar el fotograma de IAD hacia arriba para mostrar las manos del personaje. */
+.work-row[href*="project-iad"]::after     { background-position: center 88%; }
 .work-row[href*="project-ryuu"]::after     { background-position: center 45%; }
 .work-row:hover { padding-left: calc(var(--pad) + 1.4rem); }
 .work-row > * { position: relative; z-index: 1; }
