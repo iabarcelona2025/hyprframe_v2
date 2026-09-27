@@ -120,9 +120,18 @@ for (const page of PAGES) {
         assert.equal(doc.querySelector(".node-hero__word").textContent.trim(), h1.textContent.replace(/\[.*\]/, "").trim());
         assert.equal(doc.querySelectorAll("h1").length, 1);
         assert.ok(!doc.querySelector(".node-hero__image img"), "el opener es un fondo liso, no un fotograma");
+        // Una sola talla para las diez páginas: ni modificador por página ni
+        // titulares que el overflow: hidden del opener acabe recortando.
         const word = doc.querySelector(".node-hero__word").textContent.trim();
-        assert.equal(doc.querySelector(".node-hero").classList.contains("node-hero--long"), word.length > 12,
-            `${page.file}: «${word}» necesita (o no) el modificador --long`);
+        assert.equal(doc.querySelector(".node-hero").className, "node-hero",
+            `${page.file}: el opener lleva clases extra`);
+        // Presupuesto de caracteres de esa talla común: lo fija el titular más
+        // largo, DEEP IN THE FOREST [Teaser] (18 + 8). Si una pieza necesita más,
+        // hay que volver a medir el encaje — ver el comentario de .node-hero h1.
+        const teaser = doc.querySelector(".node-hero__teaser");
+        const chars = word.length + (teaser ? teaser.textContent.trim().length : 0);
+        assert.ok(chars <= 26,
+            `${page.file}: el titular mide ${chars} caracteres, por encima del presupuesto de 26`);
 
         const player = doc.querySelector(".node-player");
         assert.equal(doc.querySelectorAll(".node-player").length, 1);
@@ -237,5 +246,17 @@ for (const [i, file] of ALL.entries()) {
             `${file}: «${label}» no nombra ${href}`);
     }
 }
+
+/* ── El titular del opener tiene una talla única, fijada por el más largo ── */
+assert.ok(!/node-hero--long/.test(css), "generated.css conserva la talla especial para titulares largos");
+assert.match(css,
+    /\.node-hero h1 \{\s*font: 700 clamp\(calc\(3\.36rem - 15px\), calc\(7\.2vw - 15px\), calc\(7\.2rem - 15px\)\)\/0\.8 var\(--font-head\);/,
+    "las diez páginas comparten la misma clamp del titular");
+assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match(/(?:font|font-size): ([^;]+);/)[1]),
+    ["700 clamp(calc(3.36rem - 15px), calc(7.2vw - 15px), calc(7.2rem - 15px))/0.8 var(--font-head)",
+     "clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px))"],
+    "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
+assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,
+    "por debajo de 560px el titular parte en líneas, como antes");
 
 console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);

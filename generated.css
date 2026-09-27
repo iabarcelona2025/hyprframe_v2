@@ -56,16 +56,19 @@ body.menu-open .menu-overlay a { visibility: visible; }
     background: var(--bg);
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
+/* One size for the ten titles of the section, and the longest one sets it: the
+   h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] and ASICS
+   VULCANO [Commercial] are the limit — 450px and 455px of the 478px available
+   at 561px, the tightest point above the mobile breakpoint, where this clamp
+   has already hit its floor while the box keeps shrinking (measured with real
+   Kanit 700/600 metrics, bracket and letter-spacing included). 7.5vw is the
+   largest value that still fits; 7.2vw leaves a 5% margin, so no title gets
+   clipped by the opener's overflow: hidden. Same shape as the old 9vw — floor
+   up to 746.7px, ceiling from 1600px — just 20% smaller. Anything longer than
+   26 characters (title + bracket) has to be re-measured before shipping. */
 .node-hero h1 {
-    font: 700 clamp(calc(4.2rem - 15px), calc(9vw - 15px), calc(9rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
+    font: 700 clamp(calc(3.36rem - 15px), calc(7.2vw - 15px), calc(7.2rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
-}
-/* Pieces with a long name (Deep in the Forest, Asics Vulcano…) keep the very same
-   opener: only the type scales down, so the line still runs on one row — teaser
-   included — from the desktop width down to the mobile breakpoint, where the
-   rule below lets it wrap like any other title. */
-.node-hero--long h1 {
-    font-size: clamp(calc(2.6rem - 10px), calc(5.6vw - 10px), calc(5.6rem - 10px));
 }
 /* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
    baseline-anchored like the letters — so the rhythm never depends on the
