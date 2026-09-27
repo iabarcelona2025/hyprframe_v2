@@ -50,9 +50,9 @@
         <meta property="og:image" content="https://hyprframe.com/assets/images/node.jpg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="styles.css?v=32" />
-        <link rel="stylesheet" href="generated.css?v=8" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="styles.css?v=36" />
+        <link rel="stylesheet" href="generated.css?v=15" />
     </head>
     <body>
         <a class="skip-link" href="#main">Skip to content</a>
@@ -101,8 +101,15 @@
             <section class="node-hero" aria-labelledby="nodeTitle">
                 <div class="node-hero__top">
                     <p class="kicker"><span class="pulse" aria-hidden="true"></span> HYPRFRAME / GENERATED</p>
-                    <a href="index.html#work" class="node-back">← &nbsp; ALL WORK</a>
                 </div>
+                <!-- Prev / next: the section's cycle, right under the kicker.
+                     The names of the pieces stay in the aria-labels, so the row
+                     reads as one small control instead of a second title. -->
+                <nav class="node-pager" aria-label="More Generated projects">
+                    <a class="node-pager__link" href="project-ryuu.html" rel="prev" aria-label="Previous project: Ryuu, the Dragon's Course"><span class="node-pager__arrow" aria-hidden="true">←</span> Previous</a>
+                    <span class="node-pager__count" aria-hidden="true">01 / 10</span>
+                    <a class="node-pager__link node-pager__link--next" href="project-deep.html" rel="next" aria-label="Next project: Deep in the Forest">Next <span class="node-pager__arrow" aria-hidden="true">→</span></a>
+                </nav>
                 <div class="node-hero__image">
                     <div class="node-hero__title">
                         <h1 id="nodeTitle" aria-label="N.O.D.E. [Teaser]"><span class="node-hero__word">N<span class="node-hero__dot" aria-hidden="true"></span>O<span class="node-hero__dot" aria-hidden="true"></span>D<span class="node-hero__dot" aria-hidden="true"></span>E<span class="node-hero__dot" aria-hidden="true"></span></span> <span class="node-hero__teaser" aria-hidden="true">[Teaser]</span></h1>
@@ -115,7 +122,7 @@
 
             <!-- ══════════ FILM ══════════ -->
             <section class="node-film" id="film" aria-label="N.O.D.E. film">
-                <div class="node-player" id="nodePlayer">
+                <div class="node-player" data-vimeo="1227346538" data-title="N.O.D.E. teaser">
                     <img src="assets/images/node.jpg" alt="" loading="lazy" />
                     <button type="button" class="node-player__play" id="playFilm" aria-label="Play N.O.D.E. teaser on Vimeo">
                         <span class="node-player__circle" aria-hidden="true"></span>
@@ -132,25 +139,27 @@
                         <p>When a single algorithmic mega-corporation seizes absolute control over global infrastructure and water rationing, a desperate urban insurgency takes action to dismantle the machine before human sovereignty is wiped off the map.</p>
                     </div>
                 </div>
+                <a class="node-story__all" href="index.html#work">VIEW ALL WORK ↗</a>
             </section>
 
             <!-- ══════════ RELATED PROJECTS ══════════ -->
             <section class="node-related" aria-labelledby="relatedTitle">
                 <div class="node-section-label"><span>KEEP EXPLORING</span></div>
-                <div class="node-related__heading"><h2 id="relatedTitle">RELATED <span class="violet">PROJECTS</span></h2><a href="index.html#work">VIEW ALL WORK ↗</a></div>
+                <div class="node-related__heading"><h2 id="relatedTitle">RELATED <span class="violet">PROJECTS</span></h2></div>
                 <div class="node-related__grid">
-                    <a class="node-card" href="https://hyprframe.com/project-ryuu.html">
+                    <a class="node-card" href="project-ryuu.html">
                         <span class="node-card__image"><img src="assets/images/Ryuu.jpg" alt="Still from Ryuu, the Dragon's course" loading="lazy" /></span>
                         <span class="node-card__meta"><span>01 / SHORT FILM</span><span aria-hidden="true">↗</span></span>
                         <span class="node-card__title">RYUU, THE DRAGON'S COURSE</span>
                     </a>
-                    <a class="node-card" href="https://hyprframe.com/project-polestar5.html">
+                    <a class="node-card" href="project-polestar5.html">
                         <span class="node-card__image"><img src="assets/images/polestar5.jpg" alt="Still from Polestar 5" loading="lazy" /></span>
                         <span class="node-card__meta"><span>02 / COMMERCIAL</span><span aria-hidden="true">↗</span></span>
                         <span class="node-card__title">POLESTAR 5</span>
                     </a>
                 </div>
             </section>
+
         </main>
 
         <!-- ══════════ FOOTER ══════════ -->
@@ -171,7 +180,7 @@
             };
         })();
         </script>
-        <script src="project-node.js?v=2" defer></script>
+        <script src="generated.js?v=3" defer></script>
         <script src="cookies.js?v=2" defer></script>
     </body>
 </html>

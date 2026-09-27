@@ -146,12 +146,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         Math.max(...crossDegs) > 45 && Math.max(...crossDegs) <= 53,
         `grados: ${crossDegs.join(", ") || "no encontrados"}`);
     check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
-        /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.216em\s+0\.6105em/.test(css),
+        /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.3em\s+0\.5185em/.test(css),
         "ver transform-origin de .cross-turn");
     check("cross-turn sin cursiva (font-style: normal) y con reduced-motion queda en ×",
         /\.cross-turn\s*\{[^}]*font-style:\s*normal/.test(css) &&
         /\.cross-turn\s*\{\s*animation:\s*none;\s*transform:\s*none;/.test(css),
         "ver .cross-turn");
+
+    // Kanit → Montserrat (SIL Open Font License), mismos ejes y pesos
+    check("--font-head es Montserrat y no queda Kanit en styles.css",
+        /--font-head:\s*"Montserrat", "Syne", sans-serif;/.test(css) && !/Kanit/i.test(css));
+    check("el landing carga Montserrat con los ejes que cargaba Kanit",
+        /family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800/.test(html)
+        && !/family=Kanit/.test(html));
 
     // statement words lit (IO-independent scroll calc; rect.top=0 in jsdom → fully lit)
     const lit = doc.querySelectorAll("#statementText span.lit").length;
@@ -178,6 +185,36 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("hover enlarges cursor", doc.body.classList.contains("cursor-large"));
     link.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
     check("mouseleave restores cursor", !doc.body.classList.contains("cursor-large"));
+
+    // el cursor grande es una cruceta: mismo grosor, color y modo de fusión que el aro
+    check("el aro del cursor ya no es un círculo",
+        !/\.cursor-ring \{[^}]*border:/.test(css)
+        && !/\.cursor-dot, \.cursor-ring \{[^}]*border-radius/.test(css));
+    // 1px de grosor y el 60% de la caja de largo: al ser un porcentaje, el hover
+    // la acorta en la misma proporción (25px en reposo, 53px sobre interactivos).
+    check("la cruceta son dos trazos de 1px",
+        /\.cursor-ring::before, \.cursor-ring::after \{/.test(css)
+        && /\.cursor-ring::before \{ width: 1px; height: 60%; \}/.test(css)
+        && /\.cursor-ring::after \{ width: 60%; height: 1px; \}/.test(css));
+    check("el largo es proporcional: mismo porcentaje en reposo y en hover",
+        !/body\.cursor-large \.cursor-ring::(before|after)[^}]*\{[^}]*(width|height):/.test(css));
+    check("la cruceta conserva el color del aro",
+        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*background: rgba\(255, 255, 255, 0\.7\)/.test(css));
+    check("la cruceta conserva el modo de fusión",
+        /\.cursor-dot, \.cursor-ring \{[^}]*mix-blend-mode: difference/.test(css));
+    check("el cruce deja libre el punto central (máscara con hueco)",
+        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*mask: radial-gradient\(circle at center, transparent 4\.5px, #000 5px\)/.test(css));
+    check("la cruceta crece y se vuelve violeta sobre los interactivos",
+        /body\.cursor-large \.cursor-ring \{ width: 88px; height: 88px; \}/.test(css)
+        && /body\.cursor-large \.cursor-ring::before,\s*body\.cursor-large \.cursor-ring::after \{\s*background: var\(--violet\);\s*-webkit-mask: none; mask: none;/.test(css));
+
+    // pista de scroll del hero con vídeo: fuera la etiqueta, línea 4px más gruesa
+    const cue = doc.querySelector(".scroll-cue");
+    check("SCROLL ya no aparece en el hero", cue.textContent.trim() === "");
+    check("la pista sigue anunciándose a lectores de pantalla",
+        cue.getAttribute("aria-label") === "Scroll to work" && cue.getAttribute("href") === "#work");
+    check("la línea de la pista mide 5px (1px + 4px)", /\.scroll-cue-line \{\s*width: 5px;/.test(css));
+    check("el destello violeta de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*animation: cueDrop/.test(css));
 
     // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];
@@ -229,6 +266,26 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("DNAi: el rollover desplaza suavemente los títulos de los servicios",
         /\.service-body h3\s*\{[^}]*transform:\s*translateX\(0\)[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css) &&
         /\.service-row:hover \.service-body h3\s*\{[^}]*transform:\s*translateX\(0\.8rem\)/.test(css));
+
+    // DNAi: fuera los números entre paréntesis; el + de la derecha ocupa su sitio
+    const serviceRows = [...doc.querySelectorAll(".service-row")];
+    const servicesText = doc.getElementById("services").textContent;
+    check("DNAi: siete apartados, sin números entre paréntesis ni .service-num",
+        serviceRows.length === 7 && !doc.querySelector(".service-num")
+        && !/\(\d\d\)/.test(servicesText) && !/\.service-num\s*\{/.test(css),
+        `${serviceRows.length} apartados`);
+    check("DNAi: un solo + por apartado, abriendo la fila y decorativo",
+        serviceRows.every((row) => row.querySelectorAll(".service-plus").length === 1
+            && row.firstElementChild.classList.contains("service-plus")
+            && row.firstElementChild.textContent.trim() === "+"
+            && row.firstElementChild.getAttribute("aria-hidden") === "true"));
+    check("DNAi: el + conserva su animación (gira 135° y se vuelve lima al hover)",
+        /\.service-row:hover \.service-plus\s*\{\s*transform:\s*rotate\(135deg\);\s*color:\s*var\(--lime\);\s*\}/.test(css)
+        && /\.service-plus\s*\{[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css));
+    check("DNAi: rejilla de dos columnas y + visible también por debajo de 900px",
+        /\.service-row\s*\{[^}]*grid-template-columns:\s*6rem 1fr;/.test(css)
+        && /@media \(max-width: 900px\) \{[\s\S]*?\.service-row \{ grid-template-columns: 3\.5rem 1fr; \}/.test(css)
+        && !/\.service-plus \{ display: none; \}/.test(css));
     check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
         /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
         /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&

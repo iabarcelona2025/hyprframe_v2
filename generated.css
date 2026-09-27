@@ -1,5 +1,8 @@
-/* HYPRFRAME / N.O.D.E. — project-specific styling.
-   Brand tokens, navigation, grain and footer come from styles.css. */
+/* HYPRFRAME / GENERATED — styling shared by every video page of the Generated
+   portfolio (N.O.D.E., Deep, Polestar 5, Distant, Exit Plan, Stained, Asics
+   Vulcano, Farewell, IAD and Ryuu): same opener, same player, same story block.
+   Brand tokens, navigation, grain and footer come from styles.css.
+   The .node-* names are kept from the first page of the section (N.O.D.E.). */
 
 /* Keep the close control on top of the fullscreen menu on mobile. */
 body.menu-open .site-header { z-index: 900; }
@@ -15,16 +18,56 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-hero__top { padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
 .node-hero__top .kicker { margin: 0; font-size: inherit; letter-spacing: inherit; }
-.node-back { color: var(--fg); white-space: nowrap; transition: color 0.3s; }
-.node-back:hover { color: var(--violet); }
+/* Prev / next, between the kicker and the title. The old template paged through
+   the portfolio with a bare arrow-colon-arrow row; the section keeps that triad
+   but grouped around the position counter and without the names of the pieces,
+   so it reads as one small control and never competes with the title under it.
+   Which piece each arrow leads to lives in the link's aria-label, and the cycle
+   follows SELECTED WORK on the landing. */
+.node-pager {
+    display: flex; align-items: baseline; justify-content: center;
+    gap: clamp(0.9rem, 2vw, 1.75rem);
+    padding-bottom: clamp(1rem, 2vw, 1.75rem);
+}
+.node-pager__link {
+    display: inline-flex; align-items: baseline; gap: 0.55rem;
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
+    text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    transition: color 0.3s;
+}
+.node-pager__arrow {
+    font-size: 1.05rem; color: var(--violet);
+    transition: transform 0.45s var(--ease-out), color 0.3s;
+}
+.node-pager__count {
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
+    font-variant-numeric: tabular-nums; color: var(--fg); white-space: nowrap;
+}
+.node-pager__link:hover, .node-pager__link:focus-visible { color: var(--fg); }
+.node-pager__link:hover .node-pager__arrow,
+.node-pager__link:focus-visible .node-pager__arrow { color: var(--lime); }
+.node-pager__link:hover .node-pager__arrow { transform: translateX(-0.3rem); }
+.node-pager__link--next:hover .node-pager__arrow { transform: translateX(0.3rem); }
 .node-hero__image {
     position: relative; height: clamp(170px, 23svh, 250px);
     isolation: isolate; overflow: hidden;
     background: var(--bg);
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
+/* One size for the ten titles of the section, and the longest one sets it: the
+   h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
+   — 456px of the 478px available at 561px, the tightest point above the mobile
+   breakpoint, where this clamp has already hit its floor while the box keeps
+   shrinking (measured with real Montserrat 700/600 metrics, bracket and
+   letter-spacing included). 6.6vw is the largest value that still fits; 6.4vw
+   leaves a 4% margin, so no title gets clipped by the opener's overflow: hidden.
+   Same shape as before — floor up to 747.5px, ceiling from 1600px — but 13%
+   smaller than the 7.2vw that fitted Kanit: Montserrat's uppercase runs ~15%
+   wider on these titles (+9% to +19%), and at 7.2vw DEEP needed 111% of the box.
+   Anything longer than 26 characters (title + bracket) has to be re-measured
+   before shipping. */
 .node-hero h1 {
-    font: 700 clamp(calc(4.2rem - 15px), calc(9vw - 15px), calc(9rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
+    font: 700 clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) · 7.2vw → 6.4vw con Montserrat (27/09/2026) */
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
 /* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
@@ -99,15 +142,29 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-story__grid {
     display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
-    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(7rem, 14vw, 14rem);
+    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(3.5rem, 8vw, 7rem);
 }
 .node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
 .node-story__copy p { font-size: clamp(1.15rem, 1.9vw, 1.85rem); line-height: 1.45; font-weight: 300; }
+/* Some synopses need a second paragraph (Deep, Farewell); the global reset in
+   styles.css leaves paragraphs with no margin, so the air comes from here. */
+.node-story__copy p + p { margin-top: 1.75rem; }
 .node-story__caption {
     display: block; margin-top: 3rem; font: 400 0.65rem/1.6 var(--font-mono);
     letter-spacing: 0.19em; color: var(--muted);
 }
+/* "View all work" closes THE STORY: on the synopsis' own side, right above the
+   hairline that opens KEEP EXPLORING. It used to sit beside RELATED PROJECTS,
+   where it read as a second heading instead of as the way out of the page. */
+.node-story__all {
+    display: block; width: fit-content; margin-left: auto;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+    border-bottom: 1px solid var(--violet); padding-bottom: 0.5rem;
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.18em;
+    transition: color 0.3s, border-color 0.3s;
+}
+.node-story__all:hover { color: var(--lime); border-color: var(--lime); }
 
 .node-related { padding-bottom: clamp(6rem, 11vw, 10rem); }
 .node-related__heading {
@@ -115,12 +172,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
 }
 .node-related h2 { font-size: clamp(calc(3rem - 10px), calc(6.5vw - 10px), calc(7rem - 10px)); }
-.node-related__heading > a {
-    flex: none; border-bottom: 1px solid var(--violet); padding-bottom: 0.5rem;
-    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.18em;
-    transition: color 0.3s, border-color 0.3s;
-}
-.node-related__heading > a:hover { color: var(--lime); border-color: var(--lime); }
 .node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.25rem, 3.5vw, 4rem); }
 .node-card { min-width: 0; display: flex; flex-direction: column; }
 .node-card__image { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #151416; }
@@ -138,7 +189,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-card__meta span:last-child { font-size: 1.25rem; line-height: 0.8; color: var(--violet); }
 .node-card__title { font: 600 clamp(1.35rem, 2.7vw, 2.65rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) */
 .node-card:hover .node-card__title { color: var(--violet); }
-
 @media (max-width: 850px) {
     .node-story__grid { grid-template-columns: 1fr; gap: 2.75rem; }
     .node-story__copy { max-width: 48ch; margin-left: auto; }
@@ -147,7 +197,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
 @media (max-width: 560px) {
     .node-hero { padding-top: 7rem; }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-hero__top { gap: 0.75rem; }
     .node-hero__image { height: clamp(160px, 25svh, 210px); }
     .node-hero__title { left: 1rem; bottom: 1.5rem; }
     .node-hero h1 { font-size: clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px)); white-space: normal; }
@@ -157,7 +206,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
+    .node-pager { gap: 0.8rem; padding-bottom: 1rem; }
+    .node-pager__link { gap: 0.4rem; }
+    .node-pager__link, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
+    .node-pager__arrow { font-size: 0.95rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .node-card__image img, .node-player > img { transition: none; }
+    .node-card__image img, .node-player > img, .node-pager__arrow { transition: none; }
 }

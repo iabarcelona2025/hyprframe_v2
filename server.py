@@ -10,7 +10,11 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-WATCH = ["index.html", "styles.css", "script.js", "project-node.html", "generated.css", "project-node.js", "legacy.css"]
+WATCH = ["index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
+         # Páginas de la sección GENERATED (vídeo): todas comparten generated.css/js.
+         "project-node.html", "project-deep.html", "project-polestar5.html", "project-distant.html",
+         "project-exit.html", "project-stained.html", "project-asics.html", "project-farewell.html",
+         "project-iad.html", "project-ryuu.html"]
 
 _version = 0
 _last = 0.0
