@@ -1182,6 +1182,14 @@ section { position: relative; }
         font-weight: 700; /* 800 → 700 */
         font-size: clamp(calc(2.4rem - 10px), calc(9vw - 10px), calc(6rem - 10px)); /* -10px */
     }
+    /* Más aire entre los enlaces: el hueco sube ~un 40% (0,7/1,8vw/1,2rem →
+       1/2,5vw/1,85rem). Al crecer la pila, el centrado la reparte hacia arriba
+       y hacia abajo. */
+    .menu-links { gap: clamp(1rem, 2.5vw, 1.85rem); }
+    /* Y el bloque sube un poco: con justify-content: center, cada rem de
+       padding inferior de más sube el conjunto medio rem. 8rem → 10rem = 16px
+       hacia arriba, sin tocar el hueco de 4,5rem que libra la cabecera. */
+    .menu-overlay { padding-bottom: 10rem; }
 }
 
 /* Utilidad: respeta el case exacto del texto de marca (DNAi) */
