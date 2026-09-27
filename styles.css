@@ -249,13 +249,27 @@ html.hf-skip-intro .preloader { display: none; }
     position: absolute; left: 4px; right: 4px; height: 2px;
     background: var(--fg); transition: transform 0.45s var(--ease-out), top 0.3s;
 }
-.burger span:first-child { top: 13px; }
-.burger span:last-child { top: 20px; }
-body.menu-open .burger span:first-child { top: 16px; transform: rotate(45deg); }
-body.menu-open .burger span:last-child { top: 16px; transform: rotate(-45deg); }
-/* Same stacking as legacy.html / project-node.html: keep the two-line close
-   control above the fullscreen overlay so the × animation stays visible and
-   the button remains clickable while the menu is open. */
+/* Tres líneas paralelas: mismo grosor (2px), mismo ancho (26px) y mismo hueco
+   (5px) que tenía el icono de dos, ahora repartidas en la caja de 34px
+   (9 / 16 / 23, centradas). Hacen falta tres porque un triángulo tiene tres
+   lados. */
+.burger span:nth-child(1) { top: 9px; }
+.burger span:nth-child(2) { top: 16px; }
+.burger span:nth-child(3) { top: 23px; }
+/* Al abrir, las tres líneas se montan en un triángulo equilátero de lado 26px
+   —el ancho de cada línea— centrado en la caja: su altura es 26·√3/2 = 22,52px,
+   así que el centroide cae en (17, 17) y los vértices en (17, 1,99), (4, 24,51)
+   y (30, 24,51), es decir justo en los bordes de la caja. Cada línea gira hasta
+   el lado que le corresponde —la de arriba al izquierdo (−60°), la del medio al
+   derecho (60°) y la de abajo se queda como base— y se traslada al punto medio
+   de ese lado, que es de donde salen los translate. La animación es la propia
+   transición de transform: 0,45s con --ease-out. */
+body.menu-open .burger span:nth-child(1) { transform: translate(-6.5px, 3.25px) rotate(-60deg); }
+body.menu-open .burger span:nth-child(2) { transform: translate(6.5px, -3.75px) rotate(60deg); }
+body.menu-open .burger span:nth-child(3) { transform: translate(0px, 0.5px); }
+/* Same stacking as legacy.html / project-node.html: keep the three-line close
+   control above the fullscreen overlay so the triangle animation stays visible
+   and the button remains clickable while the menu is open. */
 body.menu-open .site-header { z-index: 900; }
 body.menu-open { overflow: hidden; }
 
@@ -438,14 +452,14 @@ body.loaded .hero-sub {
     display: flex; flex-direction: column; align-items: center;
 }
 /* Sin la etiqueta SCROLL: la línea sola es la pista, 4px más gruesa que antes
-   (1px → 5px) para sostener el peso que llevaba el texto. El destello violeta
-   de ::after sigue cayendo por dentro con la misma animación. */
+   (1px → 5px) para sostener el peso que llevaba el texto. El destello verde
+   lima de ::after sigue cayendo por dentro con la misma animación. */
 .scroll-cue-line {
     width: 5px; height: 56px; background: var(--line); position: relative; overflow: hidden;
 }
 .scroll-cue-line::after {
     content: ""; position: absolute; inset: 0;
-    background: var(--violet);
+    background: var(--lime); /* violeta → lima (27/09/2026) · el verde de la web */
     animation: cueDrop 2.2s var(--ease-out) infinite;
 }
 @keyframes cueDrop {
@@ -1044,7 +1058,7 @@ section { position: relative; }
     min-height: calc(100svh - 8.5rem);
     padding: clamp(4.5rem, 8vw, 7rem) var(--pad) clamp(2.5rem, 4vw, 3.5rem);
     background:
-        radial-gradient(80% 60% at 85% 110%, rgba(160, 100, 255, 0.16), transparent 60%),
+        radial-gradient(80% 60% at 85% 65%, rgba(160, 100, 255, 0.16), transparent 60%), /* 110% → 65% (27/09/2026) · a la altura de los iconos de social media */
         var(--bg);
     border-top: 1px solid var(--line);
 }
@@ -1125,6 +1139,9 @@ section { position: relative; }
 
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
+    /* La rejilla se apila: los iconos de social media quedan bajo el formulario,
+       así que el degradado baja con ellos (65% → 84%). */
+    .contact { background: radial-gradient(80% 60% at 85% 84%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
@@ -1157,6 +1174,22 @@ section { position: relative; }
     .main-nav { display: none; }
     .burger { display: block; }
     .header-meta > .lang-switch { display: none; }
+    /* Menú burger en móvil: letras un paso más finas y 10px más pequeñas. El
+       -10px va en los tres tramos del clamp, así que la reducción es exacta a
+       cualquier ancho. ES / EN queda intacto: .menu-lang tiene su propia talla
+       (0.95rem) y sus enlaces no son .menu-links a. */
+    .menu-links a {
+        font-weight: 700; /* 800 → 700 */
+        font-size: clamp(calc(2.4rem - 10px), calc(9vw - 10px), calc(6rem - 10px)); /* -10px */
+    }
+    /* Más aire entre los enlaces: el hueco sube ~un 40% (0,7/1,8vw/1,2rem →
+       1/2,5vw/1,85rem). Al crecer la pila, el centrado la reparte hacia arriba
+       y hacia abajo. */
+    .menu-links { gap: clamp(1rem, 2.5vw, 1.85rem); }
+    /* Y el bloque sube un poco: con justify-content: center, cada rem de
+       padding inferior de más sube el conjunto medio rem. 8rem → 10rem = 16px
+       hacia arriba, sin tocar el hueco de 4,5rem que libra la cabecera. */
+    .menu-overlay { padding-bottom: 10rem; }
 }
 
 /* Utilidad: respeta el case exacto del texto de marca (DNAi) */

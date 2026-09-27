@@ -8,6 +8,9 @@ const root = __dirname;
 const html = fs.readFileSync(path.join(root, "project-node.html"), "utf8");
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "generated.js"), "utf8");
+// El cursor arranca en la última posición guardada (atrás/adelante del navegador).
+assert.match(script, /const CURSOR_KEY = "hfCursor"/, "generated.js guarda la posición del cursor");
+assert.match(script, /sessionStorage\.setItem\(CURSOR_KEY/, "generated.js persiste la posición del cursor");
 const dom = new JSDOM(html, {
     url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
 });

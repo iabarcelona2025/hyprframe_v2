@@ -33,6 +33,11 @@ const seenTitles = new Map();
 
 assert.ok(!script.includes("1227346538"), "generated.js no hardcodea el vídeo de N.O.D.E.");
 assert.match(script, /dataset\.vimeo/, "generated.js lee el vídeo del marcado de cada página");
+// El cursor arranca en la última posición guardada: al volver con atrás/adelante
+// la página se recarga y la cruceta reaparecía en el centro hasta mover el ratón.
+assert.match(script, /const CURSOR_KEY = "hfCursor"/, "generated.js guarda la posición del cursor");
+assert.match(script, /sessionStorage\.getItem\(CURSOR_KEY\)/, "generated.js restaura la posición del cursor al cargar");
+assert.match(script, /sessionStorage\.setItem\(CURSOR_KEY/, "generated.js persiste la posición del cursor al mover el ratón");
 
 for (const page of PAGES) {
     const html = read(page.file);

@@ -108,7 +108,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-card__watch { bottom: 1.4rem; left: 1.5rem; }
 .film-card__play {
     position: absolute; top: 50%; left: 50%; z-index: 2;
-    width: clamp(3.5rem, 6vw, 5rem); aspect-ratio: 1;
+    width: clamp(3.15rem, 5.4vw, 4.5rem); aspect-ratio: 1; /* -10% de diametro (27/09/2026) · clamp(3.5rem, 6vw, 5rem) → clamp(3.15rem, 5.4vw, 4.5rem) */
     border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
     color: var(--fg); font-size: 1rem;
     translate: -50% -50%;
@@ -133,7 +133,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .film-card:hover .film-card__play,
 .film-card:focus-visible .film-card__play {
-    background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12; opacity: 1;
+    background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12; opacity: 0.7; /* 30% de transparencia (27/09/2026) */
 }
 .film-card__info {
     display: flex; align-items: baseline; gap: 0.8rem; min-width: 0;

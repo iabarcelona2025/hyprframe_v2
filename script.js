@@ -65,8 +65,26 @@
     const ring = document.getElementById("cursorRing");
 
     if (!isTouch && !reduced && dot && ring) {
+        /* El cursor arranca donde se quedó el ratón la última vez. Al volver con
+           atrás/adelante del navegador la página se recarga (el servidor manda
+           no-store, así que no hay bfcache) y la cruceta aparecía en el centro
+           hasta que el usuario movía el ratón. */
+        const CURSOR_KEY = "hfCursor";
         let mx = innerWidth / 2, my = innerHeight / 2;
+        try {
+            const saved = sessionStorage.getItem(CURSOR_KEY);
+            if (saved) {
+                const parts = saved.split(",");
+                const sx = Number(parts[0]), sy = Number(parts[1]);
+                if (Number.isFinite(sx) && Number.isFinite(sy)) {
+                    // Acotado por si la ventana cambió de tamaño entre recargas.
+                    mx = Math.min(Math.max(sx, 0), innerWidth);
+                    my = Math.min(Math.max(sy, 0), innerHeight);
+                }
+            }
+        } catch (err) { /* storage bloqueado: se queda el centro */ }
         let rx = mx, ry = my;
+        let savedX = mx, savedY = my;
 
         addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
 
@@ -75,6 +93,12 @@
             ry += (my - ry) * 0.16;
             dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
             ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+            // Guarda la posición (como mucho una escritura por frame) para que la
+            // siguiente carga —atrás/adelante incluidos— arranque desde aquí.
+            if (mx !== savedX || my !== savedY) {
+                savedX = mx; savedY = my;
+                try { sessionStorage.setItem(CURSOR_KEY, `${mx},${my}`); } catch (err) {}
+            }
             requestAnimationFrame(cursorLoop);
         })();
 
