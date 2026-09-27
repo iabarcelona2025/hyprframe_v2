@@ -86,6 +86,15 @@ class Handler(SimpleHTTPRequestHandler):
                     pass
         super().send_error(code, message, explain)
 
+    def do_HEAD(self):
+        if self.path in ("/", ""):
+            self.send_response(302)
+            self.send_header("Location", "/404.html")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        super().do_HEAD()
+
     def do_GET(self):
         if self.path.startswith("/__livereload"):
             self.send_response(200)
@@ -113,6 +122,15 @@ class Handler(SimpleHTTPRequestHandler):
                     if q in _clients:
                         _clients.remove(q)
             return
+
+        # Redirect root to 404.html for immediate preview
+        if self.path in ("/", ""):
+            self.send_response(302)
+            self.send_header("Location", "/404.html")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
         super().do_GET()
 
 
