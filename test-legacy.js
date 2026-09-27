@@ -52,7 +52,8 @@ try {
         "Real places. Real people.Stories worth keeping.");
     assert.match(legacyCss, /\.legacy-hero\s*\{[^}]*min-height: min\(410px, 47svh\)/);
     assert.match(legacyCss, /@media \(max-width: 560px\)[\s\S]*\.legacy-hero\s*\{\s*min-height: min\(320px, 42svh\)/);
-    assert.match(legacyCss, /\.legacy-work__heading\s*\{[^}]*padding:\s*clamp\(calc\(5rem - 20px\), calc\(10vw - 20px\), calc\(9rem - 20px\)\)/);
+    assert.match(legacyCss, /\.legacy-work__heading\s*\{[^}]*padding:\s*clamp\(calc\(5rem - 20px\), calc\(10vw - 20px\), calc\(9rem - 20px\)\) var\(--pad\) clamp\(calc\(2\.5rem \+ 20px\), calc\(5vw \+ 20px\), calc\(4rem \+ 20px\)\)/,
+        "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     const plays = [...doc.querySelectorAll(".film-card__play")];
     assert.equal(plays.length, 6);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");

@@ -61,7 +61,8 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .legacy-work__heading {
     display: flex; justify-content: space-between; align-items: flex-end;
     flex-wrap: wrap; gap: 2.5rem;
-    padding: clamp(calc(5rem - 20px), calc(10vw - 20px), calc(9rem - 20px)) var(--pad) clamp(2.5rem, 5vw, 4rem);
+    /* Título 20px más arriba, pero las tarjetas conservan su posición original. */
+    padding: clamp(calc(5rem - 20px), calc(10vw - 20px), calc(9rem - 20px)) var(--pad) clamp(calc(2.5rem + 20px), calc(5vw + 20px), calc(4rem + 20px));
 }
 .legacy-work__heading h2 {
     font: 700 clamp(2.8rem, 7vw, 7.5rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
