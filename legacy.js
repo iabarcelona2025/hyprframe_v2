@@ -11,6 +11,7 @@
     const closeButton = document.getElementById("modalClose");
     const title = document.getElementById("modalTitle");
     const synopsis = document.getElementById("videoSynopsis");
+    const cast = document.getElementById("videoCast");
     let lastFilmLink = null;
 
     function updateScroll() {
@@ -41,6 +42,9 @@
         lastFilmLink = link;
         title.textContent = link.dataset.title;
         synopsis.textContent = link.dataset.synopsis;
+        // Reparto opcional (data-cast): la línea solo existe en las tarjetas que lo llevan.
+        cast.textContent = link.dataset.cast || "";
+        cast.hidden = !cast.textContent;
         player.title = `${link.dataset.title} — Vimeo video`;
         modal.hidden = false;
         document.body.classList.add("modal-open");

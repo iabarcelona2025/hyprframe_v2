@@ -251,6 +251,14 @@ body.menu-open, body.modal-open { overflow: hidden; }
     text-transform: uppercase;
 }
 .film-modal__info p { margin-top: 0.4rem; font-size: 0.88rem; color: var(--muted); }
+/* Cast credit (data-cast): same mono voice as the "NOW PLAYING" eyebrow, but kept
+   quieter so the synopsis stays the lead line. Hidden when a card has no cast. */
+.film-modal__info .film-modal__cast {
+    margin-top: 0.7rem;
+    font: 400 0.7rem/1.6 var(--font-mono);
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg);
+    opacity: 0.62;
+}
 
 @media (max-width: 800px) {
     .legacy-hero__bottom { align-items: flex-start; flex-direction: column; }
