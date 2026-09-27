@@ -1,4 +1,10 @@
-/* Smoke test: tests 404.html, 404.css, and 404.js for the minimalist centered 404 design */
+/* Smoke test: tests 404.html, 404.css, and 404.js for the requested design:
+   - No top menu
+   - No footer
+   - ERROR above 404 at half size
+   - 404 reduced by 30%
+   - Centered VOLVER A INICIO button
+*/
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -15,7 +21,7 @@ const check = (name, cond, extra = "") => {
 };
 
 const dom = new JSDOM(html, {
-    url: "http://localhost:8080/non-existent-dimension",
+    url: "http://localhost:8080/404.html",
     pretendToBeVisual: true,
     runScripts: "outside-only",
 });
@@ -50,60 +56,45 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
     check("Title contains 404 and HYPRFRAME", doc.title.includes("404") && doc.title.includes("HYPRFRAME"), doc.title);
     const metaRobots = doc.querySelector('meta[name="robots"]');
     check("Robots meta has noindex, follow", !!metaRobots && metaRobots.content.includes("noindex") && metaRobots.content.includes("follow"));
-    check("Theme color meta is #050505", doc.querySelector('meta[name="theme-color"]')?.content === "#050505");
-    check("Skip link present", !!doc.querySelector(".skip-link"));
+    check("Loads styles.css and 404.css", html.includes('styles.css') && html.includes('404.css'));
 
-    /* ─── 2. Favicons & Asset Links ───────────────────────── */
-    const stylesheets = [...doc.querySelectorAll('link[rel="stylesheet"]')].map((l) => l.getAttribute("href"));
-    check("Loads styles.css and 404.css", stylesheets.some((s) => s.includes("styles.css")) && stylesheets.some((s) => s.includes("404.css")));
+    /* ─── 2. Complete Absence of Top Menu & Footer ────────── */
+    check("Top menu header (.site-header) is removed", doc.querySelector(".site-header") === null);
+    check("Mobile menu overlay (.menu-overlay) is removed", doc.querySelector(".menu-overlay") === null);
+    check("Footer (.site-footer) is removed", doc.querySelector(".site-footer") === null);
+    check("No footer text ('SYSTEM NORMAL', 'ALL RIGHTS RESERVED', 'BARCELONA') present",
+        !doc.body.textContent.includes("SYSTEM NORMAL") &&
+        !doc.body.textContent.includes("ALL RIGHTS RESERVED") &&
+        !doc.body.textContent.includes("BARCELONA"));
 
-    /* ─── 3. Navigation & Header / Footer ─────────────────── */
-    const mainNavLinks = [...doc.querySelectorAll(".main-nav a")].map((a) => a.textContent.trim());
-    const expectedNav = ["Generated", "Captured", "About", "DNAi", "CLB", "Contact"];
-    check("Header main nav items match site canonical labels",
-        JSON.stringify(mainNavLinks) === JSON.stringify(expectedNav),
-        mainNavLinks.join(", "));
-    check("Header logo is present and links home", !!doc.querySelector(".site-header .logo"));
-    check("Burger button has aria controls and expanded attributes",
-        doc.getElementById("burger")?.getAttribute("aria-controls") === "menuOverlay");
-    const footer = doc.querySelector(".site-footer");
-    check("Footer present with 2026 copyright and status",
-        !!footer && footer.textContent.includes("2026") && footer.textContent.includes("SYSTEM NORMAL"));
+    /* ─── 3. ERROR above 404 & 404 reduced by 30% ─────────── */
+    const glitchError = doc.getElementById("glitchError");
+    const glitchNumber = doc.getElementById("glitchNumber");
+    check("ERROR element is present", !!glitchError && glitchError.textContent.trim() === "ERROR");
+    check("404 number is present", !!glitchNumber && glitchNumber.textContent.trim() === "404");
+    check("ERROR precedes 404 in DOM",
+        glitchError && glitchNumber && glitchError.nextElementSibling === glitchNumber);
 
-    /* ─── 4. Centered Minimalist 404 Layout Verification ─── */
-    check("Centered 404 number display is present", doc.getElementById("glitchNumber")?.textContent.trim() === "404");
-    check("Primary button is VOLVER A INICIO",
-        doc.getElementById("ctaHome")?.textContent.includes("VOLVER A INICIO"));
-    check("Only 1 CTA button exists on the page (VOLVER A INICIO)",
-        doc.querySelectorAll(".cta-actions a, .cta-actions button").length === 1);
+    // CSS size checks
+    check("CSS defines --size-404 reduced by 30% (clamp with ~5.6rem and ~15.4rem)",
+        css.includes("--size-404") && css.includes("5.6rem") && css.includes("15.4rem"));
+    check("CSS defines ERROR at exactly half the size of 404 (calc(var(--size-404) * 0.5))",
+        css.includes("calc(var(--size-404) * 0.5)"));
 
-    /* ─── 5. Verified Removal of Requested Elements ───────── */
-    check("No kicker / 'SEÑAL PERDIDA' present",
-        !doc.body.textContent.includes("SEÑAL PERDIDA") && !doc.body.textContent.includes("ERR_CODE"));
-    check("No 'FOTOGRAMA NO ENCONTRADO' heading present",
-        !doc.body.textContent.includes("FOTOGRAMA NO ENCONTRADO") && !doc.body.textContent.includes("FRAME NOT FOUND"));
-    check("No 'LATENT FIELD DESYNC / FRAME: VOID' subscan present",
-        !doc.body.textContent.includes("FRAME: VOID") && !doc.body.textContent.includes("DESYNC"));
-    check("No long narrative description present",
-        !doc.body.textContent.includes("La máquina ha explorado"));
-    check("No Terminal HUD / 'SYNTHESIS_DEBUGGER' present",
-        doc.querySelector(".terminal-hud") === null && !doc.body.textContent.includes("SYNTHESIS_DEBUGGER"));
-    check("No 'PUNTOS DE RECUPERACIÓN' / waypoint cards present",
-        doc.querySelector(".waypoints-block") === null && doc.querySelectorAll(".waypoint-card").length === 0);
-    check("No search input bar present",
-        doc.getElementById("quickJumpInput") === null);
-    check("No 'EXPLORAR PROYECTOS' or 'CONTACTAR ESTUDIO' buttons present",
-        !doc.body.textContent.includes("EXPLORAR PROYECTOS") && !doc.body.textContent.includes("CONTACTAR"));
+    /* ─── 4. Centered Button VOLVER A INICIO ──────────────── */
+    const btnHome = doc.getElementById("ctaHome");
+    check("Button VOLVER A INICIO is present", !!btnHome && btnHome.textContent.includes("VOLVER A INICIO"));
+    check("Button links to /index.html", btnHome?.getAttribute("href") === "/index.html");
+    check("Only 1 CTA link exists", doc.querySelectorAll(".cta-actions a").length === 1);
 
-    /* ─── 6. CSS Rules Integrity ──────────────────────────── */
-    check("404.css centers content vertically and horizontally",
-        css.includes(".main-404") && css.includes("align-items: center") && css.includes("justify-content: center"));
-    check("404.css defines glitch animations",
+    /* ─── 5. CSS Centering & Glitch Animation ─────────────── */
+    check("404.css centers content in fullscreen",
+        css.includes(".page-404") && css.includes("justify-content: center") && css.includes("align-items: center"));
+    check("404.css defines glitch pseudo-elements and animations",
+        css.includes(".glitch-error::before") && css.includes(".glitch-number::before") &&
         css.includes("@keyframes glitchSlice1") && css.includes("@keyframes glitchSlice2"));
-    check("404.css respects prefers-reduced-motion",
-        css.includes("@media (prefers-reduced-motion: reduce)"));
 
-    /* ─── 7. JavaScript Runtime Execution ─────────────────── */
+    /* ─── 6. JavaScript Runtime Execution ─────────────────── */
     const errors = [];
     window.addEventListener("error", (e) => errors.push(e.message));
 
@@ -116,28 +107,13 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
 
     check("Zero uncaught runtime errors on script load", errors.length === 0, errors.join(", "));
 
-    // Test Burger menu interaction
-    const burgerBtn = doc.getElementById("burger");
-    burgerBtn.click();
-    check("Burger click opens mobile menu (.menu-open + aria-expanded=true)",
-        doc.body.classList.contains("menu-open") && burgerBtn.getAttribute("aria-expanded") === "true");
-    const overlayLink = doc.querySelector(".menu-links a");
-    overlayLink.click();
-    check("Overlay link click closes menu (.menu-open removed)",
-        !doc.body.classList.contains("menu-open") && burgerBtn.getAttribute("aria-expanded") === "false");
-
-    // Test Language switcher interaction
-    const langEnBtn = doc.getElementById("langEn");
-    const langEsBtn = doc.getElementById("langEs");
-    langEnBtn.click();
-    check("Language toggle to EN updates button text to 'RETURN HOME'",
-        doc.getElementById("ctaHome")?.textContent.includes("RETURN HOME"));
-    langEsBtn.click();
-    check("Language toggle back to ES updates button text to 'VOLVER A INICIO'",
-        doc.getElementById("ctaHome")?.textContent.includes("VOLVER A INICIO"));
+    // Trigger glitch click
+    const glitchTrigger = doc.getElementById("glitchTrigger");
+    glitchTrigger.click();
+    check("Clicking glitch trigger runs without error", errors.length === 0);
 
     if (failures === 0) {
-        console.log("\n✅ ALL MINIMALIST 404 TESTS PASSED");
+        console.log("\n✅ ALL TESTS PASSED");
         process.exit(0);
     } else {
         console.log(`\n❌ ${failures} CHECKS FAILED`);

@@ -1,23 +1,33 @@
 /* ═══════════════════════════════════════════════════════════
-   HYPRFRAME — 404 / FRAME NOT FOUND (MINIMAL CENTRED)
+   HYPRFRAME — 404 / FRAME NOT FOUND (ERROR + 404 + VOLVER A INICIO)
    Palette: #050505 bg / #efeee9 fg / #a064ff violet / #a3df02 lime
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Base layout ─────────────────────────────────────────── */
+:root {
+    /* 404 size reduced by 30% from clamp(8rem, 26vw, 22rem) */
+    --size-404: clamp(5.6rem, 18.2vw, 15.4rem);
+}
+
+/* ── Base fullscreen layout without header or footer ─────── */
 html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
     height: 100%;
+    overflow: hidden;
+    background-color: var(--bg);
+    color: var(--fg);
 }
 
 .page-404 {
-    min-height: 100vh;
-    min-height: 100svh;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background-color: var(--bg);
-    color: var(--fg);
+    align-items: center;
+    justify-content: center;
     position: relative;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 /* Background canvas for latent space constellation */
@@ -31,37 +41,12 @@ html, body {
     opacity: 0.55;
 }
 
-/* Header scrolled state by default on 404 page */
-.page-404 .site-header {
-    background: rgba(5, 5, 5, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--line);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
-
-/* Main 404 section - vertically & horizontally centered */
+/* Main 404 container - perfectly centered */
 .main-404 {
-    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
     position: relative;
     z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: calc(var(--header-h) + 1rem) var(--pad) 2rem;
-    box-sizing: border-box;
-}
-
-.section-404 {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,15 +63,15 @@ html, body {
     transform: translate(-50%, -50%);
 }
 .glow-violet {
-    top: 45%;
+    top: 50%;
     left: 50%;
     width: clamp(280px, 45vw, 600px);
     height: clamp(280px, 45vw, 600px);
     background: radial-gradient(circle, var(--violet) 0%, transparent 70%);
 }
 .glow-lime {
-    top: 65%;
-    left: 55%;
+    top: 55%;
+    left: 52%;
     width: clamp(180px, 30vw, 400px);
     height: clamp(180px, 30vw, 400px);
     background: radial-gradient(circle, var(--lime) 0%, transparent 70%);
@@ -100,26 +85,47 @@ html, body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: clamp(1.75rem, 4.5vh, 3.25rem);
+    gap: clamp(1.5rem, 3.5vh, 2.75rem);
     width: 100%;
+    padding: 1.5rem;
+    box-sizing: border-box;
 }
 
-/* ── Giant Glitch 404 Display ────────────────────────────── */
+/* ── Glitch Display (ERROR + 404) ────────────────────────── */
 .glitch-display {
     position: relative;
     cursor: pointer;
     user-select: none;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 0;
     margin: 0;
+    gap: 0;
 }
 
+/* ERROR: exactly half the size of 404 */
+.glitch-error {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: calc(var(--size-404) * 0.5);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+    text-shadow: 0 0 35px rgba(160, 100, 255, 0.25);
+    transition: transform 0.25s var(--ease-out), color 0.25s;
+    margin-bottom: clamp(0.2rem, 1vh, 0.5rem);
+}
+
+/* 404: reduced by 30% */
 .glitch-number {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(8rem, 26vw, 22rem);
+    font-size: var(--size-404);
     line-height: 0.85;
     letter-spacing: -0.05em;
     color: var(--fg);
@@ -127,11 +133,13 @@ html, body {
     display: inline-block;
     margin: 0;
     padding: 0;
+    text-shadow: 0 0 50px rgba(160, 100, 255, 0.35);
     transition: transform 0.25s var(--ease-out), color 0.25s;
-    text-shadow: 0 0 50px rgba(160, 100, 255, 0.3);
 }
 
-/* Glitch pseudo-elements */
+/* Glitch pseudo-elements for both ERROR and 404 */
+.glitch-error::before,
+.glitch-error::after,
 .glitch-number::before,
 .glitch-number::after {
     content: attr(data-text);
@@ -143,6 +151,7 @@ html, body {
     opacity: 0.8;
 }
 
+.glitch-error::before,
 .glitch-number::before {
     color: var(--violet);
     z-index: -1;
@@ -151,6 +160,7 @@ html, body {
     animation: glitchSlice1 4s infinite linear alternate-reverse;
 }
 
+.glitch-error::after,
 .glitch-number::after {
     color: var(--lime);
     z-index: -2;
@@ -159,18 +169,21 @@ html, body {
     animation: glitchSlice2 3.5s infinite linear alternate-reverse;
 }
 
+.glitch-display:hover .glitch-error,
 .glitch-display:hover .glitch-number {
     transform: scale(1.02);
 }
 
+.glitch-display:hover .glitch-error::before,
 .glitch-display:hover .glitch-number::before {
     animation: glitchBurst1 0.3s steps(2) infinite;
-    transform: translate(-6px, -2px);
+    transform: translate(-5px, -1px);
 }
 
+.glitch-display:hover .glitch-error::after,
 .glitch-display:hover .glitch-number::after {
     animation: glitchBurst2 0.3s steps(2) infinite;
-    transform: translate(6px, 2px);
+    transform: translate(5px, 1px);
 }
 
 @keyframes glitchSlice1 {
@@ -191,15 +204,15 @@ html, body {
 }
 
 @keyframes glitchBurst1 {
-    0% { transform: translate(-8px, -2px) skewX(-2deg); }
-    50% { transform: translate(8px, 2px) skewX(2deg); }
-    100% { transform: translate(-5px, 1px); }
+    0% { transform: translate(-6px, -2px) skewX(-2deg); }
+    50% { transform: translate(6px, 2px) skewX(2deg); }
+    100% { transform: translate(-4px, 1px); }
 }
 
 @keyframes glitchBurst2 {
-    0% { transform: translate(8px, 2px) skewX(2deg); }
-    50% { transform: translate(-8px, -2px) skewX(-2deg); }
-    100% { transform: translate(5px, -1px); }
+    0% { transform: translate(6px, 2px) skewX(2deg); }
+    50% { transform: translate(-6px, -2px) skewX(-2deg); }
+    100% { transform: translate(4px, -1px); }
 }
 
 /* ── Primary Action Button: VOLVER A INICIO ───────────────── */
@@ -215,7 +228,7 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 0.85rem;
-    padding: 1.1rem 2.6rem;
+    padding: 1.05rem 2.4rem;
     background: var(--violet);
     color: #050505;
     font-family: var(--font-mono);
@@ -227,6 +240,7 @@ html, body {
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(160, 100, 255, 0.35);
     transition: transform 0.25s var(--ease-out), box-shadow 0.25s, background-color 0.25s;
+    text-decoration: none;
 }
 
 .btn-primary:hover {
@@ -245,88 +259,16 @@ html, body {
     transform: translate(2px, -2px);
 }
 
-/* ── Language Switcher in Header ─────────────────────────── */
-.lang-btn, .lang-toggle {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font: inherit;
-    cursor: pointer;
-    padding: 0;
-    transition: color 0.25s;
-}
-
-.lang-btn.active, .lang-toggle.active {
-    color: var(--fg);
-    font-weight: 600;
-}
-
-.lang-btn:hover, .lang-toggle:hover {
-    color: var(--violet);
-}
-
-/* ── Screen Reader Utility ───────────────────────────────── */
-.skip-link {
-    position: fixed;
-    top: -100px;
-    left: 1rem;
-    z-index: 10000;
-    background: var(--violet);
-    color: var(--fg);
-    padding: 0.75rem 1.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    transition: top 0.3s;
-}
-.skip-link:focus {
-    top: 1rem;
-}
-
-/* ── Footer Elements ─────────────────────────────────────── */
-.page-404 .site-footer {
-    border-top: 1px solid var(--line);
-    padding: 1.25rem var(--pad);
-    background: var(--bg);
-    position: relative;
-    z-index: 10;
-    flex-shrink: 0;
-}
-
-.page-404 .footer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    font: 400 0.68rem/1.6 var(--font-mono);
-    letter-spacing: 0.18em;
-    color: var(--muted);
-    text-transform: uppercase;
-    flex-wrap: wrap;
-}
-
-.footer-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--lime);
-}
-
-.status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--lime);
-    box-shadow: 0 0 8px var(--lime);
-}
-
 /* ── Accessibility & Reduced Motion ──────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+    .glitch-error::before,
+    .glitch-error::after,
     .glitch-number::before,
     .glitch-number::after,
     .grain {
         animation: none !important;
     }
+    .glitch-display:hover .glitch-error,
     .glitch-display:hover .glitch-number,
     .btn-primary:hover {
         transform: none !important;

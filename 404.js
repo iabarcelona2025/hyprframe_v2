@@ -68,76 +68,40 @@
         bindCursorLarge();
     }
 
-    /* ─── 2. Header & Mobile Menu ────────────────────────── */
-    const header = document.getElementById("siteHeader");
-    const progress = document.getElementById("scrollProgress");
-    const burger = document.getElementById("burger");
-    const overlay = document.getElementById("menuOverlay");
-
-    const updateScroll = () => {
-        if (!progress) return;
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        progress.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
-    };
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    updateScroll();
-
-    const toggleMenu = (open) => {
-        if (!burger || !overlay) return;
-        document.body.classList.toggle("menu-open", open);
-        burger.setAttribute("aria-expanded", String(open));
-        burger.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
-        overlay.setAttribute("aria-hidden", String(!open));
-        if (open) {
-            const first = overlay.querySelector(".menu-links a");
-            if (first) first.focus();
-        } else {
-            burger.focus();
-        }
-    };
-
-    if (burger) {
-        burger.addEventListener("click", () => {
-            const isOpen = document.body.classList.contains("menu-open");
-            toggleMenu(!isOpen);
-        });
-    }
-
-    if (overlay) {
-        overlay.querySelectorAll(".menu-links a").forEach((a) => {
-            a.addEventListener("click", () => toggleMenu(false));
-        });
-    }
-
-    window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && document.body.classList.contains("menu-open")) {
-            toggleMenu(false);
-        }
-    });
-
-    /* ─── 3. Glitch Click Effect ─────────────────────────── */
+    /* ─── 2. Glitch Click Effect ─────────────────────────── */
     const glitchDisplay = document.getElementById("glitchTrigger");
+    const glitchError = document.getElementById("glitchError");
     const glitchNumber = document.getElementById("glitchNumber");
 
-    const glitchGlyphs = ["404", "4Ø4", "4_4", "4#4", "4?4", "!0!", "404"];
+    const glitchGlyphs404 = ["404", "4Ø4", "4_4", "4#4", "4?4", "!0!", "404"];
+    const glitchGlyphsErr = ["ERROR", "ERRØR", "ERR__", "ER#0R", "E??OR", "ERROR"];
     let isGlitching = false;
 
     const runGlitchBurst = () => {
         if (isGlitching || !glitchNumber) return;
         isGlitching = true;
         let count = 0;
-        const originalText = "404";
 
         const interval = setInterval(() => {
             count++;
-            const rand = glitchGlyphs[Math.floor(Math.random() * glitchGlyphs.length)];
-            glitchNumber.textContent = rand;
-            glitchNumber.setAttribute("data-text", rand);
+            const rand404 = glitchGlyphs404[Math.floor(Math.random() * glitchGlyphs404.length)];
+            glitchNumber.textContent = rand404;
+            glitchNumber.setAttribute("data-text", rand404);
+
+            if (glitchError) {
+                const randErr = glitchGlyphsErr[Math.floor(Math.random() * glitchGlyphsErr.length)];
+                glitchError.textContent = randErr;
+                glitchError.setAttribute("data-text", randErr);
+            }
 
             if (count > 7) {
                 clearInterval(interval);
-                glitchNumber.textContent = originalText;
-                glitchNumber.setAttribute("data-text", originalText);
+                glitchNumber.textContent = "404";
+                glitchNumber.setAttribute("data-text", "404");
+                if (glitchError) {
+                    glitchError.textContent = "ERROR";
+                    glitchError.setAttribute("data-text", "ERROR");
+                }
                 isGlitching = false;
             }
         }, 55);
@@ -152,55 +116,7 @@
         glitchDisplay.addEventListener("click", runGlitchBurst);
     }
 
-    /* ─── 4. Bilingual Support (EN / ES) ─────────────────── */
-    const langBtns = document.querySelectorAll(".lang-switch button, .lang-toggle");
-    let currentLang = "es";
-
-    try {
-        const savedLang = localStorage.getItem("hfLang");
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlLang = urlParams.get("lang");
-
-        if (urlLang === "es" || urlLang === "en") {
-            currentLang = urlLang;
-        } else if (savedLang === "es" || savedLang === "en") {
-            currentLang = savedLang;
-        }
-    } catch (e) {}
-
-    const setLanguage = (lang) => {
-        currentLang = lang;
-        document.documentElement.lang = lang;
-
-        try {
-            localStorage.setItem("hfLang", lang);
-        } catch (e) {}
-
-        // Update switcher buttons
-        document.querySelectorAll("[data-lang='en'], #langEn, #menuLangEn").forEach((el) => {
-            el.classList.toggle("active", lang === "en");
-        });
-        document.querySelectorAll("[data-lang='es'], #langEs, #menuLangEs").forEach((el) => {
-            el.classList.toggle("active", lang === "es");
-        });
-
-        // Update elements with data-en and data-es
-        document.querySelectorAll("[data-en][data-es]").forEach((el) => {
-            el.textContent = el.getAttribute(`data-${lang}`);
-        });
-    };
-
-    langBtns.forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            const targetLang = btn.dataset.lang || (btn.id.includes("Es") ? "es" : "en");
-            setLanguage(targetLang);
-        });
-    });
-
-    setLanguage(currentLang);
-
-    /* ─── 5. Interactive Latent Constellation Canvas ──────── */
+    /* ─── 3. Interactive Latent Constellation Canvas ──────── */
     const canvas = document.getElementById("canvas404");
     if (canvas && !reducedMotion) {
         const ctx = canvas.getContext("2d");
@@ -209,7 +125,7 @@
             let height = 0;
             let dpr = window.devicePixelRatio || 1;
             let particles = [];
-            const PARTICLE_COUNT = 50;
+            const PARTICLE_COUNT = 45;
             let pulseRadius = 0;
             let pulseActive = false;
 
@@ -228,8 +144,8 @@
                 particles.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: (Math.random() - 0.5) * 0.4,
+                    vx: (Math.random() - 0.5) * 0.35,
+                    vy: (Math.random() - 0.5) * 0.35,
                     radius: Math.random() * 1.5 + 0.8,
                     color: Math.random() > 0.65 ? "#a064ff" : (Math.random() > 0.85 ? "#a3df02" : "#ffffff"),
                     alpha: Math.random() * 0.45 + 0.2
