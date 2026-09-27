@@ -61,6 +61,11 @@ try {
         "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");
     assert.match(legacyCss, /\.legacy-work__heading h2 span\s*\{[^}]*font-style:\s*italic;/);
+    // YOUR STORY / GOES NEXT: caja y letras al 80% (27/09/2026)
+    assert.match(legacyCss, /\.legacy-next \{[^}]*padding:\s*clamp\(4rem, 8vw, 7\.2rem\) var\(--pad\)/,
+        "the YOUR STORY box is 20% tighter");
+    assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(2\.6rem, 7\.2vw, 8rem\)/,
+        "the YOUR STORY letters are 20% smaller");
     const plays = [...doc.querySelectorAll(".film-card__play")];
     assert.equal(plays.length, 6);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
