@@ -114,7 +114,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     translate: -50% -50%;
     transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out);
 }
-/* Same CSS-drawn triangle as the N.O.D.E. player (see project-node.css): the site
+/* Same CSS-drawn triangle as the N.O.D.E. player (see generated.css): the site
    fonts lack "▶", so each system drew its own glyph, off centre. Equilateral, with
    its centroid exactly on the circle's centre; em-sized like the former glyph.
    The circle is centred with `translate` rather than `transform`, so the hover

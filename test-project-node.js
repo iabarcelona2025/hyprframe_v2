@@ -33,7 +33,7 @@ try {
     for (const link of doc.querySelectorAll('link[rel="apple-touch-icon"], link[rel="icon"], link[rel="shortcut icon"], link[rel="manifest"]')) {
         assert.ok(fs.existsSync(path.join(root, link.getAttribute("href").replace(/^\//, ""))), `missing head asset ${link.href}`);
     }
-    for (const css of ["styles.css", "project-node.css"]) {
+    for (const css of ["styles.css", "generated.css"]) {
         assert.ok(fs.existsSync(path.join(root, css)));
         assert.ok(doc.querySelector(`link[href^="${css}"]`));
     }
@@ -61,7 +61,7 @@ try {
     assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "the title's four dots are uniform CSS boxes");
     assert.ok(!doc.querySelector(".node-hero__period"), "the title's period inherits the same colour as its letters");
     assert.ok(!doc.querySelector(".node-film__after"), "old film caption has been removed");
-    const css = fs.readFileSync(path.join(root, "project-node.css"), "utf8");
+    const css = fs.readFileSync(path.join(root, "generated.css"), "utf8");
     assert.ok(!doc.querySelector(".node-hero__image img"), "the opener is a flat background, not a still image");
     assert.ok(!/radial-gradient|linear-gradient/.test(css), "the opener gradient has been removed");
     assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"), "custom cursor dot and ring exist");
@@ -108,7 +108,7 @@ try {
     assert.deepEqual([...doc.querySelectorAll(".node-section-label span:first-child")].map((el) => el.textContent),
         ["THE STORY", "KEEP EXPLORING"], "section labels carry no numbering");
     assert.ok(!doc.querySelector(".node-film__heading"), "the video has no title block");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /height: clamp\(170px, 23svh, 250px\)/);
+    assert.match(fs.readFileSync(path.join(root, "generated.css"), "utf8"), /height: clamp\(170px, 23svh, 250px\)/);
     assert.match(doc.querySelector(".node-story__copy p").textContent, /water rationing/);
     assert.equal(doc.querySelectorAll(".node-card").length, 2);
     assert.equal(doc.querySelector(".footer-row").textContent.trim(), "© 2026 HYPRFRAME. All rights reserved.");
@@ -138,7 +138,7 @@ try {
     player.contentWindow.postMessage = (message, targetOrigin) => sent.push({ message, targetOrigin });
     assert.match(player.src, /player\.vimeo\.com\/video\/1227346538\?autoplay=1&dnt=1&transparent=0/);
     assert.equal(player.title, "N.O.D.E. teaser — HYPRFRAME");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /\.node-player \{[^}]*background: #000/);
+    assert.match(fs.readFileSync(path.join(root, "generated.css"), "utf8"), /\.node-player \{[^}]*background: #000/);
     assert.ok(!player.classList.contains("is-ready"), "the iframe stays hidden over black while loading");
     player.dispatchEvent(new window.Event("load"));
     assert.ok(!player.classList.contains("is-ready"), "iframe load alone must not reveal a white frame");
