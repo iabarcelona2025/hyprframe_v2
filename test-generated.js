@@ -85,7 +85,16 @@ for (const page of PAGES) {
         assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "HYPRFRAME / GENERATED");
         assert.equal(doc.querySelector(".node-back").getAttribute("href"), "index.html#work");
         assert.equal(doc.querySelector(".node-hero__explore").getAttribute("href"), "#film");
-        assert.equal(doc.querySelector(".node-related__heading > a").getAttribute("href"), "index.html#work");
+        // VIEW ALL WORK ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
+        const all = doc.querySelector(".node-story__all");
+        assert.equal(all.getAttribute("href"), "index.html#work");
+        assert.equal(all.textContent.trim(), "VIEW ALL WORK ↗");
+        assert.equal(all.parentElement.className, "node-story",
+            `${page.file}: el enlace no cierra THE STORY`);
+        assert.equal(all.previousElementSibling.className, "node-story__grid",
+            `${page.file}: el enlace no va justo bajo la sinopsis`);
+        assert.ok(!doc.querySelector(".node-related__heading a"),
+            `${page.file}: el enlace sigue junto a RELATED PROJECTS`);
         assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"));
 
         /* ── Enlaces e imágenes locales que existen de verdad ── */
@@ -258,5 +267,13 @@ assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match
     "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
 assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,
     "por debajo de 560px el titular parte en líneas, como antes");
+
+/* ── VIEW ALL WORK ↗ cierra THE STORY en las diez páginas ── */
+assert.ok(css.includes(".node-story__all"), "generated.css no da estilo al enlace bajo la sinopsis");
+assert.ok(!/\.node-related__heading > a/.test(css),
+    "generated.css conserva el estilo del enlace junto a RELATED PROJECTS");
+assert.match(css,
+    /\.node-story__all \{[^}]*margin-left: auto;[^}]*margin-bottom: clamp\(2\.5rem, 5vw, 4rem\);/,
+    "el enlace se alinea con la sinopsis y se acerca a la línea gris");
 
 console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);

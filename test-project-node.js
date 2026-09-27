@@ -41,7 +41,7 @@ try {
         [...indexDoc.querySelectorAll(".main-nav a")].map((el) => el.textContent.trim()));
     assert.deepEqual([...doc.querySelectorAll(".menu-links a")].map((el) => el.textContent.trim()),
         [...indexDoc.querySelectorAll(".menu-links a")].map((el) => el.textContent.trim()));
-    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .node-back, .node-related__heading a, .node-hero__explore")) {
+    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .node-back, .node-story__all, .node-hero__explore")) {
         const href = link.getAttribute("href");
         if (href.startsWith("https://")) continue;
         const url = new URL(href, window.location.href);

@@ -142,7 +142,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-story__grid {
     display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
-    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(7rem, 14vw, 14rem);
+    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(3.5rem, 8vw, 7rem);
 }
 .node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
@@ -154,6 +154,17 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: block; margin-top: 3rem; font: 400 0.65rem/1.6 var(--font-mono);
     letter-spacing: 0.19em; color: var(--muted);
 }
+/* "View all work" closes THE STORY: on the synopsis' own side, right above the
+   hairline that opens KEEP EXPLORING. It used to sit beside RELATED PROJECTS,
+   where it read as a second heading instead of as the way out of the page. */
+.node-story__all {
+    display: block; width: fit-content; margin-left: auto;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+    border-bottom: 1px solid var(--violet); padding-bottom: 0.5rem;
+    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.18em;
+    transition: color 0.3s, border-color 0.3s;
+}
+.node-story__all:hover { color: var(--lime); border-color: var(--lime); }
 
 .node-related { padding-bottom: clamp(6rem, 11vw, 10rem); }
 .node-related__heading {
@@ -161,12 +172,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
 }
 .node-related h2 { font-size: clamp(calc(3rem - 10px), calc(6.5vw - 10px), calc(7rem - 10px)); }
-.node-related__heading > a {
-    flex: none; border-bottom: 1px solid var(--violet); padding-bottom: 0.5rem;
-    font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.18em;
-    transition: color 0.3s, border-color 0.3s;
-}
-.node-related__heading > a:hover { color: var(--lime); border-color: var(--lime); }
 .node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.25rem, 3.5vw, 4rem); }
 .node-card { min-width: 0; display: flex; flex-direction: column; }
 .node-card__image { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #151416; }
