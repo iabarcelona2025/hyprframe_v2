@@ -83,7 +83,11 @@ for (const page of PAGES) {
         assert.deepEqual(navLabels(doc, ".menu-links a"), navLabels(indexDoc, ".menu-links a"));
         assert.deepEqual(navLabels(doc, ".site-header"), navLabels(nodeDoc, ".site-header"));
         assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "HYPRFRAME / GENERATED");
-        assert.equal(doc.querySelector(".node-back").getAttribute("href"), "index.html#work");
+        // La fila superior del opener lleva solo el kicker: ← ALL WORK se fue
+        // (el paginador arriba y VIEW ALL WORK ↗ bajo la sinopsis ya cubren la salida).
+        assert.ok(!doc.querySelector(".node-back"), `${page.file}: sigue el enlace ← ALL WORK`);
+        assert.equal(doc.querySelector(".node-hero__top").children.length, 1,
+            `${page.file}: la fila del kicker lleva más de un elemento`);
         assert.equal(doc.querySelector(".node-hero__explore").getAttribute("href"), "#film");
         // VIEW ALL WORK ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
         const all = doc.querySelector(".node-story__all");
@@ -267,6 +271,10 @@ assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match
     "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
 assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,
     "por debajo de 560px el titular parte en líneas, como antes");
+
+/* ── ← ALL WORK fuera: la salida de la sección vive en otros dos sitios ── */
+assert.ok(!/\.node-back/.test(css), "generated.css conserva las reglas de .node-back");
+assert.ok(!/class="node-back"/.test(nodeHtml), "project-node.html conserva el enlace ← ALL WORK");
 
 /* ── VIEW ALL WORK ↗ cierra THE STORY en las diez páginas ── */
 assert.ok(css.includes(".node-story__all"), "generated.css no da estilo al enlace bajo la sinopsis");

@@ -41,7 +41,7 @@ try {
         [...indexDoc.querySelectorAll(".main-nav a")].map((el) => el.textContent.trim()));
     assert.deepEqual([...doc.querySelectorAll(".menu-links a")].map((el) => el.textContent.trim()),
         [...indexDoc.querySelectorAll(".menu-links a")].map((el) => el.textContent.trim()));
-    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .node-back, .node-story__all, .node-hero__explore")) {
+    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .node-story__all, .node-hero__explore")) {
         const href = link.getAttribute("href");
         if (href.startsWith("https://")) continue;
         const url = new URL(href, window.location.href);
@@ -171,11 +171,11 @@ try {
     const replay = doc.querySelector(".node-player iframe");
     assert.match(replay.src, /player\.vimeo\.com\/video\/1227346538\?autoplay=1/, "the teaser can be played again");
     replay.contentWindow.postMessage = () => {};
-    doc.querySelector(".node-back").focus(); // the viewer has moved on to another part of the page
+    doc.querySelector(".node-hero__explore").focus(); // the viewer has moved on to another part of the page
     fromVimeo(JSON.stringify({ event: "ready" }), { source: replay.contentWindow });
     fromVimeo(JSON.stringify({ event: "ended" }), { source: replay.contentWindow });
     assert.ok(doc.querySelector(".node-player > img"), "the still comes back after a replay too");
-    assert.equal(doc.activeElement, doc.querySelector(".node-back"), "focus elsewhere on the page is left alone");
+    assert.equal(doc.activeElement, doc.querySelector(".node-hero__explore"), "focus elsewhere on the page is left alone");
     assert.deepEqual(errors, []);
     console.log("PASS  N.O.D.E.: header, working links, assets, story, video and mobile menu");
 } finally {
