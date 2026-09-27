@@ -56,6 +56,17 @@
          conexión; si no llega, cae a Fira Code / Roboto Mono / Courier New. -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css?v=84" />
+
+    <!-- ── Barra de progreso de scroll — verde corporativo ──────────────────
+         En el landing la barra de 3px que va sobre el vídeo del hero pasa a
+         --lime sólido. El valor por defecto de styles.css es el degradado
+         violeta → lima, compartido por todas las páginas de la sección
+         GENERATED, legacy.html y builder.html; el override vive aquí para no
+         cambiar esas páginas. Especificidad y orden idénticos a la regla
+         original, así que gana por ir después. -->
+    <style>
+        .scroll-progress { background: var(--lime); }
+    </style>
 </head>
 
 <body>
