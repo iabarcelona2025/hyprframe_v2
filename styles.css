@@ -968,6 +968,7 @@ section { position: relative; }
     gap: clamp(2rem, 6vw, 5rem); align-items: start;
 }
 .about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
+.about-copy strong { font-weight: 500; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
     display: block;
