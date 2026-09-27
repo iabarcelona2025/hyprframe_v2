@@ -59,21 +59,23 @@
 
     /* ── Banner ───────────────────────────────────────────── */
     function buildBanner() {
+        const isEs = document.documentElement.lang === "es" || (typeof location !== "undefined" && location.pathname && location.pathname.includes("/es/"));
         const banner = document.createElement("div");
         banner.className = "cookie-banner";
         banner.id = "cookieBanner";
         banner.setAttribute("role", "dialog");
-        banner.setAttribute("aria-label", "Cookie consent");
+        banner.setAttribute("aria-label", isEs ? "Consentimiento de cookies" : "Cookie consent");
         banner.setAttribute("aria-live", "polite");
         banner.innerHTML = `
             <p class="cookie-title">Cookies</p>
             <p class="cookie-text">
-                We use our own cookies and Google Analytics to measure traffic.
-                Accept them, or continue with technical cookies only.
+                ${isEs
+                    ? "Utilizamos cookies propias y de Google Analytics para medir el tráfico. Acéptalas o continúa únicamente con las cookies técnicas."
+                    : "We use our own cookies and Google Analytics to measure traffic. Accept them, or continue with technical cookies only."}
             </p>
             <div class="cookie-actions">
-                <button type="button" class="cookie-btn cookie-accept" data-consent="granted">Accept</button>
-                <button type="button" class="cookie-btn cookie-reject" data-consent="denied">Essential only</button>
+                <button type="button" class="cookie-btn cookie-accept" data-consent="granted">${isEs ? "Aceptar" : "Accept"}</button>
+                <button type="button" class="cookie-btn cookie-reject" data-consent="denied">${isEs ? "Solo esenciales" : "Essential only"}</button>
             </div>`;
         return banner;
     }

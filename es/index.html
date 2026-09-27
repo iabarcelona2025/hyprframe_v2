@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HYPRFRAME — Estudio de AI Visual Storytelling</title>
+    <link rel="canonical" href="https://hyprframe.com/es/index.html" />
+    <!-- NOINDEX-STAGING (quitar en el lanzamiento) -->
+    <meta name="robots" content="noindex, follow"> <!-- NOINDEX-STAGING (quitar en el lanzamiento) -->
+    <meta name="description" content="HYPRFRAME es un estudio de AI visual storytelling. Vídeo generado por IA, motion design, dirección de arte y consultoría creativa: donde la intuición humana se encuentra con la síntesis maquínica." />
+    <meta property="og:title" content="HYPRFRAME — Estudio de AI Visual Storytelling" />
+    <meta property="og:description" content="Cuando las ideas se encuentran con la máquina, lo imposible toma forma." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hyprframe.com/es/index.html" />
+    <meta name="theme-color" content="#050505" />
+
+    <script>
+    /* INTRO (contador 0→100) — solo una vez por sesión de navegador. */
+    (function () {
+        try {
+            if (/[?&]intro=1(?:&|$)/.test(location.search)) {
+                sessionStorage.removeItem("hfIntroSeen");
+            } else if (sessionStorage.getItem("hfIntroSeen") === "1") {
+                document.documentElement.classList.add("hf-skip-intro");
+            }
+        } catch (e) { /* storage no disponible */ }
+    })();
+    </script>
+
+    <!-- ─── Consent Mode v2 de Google — APAGADO ───────────────────────────── -->
+    <script>
+        window.HYPRFRAME_CONSENT_MODE = false;
+        window.dataLayer = window.dataLayer || [];
+        if (window.HYPRFRAME_CONSENT_MODE) {
+            window.gtag = function gtag() { dataLayer.push(arguments); };
+            window.gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+                'region': ['ES']
+            });
+        }
+    </script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=89" />
+</head>
+
+<body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+
+    <!-- ══════════ PRELOADER ══════════ -->
+    <div class="preloader" id="preloader" aria-hidden="true">
+        <div class="preloader-inner">
+            <span class="preloader-count" id="preCount">0</span>
+        </div>
+        <div class="preloader-bar"><span id="preBar"></span></div>
+    </div>
+
+    <!-- grain overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- custom cursor -->
+    <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+    <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+    <!-- scroll progress -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <!-- ══════════ HEADER ══════════ -->
+    <header class="site-header" id="siteHeader">
+        <a href="#top" class="logo" aria-label="HYPRFRAME inicio">
+            <img src="assets/images/logo.png" alt="HYPRFRAME" />
+        </a>
+        <nav class="main-nav" aria-label="Navegación principal">
+            <a href="#work">Generated</a>
+            <a href="legacy.html">Captured</a>
+            <a href="#about">About</a>
+            <a href="#services" class="keep-case">DNAi</a>
+            <a href="#clb">CLB</a>
+            <a href="#contact" class="nav-cta">Contacto</a>
+        </nav>
+        <div class="header-meta">
+            <span class="lang-switch"><span class="active">ES</span><i>/</i><a href="https://hyprframe.com/index.html" lang="en">EN</a></span>
+            <button class="burger" id="burger" type="button" aria-label="Abrir menú" aria-controls="menuOverlay" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ══════════ FULLSCREEN MENU ══════════ -->
+    <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+        <div class="menu-links">
+            <a href="#work"><span class="pulse" aria-hidden="true"></span> Generated</a>
+            <a href="legacy.html"><span class="pulse" aria-hidden="true"></span> Captured</a>
+            <a href="#about"><span class="pulse" aria-hidden="true"></span> About</a>
+            <a href="#services" class="keep-case"><span class="pulse" aria-hidden="true"></span> DNAi</a>
+            <a href="#clb"><span class="pulse" aria-hidden="true"></span> CLB</a>
+            <a href="#contact"><span class="pulse" aria-hidden="true"></span> Contacto</a>
+        </div>
+        <div class="menu-lang">
+            <span class="lang-switch"><span class="active">ES</span><i>/</i><a href="https://hyprframe.com/index.html" lang="en">EN</a></span>
+        </div>
+    </div>
+
+    <main id="main">
+        <!-- ══════════ HERO ══════════ -->
+        <section class="hero" id="top">
+            <video class="hero-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+                <source src="assets/videos/header-video_06.mp4" type="video/mp4" />
+            </video>
+            <div class="hero-veil" aria-hidden="true"></div>
+
+            <div class="hero-content">
+                <p class="kicker" data-reveal><span class="pulse"></span> ESTUDIO DE MEDIOS SINTÉTICOS</p>
+                <h1 class="hero-title">
+                    <span class="line"><span class="line-inner">AI VISUAL</span></span>
+                    <span class="line"><span class="line-inner rotator">
+                        <span class="rotator-viewport">
+                            <span class="rotator-item" data-rot>STORYTELLING</span>
+                            <span class="rotator-item" data-rot>FILMMAKING</span>
+                            <span class="rotator-item" data-rot>MOTION DESIGN</span>
+                            <span class="rotator-item" data-rot>SYNTHESIS</span>
+                        </span>
+                    </span></span>
+                </h1>
+                <p class="hero-sub">Cuando las ideas se encuentran con la máquina,<br />lo imposible toma forma.</p>
+            </div>
+
+            <!-- Capa cromática independiente: funde el terminal con el vídeo sin afectar la opacidad del texto. -->
+            <div class="hero-log-blend" aria-hidden="true"></div>
+
+            <!-- Log de inferencia del modelo -->
+            <div class="hero-log" id="heroLog" aria-hidden="true">
+                <div class="log-body" data-log-lines></div>
+            </div>
+
+            <a href="#work" class="scroll-cue" aria-label="Desplazarse a los proyectos">
+                <span class="scroll-cue-line"></span>
+            </a>
+
+            <div class="hero-marquee" aria-hidden="true">
+                <div class="marquee-track">
+                    <span>VÍDEO CON IA ✳ MOTION DESIGN ✳ DIRECCIÓN DE ARTE ✳ IDENTIDAD DE MARCA ✳ NARRATIVA ✳ CONSULTORÍA CREATIVA ✳&nbsp;</span>
+                    <span>VÍDEO CON IA ✳ MOTION DESIGN ✳ DIRECCIÓN DE ARTE ✳ IDENTIDAD DE MARCA ✳ NARRATIVA ✳ CONSULTORÍA CREATIVA ✳&nbsp;</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ STATEMENT (word-by-word reveal) ══════════ -->
+        <section class="statement" id="statement">
+            <p class="statement-text" id="statementText">
+                <span>Sintetizando</span> <span>la</span> <span>visión</span> <span class="accent italic">humana</span>
+                <span>y</span> <span>la</span> <span class="accent italic">inteligencia</span> <span>artificial</span>
+                <span>para</span> <span>construir</span> <span>nuevas</span> <span>realidades</span> <span>visuales.</span>
+            </p>
+        </section>
+
+        <!-- ══════════ WORK ══════════ -->
+        <section class="work" id="work">
+            <div class="section-head">
+                <h2 class="section-title">
+                    <span class="line"><span class="line-inner">SELECTED</span></span>
+                    <span class="line"><span class="line-inner"><span class="violet italic">WORK</span></span></span>
+                </h2>
+                <p class="section-side" data-reveal>Mundos generados, películas y campañas — 2023 → actualidad. Pasa el cursor para explorar.</p>
+            </div>
+
+            <div class="work-list" id="workList">
+                <a class="work-row" href="project-node.html" data-img="assets/images/node.jpg">
+                    <span class="work-num">01</span>
+                    <span class="work-title">N.O.D.E.</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-deep.html" data-img="assets/images/deep.jpg">
+                    <span class="work-num">02</span>
+                    <span class="work-title">DEEP</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-polestar5.html" data-img="assets/images/polestar5.jpg">
+                    <span class="work-num">03</span>
+                    <span class="work-title">POLESTAR 5</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-distant.html" data-img="assets/images/distant.jpg">
+                    <span class="work-num">04</span>
+                    <span class="work-title">DISTANT</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-exit.html" data-img="assets/images/Hsbc.jpg">
+                    <span class="work-num">05</span>
+                    <span class="work-title">EXIT</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-stained.html" data-img="assets/images/Stained.jpg">
+                    <span class="work-num">06</span>
+                    <span class="work-title">STAINED</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-asics.html" data-img="assets/images/Asics.jpg">
+                    <span class="work-num">07</span>
+                    <span class="work-title">ASICS</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-farewell.html" data-img="assets/images/farewell.jpg">
+                    <span class="work-num">08</span>
+                    <span class="work-title">FAREWELL</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-iad.html" data-img="assets/images/iad.jpg">
+                    <span class="work-num">09</span>
+                    <span class="work-title">IAD</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="work-row" href="project-ryuu.html" data-img="assets/images/Ryuu.jpg">
+                    <span class="work-num">10</span>
+                    <span class="work-title">RYUU</span>
+                    <span class="work-go" aria-hidden="true">↗</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- ══════════ MARQUEE STRIP ══════════ -->
+        <div class="strip-marquee" aria-hidden="true">
+            <div class="marquee-track reverse">
+                <span>NODE ✳ DEEP ✳ POLESTAR 5 ✳ DISTANT ✳ EXIT ✳ STAINED ✳ ASICS ✳ FAREWELL ✳ IAD ✳ RYUU ✳&nbsp;</span>
+                <span>NODE ✳ DEEP ✳ POLESTAR 5 ✳ DISTANT ✳ EXIT ✳ STAINED ✳ ASICS ✳ FAREWELL ✳ IAD ✳ RYUU ✳&nbsp;</span>
+            </div>
+        </div>
+
+        <!-- ══════════ ABOUT + NUMBERS ══════════ -->
+        <section class="about" id="about">
+            <p class="kicker" data-reveal><span class="pulse"></span> HYPRFRAME</p>
+            <h2 class="about-title">
+                <span class="line"><span class="line-inner"><span class="violet italic">HUMAN</span></span></span>
+                <span class="line"><span class="line-inner">INTUITION<span class="accent cross-turn">×</span></span></span>
+                <span class="line"><span class="line-inner"><span class="violet italic">MACHINE</span> SYNTHESIS</span></span>
+            </h2>
+            <div class="about-grid">
+                <p class="about-copy" data-reveal><strong>HYPRFRAME</strong> explora la intersección entre la intuición humana y la síntesis maquínica. Especializados en vídeo generado por IA y motion design, creamos narrativas visuales que dan forma a nuevas perspectivas y nuevas formas de contar historias.</p>
+                <div class="stats">
+                    <div class="stat" data-reveal>
+                        <span class="stat-num"><span data-count="10">0</span>+</span>
+                        <span class="stat-label">FILMS Y CAMPAÑAS CON IA</span>
+                    </div>
+                    <div class="stat" data-reveal data-reveal-delay="1">
+                        <span class="stat-num"><span data-count="7">0</span></span>
+                        <span class="stat-label">DISCIPLINAS PRINCIPALES</span>
+                    </div>
+                    <div class="stat" data-reveal data-reveal-delay="2">
+                        <span class="stat-num">∞</span>
+                        <span class="stat-label">MUNDOS POSIBLES</span>
+                    </div>
+                </div>
+            </div>
+        </section>        
+
+        <!-- ══════════ SERVICES / DNAi ══════════ -->
+        <section class="services" id="services">
+            <div class="section-head">
+                <h2 class="section-title">
+                    <span class="line"><span class="line-inner keep-case">DN<span class="violet italic">Ai</span></span></span>
+                </h2>
+                <p class="section-side" data-reveal>El ADN del estudio, decodificado: branding, narrativa y producción impulsada por IA.</p>
+            </div>
+
+            <div class="service-list">
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Concepto e Identidad de Marca</h3>
+                        <p>Construyendo marcos visuales y conceptuales que definen cómo siente, habla y se mueve una marca.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Consultoría Creativa</h3>
+                        <p>Guiando a clientes en el proceso de convertir ideas dispersas en declaraciones visuales coherentes y potentes.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Desarrollo de Concepto Creativo</h3>
+                        <p>Transformando ideas abstractas en conceptos creativos sólidos y originales que conectan con la audiencia.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Diseño Narrativo</h3>
+                        <p>Creando historias que fusionan la emoción humana con la innovación visual.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Dirección de Arte y Visual Storytelling</h3>
+                        <p>Diseñando el núcleo estético y narrativo de cada proyecto a través de la imagen, el ritmo y la emoción.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Dirección y Producción de Vídeo</h3>
+                        <p>Desde la ideación hasta el montaje final: dirigiendo, rodando y creando piezas visuales con precisión cinematográfica.</p>
+                    </div>
+                </div>
+                <div class="service-row" data-reveal>
+                    <span class="service-plus" aria-hidden="true">+</span>
+                    <div class="service-body">
+                        <h3>Generación de Imagen y Vídeo con IA</h3>
+                        <p>Explorando nuevos territorios visuales a través de la inteligencia artificial: fusionando tecnología e intuición creativa.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ CLB / CINEMATIC LOOK BUILDER ══════════ -->
+        <section class="clb" id="clb" aria-labelledby="clb-title">
+            <div class="section-head">
+                <h2 class="section-title" id="clb-title">
+                    <span class="line"><span class="line-inner"><span class="violet italic">Cinematic</span></span></span>
+                    <span class="line"><span class="line-inner">Look Builder</span></span>
+                </h2>
+            </div>
+
+            <div class="clb-grid">
+                <div class="clb-intro" data-reveal>
+                    <p>Cinematic Look Builder es una herramienta web interactiva diseñada para cineastas, directores de fotografía y creadores de IA para traducir configuraciones de cámara reales en prompts listos para LLMs.</p>
+                </div>
+
+                <div class="clb-showcase" aria-label="Ejemplos de cinematic look">
+                    <div class="clb-gallery-frame">
+                        <div class="clb-gallery-track">
+                            <img src="assets/images/clb01.png" alt="Mujer en agua de bosque, etalonaje de luz natural" width="1500" height="636" loading="lazy" />
+                            <img src="assets/images/clb02.png" alt="Mujer en agua de bosque, etalonaje en blanco y negro de alto contraste" width="1500" height="636" loading="lazy" />
+                            <img src="assets/images/clb03.png" alt="Mujer en agua de bosque, etalonaje en violeta y verde intensos" width="1500" height="837" loading="lazy" />
+                            <img src="assets/images/clb04.png" alt="Mujer en agua de bosque, etalonaje cálido iluminado por el sol" width="1500" height="837" loading="lazy" />
+                            <!-- El duplicado del primer fotograma hace que la vuelta al inicio sea fluida. -->
+                            <img src="assets/images/clb01.png" alt="" aria-hidden="true" width="1500" height="636" loading="lazy" />
+                        </div>
+                    </div>
+                    <!-- La tira reflejada sigue los mismos fotogramas, sin resplandor de color. -->
+                    <div class="clb-gallery-reflection" aria-hidden="true">
+                        <div class="clb-reflection-track">
+                            <img src="assets/images/clb01.png" alt="" width="1500" height="636" loading="lazy" />
+                            <img src="assets/images/clb02.png" alt="" width="1500" height="636" loading="lazy" />
+                            <img src="assets/images/clb03.png" alt="" width="1500" height="837" loading="lazy" />
+                            <img src="assets/images/clb04.png" alt="" width="1500" height="837" loading="lazy" />
+                            <img src="assets/images/clb01.png" alt="" width="1500" height="636" loading="lazy" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clb-side">
+                    <div class="clb-capabilities">
+                        <p class="kicker clb-kicker" data-reveal><span class="pulse" aria-hidden="true"></span> Capacidades Clave</p>
+                        <div class="clb-feature-list">
+                            <article class="clb-feature" data-reveal>
+                                <div>
+                                    <h3>Configuración Técnica Precisa</h3>
+                                    <p>Selecciona cámaras estándar de la industria, lentes anamórficas o vintage, distancias focales, apertura, balance de blancos, ratios de contraste y emulación de película como grano, halación y saturación.</p>
+                                </div>
+                            </article>
+                            <article class="clb-feature" data-reveal data-reveal-delay="1">
+                                <div>
+                                    <h3>Generación en Doble Formato</h3>
+                                    <p>Genera tanto un <strong>Prompt Semántico</strong> optimizado para herramientas de IA de texto a imagen/vídeo como un <strong>JSON Técnico</strong> para pipelines de datos estructurados.</p>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <a class="clb-cta magnetic" href="builder.html">
+                        TEST NOW <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ CONTACT ══════════ -->
+        <section class="contact" id="contact">
+            <div class="contact-head">
+                <p class="kicker" data-reveal><span class="pulse"></span> INICIA UN PROYECTO</p>
+                <h2 class="contact-title">
+                    <span class="line"><span class="line-inner">CONSTRUYAMOS</span></span>
+                    <span class="line"><span class="line-inner">EL <span class="accent">FUTURO</span></span></span>
+                </h2>
+            </div>
+
+            <div class="contact-grid">
+                <form class="contact-form" action="https://formspree.io/f/mzzkreow" method="POST">
+                    <div class="field">
+                        <input type="text" name="name" id="fName" placeholder=" " required />
+                        <label for="fName">Nombre</label>
+                    </div>
+                    <div class="field">
+                        <input type="email" name="email" id="fEmail" placeholder=" " required />
+                        <label for="fEmail">Email</label>
+                    </div>
+                    <div class="field">
+                        <textarea name="message" id="fMessage" rows="3" placeholder=" " required></textarea>
+                        <label for="fMessage">Mensaje</label>
+                    </div>
+                    <button type="submit" class="send-btn magnetic">ENVIAR MENSAJE <span aria-hidden="true">→</span></button>
+                </form>
+
+                <div class="contact-side">
+                    <a class="contact-link magnetic" href="https://www.linkedin.com/company/hyprframe/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg class="contact-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> <span aria-hidden="true">↗</span></a>
+                    <a class="contact-link magnetic" href="https://www.instagram.com/dommanuel/" target="_blank" rel="noopener" aria-label="Instagram"><svg class="contact-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg> <span aria-hidden="true">↗</span></a>
+                    <a class="contact-link magnetic" href="https://wa.me/34645795080" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="contact-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg> <span aria-hidden="true">↗</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ══════════ FOOTER ══════════ -->
+    <footer class="site-footer">
+        <div class="footer-row">
+            <span>© 2026 HYPRFRAME. Todos los derechos reservados.</span>
+        </div>
+    </footer>
+
+    <script>
+    /* LIVE-RELOAD — solo para el preview de desarrollo (localhost / e2b.app). */
+    (function () {
+        if (!/(localhost|127\.0\.0\.1|e2b\.app)/.test(location.hostname)) return;
+        var es = new EventSource("/__livereload");
+        var first = true;
+        es.onmessage = function () {
+            if (first) { first = false; return; }
+            location.reload();
+        };
+    })();
+    </script>
+    <script src="script.js?v=19" defer></script>
+    <script src="cookies.js?v=2" defer></script>
+</body>
+</html>
