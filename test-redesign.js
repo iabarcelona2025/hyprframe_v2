@@ -87,9 +87,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("CLB occupies a full viewport so Contact does not appear when the anchor opens",
         /\.clb\s*\{[^}]*min-height:\s*100svh/.test(css));
     const contactSection = doc.getElementById("contact");
-    check("Contact anchor can reach the top without showing CLB's TEST NOW button",
-        /\.contact\s*\{[^}]*min-height:\s*100svh/.test(css));
+    check("Contact anchor reserves space for the footer without showing CLB's TEST NOW button",
+        /\.contact\s*\{[^}]*min-height:\s*calc\(100svh - 8\.5rem\)/.test(css));
+    check("Contact desktop layout fits the footer in view without changing mobile",
+        /@media \(min-width: 861px\)\s*\{\s*\.contact\s*\{[^}]*padding:\s*clamp\(5\.5rem, 8vh, 6\.5rem\)/.test(css) &&
+        /\.contact-title\s*\{\s*font-size:\s*clamp\(3rem, min\(9\.5vw, 10vh\), 8\.5rem\)/.test(css));
     const pageFooter = doc.querySelector(".site-footer");
+    check("footer copyright stays legible at the Contact anchor",
+        /\.footer-row\s*\{[^}]*font-size:\s*0\.65rem;[^}]*color:\s*var\(--muted\)/.test(css));
     check("Contact is compacted so the footer follows closely and can be seen sooner",
         !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
         /\.contact\s*\{[^}]*padding:\s*clamp\(4\.5rem, 8vw, 7rem\) var\(--pad\) clamp\(2\.5rem, 4vw, 3\.5rem\)/.test(css) &&
