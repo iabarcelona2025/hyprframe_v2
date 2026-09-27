@@ -790,7 +790,9 @@ section { position: relative; }
 .services { background: var(--bg-soft); padding-bottom: clamp(5rem, 12vw, 9rem); }
 .service-list { border-top: 1px solid var(--line); }
 .service-row {
-    display: grid; grid-template-columns: 6rem 1fr 3rem;
+    /* Dos columnas: la del número (que ahora lleva el +) y la del texto. La de
+       la derecha desaparece con el + que la ocupaba. */
+    display: grid; grid-template-columns: 6rem 1fr;
     align-items: center; gap: 1.5rem;
     padding: clamp(1.5rem, 3vw, 2.2rem) var(--pad);
     border-bottom: 1px solid var(--line);
@@ -798,10 +800,6 @@ section { position: relative; }
     cursor: default;
 }
 .service-row:hover { background: rgba(160, 100, 255, 0.06); }
-.service-num {
-    font-family: var(--font-mono); font-size: 0.8rem;
-    letter-spacing: 0.15em; color: var(--violet);
-}
 .service-body h3 {
     font-family: var(--font-body);      /* Space Grotesk */
     font-weight: 600;                   /* 700 → 600 (25/09/2026) */
@@ -819,15 +817,16 @@ section { position: relative; }
 }
 .service-row:hover .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
 .service-plus {
+    /* Era el + de la derecha; ahora abre cada apartado, en el sitio del número
+       que se fue. Mismos tipo, tamaño, color y animación: al pasar por encima
+       gira 135° (de + a ×) y se vuelve lima. */
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
-    text-align: right;
     transition: transform 0.7s var(--ease-out), color 0.5s var(--ease-out);
 }
 .service-row:hover .service-plus { transform: rotate(135deg); color: var(--lime); }
 
 @media (max-width: 900px) {
     .service-row { grid-template-columns: 3.5rem 1fr; }
-    .service-plus { display: none; }
     .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
 }
 

@@ -266,6 +266,26 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("DNAi: el rollover desplaza suavemente los títulos de los servicios",
         /\.service-body h3\s*\{[^}]*transform:\s*translateX\(0\)[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css) &&
         /\.service-row:hover \.service-body h3\s*\{[^}]*transform:\s*translateX\(0\.8rem\)/.test(css));
+
+    // DNAi: fuera los números entre paréntesis; el + de la derecha ocupa su sitio
+    const serviceRows = [...doc.querySelectorAll(".service-row")];
+    const servicesText = doc.getElementById("services").textContent;
+    check("DNAi: siete apartados, sin números entre paréntesis ni .service-num",
+        serviceRows.length === 7 && !doc.querySelector(".service-num")
+        && !/\(\d\d\)/.test(servicesText) && !/\.service-num\s*\{/.test(css),
+        `${serviceRows.length} apartados`);
+    check("DNAi: un solo + por apartado, abriendo la fila y decorativo",
+        serviceRows.every((row) => row.querySelectorAll(".service-plus").length === 1
+            && row.firstElementChild.classList.contains("service-plus")
+            && row.firstElementChild.textContent.trim() === "+"
+            && row.firstElementChild.getAttribute("aria-hidden") === "true"));
+    check("DNAi: el + conserva su animación (gira 135° y se vuelve lima al hover)",
+        /\.service-row:hover \.service-plus\s*\{\s*transform:\s*rotate\(135deg\);\s*color:\s*var\(--lime\);\s*\}/.test(css)
+        && /\.service-plus\s*\{[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css));
+    check("DNAi: rejilla de dos columnas y + visible también por debajo de 900px",
+        /\.service-row\s*\{[^}]*grid-template-columns:\s*6rem 1fr;/.test(css)
+        && /@media \(max-width: 900px\) \{[\s\S]*?\.service-row \{ grid-template-columns: 3\.5rem 1fr; \}/.test(css)
+        && !/\.service-plus \{ display: none; \}/.test(css));
     check("hero log: ocupa el alto del hero, de debajo del ES/EN a la marquesina horizontal",
         /\.hero-log\s*\{[^}]*top:\s*var\(--header-h\)/.test(css) &&
         /\.hero-log\s*\{[^}]*bottom:\s*calc\(var\(--marquee-h\)/.test(css) &&
