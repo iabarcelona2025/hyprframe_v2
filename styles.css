@@ -81,18 +81,38 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
 /* ── Custom cursor ───────────────────────────────────────── */
 .cursor-dot, .cursor-ring {
     position: fixed; top: 0; left: 0; z-index: 9999;
-    pointer-events: none; border-radius: 50%;
+    pointer-events: none;
     transform: translate(-50%, -50%);
     mix-blend-mode: difference;
 }
-.cursor-dot { width: 7px; height: 7px; background: #fff; }
+.cursor-dot { width: 7px; height: 7px; background: #fff; border-radius: 50%; }
+/* Cruceta en lugar del aro: dos trazos cruzados de 1px —mismo grosor, mismo
+   color y mismo modo de fusión (difference) que tenía el círculo— centrados en
+   el cursor y creciendo con él hasta 88px sobre los elementos interactivos. */
 .cursor-ring {
     width: 42px; height: 42px;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out),
-                border-color 0.35s, opacity 0.35s;
+    transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out), opacity 0.35s;
 }
-body.cursor-large .cursor-ring { width: 88px; height: 88px; border-color: var(--violet); }
+.cursor-ring::before, .cursor-ring::after {
+    content: ""; position: absolute; inset: 0; margin: auto;
+    background: rgba(255, 255, 255, 0.7);
+    /* la máscara abre un hueco redondo en el centro: los brazos no deben pasar
+       por encima del punto (.cursor-dot), porque dos capas en difference se
+       restan y el cruce se mancharía de negro */
+    -webkit-mask: radial-gradient(circle at center, transparent 4.5px, #000 5px);
+            mask: radial-gradient(circle at center, transparent 4.5px, #000 5px);
+    transition: background 0.35s;
+}
+/* cada brazo cruza la caja entera: 1px de grosor × 100% del otro eje */
+.cursor-ring::before { width: 1px; height: 100%; } /* el trazo vertical */
+.cursor-ring::after { width: 100%; height: 1px; } /* el horizontal */
+/* al crecer, el punto se oculta: el violeta pasa al relleno y el hueco sobra */
+body.cursor-large .cursor-ring { width: 88px; height: 88px; }
+body.cursor-large .cursor-ring::before,
+body.cursor-large .cursor-ring::after {
+    background: var(--violet);
+    -webkit-mask: none; mask: none;
+}
 body.cursor-large .cursor-dot { opacity: 0; }
 
 @media (hover: none), (pointer: coarse) {
@@ -411,14 +431,13 @@ body.loaded .hero-sub {
 
 .scroll-cue {
     position: absolute; bottom: 5.5rem; left: 50%; transform: translateX(-50%); z-index: 2;
-    display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
-    font-family: var(--font-mono); font-size: 0.62rem;
-    letter-spacing: 0.3em; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center;
 }
-/* compensa el letter-spacing final para que el texto comparta eje óptico con la línea */
-.scroll-cue > span:first-child { text-indent: 0.3em; }
+/* Sin la etiqueta SCROLL: la línea sola es la pista, 4px más gruesa que antes
+   (1px → 5px) para sostener el peso que llevaba el texto. El destello violeta
+   de ::after sigue cayendo por dentro con la misma animación. */
 .scroll-cue-line {
-    width: 1px; height: 56px; background: var(--line); position: relative; overflow: hidden;
+    width: 5px; height: 56px; background: var(--line); position: relative; overflow: hidden;
 }
 .scroll-cue-line::after {
     content: ""; position: absolute; inset: 0;

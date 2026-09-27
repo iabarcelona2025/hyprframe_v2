@@ -179,6 +179,32 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     link.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
     check("mouseleave restores cursor", !doc.body.classList.contains("cursor-large"));
 
+    // el cursor grande es una cruceta: mismo grosor, color y modo de fusión que el aro
+    check("el aro del cursor ya no es un círculo",
+        !/\.cursor-ring \{[^}]*border:/.test(css)
+        && !/\.cursor-dot, \.cursor-ring \{[^}]*border-radius/.test(css));
+    check("la cruceta son dos trazos de 1px",
+        /\.cursor-ring::before, \.cursor-ring::after \{/.test(css)
+        && /\.cursor-ring::before \{ width: 1px; height: 100%; \}/.test(css)
+        && /\.cursor-ring::after \{ width: 100%; height: 1px; \}/.test(css));
+    check("la cruceta conserva el color del aro",
+        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*background: rgba\(255, 255, 255, 0\.7\)/.test(css));
+    check("la cruceta conserva el modo de fusión",
+        /\.cursor-dot, \.cursor-ring \{[^}]*mix-blend-mode: difference/.test(css));
+    check("el cruce deja libre el punto central (máscara con hueco)",
+        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*mask: radial-gradient\(circle at center, transparent 4\.5px, #000 5px\)/.test(css));
+    check("la cruceta crece y se vuelve violeta sobre los interactivos",
+        /body\.cursor-large \.cursor-ring \{ width: 88px; height: 88px; \}/.test(css)
+        && /body\.cursor-large \.cursor-ring::before,\s*body\.cursor-large \.cursor-ring::after \{\s*background: var\(--violet\);\s*-webkit-mask: none; mask: none;/.test(css));
+
+    // pista de scroll del hero con vídeo: fuera la etiqueta, línea 4px más gruesa
+    const cue = doc.querySelector(".scroll-cue");
+    check("SCROLL ya no aparece en el hero", cue.textContent.trim() === "");
+    check("la pista sigue anunciándose a lectores de pantalla",
+        cue.getAttribute("aria-label") === "Scroll to work" && cue.getAttribute("href") === "#work");
+    check("la línea de la pista mide 5px (1px + 4px)", /\.scroll-cue-line \{\s*width: 5px;/.test(css));
+    check("el destello violeta de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*animation: cueDrop/.test(css));
+
     // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];
     const activeIdx = () => rots.findIndex((r) => r.classList.contains("is-active"));

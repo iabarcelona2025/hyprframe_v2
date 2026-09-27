@@ -13,14 +13,14 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const PAGES = [
     { file: "project-deep.html", vimeo: "1185276367", title: "Deep in the Forest", aria: "Deep in the Forest [Teaser]" },
-    { file: "project-polestar5.html", vimeo: "1180539625", title: "Polestar 5", aria: "Polestar 5 [Commercial]" },
+    { file: "project-polestar5.html", vimeo: "1180539625", title: "Polestar 5", aria: "Polestar 5" },
     { file: "project-distant.html", vimeo: "1164823364", title: "Distant", aria: "Distant [Trailer]" },
-    { file: "project-exit.html", vimeo: "1141629024", title: "Exit Plan", aria: "Exit Plan [Campaign]" },
-    { file: "project-stained.html", vimeo: "1126933718", title: "Stained", aria: "Stained [Short Film]" },
-    { file: "project-asics.html", vimeo: "1131296888", title: "Asics Vulcano", aria: "Asics Vulcano [Commercial]" },
-    { file: "project-farewell.html", vimeo: "1148202010", title: "Farewell", aria: "Farewell [Short Film]" },
-    { file: "project-iad.html", vimeo: "1159850270", title: "IAD Annual Meeting", aria: "IAD [Annual Meeting]" },
-    { file: "project-ryuu.html", vimeo: "1136653573", title: "Ryuu, the Dragon's Course", aria: "Ryuu, the Dragon's Course" },
+    { file: "project-exit.html", vimeo: "1141629024", title: "Exit Plan", aria: "Exit Plan" },
+    { file: "project-stained.html", vimeo: "1126933718", title: "Stained", aria: "Stained" },
+    { file: "project-asics.html", vimeo: "1131296888", title: "Asics Vulcano", aria: "Asics Vulcano" },
+    { file: "project-farewell.html", vimeo: "1148202010", title: "Farewell", aria: "Farewell" },
+    { file: "project-iad.html", vimeo: "1159850270", title: "IAD Annual Meeting", aria: "IAD Annual Meeting" },
+    { file: "project-ryuu.html", vimeo: "1136653573", title: "Ryuu, the Dragon's Course", aria: "Ryuu, the Dragon's Course [Trailer]" },
 ];
 
 const nodeHtml = read("project-node.html");
