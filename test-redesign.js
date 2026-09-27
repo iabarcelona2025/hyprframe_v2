@@ -87,6 +87,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("CLB occupies a full viewport so Contact does not appear when the anchor opens",
         /\.clb\s*\{[^}]*min-height:\s*100svh/.test(css));
     const contactSection = doc.getElementById("contact");
+    check("Contact anchor can reach the top without showing CLB's TEST NOW button",
+        /\.contact\s*\{[^}]*min-height:\s*100svh/.test(css));
     const pageFooter = doc.querySelector(".site-footer");
     check("Contact is compacted so the footer follows closely and can be seen sooner",
         !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
