@@ -7,7 +7,7 @@ const { JSDOM } = require("jsdom");
 const root = __dirname;
 const html = fs.readFileSync(path.join(root, "project-node.html"), "utf8");
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const script = fs.readFileSync(path.join(root, "project-node.js"), "utf8");
+const script = fs.readFileSync(path.join(root, "generated.js"), "utf8");
 const dom = new JSDOM(html, {
     url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
 });

@@ -1,8 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+    <head>
 
-    <!-- Google tag (gtag.js) -->
+        <!-- ─── Consent Mode v2 de Google — APAGADO ─────────────────────────
+             Para activarlo al pasar a producción, cambia false por true en la
+             primera línea. Con true, Google no deja cookies de analítica hasta
+             que el visitante acepte en el banner, y cookies.js comunica la
+             decisión con gtag('consent','update').
+             El gtag.js de debajo NO se toca: con false este bloque no hace nada. -->
+        <script>
+            window.HYPRFRAME_CONSENT_MODE = false;
+            window.dataLayer = window.dataLayer || [];
+            if (window.HYPRFRAME_CONSENT_MODE) {
+                window.gtag = function gtag() { dataLayer.push(arguments); };
+                window.gtag('consent', 'default', {
+                    'analytics_storage': 'denied',
+                    'ad_storage': 'denied',
+                    'region': ['ES']
+                });
+            }
+        </script>
+
+                <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MW201KGC9"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -11,493 +30,148 @@
 
   gtag('config', 'G-6MW201KGC9');
 </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Visual Storytelling Studio – Generative Image & Video | HYPRFRAME</title>
-    <meta name="description" content="IAD Annual meeting">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="styles/pieza.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        body {
-            background-color: #0a0a0a;
-            color: #e5e5e5;
-            font-family: 'Inter', sans-serif;
-            font-weight: 300;
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
+        <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16x16.png">
+        <link rel="manifest" href="/assets/favicons/site.webmanifest">
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="theme-color" content="#000000">
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>IAD Annual Meeting — Generative AI Video | HYPRFRAME</title>
+        <meta name="description" content="IAD Annual meeting: a journey through time revealing the spirit of innovation behind every era, created with generative AI." />
+        <meta property="og:title" content="IAD Annual Meeting — HYPRFRAME" />
+        <meta property="og:description" content="Each department and face morphs across decades, reimagining how IAD shaped the past to build the future." />
+        <meta property="og:type" content="video.other" />
+        <meta property="og:image" content="https://hyprframe.com/assets/images/iad.jpg" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="styles.css?v=32" />
+        <link rel="stylesheet" href="generated.css?v=9" />
+    </head>
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+        <div class="grain" aria-hidden="true"></div>
+        <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+        <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+        <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 
-        /* Header */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            padding: 20px 0;
-            border-bottom: 1px solid #1a1a1a;
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: 'Space Mono', monospace;
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-
-        .back-btn {
-            color: #888;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .back-btn:hover {
-            color: #ffffff;
-        }
-
-        .back-btn::before {
-            content: '← ';
-            font-size: 16px;
-        }
-
-        /* Main Content */
-        main {
-            margin-top: 100px;
-            padding: 40px 0 80px;
-        }
-
-        .project-header {
-            text-align: center;
-            padding: 60px 0;
-            border-bottom: 1px solid #1a1a1a;
-        }
-
-        .project-title {
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 300;
-            letter-spacing: -1px;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffffff 0%, #888 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .project-subtitle {
-            font-size: 18px;
-            color: #666;
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 30px;
-        }
-
-        .project-description {
-            font-size: 16px;
-            color: #999;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.8;
-        }
-
-        /* Project Gallery */
-        .project-gallery {
-            padding: 80px 0;
-        }
-
-        .main-image {
-            width: 100%;
-            max-width: 900px;
-            margin: 0 auto 60px;
-            border: none !important; /* <--- CAMBIA ESTO (estaba en 1px solid #1a1a1a) */
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .main-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .project-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 60px;
-            margin-bottom: 80px;
-        }
-
-        .detail-section h3 {
-            font-size: 14px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            color: #ffffff;
-        }
-
-        .detail-section p,
-        .detail-section li {
-            font-size: 14px;
-            color: #888;
-            line-height: 1.8;
-            margin-bottom: 10px;
-        }
-
-        .detail-section ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .detail-section li::before {
-            content: '— ';
-            color: #555;
-            margin-right: 10px;
-        }
-
-        .tech-stack {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .tech-tag {
-            padding: 5px 12px;
-            background-color: #111;
-            border: 1px solid #333;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Related Projects */
-        .related-projects {
-            padding: 80px 0;
-            border-top: 1px solid #1a1a1a;
-        }
-
-        .section-title {
-            font-size: 24px;
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 60px;
-            text-align: center;
-            color: #888;
-        }
-
-        .related-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-        }
-
-        .related-item {
-            background-color: #111;
-            border: 1px solid #1a1a1a;
-            overflow: hidden;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.3s ease;
-            aspect-ratio: 16/10;
-        }
-
-        .related-item:hover {
-            border-color: #333;
-            transform: translateY(-5px);
-        }
-
-        .related-item img {
-            width: 100%;
-            height: 70%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .related-item:hover img {
-            transform: scale(1.05);
-        }
-
-        .related-item-info {
-            padding: 20px;
-            background-color: #0f0f0f;
-            height: 30%;
-        }
-
-        .related-item-title {
-            font-size: 16px;
-            font-weight: 500;
-            color: #ffffff;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .related-item-category {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .project-details {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-
-            .related-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 0 15px;
-            }
-
-            .project-header {
-                padding: 40px 0;
-            }
-        }
-
-        /* Loading Animation */
-        .fade-in {
-            opacity: 0;
-            animation: fadeIn 0.8s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <!-- Menú fijo negro -->
-    <header class="top-nav">
-      <div class="container header-content">
-        <a href="index.html" class="logo">
-      <img src="assets/logo_HYPRFRAME_03.png" alt="Hyprframe Logo" />
-    </a>
-
-
-        <nav>
-          <ul>
-              <li><a href="index.html#ai%20Generated" class="active">Generated</a></li>
-              <li><a href="legacy.html">Captured</a></li>
-              <li><a href="index.html#about">About</a></li>
-              <li><a href="index.html#services">DNAi</a></li>
-              <li><a href="index.html#contact">Contact</a></li>
-              <li class="lang-switch"><a href="es/project-iad.html">es</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    <!-- Burger menu -->
-    <div class="burger-menu" id="burgerMenu">
-        <div class="burger-line"></div>
-        <div class="burger-line"></div>
-        <div class="burger-line"></div>
-    </div>
-
-    <!-- Mobile Navigation -->
-    <div class="mobile-nav" id="mobileNav">
-        <ul>
-            <li><a href="index.html#AI">Generated</a></li>
-            <li><a href="legacy.html">Captured</a></li>
-            <li><a href="index.html#about">About</a></li>
-            <li><a href="index.html#services">DNAi</a></li>
-            <li><a href="index.html#contact">Contact</a></li>
-            <li><a href="es/project-iad.html">ES</a></li>
-        </ul>
-    </div>
-
-    <!--<main>
-        <section class="project-header fade-in">
-            <div class="container">
-                <h1 class="project-title">Modern Architecture</h1>
-                <p class="project-subtitle">Architectural Visualization</p>
-                <p class="project-description">
-                    Contemporary residential design showcasing clean lines, natural lighting,
-                    and sustainable materials. This project demonstrates advanced architectural
-                    visualization techniques and photorealistic rendering workflows.
-                </p>
+        <!-- Same header and fullscreen menu as index.html; section links lead back to the landing. -->
+        <header class="site-header" id="siteHeader">
+            <a href="index.html#top" class="logo" aria-label="HYPRFRAME home">
+                <img src="assets/images/logo.png" alt="HYPRFRAME" />
+            </a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="index.html#work">Generated</a>
+                <a href="legacy.html">Captured</a>
+                <a href="index.html#about">About</a>
+                <a href="index.html#services" class="keep-case">DNAi</a>
+                <a href="builder.html">CLB</a>
+                <a href="index.html#contact" class="nav-cta">Contact</a>
+            </nav>
+            <div class="header-meta">
+                <span class="lang-switch"><a href="https://hyprframe.com/es/project-iad.html" lang="es">ES</a><i>/</i><span class="active">EN</span></span>
+                <button class="burger" id="burger" type="button" aria-label="Open menu" aria-controls="menuOverlay" aria-expanded="false">
+                    <span></span><span></span>
+                </button>
             </div>
-        </section>-->
-        <nav class="projects-navigation">
-            <div class="buttons">
-                <a href="project-farewell.html">&lt;</a>
-                <a href="index.html#AI">::</a>
-                <a href="project-ryuu.html">&gt;</a>
+        </header>
+
+        <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+            <nav class="menu-links" aria-label="Mobile navigation">
+                <a href="index.html#work"><span class="pulse" aria-hidden="true"></span> Generated</a>
+                <a href="legacy.html"><span class="pulse" aria-hidden="true"></span> Captured</a>
+                <a href="index.html#about"><span class="pulse" aria-hidden="true"></span> About</a>
+                <a href="index.html#services" class="keep-case"><span class="pulse" aria-hidden="true"></span> DNAi</a>
+                <a href="builder.html"><span class="pulse" aria-hidden="true"></span> CLB</a>
+                <a href="index.html#contact"><span class="pulse" aria-hidden="true"></span> Contact</a>
+            </nav>
+            <div class="menu-lang">
+                <span class="lang-switch"><a href="https://hyprframe.com/es/project-iad.html" lang="es">ES</a><i>/</i><span class="active">EN</span></span>
             </div>
-        </nav>
-        <section class="project-gallery">
-            <div class="container">
-                <div class="main-image fade-in">
-                    <!--<img src="assets/images/Asics.jpg" alt="Modern Architecture - Exterior View">-->
+        </div>
+
+        <main id="main">
+            <!-- ══════════ PROJECT OPENER ══════════ -->
+            <section class="node-hero" aria-labelledby="projectTitle">
+                <div class="node-hero__top">
+                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> HYPRFRAME / GENERATED</p>
+                    <a href="index.html#work" class="node-back">← &nbsp; ALL WORK</a>
                 </div>
-<section id="video">
-  <div class="video-container">
-    <iframe
-      src="https://player.vimeo.com/video/1159850270"
-      title="AI Generated Video"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen>
-    </iframe>
-  </div>
-</section>
-                <div class="project-details">
-                    <div class="detail-section fade-in">
-                        <div class="video-text">
-                        <h2>IAD Annual meeting</h2>
-                        <p>A journey through time reveals the spirit of innovation behind every era.
-                            Each department and face morphs across decades — reimagining how IAD might have shaped the past to create the future we live today.</p>
-
-                        <!--<h3 style="margin-top: 30px;">Key Features</h3>
-                        <ul>
-                            <li>Photorealistic Materials</li>
-                            <li>HDRI Lighting</li>
-                            <li>Landscape Integration</li>
-                            <li>Atmospheric Effects</li>
-                            <li>Post-Production Enhancement</li>
-                            <li>Multiple Camera Angles</li>
-                        </ul>
+                <div class="node-hero__image">
+                    <div class="node-hero__title">
+                        <h1 id="projectTitle" aria-label="IAD [Annual Meeting]"><span class="node-hero__word">IAD</span> <span class="node-hero__teaser" aria-hidden="true">[Annual Meeting]</span></h1>
                     </div>
-
-                    <div class="detail-section fade-in">
-                        <h3>Technical Approach</h3>
-                        <p>Utilizing industry-standard architectural visualization tools and
-                            techniques to achieve photorealistic results suitable for client
-                            presentations and marketing materials.</p>
-
-                        <h3 style="margin-top: 30px;">Software Stack</h3>
-                        <div class="tech-stack">
-                            <span class="tech-tag">3ds Max</span>
-                            <span class="tech-tag">V-Ray</span>
-                            <span class="tech-tag">Corona Renderer</span>
-                            <span class="tech-tag">Photoshop</span>
-                        </div>
-
-                        <h3 style="margin-top: 30px;">Project Stats</h3>
-                        <p>Render Resolution: 4K</p>
-                        <p>Lighting: HDRI + Sun System</p>
-                        <p>Render Time: 2-4 hours per image</p>
-                        <p>Total Deliverables: 8 views</p>
-                    </div>-->
                 </div>
-            </div>
-        </section>
+                <div class="node-hero__bottom">
+                    <a href="#film" class="node-hero__explore">EXPLORE <span aria-hidden="true">↓</span></a>
+                </div>
+            </section>
 
-        <section class="related-projects">
-            <div class="container">
-                <h2 class="section-title">Related Projects</h2>
-                <div class="related-grid">
-                    <a href="project-exit.html" class="related-item fade-in">
-                        <img src="assets/images/Hsbc.jpg" alt="Commercial for IBank">
-                        <div class="related-item-info">
-                            <h3 class="related-item-title">Exit Plan Campaign</h3>
-                            <!--<p class="related-item-category">Data Visualization</p>-->
-                        </div>
+            <!-- ══════════ FILM ══════════ -->
+            <section class="node-film" id="film" aria-label="IAD Annual Meeting film">
+                <div class="node-player" data-vimeo="1159850270" data-title="IAD Annual Meeting">
+                    <img src="assets/images/iad.jpg" alt="" loading="lazy" />
+                    <button type="button" class="node-player__play" id="playFilm" aria-label="Play IAD Annual Meeting on Vimeo">
+                        <span class="node-player__circle" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ══════════ STORY ══════════ -->
+            <section class="node-story" aria-labelledby="storyTitle">
+                <div class="node-section-label"><span>THE STORY</span></div>
+                <div class="node-story__grid">
+                    <h2 id="storyTitle">EVERY ERA<br />SHAPES<br /><span class="violet">THE NEXT.</span></h2>
+                    <div class="node-story__copy">
+                        <p>A journey through time reveals the spirit of innovation behind every era. Each department and face morphs across decades — reimagining how IAD might have shaped the past to create the future we live today.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════ RELATED PROJECTS ══════════ -->
+            <section class="node-related" aria-labelledby="relatedTitle">
+                <div class="node-section-label"><span>KEEP EXPLORING</span></div>
+                <div class="node-related__heading"><h2 id="relatedTitle">RELATED <span class="violet">PROJECTS</span></h2><a href="index.html#work">VIEW ALL WORK ↗</a></div>
+                <div class="node-related__grid">
+                    <a class="node-card" href="project-exit.html">
+                        <span class="node-card__image"><img src="assets/images/Hsbc.jpg" alt="Still from Exit Plan" loading="lazy" /></span>
+                        <span class="node-card__meta"><span>01 / COMMERCIAL</span><span aria-hidden="true">↗</span></span>
+                        <span class="node-card__title">EXIT PLAN</span>
                     </a>
-                    <a href="project-stained.html" class="related-item fade-in">
-                        <img src="assets/images/Stained.jpg" alt="Short Film">
-                        <div class="related-item-info">
-                            <h3 class="related-item-title">Stained</h3>
-                            <!--<p class="related-item-category">3D Modeling</p>-->
-                        </div>
+                    <a class="node-card" href="project-stained.html">
+                        <span class="node-card__image"><img src="assets/images/Stained.jpg" alt="Still from Stained" loading="lazy" /></span>
+                        <span class="node-card__meta"><span>02 / SHORT FILM</span><span aria-hidden="true">↗</span></span>
+                        <span class="node-card__title">STAINED</span>
                     </a>
                 </div>
+            </section>
+        </main>
+
+        <!-- ══════════ FOOTER ══════════ -->
+        <footer class="site-footer">
+            <div class="footer-row">
+                <span>© 2026 HYPRFRAME. All rights reserved.</span>
             </div>
-        </section>
-        <main>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Hyprframe. All rights reserved.</p>
-            </div>
-    </main>
-
-    <script>
-        // Fade in animation on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.style.animationDelay = Math.random() * 0.3 + 's';
-                    entry.target.classList.add('fade-in');
-                }
-            });
-        }, observerOptions);
-
-        // Observe all fade-in elements
-        document.querySelectorAll('.fade-in').forEach((item) => {
-            observer.observe(item);
-        });
-
-        // Burger menu
-        const burgerMenu = document.getElementById("burgerMenu");
-        const mobileNav = document.getElementById("mobileNav");
-        burgerMenu.addEventListener("click", () => {
-            burgerMenu.classList.toggle("active");
-            mobileNav.classList.toggle("active");
-        });
-        const mobileNavLinks = mobileNav.querySelectorAll("a");
-        mobileNavLinks.forEach((link) => {
-            link.addEventListener("click", () => {
-                burgerMenu.classList.remove("active");
-                mobileNav.classList.remove("active");
-            });
-        });
-        document.addEventListener("click", (e) => {
-            if (
-                !burgerMenu.contains(e.target) &&
-                !mobileNav.contains(e.target)
-            ) {
-                burgerMenu.classList.remove("active");
-                mobileNav.classList.remove("active");
-            }
-        });
-
-    </script>
-</body>
-
+        </footer>
+        <script>
+        /* LIVE-RELOAD — solo para el preview de desarrollo (localhost / e2b.app). */
+        (function () {
+            if (!/(localhost|127\.0\.0\.1|e2b\.app)/.test(location.hostname)) return;
+            var es = new EventSource("/__livereload");
+            var first = true;
+            es.onmessage = function () {
+                if (first) { first = false; return; }
+                location.reload();
+            };
+        })();
+        </script>
+        <script src="generated.js?v=3" defer></script>
+        <script src="cookies.js?v=2" defer></script>
+    </body>
 </html>

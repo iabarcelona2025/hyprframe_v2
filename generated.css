@@ -1,5 +1,8 @@
-/* HYPRFRAME / N.O.D.E. — project-specific styling.
-   Brand tokens, navigation, grain and footer come from styles.css. */
+/* HYPRFRAME / GENERATED — styling shared by every video page of the Generated
+   portfolio (N.O.D.E., Deep, Polestar 5, Distant, Exit Plan, Stained, Asics
+   Vulcano, Farewell, IAD and Ryuu): same opener, same player, same story block.
+   Brand tokens, navigation, grain and footer come from styles.css.
+   The .node-* names are kept from the first page of the section (N.O.D.E.). */
 
 /* Keep the close control on top of the fullscreen menu on mobile. */
 body.menu-open .site-header { z-index: 900; }
@@ -26,6 +29,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero h1 {
     font: 700 clamp(calc(4.2rem - 15px), calc(9vw - 15px), calc(9rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
+}
+/* Pieces with a long name (Deep in the Forest, Asics Vulcano…) keep the very same
+   opener: only the type scales down, so the line still runs on one row — teaser
+   included — from the desktop width down to the mobile breakpoint, where the
+   rule below lets it wrap like any other title. */
+.node-hero--long h1 {
+    font-size: clamp(calc(2.6rem - 10px), calc(5.6vw - 10px), calc(5.6rem - 10px));
 }
 /* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
    baseline-anchored like the letters — so the rhythm never depends on the
@@ -104,6 +114,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
 .node-story__copy p { font-size: clamp(1.15rem, 1.9vw, 1.85rem); line-height: 1.45; font-weight: 300; }
+/* Some synopses need a second paragraph (Deep, Farewell); the global reset in
+   styles.css leaves paragraphs with no margin, so the air comes from here. */
+.node-story__copy p + p { margin-top: 1.75rem; }
 .node-story__caption {
     display: block; margin-top: 3rem; font: 400 0.65rem/1.6 var(--font-mono);
     letter-spacing: 0.19em; color: var(--muted);

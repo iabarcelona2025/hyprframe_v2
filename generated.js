@@ -1,4 +1,7 @@
-/* HYPRFRAME / N.O.D.E. — navigation and on-demand film player. */
+/* HYPRFRAME / GENERATED — brand navigation and on-demand film player shared by
+   every page of the Generated section (N.O.D.E., Deep, Polestar 5, Distant,
+   Exit Plan, Stained, Asics Vulcano, Farewell, IAD, Ryuu).
+   Each page declares its own video with data-vimeo / data-title on .node-player. */
 (() => {
     "use strict";
 
@@ -71,35 +74,45 @@
         }
     });
 
+    /* ── On-demand player ─────────────────────────────────────
+       The iframe is created only when the visitor presses play, and the opening
+       still comes back when Vimeo reports the end of the piece. Which piece it is
+       lives in the markup of each page: data-vimeo (id) and data-title (name) on
+       the .node-player box, the same convention as the Captured film cards. */
     const play = document.getElementById("playFilm");
-    const playerBox = document.getElementById("nodePlayer");
-    const poster = [...playerBox.childNodes]; // opening still + play button, restored when the teaser ends
-    play.addEventListener("click", () => {
-        const iframe = document.createElement("iframe");
-        iframe.title = "N.O.D.E. teaser — HYPRFRAME";
-        // The iframe's load event may fire before Vimeo paints its player (white flash).
-        // Reveal it only when Vimeo itself reports that the player is ready, and ask it to
-        // report the end as well: then the opening still and its play button come back.
-        function onPlayerMessage(event) {
-            if (event.origin !== "https://player.vimeo.com" || event.source !== iframe.contentWindow) return;
-            let data;
-            try { data = typeof event.data === "string" ? JSON.parse(event.data) : event.data; }
-            catch { return; }
-            if (data?.event === "ready") {
-                iframe.classList.add("is-ready");
-                iframe.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, "https://player.vimeo.com");
-            } else if (data?.event === "ended") {
-                removeEventListener("message", onPlayerMessage);
-                const hadFocus = document.activeElement === iframe;
-                playerBox.replaceChildren(...poster);
-                if (hadFocus) play.focus({ preventScroll: true });
+    const playerBox = play ? play.closest(".node-player") : null;
+    const vimeoId = playerBox ? playerBox.dataset.vimeo : "";
+
+    if (play && playerBox && vimeoId) {
+        const pieceTitle = playerBox.dataset.title || document.title;
+        const poster = [...playerBox.childNodes]; // opening still + play button, restored when the film ends
+        play.addEventListener("click", () => {
+            const iframe = document.createElement("iframe");
+            iframe.title = `${pieceTitle} — HYPRFRAME`;
+            iframe.src = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&dnt=1&transparent=0`;
+            iframe.allow = "autoplay; fullscreen; picture-in-picture";
+            iframe.setAttribute("allowfullscreen", "");
+            // The iframe's load event may fire before Vimeo paints its player (white flash).
+            // Reveal it only when Vimeo itself reports that the player is ready, and ask it to
+            // report the end as well: then the opening still and its play button come back.
+            function onPlayerMessage(event) {
+                if (event.origin !== "https://player.vimeo.com" || event.source !== iframe.contentWindow) return;
+                let data;
+                try { data = typeof event.data === "string" ? JSON.parse(event.data) : event.data; }
+                catch { return; }
+                if (data?.event === "ready") {
+                    iframe.classList.add("is-ready");
+                    iframe.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, "https://player.vimeo.com");
+                } else if (data?.event === "ended") {
+                    removeEventListener("message", onPlayerMessage);
+                    const hadFocus = document.activeElement === iframe;
+                    playerBox.replaceChildren(...poster);
+                    if (hadFocus) play.focus({ preventScroll: true });
+                }
             }
-        }
-        addEventListener("message", onPlayerMessage);
-        iframe.src = "https://player.vimeo.com/video/1227346538?autoplay=1&dnt=1&transparent=0";
-        iframe.allow = "autoplay; fullscreen; picture-in-picture";
-        iframe.setAttribute("allowfullscreen", "");
-        playerBox.replaceChildren(iframe);
-        iframe.focus();
-    });
+            addEventListener("message", onPlayerMessage);
+            playerBox.replaceChildren(iframe);
+            iframe.focus();
+        });
+    }
 })();
