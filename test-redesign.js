@@ -214,7 +214,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("la pista sigue anunciándose a lectores de pantalla",
         cue.getAttribute("aria-label") === "Scroll to work" && cue.getAttribute("href") === "#work");
     check("la línea de la pista mide 5px (1px + 4px)", /\.scroll-cue-line \{\s*width: 5px;/.test(css));
-    check("el destello violeta de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*animation: cueDrop/.test(css));
+    check("el destello verde lima de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*background: var\(--lime\);[^}]*animation: cueDrop/.test(css));
 
     // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];

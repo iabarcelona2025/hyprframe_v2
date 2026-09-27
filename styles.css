@@ -438,14 +438,14 @@ body.loaded .hero-sub {
     display: flex; flex-direction: column; align-items: center;
 }
 /* Sin la etiqueta SCROLL: la línea sola es la pista, 4px más gruesa que antes
-   (1px → 5px) para sostener el peso que llevaba el texto. El destello violeta
-   de ::after sigue cayendo por dentro con la misma animación. */
+   (1px → 5px) para sostener el peso que llevaba el texto. El destello verde
+   lima de ::after sigue cayendo por dentro con la misma animación. */
 .scroll-cue-line {
     width: 5px; height: 56px; background: var(--line); position: relative; overflow: hidden;
 }
 .scroll-cue-line::after {
     content: ""; position: absolute; inset: 0;
-    background: var(--violet);
+    background: var(--lime); /* violeta → lima (27/09/2026) · el verde de la web */
     animation: cueDrop 2.2s var(--ease-out) infinite;
 }
 @keyframes cueDrop {
