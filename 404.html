@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 — Frame Not Found | HYPRFRAME</title>
+    <meta name="description" content="Error 404: Fotograma no encontrado. Volver a HYPRFRAME." />
+    <meta name="robots" content="noindex, follow" />
+    <meta property="og:title" content="404 — Frame Not Found | HYPRFRAME" />
+    <meta property="og:description" content="Error 404: Volver a HYPRFRAME." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hyprframe.com/404.html" />
+    <meta name="theme-color" content="#050505" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16x16.png" />
+    <link rel="manifest" href="/assets/favicons/site.webmanifest" />
+    <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=100" />
+    <link rel="stylesheet" href="/404.css?v=100" />
+</head>
+
+<body class="page-404">
+    <!-- grain overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- custom cursor -->
+    <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+    <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+    <!-- interactive canvas background -->
+    <canvas id="canvas404" class="canvas-404" aria-hidden="true"></canvas>
+
+    <!-- ══════════ MAIN (FULLSCREEN CENTRED) ══════════ -->
+    <main id="main" class="main-404">
+        <!-- Ambient lighting glow -->
+        <div class="glow-orb glow-violet" aria-hidden="true"></div>
+        <div class="glow-orb glow-lime" aria-hidden="true"></div>
+
+        <div class="container-404">
+            <!-- ERROR above 404 (half size of 404) & 404 Display (reduced 30%) -->
+            <div class="glitch-display" id="glitchTrigger" role="figure" aria-label="Error 404" title="Click to trigger glitch">
+                <span class="glitch-error" id="glitchError" data-text="ERROR">ERROR</span>
+                <span class="glitch-number" id="glitchNumber" data-text="404">404</span>
+            </div>
+
+            <!-- Single Action Button: VOLVER A INICIO -->
+            <div class="cta-actions">
+                <a href="/index.html" class="btn-primary" id="ctaHome">
+                    <span class="btn-text">VOLVER A INICIO</span>
+                    <span class="btn-arrow" aria-hidden="true">↗</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- LIVE-RELOAD -->
+    <script>
+    (function () {
+        if (!/(localhost|127\.0\.0\.1|e2b\.app)/.test(location.hostname)) return;
+        var es = new EventSource("/__livereload");
+        var first = true;
+        es.onmessage = function () {
+            if (first) { first = false; return; }
+            location.reload();
+        };
+    })();
+    </script>
+    <script src="/404.js?v=100" defer></script>
+</body>
+</html>

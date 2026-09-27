@@ -1,6 +1,10 @@
 # Dependencias de Node (solo para los tests de desarrollo)
 node_modules/
 
+# Python
+__pycache__/
+*.pyc
+
 # Sistema
 .DS_Store
 Thumbs.db

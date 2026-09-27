@@ -11,6 +11,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 WATCH = ["index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
+         "404.html", "404.css", "404.js",
          # Páginas de la sección GENERATED (vídeo): todas comparten generated.css/js.
          "project-node.html", "project-deep.html", "project-polestar5.html", "project-distant.html",
          "project-exit.html", "project-stained.html", "project-asics.html", "project-farewell.html",
@@ -68,6 +69,38 @@ class Handler(SimpleHTTPRequestHandler):
             sys.stderr.write("%s - %s\n" % (self.client_address[0], msg))
             sys.stderr.flush()
 
+    def send_error(self, code, message=None, explain=None):
+        if code == 404:
+            page_404 = os.path.join(ROOT, "404.html")
+            if os.path.exists(page_404):
+                try:
+                    with open(page_404, "rb") as f:
+                        content = f.read()
+                    self.send_response(404, "Not Found")
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                    return
+                except Exception:
+                    pass
+        super().send_error(code, message, explain)
+
+    def do_HEAD(self):
+        if self.path in ("/", ""):
+            page_404 = os.path.join(ROOT, "404.html")
+            try:
+                with open(page_404, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                return
+            except Exception:
+                pass
+        super().do_HEAD()
+
     def do_GET(self):
         if self.path.startswith("/__livereload"):
             self.send_response(200)
@@ -95,6 +128,22 @@ class Handler(SimpleHTTPRequestHandler):
                     if q in _clients:
                         _clients.remove(q)
             return
+
+        # Serve 404.html directly on root for immediate preview
+        if self.path in ("/", ""):
+            page_404 = os.path.join(ROOT, "404.html")
+            try:
+                with open(page_404, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            except Exception:
+                pass
+
         super().do_GET()
 
 

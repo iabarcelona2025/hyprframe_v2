@@ -36,7 +36,7 @@ const PAGES = [
     // La página de referencia conserva de momento el titular de portada del
     // estudio en <title> (su og:title sí nombra la pieza).
     { file: "project-node.html", vimeo: "1227346538", piece: "N.O.D.E.", aria: "N.O.D.E. [Teaser]",
-      pageTitle: "AI Visual Storytelling Studio – Generative Image & Video | HYPRFRAME" },
+      pageTitle: "N.O.D.E — Generative AI Video | HYPRFRAME" },
     { file: "project-deep.html", vimeo: "1185276367", piece: "Deep in the Forest", aria: "Deep in the Forest [Teaser]" },
     { file: "project-polestar5.html", vimeo: "1180539625", piece: "Polestar 5", aria: "Polestar 5" },
     { file: "project-distant.html", vimeo: "1164823364", piece: "Distant", aria: "Distant [Trailer]" },
