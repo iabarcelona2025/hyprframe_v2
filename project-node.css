@@ -24,7 +24,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
 .node-hero h1 {
-    font: 700 clamp(4.2rem, 9vw, 9rem)/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
+    font: 700 clamp(calc(4.2rem - 15px), calc(9vw - 15px), calc(9rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
 /* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
@@ -63,17 +63,17 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: grid; place-items: center;
 }
 .node-player__circle {
-    position: relative; display: block; width: clamp(2.25rem, 4.5vw, 4rem); aspect-ratio: 1;
-    background: var(--lime); border: 1px solid var(--lime); border-radius: 50%;
-    color: var(--bg); font-size: clamp(1.15rem, 2vw, 1.7rem);
-    transition: transform 0.4s var(--ease-out), box-shadow 0.3s;
+    position: relative; display: block; width: clamp(3.5rem, 6vw, 5rem); aspect-ratio: 1;
+    border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
+    color: var(--fg); font-size: 1rem;
+    transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out);
 }
 /* The play triangle is drawn in CSS instead of the "▶" character: the site fonts
    lack that glyph, so every system substituted its own symbol font (different
    metrics) and the triangle drifted off centre. It is equilateral and its centre
    — centroid and circumcentre at once — sits exactly on the circle's centre, so
-   its three corners are equidistant from the lime edge. Sized in em from the
-   font-size above, it keeps the scale of the former glyph. */
+   its three corners are equidistant from the circle's edge. Sized in em from the
+   font-size above, it matches the Captured play button. */
 .node-player__circle::before {
     content: ""; position: absolute; inset: 0; background: currentColor;
     clip-path: polygon(calc(50% + 0.48em) 50%, calc(50% - 0.24em) calc(50% - 0.4157em), calc(50% - 0.24em) calc(50% + 0.4157em));
@@ -82,7 +82,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-player__circle::before { background: ButtonText; }
 }
 .node-player__play:hover .node-player__circle, .node-player__play:focus-visible .node-player__circle {
-    transform: scale(1.09); box-shadow: 0 0 26px rgba(163, 223, 2, 0.5);
+    background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12;
 }
 .node-player iframe {
     position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
@@ -95,7 +95,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
     padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(7rem, 14vw, 14rem);
 }
-.node-story h2 { font-size: clamp(calc(3rem - 12px), calc(6.4vw - 12px), calc(7rem - 12px)); }
+.node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
 .node-story__copy p { font-size: clamp(1.15rem, 1.9vw, 1.85rem); line-height: 1.45; font-weight: 300; }
 .node-story__caption {
@@ -144,11 +144,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-hero__top { gap: 0.75rem; }
     .node-hero__image { height: clamp(160px, 25svh, 210px); }
     .node-hero__title { left: 1rem; bottom: 1.5rem; }
-    .node-hero h1 { font-size: clamp(3.7rem, 16vw, 6.5rem); white-space: normal; }
+    .node-hero h1 { font-size: clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px)); white-space: normal; }
     .node-hero__teaser { display: block; margin-top: 0.7rem; font-size: calc(0.45em + 10px); }
     .node-hero__explore { font-size: 0.56rem; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 10px), calc(10vw - 10px), calc(4.8rem - 10px)); }
-    .node-story h2 { font-size: clamp(calc(2.75rem - 12px), calc(10vw - 12px), calc(5rem - 12px)); }
+    .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
 }

@@ -60,13 +60,24 @@ try {
     assert.equal(doc.querySelector("h1").getAttribute("aria-label"), "N.O.D.E. [Teaser]");
     assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "the title's four dots are uniform CSS boxes");
     assert.ok(!doc.querySelector(".node-hero__period"), "the title's period inherits the same colour as its letters");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /font-size: clamp\(1\.15rem, 2vw, 1\.7rem\);/);
     assert.ok(!doc.querySelector(".node-film__after"), "old film caption has been removed");
     const css = fs.readFileSync(path.join(root, "project-node.css"), "utf8");
     assert.ok(!doc.querySelector(".node-hero__image img"), "the opener is a flat background, not a still image");
     assert.ok(!/radial-gradient|linear-gradient/.test(css), "the opener gradient has been removed");
     assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"), "custom cursor dot and ring exist");
-    assert.match(fs.readFileSync(path.join(root, "project-node.css"), "utf8"), /background: var\(--lime\); border: 1px solid var\(--lime\)/);
+    const legacyCss = fs.readFileSync(path.join(root, "legacy.css"), "utf8");
+    const nodeCircle = css.match(/\.node-player__circle \{[^}]*\}/)[0];
+    const legacyCircle = legacyCss.match(/\.film-card__play \{[^}]*\}/)[0];
+    for (const declaration of ["width", "border", "border-radius", "color", "font-size", "transition"]) {
+        const value = legacyCircle.match(new RegExp(`(?:^|[;{]\\s*)${declaration}: ([^;]+);`))[1];
+        assert.ok(nodeCircle.includes(`${declaration}: ${value};`), `N.O.D.E. play button matches Captured's ${declaration}`);
+    }
+    const nodeHover = css.match(/\.node-player__play:hover \.node-player__circle, \.node-player__play:focus-visible \.node-player__circle \{[^}]*\}/)[0];
+    const legacyHover = legacyCss.match(/\.film-card:hover \.film-card__play,\s*\.film-card:focus-visible \.film-card__play \{[^}]*\}/)[0];
+    for (const declaration of ["background", "border-color", "color", "scale"]) {
+        const value = legacyHover.match(new RegExp(`(?:^|[;{]\\s*)${declaration}: ([^;]+);`))[1];
+        assert.ok(nodeHover.includes(`${declaration}: ${value};`), `N.O.D.E. hover matches Captured's ${declaration}`);
+    }
     assert.equal(doc.getElementById("playFilm").textContent.trim(), "", "the play triangle is drawn in CSS, not with a font glyph");
     const triangle = css.match(/\.node-player__circle::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
         .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
