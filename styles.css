@@ -116,8 +116,7 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-head);
 }
 .preloader-count {
-    /* 20 px smaller than the original intro counter at every breakpoint. */
-    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px));
+    font-size: 12px;
     /* Misma tipografía que el menú fijo superior (Space Mono), en blanco.
        Space Mono solo se carga en 400/700: 400 es el peso del menú. */
     font-family: var(--font-mono); font-weight: 400;
@@ -1086,14 +1085,15 @@ section { position: relative; }
 .contact-link span { color: var(--violet); }
 .contact-icon { display: block; width: 1.4em; height: 1.4em; color: var(--fg); flex-shrink: 0; }
 
-/* Escritorio: el formulario y el pie caben en la misma pantalla al ir a #contact.
-   La cabecera fija sigue teniendo espacio sobre el título; móvil no se altera. */
+/* Escritorio: START A PROJECT arranca a la misma altura visual que el kicker
+   HYPRFRAME de About. El espacio se recupera al final del bloque para que el
+   pie siga entrando en pantalla al navegar a #contact; móvil no se altera. */
 @media (min-width: 861px) {
-    .contact { padding: clamp(5.5rem, 8vh, 6.5rem) var(--pad) clamp(1.5rem, 2.5vh, 2.5rem); }
-    .contact .kicker { margin-bottom: clamp(1rem, 2vh, 1.5rem); }
-    .contact-head { margin-bottom: clamp(1.5rem, 3vh, 2.5rem); }
+    .contact { padding: clamp(6rem, 15vw, 11rem) var(--pad) clamp(0.5rem, 1vh, 0.75rem); }
+    .contact .kicker { margin-bottom: clamp(0.75rem, 1.5vh, 1.25rem); }
+    .contact-head { margin-bottom: clamp(1rem, 2vh, 1.75rem); }
     .contact-title { font-size: clamp(3rem, min(9.5vw, 10vh), 8.5rem); }
-    .contact .field { margin-bottom: clamp(1rem, 2vh, 1.5rem); }
+    .contact .field { margin-bottom: clamp(0.75rem, 1.5vh, 1.25rem); }
 }
 
 @media (max-width: 860px) {

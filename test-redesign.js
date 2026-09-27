@@ -89,8 +89,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const contactSection = doc.getElementById("contact");
     check("Contact anchor reserves space for the footer without showing CLB's TEST NOW button",
         /\.contact\s*\{[^}]*min-height:\s*calc\(100svh - 8\.5rem\)/.test(css));
-    check("Contact desktop layout fits the footer in view without changing mobile",
-        /@media \(min-width: 861px\)\s*\{\s*\.contact\s*\{[^}]*padding:\s*clamp\(5\.5rem, 8vh, 6\.5rem\)/.test(css) &&
+    check("Contact desktop kicker aligns with About while the footer still fits in view",
+        /\.about\s*\{\s*padding:\s*clamp\(6rem, 15vw, 11rem\)/.test(css) &&
+        /@media \(min-width: 861px\)\s*\{\s*\.contact\s*\{[^}]*padding:\s*clamp\(6rem, 15vw, 11rem\) var\(--pad\) clamp\(0\.5rem, 1vh, 0\.75rem\)/.test(css) &&
         /\.contact-title\s*\{\s*font-size:\s*clamp\(3rem, min\(9\.5vw, 10vh\), 8\.5rem\)/.test(css));
     const pageFooter = doc.querySelector(".site-footer");
     check("footer copyright stays legible at the Contact anchor",

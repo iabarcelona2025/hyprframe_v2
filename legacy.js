@@ -14,7 +14,8 @@
     let lastFilmLink = null;
 
     function updateScroll() {
-        header.classList.toggle("scrolled", window.scrollY > 40);
+        // En Captured la cabecera usa siempre su versión compacta y desenfocada.
+        header.classList.add("scrolled");
         const max = document.documentElement.scrollHeight - window.innerHeight;
         progress.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
     }
