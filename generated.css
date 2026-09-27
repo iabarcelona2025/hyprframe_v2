@@ -180,7 +180,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
 }
 .node-related h2 { font-size: clamp(calc(3rem - 25px), calc(6.5vw - 40px), calc(7rem - 40px)); } /* -15px (27/09/2026) · el mínimo se queda en 3rem-25px: restarle los 15px dejaría el titular en 8px entre 561 y 738px */
-.node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(clamp(1.25rem, 3.5vw, 4rem) * 0.85); width: 85%; margin-inline: auto; } /* 100% → 85% (27/09/2026) · los 2 cuadros de RELATED PROJECTS se reducen un 15%; el gap baja al 85% para que la reducción de cada cuadro sea exacta */
+.node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, calc((100% - clamp(1.25rem, 3.5vw, 4rem)) * 0.425))); justify-content: space-between; } /* 85% centrado → ancho completo con space-between (27/09/2026) · los cuadros mantienen la talla del -15% y se pegan a los bordes de «RELATED PROJECTS»; el 15% recuperado los separa */
 .node-card { min-width: 0; display: flex; flex-direction: column; }
 .node-card__image { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #151416; }
 .node-card__image img {
@@ -230,7 +230,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
-    .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
+    .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
     .node-pager { gap: 0.8rem; padding-bottom: 1rem; }
     .node-pager__link { gap: 0.4rem; }
     .node-pager__link, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
