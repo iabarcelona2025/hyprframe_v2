@@ -212,13 +212,15 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         && /sessionStorage\.getItem\(CURSOR_KEY\)/.test(js)
         && /sessionStorage\.setItem\(CURSOR_KEY/.test(js));
 
-    // pista de scroll del hero con vídeo: fuera la etiqueta, línea 4px más gruesa
+    // pista de scroll del hero con vídeo: fuera la etiqueta, línea de 3px (27/09/2026)
     const cue = doc.querySelector(".scroll-cue");
     check("SCROLL ya no aparece en el hero", cue.textContent.trim() === "");
     check("la pista sigue anunciándose a lectores de pantalla",
         cue.getAttribute("aria-label") === "Scroll to work" && cue.getAttribute("href") === "#work");
-    check("la línea de la pista mide 5px (1px + 4px)", /\.scroll-cue-line \{\s*width: 5px;/.test(css));
+    check("la línea de la pista mide 3px (5px − 2px)", /\.scroll-cue-line \{\s*width: 3px;/.test(css));
     check("el destello verde lima de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*background: var\(--lime\);[^}]*animation: cueDrop/.test(css));
+    check("el verde del cue deja un glow sutil al pasar",
+        /\.scroll-cue::after \{[^}]*filter: blur\(5px\)/.test(css) && /@keyframes cueGlow/.test(css));
 
     // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];
