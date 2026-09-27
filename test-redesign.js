@@ -190,10 +190,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("el aro del cursor ya no es un círculo",
         !/\.cursor-ring \{[^}]*border:/.test(css)
         && !/\.cursor-dot, \.cursor-ring \{[^}]*border-radius/.test(css));
+    // 1px de grosor y el 60% de la caja de largo: al ser un porcentaje, el hover
+    // la acorta en la misma proporción (25px en reposo, 53px sobre interactivos).
     check("la cruceta son dos trazos de 1px",
         /\.cursor-ring::before, \.cursor-ring::after \{/.test(css)
-        && /\.cursor-ring::before \{ width: 1px; height: 100%; \}/.test(css)
-        && /\.cursor-ring::after \{ width: 100%; height: 1px; \}/.test(css));
+        && /\.cursor-ring::before \{ width: 1px; height: 60%; \}/.test(css)
+        && /\.cursor-ring::after \{ width: 60%; height: 1px; \}/.test(css));
+    check("el largo es proporcional: mismo porcentaje en reposo y en hover",
+        !/body\.cursor-large \.cursor-ring::(before|after)[^}]*\{[^}]*(width|height):/.test(css));
     check("la cruceta conserva el color del aro",
         /\.cursor-ring::before, \.cursor-ring::after \{[^}]*background: rgba\(255, 255, 255, 0\.7\)/.test(css));
     check("la cruceta conserva el modo de fusión",
