@@ -78,6 +78,11 @@
   <priority>0.80</priority>
 </url>
 <url>
+  <loc>https://hyprframe.com/es/builder.html</loc>
+  <lastmod>2026-05-04T17:23:26+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
   <loc>https://hyprframe.com/es/project-node.html</loc>
   <lastmod>2026-05-04T17:23:26+00:00</lastmod>
   <priority>0.80</priority>
