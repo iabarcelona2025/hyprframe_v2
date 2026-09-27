@@ -9,12 +9,31 @@ const root = __dirname;
 const doc = new JSDOM(fs.readFileSync(path.join(root, "index.html"), "utf8")).window.document;
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
-test("CLB gallery precedes Key Capabilities and TEST NOW follows them on mobile", () => {
+test("CLB gallery precedes Key Capabilities and TEST NOW sits directly below its text", () => {
     const grid = doc.querySelector("#clb .clb-grid");
     assert.deepEqual([...grid.children].map(el => el.className),
-        ["clb-intro", "clb-showcase", "clb-capabilities", "clb-cta magnetic"]);
-    assert.equal(grid.querySelector(".clb-cta").getAttribute("href"), "builder.html");
-    assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"\s*"cta"/);
+        ["clb-intro", "clb-showcase", "clb-side"]);
+    const side = grid.querySelector(".clb-side");
+    assert.deepEqual([...side.children].map(el => el.className), ["clb-capabilities", "clb-cta magnetic"]);
+    assert.equal(side.querySelector(".clb-cta").getAttribute("href"), "builder.html");
+    assert.match(css, /\.clb-side\s*\{[^}]*grid-area:\s*side;[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/);
+    assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"side"/);
+});
+
+test("desktop CLB keeps the gallery wide with capabilities and CTA in the right column", () => {
+    const gridRule = css.match(/\.clb-grid\s*\{[^}]*\}/)[0];
+    assert.match(gridRule, /grid-template-columns: minmax\(0, 1\.35fr\) minmax\(22rem, 0\.85fr\)/);
+    assert.match(gridRule, /grid-template-areas:\s*"intro side"\s*"showcase side"/);
+    assert.match(css, /@media \(max-width: 700px\)[\s\S]*grid-template-areas: "intro" "showcase" "side"/);
+});
+
+test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
+    const features = [...doc.querySelectorAll("#clb .clb-feature")];
+    assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),
+        ["Precise Technical Setup", "Dual-Format Generation"]);
+    assert.ok(features.every(feature => !feature.querySelector(".clb-num")));
+    assert.doesNotMatch(css.match(/\.clb-feature\s*\{[^}]*\}/)[0], /grid-template-columns|padding-left/);
+    assert.match(css.match(/\.clb-feature p\s*\{[^}]*\}/)[0], /margin-left:\s*clamp\(0\.75rem, 1\.5vw, 1\.25rem\)/);
 });
 
 test("four distinct frames plus a hidden copy of the first for a seamless loop", () => {
@@ -71,6 +90,6 @@ test("the screen and its reflection share the same inward bow", () => {
 });
 
 test("gallery stacks between intro and features on mobile and stays still with reduced motion", () => {
-    assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"/);
+    assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"side"/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.clb-gallery-track, \.clb-reflection-track\s*\{\s*animation:\s*none;\s*transform:\s*none;/);
 });

@@ -87,7 +87,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("CLB occupies a full viewport so Contact does not appear when the anchor opens",
         /\.clb\s*\{[^}]*min-height:\s*100svh/.test(css));
     const contactSection = doc.getElementById("contact");
+    check("Contact anchor reserves space for the footer without showing CLB's TEST NOW button",
+        /\.contact\s*\{[^}]*min-height:\s*calc\(100svh - 8\.5rem\)/.test(css));
+    check("Contact desktop layout fits the footer in view without changing mobile",
+        /@media \(min-width: 861px\)\s*\{\s*\.contact\s*\{[^}]*padding:\s*clamp\(5\.5rem, 8vh, 6\.5rem\)/.test(css) &&
+        /\.contact-title\s*\{\s*font-size:\s*clamp\(3rem, min\(9\.5vw, 10vh\), 8\.5rem\)/.test(css));
     const pageFooter = doc.querySelector(".site-footer");
+    check("footer copyright stays legible at the Contact anchor",
+        /\.footer-row\s*\{[^}]*font-size:\s*0\.65rem;[^}]*color:\s*var\(--muted\)/.test(css));
     check("Contact is compacted so the footer follows closely and can be seen sooner",
         !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
         /\.contact\s*\{[^}]*padding:\s*clamp\(4\.5rem, 8vw, 7rem\) var\(--pad\) clamp\(2\.5rem, 4vw, 3\.5rem\)/.test(css) &&
@@ -117,11 +124,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@keyframes heroSubtitleFade\s*\{\s*from\s*\{\s*opacity:\s*0;\s*\}\s*to\s*\{\s*opacity:\s*1;\s*\}/.test(css));
     check("hero subtitle is immediately visible with reduced motion",
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
-    check("cross-turn: ping-pong ×(0°) ↔ +(45°), ease-in-out, alternate y hold en cada extremo",
-        /crossTurn\s+[\d.]+s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
+    check("cross-turn: ping-pong ×(0°) ↔ +(45°), alternate y hold en cada extremo",
+        /crossTurn\s+1\.3s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
         /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
         /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
         "ver @keyframes crossTurn / .cross-turn");
+    check("cross-turn: × y + reposan ~0.2 s más sin ralentizar el giro",
+        /0%,\s*19\.5%/.test(css) && /25\.5%/.test(css) &&
+        /74\.5%/.test(css) && /80\.5%,\s*100%/.test(css) &&
+        Math.abs(2 * 1.3 * 0.195 - (2 * 1.1 * 0.14 + 0.2)) < 0.01 &&
+        Math.abs(1.3 * (0.805 - 0.195) - 1.1 * (0.86 - 0.14)) < 0.01);
     // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
     // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
     const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";

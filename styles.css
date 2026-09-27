@@ -117,7 +117,7 @@ html.hf-skip-intro .preloader { display: none; }
 }
 .preloader-count {
     /* 20 px smaller than the original intro counter at every breakpoint. */
-    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px)); font-weight: 400;
+    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px)); font-weight: 300;
     font-variant-numeric: tabular-nums; color: var(--violet);
     letter-spacing: 0.04em;
 }
@@ -583,7 +583,7 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.216em 0.6105em;
-    animation: crossTurn 1.6s ease-in-out infinite alternate;
+    animation: crossTurn 1.3s ease-in-out infinite alternate;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
@@ -594,12 +594,13 @@ em { font-style: normal; color: var(--violet); }
    ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
    velocidad debe morir en el extremo; ease-in-out en el barrido largo.
    `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
-   el de final se aplican igual al × (0°) y al + (45°). */
+   el de final se aplican igual al × (0°) y al + (45°).
+   Pausa en cada extremo: ~0.51 s (antes ~0.31 s); la rotación dura lo mismo. */
 @keyframes crossTurn {
-    0%, 14%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
-    21%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
-    79%       { transform: rotate(49deg); animation-timing-function: ease-out; }
-    86%, 100% { transform: rotate(45deg); }
+    0%, 19.5%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
+    25.5%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
+    74.5%       { transform: rotate(49deg); animation-timing-function: ease-out; }
+    80.5%, 100% { transform: rotate(45deg); }
 }
 
 /* ── Sections base ───────────────────────────────────────── */
@@ -693,6 +694,8 @@ section { position: relative; }
 .work-row[href*="project-distant"]::after  { background-position: center 42%; }
 .work-row[href*="project-exit"]::after     { background-position: center 30%; }
 .work-row[href*="project-farewell"]::after { background-position: center 40%; }
+/* Desplazar el fotograma de IAD hacia arriba para mostrar las manos del personaje. */
+.work-row[href*="project-iad"]::after     { background-position: center 88%; }
 .work-row[href*="project-ryuu"]::after     { background-position: center 45%; }
 .work-row:hover { padding-left: calc(var(--pad) + 1.4rem); }
 .work-row > * { position: relative; z-index: 1; }
@@ -807,17 +810,15 @@ section { position: relative; }
 }
 .clb-grid {
     display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr) minmax(0, 1.15fr);
-    grid-template-areas:
-        "intro showcase capabilities"
-        "cta showcase capabilities";
+    grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 0.85fr);
+    grid-template-areas: "intro side" "showcase side";
     align-items: start; gap: clamp(1.25rem, 2.5vw, 2.75rem);
     padding: 0 var(--pad);
 }
 .clb-intro { grid-area: intro; max-width: 52ch; }
 .clb-showcase { grid-area: showcase; }
-.clb-capabilities { grid-area: capabilities; }
-.clb-cta { grid-area: cta; align-self: start; justify-self: start; }
+.clb-side { grid-area: side; display: flex; flex-direction: column; }
+.clb-cta { align-self: flex-start; margin-top: clamp(1.5rem, 3vw, 2.5rem); }
 .clb-intro > p {
     color: rgba(239, 238, 233, 0.78); font-weight: 300;
     font-size: clamp(1.15rem, 1.7vw, 1.5rem); line-height: 1.55;
@@ -908,14 +909,8 @@ section { position: relative; }
 .clb-kicker { margin-bottom: 1rem; }
 .clb-feature-list { border-top: 1px solid var(--line); }
 .clb-feature {
-    display: grid; grid-template-columns: 3rem minmax(0, 1fr);
-    gap: 1rem; padding: 1.4rem 0;
+    padding: 1.4rem 0;
     border-bottom: 1px solid var(--line);
-}
-.clb-num {
-    padding-top: 0.2rem;
-    font-family: var(--font-mono); font-size: 0.68rem;
-    letter-spacing: 0.16em; color: var(--violet);
 }
 .clb-feature h3 {
     margin-bottom: 0.55rem;
@@ -923,34 +918,37 @@ section { position: relative; }
     font-weight: 600; line-height: 1.2;
 }
 .clb-feature p {
+    margin-left: clamp(0.75rem, 1.5vw, 1.25rem);
     max-width: 60ch; color: var(--muted);
     font-size: 0.92rem; font-weight: 300; line-height: 1.7;
 }
 .clb-feature strong { color: var(--fg); font-weight: 600; }
+/* Escritorio: galería ancha a la izquierda; capacidades y CTA juntos a la derecha. */
+@media (min-width: 1181px) {
+    .clb { padding-bottom: clamp(3rem, 6vw, 6rem); }
+    .clb-grid {
+        column-gap: clamp(2.5rem, 6vw, 6.5rem);
+        row-gap: clamp(1rem, 2vw, 1.75rem);
+    }
+    .clb-intro > p { margin-bottom: 0; }
+}
 @media (max-width: 1180px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-areas:
-            "intro capabilities"
-            "showcase capabilities"
-            "cta capabilities";
         gap: 2rem clamp(2rem, 4vw, 3.5rem);
     }
-    .clb-intro { grid-area: intro; }
-    .clb-showcase { grid-area: showcase; width: 100%; }
-    .clb-capabilities { grid-area: capabilities; }
-    .clb-cta { grid-area: cta; }
+    .clb-showcase { width: 100%; }
 }
 @media (max-width: 700px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr);
-        /* On mobile the CTA follows the complete capabilities block. */
-        grid-template-areas: "intro" "showcase" "capabilities" "cta";
+        /* On mobile the CTA remains below the complete capabilities block. */
+        grid-template-areas: "intro" "showcase" "side";
         gap: 2.5rem;
     }
     .clb-intro { max-width: 60ch; }
     .clb-showcase { max-width: 580px; }
-    .clb-cta { margin-top: -0.5rem; }
+    .clb-cta { margin-top: 2rem; }
 }
 
 /* ── ABOUT ───────────────────────────────────────────────── */
@@ -966,6 +964,7 @@ section { position: relative; }
     gap: clamp(2rem, 6vw, 5rem); align-items: start;
 }
 .about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
+.about-copy strong { font-weight: 500; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
     display: block;
@@ -989,6 +988,9 @@ section { position: relative; }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
 .contact {
+    /* Reservar el alto del footer al anclar #contact: queda visible sin
+       enseñar el botón TEST NOW de la sección anterior. */
+    min-height: calc(100svh - 8.5rem);
     padding: clamp(4.5rem, 8vw, 7rem) var(--pad) clamp(2.5rem, 4vw, 3.5rem);
     background:
         radial-gradient(80% 60% at 85% 110%, rgba(160, 100, 255, 0.16), transparent 60%),
@@ -1059,6 +1061,16 @@ section { position: relative; }
 .contact-link span { color: var(--violet); }
 .contact-icon { display: block; width: 1.4em; height: 1.4em; color: var(--fg); flex-shrink: 0; }
 
+/* Escritorio: el formulario y el pie caben en la misma pantalla al ir a #contact.
+   La cabecera fija sigue teniendo espacio sobre el título; móvil no se altera. */
+@media (min-width: 861px) {
+    .contact { padding: clamp(5.5rem, 8vh, 6.5rem) var(--pad) clamp(1.5rem, 2.5vh, 2.5rem); }
+    .contact .kicker { margin-bottom: clamp(1rem, 2vh, 1.5rem); }
+    .contact-head { margin-bottom: clamp(1.5rem, 3vh, 2.5rem); }
+    .contact-title { font-size: clamp(3rem, min(9.5vw, 10vh), 8.5rem); }
+    .contact .field { margin-bottom: clamp(1rem, 2vh, 1.5rem); }
+}
+
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
 }
@@ -1083,8 +1095,8 @@ section { position: relative; }
     display: flex; justify-content: center; text-align: center; gap: 1rem; flex-wrap: wrap;
     margin-top: 1rem; padding-top: 1.5rem;
     border-top: 1px solid var(--line);
-    font-family: var(--font-mono); font-size: calc(0.6rem - 2px); /* 9.6px → 7.6px */
-    letter-spacing: 0.22em; text-transform: uppercase; color: #5a5a5a; /* más oscuro que --muted (#8b8b8b) */
+    font-family: var(--font-mono); font-size: 0.65rem;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
 }
 .footer-row a:hover { color: var(--fg); }
 

@@ -48,6 +48,14 @@ try {
     // Play triangles are drawn in CSS (no "▶" glyph) and centred on their circle, which
     // keeps its centre on hover (`translate`, not `transform`, so `scale` can't drift it).
     const legacyCss = fs.readFileSync(path.join(root, "legacy.css"), "utf8");
+    assert.equal(doc.querySelector(".legacy-hero__bottom p").textContent,
+        "Real places. Real people.Stories worth keeping.");
+    assert.match(legacyCss, /\.legacy-hero\s*\{[^}]*min-height: min\(410px, 47svh\)/);
+    assert.match(legacyCss, /@media \(max-width: 560px\)[\s\S]*\.legacy-hero\s*\{\s*min-height: min\(320px, 42svh\)/);
+    assert.match(legacyCss, /\.legacy-work__heading\s*\{[^}]*padding:\s*clamp\(calc\(5rem - 20px\), calc\(10vw - 20px\), calc\(9rem - 20px\)\) var\(--pad\) clamp\(calc\(2\.5rem \+ 20px\), calc\(5vw \+ 20px\), calc\(4rem \+ 20px\)\)/,
+        "the heading moves up 20px while the equal bottom padding keeps the videos in place");
+    assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");
+    assert.match(legacyCss, /\.legacy-work__heading h2 span\s*\{[^}]*font-style:\s*italic;/);
     const plays = [...doc.querySelectorAll(".film-card__play")];
     assert.equal(plays.length, 6);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
