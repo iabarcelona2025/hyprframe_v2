@@ -124,11 +124,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@keyframes heroSubtitleFade\s*\{\s*from\s*\{\s*opacity:\s*0;\s*\}\s*to\s*\{\s*opacity:\s*1;\s*\}/.test(css));
     check("hero subtitle is immediately visible with reduced motion",
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
-    check("cross-turn: ping-pong ×(0°) ↔ +(45°) más rápido, alternate y hold en cada extremo",
-        /crossTurn\s+1\.1s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
+    check("cross-turn: ping-pong ×(0°) ↔ +(45°), alternate y hold en cada extremo",
+        /crossTurn\s+1\.3s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
         /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
         /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
         "ver @keyframes crossTurn / .cross-turn");
+    check("cross-turn: × y + reposan ~0.2 s más sin ralentizar el giro",
+        /0%,\s*19\.5%/.test(css) && /25\.5%/.test(css) &&
+        /74\.5%/.test(css) && /80\.5%,\s*100%/.test(css) &&
+        Math.abs(2 * 1.3 * 0.195 - (2 * 1.1 * 0.14 + 0.2)) < 0.01 &&
+        Math.abs(1.3 * (0.805 - 0.195) - 1.1 * (0.86 - 0.14)) < 0.01);
     // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
     // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
     const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";

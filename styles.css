@@ -583,7 +583,7 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.216em 0.6105em;
-    animation: crossTurn 1.1s ease-in-out infinite alternate;
+    animation: crossTurn 1.3s ease-in-out infinite alternate;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
@@ -594,12 +594,13 @@ em { font-style: normal; color: var(--violet); }
    ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
    velocidad debe morir en el extremo; ease-in-out en el barrido largo.
    `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
-   el de final se aplican igual al × (0°) y al + (45°). */
+   el de final se aplican igual al × (0°) y al + (45°).
+   Pausa en cada extremo: ~0.51 s (antes ~0.31 s); la rotación dura lo mismo. */
 @keyframes crossTurn {
-    0%, 14%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
-    21%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
-    79%       { transform: rotate(49deg); animation-timing-function: ease-out; }
-    86%, 100% { transform: rotate(45deg); }
+    0%, 19.5%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
+    25.5%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
+    74.5%       { transform: rotate(49deg); animation-timing-function: ease-out; }
+    80.5%, 100% { transform: rotate(45deg); }
 }
 
 /* ── Sections base ───────────────────────────────────────── */
