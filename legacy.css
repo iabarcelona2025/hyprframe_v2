@@ -112,7 +112,8 @@ body.menu-open, body.modal-open { overflow: hidden; }
     border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
     color: var(--fg); font-size: 1rem;
     translate: -50% -50%;
-    transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out);
+    opacity: 0.3;
+    transition: background 0.3s, border-color 0.3s, color 0.3s, scale 0.4s var(--ease-out), opacity 0.3s; /* 70% de transparencia (27/09/2026) */
 }
 /* Same CSS-drawn triangle as the N.O.D.E. player (see generated.css): the site
    fonts lack "▶", so each system drew its own glyph, off centre. Equilateral, with
@@ -132,7 +133,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .film-card:hover .film-card__play,
 .film-card:focus-visible .film-card__play {
-    background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12;
+    background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12; opacity: 1;
 }
 .film-card__info {
     display: flex; align-items: baseline; gap: 0.8rem; min-width: 0;
