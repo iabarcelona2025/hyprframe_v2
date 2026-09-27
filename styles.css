@@ -117,8 +117,11 @@ html.hf-skip-intro .preloader { display: none; }
 }
 .preloader-count {
     /* 20 px smaller than the original intro counter at every breakpoint. */
-    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px)); font-weight: 300;
-    font-variant-numeric: tabular-nums; color: var(--violet);
+    font-size: clamp(calc(2.2rem - 20px), calc(7.32vw - 20px), calc(5.125rem - 20px));
+    /* Misma tipografía que el menú fijo superior (Space Mono), en blanco.
+       Space Mono solo se carga en 400/700: 400 es el peso del menú. */
+    font-family: var(--font-mono); font-weight: 400;
+    font-variant-numeric: tabular-nums; color: var(--fg);
     letter-spacing: 0.04em;
 }
 .preloader-word {
