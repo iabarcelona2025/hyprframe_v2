@@ -875,6 +875,7 @@ section { position: relative; }
     padding: 0 var(--pad);
 }
 .clb-intro { grid-area: intro; max-width: 52ch; }
+.clb-intro strong { font-weight: 500; }
 .clb-showcase { grid-area: showcase; }
 .clb-side { grid-area: side; display: flex; flex-direction: column; }
 .clb-cta { align-self: flex-start; margin-top: clamp(1.5rem, 3vw, 2.5rem); }
