@@ -17,6 +17,14 @@ test("CLB gallery precedes Key Capabilities and TEST NOW follows them on mobile"
     assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"\s*"cta"/);
 });
 
+test("capability headings start at the left edge without numbering", () => {
+    const features = [...doc.querySelectorAll("#clb .clb-feature")];
+    assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),
+        ["Precise Technical Setup", "Dual-Format Generation"]);
+    assert.ok(features.every(feature => !feature.querySelector(".clb-num")));
+    assert.doesNotMatch(css.match(/\.clb-feature\s*\{[^}]*\}/)[0], /grid-template-columns|padding-left/);
+});
+
 test("four distinct frames plus a hidden copy of the first for a seamless loop", () => {
     const images = [...doc.querySelectorAll("#clb .clb-gallery-track img")];
     assert.equal(images.length, 5);

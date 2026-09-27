@@ -910,14 +910,8 @@ section { position: relative; }
 .clb-kicker { margin-bottom: 1rem; }
 .clb-feature-list { border-top: 1px solid var(--line); }
 .clb-feature {
-    display: grid; grid-template-columns: 3rem minmax(0, 1fr);
-    gap: 1rem; padding: 1.4rem 0;
+    padding: 1.4rem 0;
     border-bottom: 1px solid var(--line);
-}
-.clb-num {
-    padding-top: 0.2rem;
-    font-family: var(--font-mono); font-size: 0.68rem;
-    letter-spacing: 0.16em; color: var(--violet);
 }
 .clb-feature h3 {
     margin-bottom: 0.55rem;
