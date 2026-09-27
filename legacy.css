@@ -68,7 +68,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     font: 700 clamp(2.8rem, 7vw, 7.5rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.015em; text-transform: uppercase;
 }
-.legacy-work__heading h2 span { color: var(--violet); }
+.legacy-work__heading h2 span { color: var(--violet); font-style: italic; }
 .film-grid {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: clamp(1.5rem, 3.5vw, 4rem);
