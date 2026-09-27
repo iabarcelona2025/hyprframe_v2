@@ -108,7 +108,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-card__watch { bottom: 1.4rem; left: 1.5rem; }
 .film-card__play {
     position: absolute; top: 50%; left: 50%; z-index: 2;
-    width: clamp(3.5rem, 6vw, 5rem); aspect-ratio: 1;
+    width: clamp(3.15rem, 5.4vw, 4.5rem); aspect-ratio: 1; /* -10% de diametro (27/09/2026) · clamp(3.5rem, 6vw, 5rem) → clamp(3.15rem, 5.4vw, 4.5rem) */
     border: 1px solid rgba(255, 255, 255, 0.75); border-radius: 50%;
     color: var(--fg); font-size: 1rem;
     translate: -50% -50%;
