@@ -207,6 +207,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("la cruceta crece y se vuelve violeta sobre los interactivos",
         /body\.cursor-large \.cursor-ring \{ width: 88px; height: 88px; \}/.test(css)
         && /body\.cursor-large \.cursor-ring::before,\s*body\.cursor-large \.cursor-ring::after \{\s*background: var\(--violet\);\s*-webkit-mask: none; mask: none;/.test(css));
+    check("el cursor arranca donde se quedó el ratón (sobrevive a atrás/adelante)",
+        /const CURSOR_KEY = "hfCursor"/.test(js)
+        && /sessionStorage\.getItem\(CURSOR_KEY\)/.test(js)
+        && /sessionStorage\.setItem\(CURSOR_KEY/.test(js));
 
     // pista de scroll del hero con vídeo: fuera la etiqueta, línea 4px más gruesa
     const cue = doc.querySelector(".scroll-cue");
