@@ -166,10 +166,10 @@ for (const page of PAGES) {
         const cards = [...doc.querySelectorAll(".node-card")];
         assert.equal(cards.length, 2);
         cards.forEach((card) => {
-            // Numeraciones quitadas en RELATED PROJECTS (28/09/2026)
+            // Numeraciones y categorias quitadas en RELATED PROJECTS (28/09/2026)
             const meta = card.querySelector(".node-card__meta span").textContent.trim();
             assert.ok(!/^\d+\s*\/\s*/.test(meta), `${page.file}: RELATED PROJECTS sigue con numeración «${meta}»`);
-            assert.ok(meta.length > 2, `${page.file}: meta vacía`);
+            assert.ok(!/(SHORT FILM|COMMERCIAL|BRAND FILM)/i.test(meta), `${page.file}: RELATED PROJECTS sigue con categoria «${meta}»`);
             assert.ok(card.querySelector(".node-card__title").textContent.trim().length > 2);
             assert.notEqual(card.getAttribute("href"), page.file, `${page.file}: se enlaza a sí misma`);
         });
