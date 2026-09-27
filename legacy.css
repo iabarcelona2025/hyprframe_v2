@@ -163,7 +163,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
 
 /* ── Next story & footer ──────────────────────────────────── */
 .legacy-next {
-    padding: clamp(5rem, 10vw, 9rem) var(--pad);
+    padding: clamp(4rem, 8vw, 7.2rem) var(--pad); /* −20% de caja (27/09/2026) · clamp(5rem, 10vw, 9rem) → clamp(4rem, 8vw, 7.2rem) */
     border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
     background: radial-gradient(ellipse at 90% 50%, rgba(160, 100, 255, 0.13), transparent 60%), var(--bg-soft);
 }
@@ -172,7 +172,7 @@ body.menu-open, body.modal-open { overflow: hidden; }
     flex-wrap: wrap; gap: 2.5rem;
 }
 .legacy-next h2 {
-    font: 700 clamp(3.25rem, 9vw, 10rem)/0.97 var(--font-head); /* 800 → 700 (25/09/2026) */
+    font: 700 clamp(2.6rem, 7.2vw, 8rem)/0.97 var(--font-head); /* −20% letras (27/09/2026) · clamp(3.25rem, 9vw, 10rem) → clamp(2.6rem, 7.2vw, 8rem); antes 800 → 700 (25/09/2026) */
     letter-spacing: 0.015em; text-transform: uppercase;
 }
 .legacy-next h2 span { color: var(--violet); }

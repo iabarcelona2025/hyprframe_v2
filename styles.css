@@ -451,20 +451,36 @@ body.loaded .hero-sub {
     position: absolute; bottom: 5.5rem; left: 50%; transform: translateX(-50%); z-index: 2;
     display: flex; flex-direction: column; align-items: center;
 }
-/* Sin la etiqueta SCROLL: la línea sola es la pista, 4px más gruesa que antes
-   (1px → 5px) para sostener el peso que llevaba el texto. El destello verde
-   lima de ::after sigue cayendo por dentro con la misma animación. */
+/* Sin la etiqueta SCROLL: la línea sola es la pista. Grosor 3px (era 5px;
+   −2px el 27/09/2026). El destello verde lima de ::after sigue cayendo por
+   dentro con la misma animación. */
 .scroll-cue-line {
-    width: 5px; height: 56px; background: var(--line); position: relative; overflow: hidden;
+    width: 3px; height: 56px; background: var(--line); position: relative; overflow: hidden;
 }
 .scroll-cue-line::after {
     content: ""; position: absolute; inset: 0;
     background: var(--lime); /* violeta → lima (27/09/2026) · el verde de la web */
     animation: cueDrop 2.2s var(--ease-out) infinite;
 }
+/* Glow súper sutil al paso del verde: mismo barrido que ::after pero sin el
+   clip del overflow (va en el .scroll-cue, que no recorta) para que el lima
+   deje un halo tenue sobre el vídeo. z-index:-1 → el halo nace por detrás de
+   la pista y no tiñe el destello; cueGlow le da sube-baja la opacidad para
+   que el glow entre y salga con el verde. */
+.scroll-cue::after {
+    content: ""; position: absolute; inset: 0;
+    background: var(--lime); opacity: 0;
+    filter: blur(5px); z-index: -1; pointer-events: none;
+    animation: cueDrop 2.2s var(--ease-out) infinite,
+               cueGlow 2.2s var(--ease-out) infinite;
+}
 @keyframes cueDrop {
     0% { transform: translateY(-100%); }
     60%, 100% { transform: translateY(100%); }
+}
+@keyframes cueGlow {
+    0%, 100% { opacity: 0; }
+    12%, 55% { opacity: 0.2; }
 }
 
 .hero-marquee {
