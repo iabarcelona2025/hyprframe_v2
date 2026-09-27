@@ -924,6 +924,21 @@ section { position: relative; }
     font-size: 0.92rem; font-weight: 300; line-height: 1.7;
 }
 .clb-feature strong { color: var(--fg); font-weight: 600; }
+/* Escritorio: dos columnas editoriales. La galería gana protagonismo y el CTA
+   cierra la columna izquierda; Key Capabilities queda como panel lateral. */
+@media (min-width: 1181px) {
+    .clb { padding-bottom: clamp(3rem, 6vw, 6rem); }
+    .clb-grid {
+        grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 0.85fr);
+        grid-template-areas:
+            "intro capabilities"
+            "showcase capabilities"
+            "cta capabilities";
+        column-gap: clamp(2.5rem, 6vw, 6.5rem);
+        row-gap: clamp(1rem, 2vw, 1.75rem);
+    }
+    .clb-intro > p { margin-bottom: 0; }
+}
 @media (max-width: 1180px) {
     .clb-grid {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

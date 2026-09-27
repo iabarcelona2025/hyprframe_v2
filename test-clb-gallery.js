@@ -17,6 +17,14 @@ test("CLB gallery precedes Key Capabilities and TEST NOW follows them on mobile"
     assert.match(css, /grid-template-areas:\s*"intro"\s*"showcase"\s*"capabilities"\s*"cta"/);
 });
 
+test("desktop CLB gives the gallery a wide column without changing the mobile layout", () => {
+    const desktop = css.match(/@media \(min-width: 1181px\) \{([\s\S]*?)\n\}\n@media \(max-width: 1180px\)/)?.[1];
+    assert.ok(desktop, "the editorial layout is limited to large screens");
+    assert.match(desktop, /grid-template-columns: minmax\(0, 1\.35fr\) minmax\(22rem, 0\.85fr\)/);
+    assert.match(desktop, /grid-template-areas:\s*"intro capabilities"\s*"showcase capabilities"\s*"cta capabilities"/);
+    assert.match(css, /@media \(max-width: 700px\)[\s\S]*grid-template-areas: "intro" "showcase" "capabilities" "cta"/);
+});
+
 test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
     const features = [...doc.querySelectorAll("#clb .clb-feature")];
     assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),
