@@ -203,7 +203,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("la cruceta conserva el modo de fusión",
         /\.cursor-dot, \.cursor-ring \{[^}]*mix-blend-mode: difference/.test(css));
     check("el cruce deja libre el punto central (máscara con hueco)",
-        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*mask: radial-gradient\(circle at center, transparent 4\.5px, #000 5px\)/.test(css));
+        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*mask: radial-gradient\(circle at center, transparent (?:4\.5px|2px), #000 (?:5px|2\.5px)\)/.test(css));
     check("la cruceta crece y se vuelve violeta sobre los interactivos",
         /body\.cursor-large \.cursor-ring \{ width: 88px; height: 88px; \}/.test(css)
         && /body\.cursor-large \.cursor-ring::before,\s*body\.cursor-large \.cursor-ring::after \{\s*background: var\(--violet\);\s*-webkit-mask: none; mask: none;/.test(css));

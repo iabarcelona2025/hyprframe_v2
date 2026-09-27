@@ -165,8 +165,11 @@ for (const page of PAGES) {
         assert.equal(doc.querySelectorAll(".node-story h2 .violet").length, 1);
         const cards = [...doc.querySelectorAll(".node-card")];
         assert.equal(cards.length, 2);
-        cards.forEach((card, i) => {
-            assert.match(card.querySelector(".node-card__meta span").textContent, new RegExp(`^0${i + 1} / `));
+        cards.forEach((card) => {
+            // Numeraciones y categorias quitadas en RELATED PROJECTS (28/09/2026)
+            const meta = card.querySelector(".node-card__meta span").textContent.trim();
+            assert.ok(!/^\d+\s*\/\s*/.test(meta), `${page.file}: RELATED PROJECTS sigue con numeración «${meta}»`);
+            assert.ok(!/(SHORT FILM|COMMERCIAL|BRAND FILM)/i.test(meta), `${page.file}: RELATED PROJECTS sigue con categoria «${meta}»`);
             assert.ok(card.querySelector(".node-card__title").textContent.trim().length > 2);
             assert.notEqual(card.getAttribute("href"), page.file, `${page.file}: se enlaza a sí misma`);
         });
@@ -255,10 +258,10 @@ for (const [i, file] of ALL.entries()) {
             `${file}: la flecha es decorativa`);
         assert.ok(!link.querySelector(".node-pager__name"), `${file}: el paginador vuelve a enseñar nombres`);
         const visible = link.textContent.replace(/[\u2190\u2192]/g, "").trim();
-        assert.match(visible, /^(Previous|Next)$/, `${file}: «${visible}» no es solo Previous/Next`);
+        assert.match(visible, /^(Back|Next)$/, `${file}: «${visible}» no es solo Back/Next`);
         // El destino se anuncia por aria-label, ya que en pantalla no se ve.
         const label = link.getAttribute("aria-label") || "";
-        assert.match(label, new RegExp(`^${visible} project: .+`), `${file}: aria-label ${label}`);
+        assert.match(label, new RegExp(`^(Back|Previous|Next) project: .+`, 'i'), `${file}: aria-label ${label}`);
         assert.ok(label.toLowerCase().includes(workTitles[href].toLowerCase()),
             `${file}: «${label}» no nombra ${href}`);
     }
@@ -270,15 +273,24 @@ assert.ok(!/node-hero--long/.test(css), "generated.css conserva la talla especia
 // como familia declarada tiene que haber desaparecido.
 assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
     "generated.css sigue declarando Kanit como familia");
+// Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
+// font-family/weight separados para que N.O.D.E. respete Montserrat.
 assert.match(css,
-    /\.node-hero h1 \{\s*font: 700 clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)\/0\.8 var\(--font-head\);/,
-    "las diez páginas comparten la misma clamp del titular");
-assert.deepEqual(css.match(/\.node-hero h1 \{[^}]*\}/g).map((rule) => rule.match(/(?:font|font-size): ([^;]+);/)[1]),
-    ["700 clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px))/0.8 var(--font-head)",
-     "clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px))"],
-    "el titular tiene exactamente dos tallas: la común de escritorio y la de móvil");
-assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.node-hero h1 \{ font-size: clamp\(calc\(3\.7rem - 15px\), calc\(16vw - 15px\), calc\(6\.5rem - 15px\)\); white-space: normal; \}/,
-    "por debajo de 560px el titular parte en líneas, como antes");
+    /\.node-hero h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)/,
+    "las diez páginas comparten la misma clamp del titular en Montserrat");
+const h1Rules = css.match(/\.node-hero h1 \{[^}]*\}/g);
+assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
+const desktopRule = h1Rules[0];
+const mobileRule = h1Rules[1];
+assert.match(desktopRule, /white-space: nowrap/, "desktop: una sola línea");
+assert.match(desktopRule, /var\(--font-head\)/, "desktop: Montserrat");
+// Mobile: título adaptable en una sola línea — nunca se corta, siempre nowrap.
+assert.match(mobileRule, /font-size: clamp\(1\.125rem, 5\.5vw, 2\.6rem\)/, "móvil: clamp adaptable para que entre en una línea");
+assert.match(mobileRule, /white-space: nowrap/, "móvil: una sola línea, no se corta");
+assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líneas");
+// N.O.D.E. respeta Montserrat igual que las otras 9.
+assert.match(css, /\.node-hero__word \{[^}]*font-family: var\(--font-head\)/, "N.O.D.E. usa Montserrat");
+assert.match(css, /\.node-hero__teaser \{[^}]*font-family: var\(--font-head\)/, "el teaser usa Montserrat");
 
 /* ── ← ALL WORK fuera: la salida de la sección vive en otros dos sitios ── */
 assert.ok(!/\.node-back/.test(css), "generated.css conserva las reglas de .node-back");

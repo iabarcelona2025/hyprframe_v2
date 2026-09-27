@@ -53,7 +53,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     isolation: isolate; overflow: hidden;
     background: var(--bg);
 }
-.node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; }
+.node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; max-width: calc(100% - 2rem); }
 /* One size for the ten titles of the section, and the longest one sets it: the
    h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
    — 456px of the 478px available at 561px, the tightest point above the mobile
@@ -65,23 +65,30 @@ body.menu-open .menu-overlay a { visibility: visible; }
    smaller than the 7.2vw that fitted Kanit: Montserrat's uppercase runs ~15%
    wider on these titles (+9% to +19%), and at 7.2vw DEEP needed 111% of the box.
    Anything longer than 26 characters (title + bracket) has to be re-measured
-   before shipping. */
+   before shipping.
+   Mobile (≤560px) uses a smaller, fully fluid clamp with white-space: nowrap
+   so every title — including the longest — fits in a single line without being
+   cut by the opener's overflow. */
 .node-hero h1 {
-    font: 700 clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px))/0.8 var(--font-head); /* 800 → 700 (25/09/2026) · 7.2vw → 6.4vw con Montserrat (27/09/2026) */
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px));
+    line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
-/* Dots of N.O.D.E. are drawn as pure-CSS boxes — identical size and exactly
-   baseline-anchored like the letters — so the rhythm never depends on the
-   side bearings of the font's "." glyph (which vary per font and made the
-   last dot look detached). The ±0.025em margins cancel the h1's negative
-   letter-spacing, leaving each gap equal to the letter's own side bearing. */
-.node-hero__word { white-space: nowrap; }
+/* N.O.D.E. uses the same Montserrat family as the other 9 pages: the letters
+   inherit var(--font-head) from the h1, and the dots are drawn as pure-CSS
+   boxes (identical size, baseline-anchored) so the rhythm never depends on the
+   side bearings of the font's "." glyph — which vary per font and made the
+   last dot look detached — but they inherit currentColor and sit on the
+   Montserrat baseline, so the whole word respects Montserrat metrics. */
+.node-hero__word { white-space: nowrap; font-family: var(--font-head); font-weight: 700; }
 .node-hero__dot {
     display: inline-block; width: 0.165em; height: 0.15em;
     margin: 0 0.025em;
     background: currentColor; vertical-align: baseline;
 }
-.node-hero__teaser { font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
+.node-hero__teaser { font-family: var(--font-head); font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
 .node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
 .node-hero__explore {
     display: inline-flex; align-items: center; gap: 1.75rem;
@@ -171,7 +178,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: flex; justify-content: space-between; align-items: end; gap: 2rem;
     padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
 }
-.node-related h2 { font-size: clamp(calc(3rem - 10px), calc(6.5vw - 10px), calc(7rem - 10px)); }
+.node-related h2 { font-size: clamp(calc(3rem - 25px), calc(6.5vw - 25px), calc(7rem - 25px)); }
 .node-related__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.25rem, 3.5vw, 4rem); }
 .node-card { min-width: 0; display: flex; flex-direction: column; }
 .node-card__image { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #151416; }
@@ -187,7 +194,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.2em; color: var(--muted);
 }
 .node-card__meta span:last-child { font-size: 1.25rem; line-height: 0.8; color: var(--violet); }
-.node-card__title { font: 600 clamp(1.35rem, 2.7vw, 2.65rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) */
+.node-card__title { font: 600 clamp(1.1rem, 2.2vw, 2.1rem)/1.1 var(--font-head); letter-spacing: 0.025em; } /* 700 → 600 (25/09/2026) · reducido para RELATED PROJECTS (28/09/2026) */
 .node-card:hover .node-card__title { color: var(--violet); }
 @media (max-width: 850px) {
     .node-story__grid { grid-template-columns: 1fr; gap: 2.75rem; }
@@ -198,11 +205,28 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-hero { padding-top: 7rem; }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
     .node-hero__image { height: clamp(160px, 25svh, 210px); }
-    .node-hero__title { left: 1rem; bottom: 1.5rem; }
-    .node-hero h1 { font-size: clamp(calc(3.7rem - 15px), calc(16vw - 15px), calc(6.5rem - 15px)); white-space: normal; }
-    .node-hero__teaser { display: block; margin-top: 0.7rem; font-size: calc(0.45em + 10px); }
+    .node-hero__title { left: 1rem; right: 1rem; bottom: 1.5rem; max-width: calc(100% - 2rem); }
+    /* Mobile: título adaptable en una sola línea — nunca se corta.
+       clamp(1.125rem, 5.5vw, 2.6rem) cabe en 320px para el titular más largo
+       (DEEP IN THE FOREST, 18 chars) con margen: 5.5vw@320=17.6px, floor 18px,
+       ~11.7×font para Montserrat 700 uppercase → ~210px en 248px disponibles.
+       white-space: nowrap garantiza una sola línea; el teaser va debajo en
+       bloque pequeño para no competir por ancho. */
+    .node-hero h1 {
+        font-size: clamp(1.125rem, 5.5vw, 2.6rem);
+        white-space: nowrap;
+        letter-spacing: -0.02em;
+        line-height: 0.9;
+    }
+    .node-hero__word { white-space: nowrap; }
+    .node-hero__teaser {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: calc(0.5em + 6px);
+        white-space: nowrap;
+    }
     .node-hero__explore { font-size: 0.56rem; }
-    .node-related h2 { font-size: clamp(calc(2.9rem - 10px), calc(10vw - 10px), calc(4.8rem - 10px)); }
+    .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; }
