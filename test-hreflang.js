@@ -1,6 +1,6 @@
 // Run with: node --test test-hreflang.js
-// Public language pairs are prepared for launch; staging noindex is intentionally
-// left in place. Builder remains non-indexable even after launch, as do 404 pages.
+// Launch state: the staging noindex has been removed, so public EN/ES pages must
+// be indexable. Builder and 404 pages remain non-indexable on purpose.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -52,6 +52,18 @@ for (const page of pages) {
                 const backLink = versions[link.lang].alternates.find(item => item.lang === lang);
                 assert.equal(backLink?.href, urls[lang], "Target must link back to this language version");
             }
+        }
+    });
+}
+
+for (const page of pages) {
+    test(`${page}: public EN/ES versions are indexable after launch`, () => {
+        for (const file of [page, "es/" + page]) {
+            const version = readPage(file);
+            assert.ok(
+                !version.robots.some(content => /\bnoindex\b/i.test(content)),
+                `${file} must not carry noindex once the site is live`
+            );
         }
     });
 }
