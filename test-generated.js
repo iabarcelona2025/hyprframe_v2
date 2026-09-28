@@ -440,6 +440,15 @@ assert.match(css,
     /\.node-story__all \{[^}]*margin-left: auto;[^}]*margin-bottom: clamp\(2\.5rem, 5vw, 4rem\);/,
     "el enlace se alinea con la sinopsis y se acerca a la línea gris");
 
+/* ── Móvil: el vídeo ocupa el ancho de la línea gris que abre THE STORY ── */
+const mobileBlock = css.match(/@media \(max-width: 560px\) \{[\s\S]*?\n\}/)[0];
+assert.match(mobileBlock, /\.node-player \{ width: 100%; \}/,
+    "en móvil la caja del vídeo debe crecer hasta el ancho del contenido (la línea de 1px)");
+assert.match(ruleOf(generatedFlat, ".node-player"), /width: 85\.5%;/,
+    "fuera de móvil el vídeo sigue al 85,5% centrado");
+assert.match(ruleOf(generatedFlat, ".node-player"), /aspect-ratio: 16 \/ 9;/,
+    "el alto crece en proporción porque la caja conserva su aspect-ratio");
+
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
 for (const file of ALL) {
     const es = read(`es/${file}`);

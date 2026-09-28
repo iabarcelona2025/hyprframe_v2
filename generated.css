@@ -230,6 +230,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
+    /* Móvil: la caja del vídeo crece hasta el ancho de la línea gris de 1px que
+       abre THE STORY (.node-section-label, que va de borde a borde del contenido).
+       En escritorio sigue al 85,5% centrada; aquí ocupa el 100% de la columna y
+       el aspect-ratio 16/9 la agranda en la misma proporción en alto, con el
+       botón de play igual de centrado. (28/09/2026) */
+    .node-player { width: 100%; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
     .node-pager { gap: 0.8rem; padding-bottom: 1rem; }
     .node-pager__link { gap: 0.4rem; }
