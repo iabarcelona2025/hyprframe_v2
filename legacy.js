@@ -2,6 +2,58 @@
 (() => {
     "use strict";
 
+    /* ── Custom cursor (same behaviour as index.html and the Generated pages) ── */
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const dot = document.getElementById("cursorDot");
+    const ring = document.getElementById("cursorRing");
+
+    if (!isTouch && !reduced && dot && ring) {
+        /* El cursor arranca donde se quedó el ratón la última vez: al volver con
+           atrás/adelante del navegador la página se recarga y la cruceta
+           aparecía en el centro hasta que el usuario movía el ratón. */
+        const CURSOR_KEY = "hfCursor";
+        let mx = innerWidth / 2, my = innerHeight / 2;
+        try {
+            const saved = sessionStorage.getItem(CURSOR_KEY);
+            if (saved) {
+                const parts = saved.split(",");
+                const sx = Number(parts[0]), sy = Number(parts[1]);
+                if (Number.isFinite(sx) && Number.isFinite(sy)) {
+                    // Acotado por si la ventana cambió de tamaño entre recargas.
+                    mx = Math.min(Math.max(sx, 0), innerWidth);
+                    my = Math.min(Math.max(sy, 0), innerHeight);
+                }
+            }
+        } catch (err) { /* storage bloqueado: se queda el centro */ }
+        let rx = mx, ry = my;
+        let savedX = mx, savedY = my;
+
+        addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
+
+        (function cursorLoop() {
+            rx += (mx - rx) * 0.16;
+            ry += (my - ry) * 0.16;
+            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+            // Guarda la posición (como mucho una escritura por frame) para que la
+            // siguiente carga —atrás/adelante incluidos— arranque desde aquí.
+            if (mx !== savedX || my !== savedY) {
+                savedX = mx; savedY = my;
+                try { sessionStorage.setItem(CURSOR_KEY, `${mx},${my}`); } catch (err) {}
+            }
+            requestAnimationFrame(cursorLoop);
+        })();
+
+        // En Captured los interactivos son los enlaces (tarjetas de película, nav,
+        // menú) y los botones (hamburguesa, cerrar el modal): el selector genérico
+        // ya los cubre, igual que en la landing y en las fichas GENERATED.
+        document.querySelectorAll("a, button, .service-row, input, textarea").forEach((el) => {
+            el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
+            el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
+        });
+    }
+
     const header = document.getElementById("siteHeader");
     const progress = document.getElementById("scrollProgress");
     const burger = document.getElementById("burger");
