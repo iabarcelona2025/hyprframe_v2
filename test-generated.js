@@ -173,15 +173,15 @@ for (const page of PAGES) {
             `${page.file}: la cabecera no es la de la landing`);
         assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "HYPRFRAME / GENERATED");
         // La fila superior del opener lleva solo el kicker: ← ALL WORK se fue
-        // (el paginador arriba y VIEW ALL WORK ↗ bajo la sinopsis ya cubren la salida).
+        // (el paginador arriba y VIEW ALL ↗ bajo la sinopsis ya cubren la salida).
         assert.ok(!doc.querySelector(".node-back"), `${page.file}: sigue el enlace ← ALL WORK`);
         assert.equal(doc.querySelector(".node-hero__top").children.length, 1,
             `${page.file}: la fila del kicker lleva más de un elemento`);
         assert.equal(doc.querySelector(".node-hero__explore").getAttribute("href"), "#film");
-        // VIEW ALL WORK ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
+        // VIEW ALL ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
         const all = doc.querySelector(".node-story__all");
         assert.equal(all.getAttribute("href"), "index.html#work");
-        assert.equal(all.textContent.trim(), "VIEW ALL WORK ↗");
+        assert.equal(all.textContent.trim(), "VIEW ALL ↗");
         assert.equal(all.parentElement.className, "node-story",
             `${page.file}: el enlace no cierra THE STORY`);
         assert.equal(all.previousElementSibling.className, "node-story__grid",
@@ -432,12 +432,20 @@ assert.match(css, /\.node-hero__teaser \{[^}]*font-family: var\(--font-head\)/, 
 assert.ok(!/\.node-back/.test(css), "generated.css conserva las reglas de .node-back");
 assert.ok(!/class="node-back"/.test(read("project-node.html")), "project-node.html conserva el enlace ← ALL WORK");
 
-/* ── VIEW ALL WORK ↗ cierra THE STORY en las diez páginas ── */
+/* ── VIEW ALL ↗ cierra THE STORY en las diez páginas ── */
 assert.ok(css.includes(".node-story__all"), "generated.css no da estilo al enlace bajo la sinopsis");
 assert.ok(!/\.node-related__heading > a/.test(css),
     "generated.css conserva el estilo del enlace junto a RELATED PROJECTS");
 assert.match(css,
     /\.node-story__all \{[^}]*margin-left: auto;[^}]*margin-bottom: clamp\(2\.5rem, 5vw, 4rem\);/,
     "el enlace se alinea con la sinopsis y se acerca a la línea gris");
+
+/* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
+for (const file of ALL) {
+    const es = read(`es/${file}`);
+    assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
+        `es/${file}: el enlace de salida no es VER TODO ↗`);
+    assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
+}
 
 console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
