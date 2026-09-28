@@ -765,13 +765,24 @@ section { position: relative; }
 .work { padding-bottom: clamp(4rem, 10vw, 8rem); }
 .work-list { border-top: 1px solid var(--line); }
 .work-row {
+    /* El alto de la fila lo determina la flecha (font-size × line-height 1.65).
+       Sumamos un 7,5% del alto en cada lado al abrir: 15% de alto total,
+       sin escalar el texto ni recortar el fotograma. */
+    --work-row-pad: clamp(1.4rem, 3.2vw, 2.4rem);
+    --work-row-content-h: clamp(1.98rem, 3.96vw, 2.97rem);
     display: grid;
     grid-template-columns: 5.5rem 1fr auto;
     align-items: center; gap: 1.5rem;
-    padding: clamp(1.4rem, 3.2vw, 2.4rem) var(--pad);
+    padding: var(--work-row-pad) var(--pad);
     border-bottom: 1px solid var(--line);
     position: relative;
-    transition: padding-left 0.5s var(--ease-out), background 0.5s;
+    transition: padding-block 0.55s var(--ease-out), padding-left 0.5s var(--ease-out), background 0.5s;
+}
+.work-row:hover, .work-row:focus-visible {
+    /* Foto y degradado arrancan primero; solo la apertura espera 0,3 s.
+       Al salir, la caja vuelve a su tamaño sin demora. */
+    transition-delay: 0.3s, 0s, 0s;
+    padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075);
 }
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
