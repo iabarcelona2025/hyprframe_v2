@@ -39,6 +39,7 @@ console.log(`${missingInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap cubre lo
 console.log(`${unexpectedInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap sin páginas no indexables; builder listado: ${unexpectedInSitemap.length ? unexpectedInSitemap.join(", ") : "no"}`);
 console.log(`     sitemap: ${locs.length} URLs, ${locs.filter(l => l.includes("/es/")).length} en /es/`);
 if (missingInSitemap.length) fail++;
+if (unexpectedInSitemap.length) fail++;
 
 console.log(fail === 0 ? "\nRESULTADO: TODO OK" : `\nRESULTADO: ${fail} FALLOS`);
 process.exit(fail === 0 ? 0 : 1);
