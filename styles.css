@@ -796,7 +796,31 @@ section { position: relative; }
     transition: opacity 0.55s var(--ease-out), transform 0.9s var(--ease-out);
     pointer-events: none; z-index: 0;
 }
-.work-row:hover::after { opacity: 1; transform: scale(1); }
+.work-row:hover::after, .work-row:focus-visible::after { opacity: 1; transform: scale(1); }
+
+/* El fotograma se descubre en bandas inclinadas ~12° respecto a la vertical,
+   como la cursiva de la web. Componemos las bandas con el fundido lateral
+   existente; sin soporte para máscaras compuestas, queda el fade original. */
+@property --work-stripe {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+@supports (mask-composite: intersect) {
+    .work-row::after {
+        --work-stripe: 0px;
+        -webkit-mask-image:
+            linear-gradient(to left, #000 42%, transparent 98%),
+            repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+        mask-image:
+            linear-gradient(to left, #000 42%, transparent 98%),
+            repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect;
+        transition: --work-stripe 0.7s var(--ease-out), opacity 0.35s, transform 0.9s var(--ease-out);
+    }
+    .work-row:hover::after, .work-row:focus-visible::after { --work-stripe: 32px; }
+}
 
 /* Encuadre vertical a la altura de los ojos, por proyecto */
 .work-row[href*="project-distant"]::after  { background-position: center 42%; }
