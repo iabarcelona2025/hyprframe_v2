@@ -773,12 +773,21 @@ section { position: relative; }
     position: relative;
     transition: padding-left 0.5s var(--ease-out), background 0.5s;
 }
+/* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
+   izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
+   recortando el ::before con clip-path (28/09/2026). Al salir el cursor el
+   barrido se recoge de vuelta hacia la derecha. */
 .work-row::before {
     content: ""; position: absolute; inset: 0; z-index: 0;
     background: linear-gradient(90deg, rgba(160, 100, 255, 0.14), transparent 55%);
-    opacity: 0; transition: opacity 0.5s;
+    -webkit-clip-path: inset(0 0 0 100%);
+            clip-path: inset(0 0 0 100%);
+    transition: -webkit-clip-path 0.6s var(--ease-out), clip-path 0.6s var(--ease-out);
 }
-.work-row:hover::before { opacity: 1; }
+.work-row:hover::before, .work-row:focus-visible::before {
+    -webkit-clip-path: inset(0 0 0 0);
+            clip-path: inset(0 0 0 0);
+}
 
 /* Fotograma del proyecto dentro de la fila: mitad derecha,
    fundido con el degradado lila→negro del hover */
