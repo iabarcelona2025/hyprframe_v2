@@ -145,7 +145,24 @@ body.menu-open .menu-overlay a { visibility: visible; }
     position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
     background: #000; color-scheme: dark; opacity: 0;
 }
-.node-player iframe.is-ready { opacity: 1; }
+/* Inverso del reveal del index: al acabar el vídeo, sus bandas de 12°
+   se estrechan hasta descubrir el fotograma de apertura que hay debajo. */
+@property --film-stripe {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 32px;
+}
+.node-player iframe.is-ready {
+    opacity: 1;
+    -webkit-mask-image: repeating-linear-gradient(102deg, #000 0 var(--film-stripe), transparent var(--film-stripe) 32px);
+            mask-image: repeating-linear-gradient(102deg, #000 0 var(--film-stripe), transparent var(--film-stripe) 32px);
+}
+.node-player iframe.is-ending {
+    --film-stripe: 0px;
+    opacity: 0;
+    pointer-events: none;
+    transition: --film-stripe 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
+}
 .node-story { padding-top: 0; }
 .node-story__grid {
     display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);

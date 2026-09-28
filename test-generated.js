@@ -94,10 +94,16 @@ function exercisePlayer(window, doc, page) {
     assert.ok(doc.querySelector(".node-player iframe"), `${page.file}: solo Vimeo puede dar por acabada la pieza`);
     assert.equal(doc.activeElement, iframe, `${page.file}: el foco sigue en el reproductor que acaba`);
     fromVimeo(JSON.stringify({ event: "ended", data: { seconds: 171, percent: 1, duration: 171 } }), { source: iframe.contentWindow });
-    assert.equal(doc.querySelector(".node-player iframe"), null, `${page.file}: el iframe se retira al acabar`);
-    assert.equal(doc.querySelector(".node-player > img").getAttribute("src"), posterSrc, `${page.file}: vuelve el fotograma de apertura`);
+    assert.equal(doc.querySelector(".node-player iframe"), iframe, `${page.file}: el vídeo queda encima durante la salida`);
+    assert.ok(iframe.classList.contains("is-ending"), `${page.file}: se cierran las bandas del vídeo`);
+    assert.equal(iframe.getAttribute("aria-hidden"), "true", `${page.file}: el vídeo saliente no es accesible`);
+    assert.equal(doc.querySelector(".node-player > img").getAttribute("src"), posterSrc, `${page.file}: vuelve el fotograma detrás del vídeo`);
     assert.equal(doc.querySelector(".node-player > .node-player__play"), doc.getElementById("playFilm"), `${page.file}: con su botón de play`);
     assert.equal(doc.activeElement, doc.getElementById("playFilm"), `${page.file}: el foco pasa del reproductor al botón de play`);
+    const exit = new window.Event("transitionend");
+    Object.defineProperty(exit, "propertyName", { value: "opacity" });
+    iframe.dispatchEvent(exit);
+    assert.equal(doc.querySelector(".node-player iframe"), null, `${page.file}: el iframe se retira después de la animación`);
     doc.getElementById("playFilm").click();
     const replay = doc.querySelector(".node-player iframe");
     replay.contentWindow.postMessage = () => {};
@@ -107,6 +113,8 @@ function exercisePlayer(window, doc, page) {
     fromVimeo(JSON.stringify({ event: "ended" }), { source: replay.contentWindow });
     assert.ok(doc.querySelector(".node-player > img"), `${page.file}: el fotograma vuelve también tras repetir`);
     assert.equal(doc.activeElement, doc.querySelector(".node-hero__explore"), `${page.file}: no se roba el foco si el espectador está en otro sitio`);
+    replay.dispatchEvent(exit);
+    assert.equal(doc.querySelector(".node-player iframe"), null, `${page.file}: la segunda salida también se limpia`);
 }
 
 for (const page of PAGES) {
@@ -134,6 +142,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=25");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=5");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -295,8 +305,10 @@ for (const page of PAGES) {
     // El titular dibuja sus cuatro puntos con cajas CSS uniformes, sin el punto
     // final y sin el fotograma que abría la página.
     assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "los cuatro puntos del titular son cajas CSS");
-    // El opener se pinta con un color plano: si vuelve un degradado, se cuela aquí.
-    assert.ok(!/radial-gradient|linear-gradient/.test(css), "el degradado del opener ha vuelto a generated.css");
+    // El opener se pinta con un color plano (el reproductor sí usa una máscara degradada).
+    const openerRule = ruleOf(squash(stripComments(css)), ".node-hero__image");
+    assert.match(openerRule, /background: var\(--bg\);/);
+    assert.ok(!/radial-gradient|linear-gradient/.test(openerRule), "el degradado del opener ha vuelto");
     const explore = doc.querySelector(".node-hero__bottom > .node-hero__explore");
     assert.equal(explore.getAttribute("href"), "#film");
     assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"),
@@ -366,6 +378,10 @@ for (const [i, file] of ALL.entries()) {
    con los comentarios fuera. */
 const generatedFlat = squash(stripComments(css));
 const legacyFlat = squash(stripComments(read("legacy.css")));
+// Misma inclinación y paso de bandas que SELECTED WORK, pero cierre de 32 a 0.
+assert.match(css, /@property --film-stripe\s*\{[^}]*initial-value: 32px;/);
+assert.match(css, /repeating-linear-gradient\(102deg, #000 0 var\(--film-stripe\), transparent var\(--film-stripe\) 32px\)/);
+assert.match(ruleOf(generatedFlat, ".node-player iframe.is-ending"), /--film-stripe: 0px; opacity: 0; pointer-events: none;/);
 const nodeStill = ruleOf(generatedFlat, ".node-player > img");
 const legacyStill = ruleOf(legacyFlat, ".film-card__poster img");
 assert.equal(declaration(nodeStill, "filter"), declaration(legacyStill, "filter"),
@@ -455,6 +471,30 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
+    assert.match(es, /generated\.css\?v=25/);
+    assert.match(es, /generated\.js\?v=5/);
+}
+
+/* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = (query) => ({ matches: query.includes("prefers-reduced-motion") });
+    window.eval(script);
+    const doc = window.document;
+    doc.getElementById("playFilm").click();
+    const iframe = doc.querySelector(".node-player iframe");
+    window.dispatchEvent(new window.MessageEvent("message", {
+        origin: "https://player.vimeo.com", source: iframe.contentWindow, data: { event: "ready" },
+    }));
+    window.dispatchEvent(new window.MessageEvent("message", {
+        origin: "https://player.vimeo.com", source: iframe.contentWindow, data: { event: "ended" },
+    }));
+    assert.equal(doc.querySelector(".node-player iframe"), null, "reduced motion: sin transición al acabar");
+    assert.ok(doc.querySelector(".node-player > img"), "reduced motion: el fotograma vuelve de inmediato");
+    dom.window.close();
 }
 
 console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);

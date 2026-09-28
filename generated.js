@@ -129,8 +129,25 @@
                 } else if (data?.event === "ended") {
                     removeEventListener("message", onPlayerMessage);
                     const hadFocus = document.activeElement === iframe;
-                    playerBox.replaceChildren(...poster);
+                    // Devuelve el fotograma DETRÁS del iframe sin desmontarlo: mover
+                    // el iframe lo recargaría y perderíamos la imagen a enmascarar.
+                    playerBox.prepend(...poster);
                     if (hadFocus) play.focus({ preventScroll: true });
+                    if (reduced || !iframe.classList.contains("is-ready")) {
+                        iframe.remove();
+                        return;
+                    }
+                    iframe.setAttribute("aria-hidden", "true");
+                    iframe.tabIndex = -1;
+                    // Las bandas que destapaban la imagen en Selected Work se
+                    // cierran aquí sobre el vídeo, dejando el fotograma debajo.
+                    // Opacity asegura la salida si el navegador no soporta máscaras.
+                    const finishExit = () => { clearTimeout(exitTimer); iframe.remove(); };
+                    iframe.addEventListener("transitionend", (e) => {
+                        if (e.target === iframe && e.propertyName === "opacity") finishExit();
+                    });
+                    const exitTimer = setTimeout(finishExit, 850); // pestaña oculta / sin transitionend
+                    iframe.classList.add("is-ending");
                 }
             }
             addEventListener("message", onPlayerMessage);
