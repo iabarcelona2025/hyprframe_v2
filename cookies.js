@@ -3,10 +3,10 @@
    Widget autónomo (vanilla JS, sin dependencias). Inyecta el banner y
    guarda la decisión del visitante en localStorage.
 
-   NO toca Google Analytics: el gtag.js de legacy.html y project-node.html
-   se mantiene tal cual, y este widget nunca inyecta un segundo gtag.
-   Aquí solo se registra la preferencia (window.HFCookies.consent), lista
-   para cablearla a lo que se decida (p. ej. Consent Mode de Google).
+   NO toca Google Analytics: el gtag.js de legacy.html y las páginas de
+   proyecto se mantiene tal cual, y este widget nunca inyecta un segundo
+   gtag. Registra la preferencia (window.HFCookies.consent) y la comunica
+   a Google vía Consent Mode v2 (ver el interruptor más abajo).
    ═══════════════════════════════════════════════════════════ */
 (() => {
     "use strict";
@@ -14,12 +14,13 @@
     const STORAGE_KEY = "hfCookieConsent";
     const REMEMBER_MS = 180 * 24 * 60 * 60 * 1000; // se vuelve a preguntar a los 6 meses
 
-    /* ── Consent Mode v2 de Google — APAGADO ────────────────
+    /* ── Consent Mode v2 de Google — ACTIVADO ───────────────
        El interruptor vive en el <head> de cada página, justo encima del
-       gtag.js: `window.HYPRFRAME_CONSENT_MODE = false`.
-       Para activarlo al pasar a producción basta con ponerlo a true: los
-       consent defaults se declararán antes de cargar gtag y este widget
-       comunicará la decisión del visitante. El gtag.js no se modifica. */
+       gtag.js: `window.HYPRFRAME_CONSENT_MODE = true` declara los consent
+       defaults globales en 'denied' (Google no deja cookies hasta que el
+       visitante acepta) y este widget comunica la decisión con
+       gtag('consent','update'). Con false el cableado se apaga sin tocar
+       el gtag.js. */
     const CONSENT_MODE = window.HYPRFRAME_CONSENT_MODE === true;
 
     function applyConsent(value) {

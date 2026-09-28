@@ -19,8 +19,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const inlineScripts = (html) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 
-function boot(page, storage = null, blockStorage = false) {
-    const html = fs.readFileSync(path.join(root, page), "utf8");
+// transform (opcional) reescribe el HTML antes de montar la página:
+// sirve para simular el interruptor apagado sin tocar los archivos.
+function boot(page, storage = null, blockStorage = false, transform = null) {
+    let html = fs.readFileSync(path.join(root, page), "utf8");
+    if (transform) html = transform(html);
     const dom = new JSDOM(html, {
         url: `http://localhost:8080/${page}`,
         pretendToBeVisual: true,
@@ -147,36 +150,79 @@ const consentOf = (window) => {
     check("cookies.js no inyecta googletagmanager por su cuenta",
         !/googletagmanager\.com/.test(cookiesJs));
 
-    /* ── 11. Consent Mode APAGADO (estado por defecto) ── */
+    /* ── 11. Consent Mode ENCENDIDO (estado en producción) ── */
     const consentUpdates = (w) => (w.dataLayer || [])
         .filter((a) => a[0] === "consent" && a[1] === "update")
         .map((a) => a[2]);
+    const consentDefaults = (w) => (w.dataLayer || [])
+        .filter((a) => a[0] === "consent" && a[1] === "default")
+        .map((a) => a[2]);
 
-    check("El interruptor se envía apagado en legacy.html",
-        /window\.HYPRFRAME_CONSENT_MODE\s*=\s*false/.test(fs.readFileSync(path.join(root, "legacy.html"), "utf8")));
-    check("El interruptor se envía apagado en project-node.html",
-        /window\.HYPRFRAME_CONSENT_MODE\s*=\s*false/.test(fs.readFileSync(path.join(root, "project-node.html"), "utf8")));
-
-    // El bloque de consent defaults tiene que ir ANTES que el gtag.js.
-    for (const page of ["legacy.html", "project-node.html"]) {
+    // Las 26 páginas envían el interruptor encendido, con defaults 'denied'
+    // globales (sin restricción de región: todo el EEE queda cubierto), y el
+    // bloque va ANTES del gtag.js cuando la página lo carga.
+    const projectPages = [
+        "project-asics.html", "project-deep.html", "project-distant.html",
+        "project-exit.html", "project-farewell.html", "project-iad.html",
+        "project-node.html", "project-polestar5.html", "project-ryuu.html",
+        "project-stained.html",
+    ];
+    const allPages = [
+        "index.html", "legacy.html", "builder.html", ...projectPages,
+        "es/index.html", "es/legacy.html", "es/builder.html",
+        ...projectPages.map((p) => "es/" + p),
+    ];
+    for (const page of allPages) {
         const src = fs.readFileSync(path.join(root, page), "utf8");
+        const defaultBlock = (src.match(/gtag\('consent', 'default', \{[\s\S]*?\}\)/) || [""])[0];
         const flagAt = src.indexOf("window.HYPRFRAME_CONSENT_MODE");
         const gtagAt = src.indexOf("googletagmanager.com/gtag/js");
-        check(`${page}: el interruptor va antes que gtag.js`,
-            flagAt !== -1 && gtagAt !== -1 && flagAt < gtagAt);
+        check(`${page}: interruptor encendido y defaults denied globales`,
+            /window\.HYPRFRAME_CONSENT_MODE\s*=\s*true/.test(src) &&
+            defaultBlock.includes("'analytics_storage': 'denied'") &&
+            defaultBlock.includes("'ad_storage': 'denied'") &&
+            !defaultBlock.includes("'region'"));
+        if (gtagAt !== -1) {
+            check(`${page}: el interruptor va antes que gtag.js`,
+                flagAt !== -1 && flagAt < gtagAt);
+        }
     }
 
     ctx = boot("legacy.html");
-    check("Consent Mode: apagado por defecto", ctx.window.HYPRFRAME_CONSENT_MODE === false);
+    check("Consent Mode: encendido por defecto", ctx.window.HYPRFRAME_CONSENT_MODE === true);
+    check("Defaults denied emitidos antes de que llegue gtag",
+        consentDefaults(ctx.window).length === 1 &&
+        consentDefaults(ctx.window)[0]?.analytics_storage === "denied" &&
+        consentDefaults(ctx.window)[0]?.ad_storage === "denied",
+        JSON.stringify(consentDefaults(ctx.window)));
     ctx.window.eval(cookiesJs);
     await wait(60);
     ctx.doc.querySelector(".cookie-accept").click();
     await wait(50);
-    check("Consent Mode OFF: aceptar NO emite consent update",
+    check("ON por defecto: aceptar emite consent update granted",
+        consentUpdates(ctx.window).length === 1 &&
+        consentUpdates(ctx.window)[0]?.analytics_storage === "granted",
+        JSON.stringify(consentUpdates(ctx.window)));
+
+    /* ── 11b. Interruptor apagado a mano (modo OFF simulado) ── */
+    const switchOff = (html) => html.replace(
+        "window.HYPRFRAME_CONSENT_MODE = true;",
+        "window.HYPRFRAME_CONSENT_MODE = false;"
+    );
+    ctx = boot("legacy.html", null, false, switchOff);
+    check("OFF simulado: no se emiten consent defaults",
+        consentDefaults(ctx.window).length === 0);
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    ctx.doc.querySelector(".cookie-accept").click();
+    await wait(50);
+    check("OFF simulado: aceptar NO emite consent update",
         consentUpdates(ctx.window).length === 0,
         JSON.stringify(consentUpdates(ctx.window)));
 
-    /* ── 12. Consent Mode ENCENDIDO (simula el paso a producción) ── */
+    /* ── 12. Consent Mode ENCENDIDO — comportamiento del widget ──
+       (redundante a propósito: la sección 11 ya comprueba el estado por
+       defecto; aquí se fuerza el flag para aislar cookies.js del HTML) */
     ctx = boot("legacy.html");
     ctx.window.HYPRFRAME_CONSENT_MODE = true;
     ctx.window.eval(cookiesJs);

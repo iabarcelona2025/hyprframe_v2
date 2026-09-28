@@ -136,7 +136,7 @@ for (const page of PAGES) {
         /* ── Cabecera: analítica, consentimiento y estilos de la sección ── */
         assert.match(html, /gtag\('config', 'G-6MW201KGC9'\)/, `${page.file}: falta el gtag`);
         assert.equal(doc.querySelectorAll('script[src*="googletagmanager.com/gtag/js"]').length, 1);
-        assert.match(html, /window\.HYPRFRAME_CONSENT_MODE\s*=\s*false/);
+        assert.match(html, /window\.HYPRFRAME_CONSENT_MODE\s*=\s*true/);
         assert.ok(html.indexOf("window.HYPRFRAME_CONSENT_MODE") < html.indexOf("googletagmanager.com/gtag/js"),
             `${page.file}: el interruptor de consentimiento va antes que gtag.js`);
         for (const style of ["styles.css", "generated.css"]) {
