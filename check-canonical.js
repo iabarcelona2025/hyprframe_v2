@@ -25,12 +25,18 @@ const robots404 = d404.querySelector('meta[name="robots"]')?.getAttribute("conte
 console.log(`${n404 === 0 ? "OK  " : "FAIL"} 404.html               canonical=${n404} (esperado 0) robots="${robots404}"`);
 if (n404 !== 0) fail++;
 
-// sitemap: parseo y contraste con los canonicals
+// sitemap: parseo y contraste con los canonicals.
+// builder.html queda fuera a propósito: es accesible pero no indexable, así que
+// no debe anunciarse en el sitemap (los buscadores lo descubren por enlaces).
 const sm = fs.readFileSync("sitemap.xml", "utf8");
 const locs = [...sm.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
-const canon = pages.map(f => f === "index.html" ? "https://hyprframe.com/" : `https://hyprframe.com/${f}`);
+const canon = pages
+  .filter(f => f !== "builder.html")
+  .map(f => f === "index.html" ? "https://hyprframe.com/" : `https://hyprframe.com/${f}`);
 const missingInSitemap = canon.filter(c => !locs.includes(c));
-console.log(`${missingInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap cubre los 13 canonical EN; faltan: ${missingInSitemap.length ? missingInSitemap.join(", ") : "ninguna"}`);
+const unexpectedInSitemap = locs.filter(l => /\/builder\.html$/.test(l));
+console.log(`${missingInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap cubre los ${canon.length} canonical EN indexables; faltan: ${missingInSitemap.length ? missingInSitemap.join(", ") : "ninguna"}`);
+console.log(`${unexpectedInSitemap.length === 0 ? "OK  " : "FAIL"} sitemap sin páginas no indexables; builder listado: ${unexpectedInSitemap.length ? unexpectedInSitemap.join(", ") : "no"}`);
 console.log(`     sitemap: ${locs.length} URLs, ${locs.filter(l => l.includes("/es/")).length} en /es/`);
 if (missingInSitemap.length) fail++;
 
