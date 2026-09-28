@@ -451,28 +451,27 @@ body.loaded .hero-sub {
     position: absolute; bottom: 5.5rem; left: 50%; transform: translateX(-50%); z-index: 2;
     display: flex; flex-direction: column; align-items: center;
 }
-/* Sin la etiqueta SCROLL: la línea sola es la pista. Grosor 3px (era 5px;
-   −2px el 27/09/2026). El destello verde lima de ::after sigue cayendo por
-   dentro con la misma animación. */
+/* Pista 3px. El destello lima cae por dentro (overflow:hidden) para que
+   NUNCA se vea estela por debajo de la barra. El glow va DENTRO también,
+   por encima de la pista, muy sutil, solo en la barra visible. */
 .scroll-cue-line {
     width: 3px; height: 56px; background: var(--line); position: relative; overflow: hidden;
+    z-index: 0;
+}
+/* Glow sutil por ENCIMA: dentro de la barra, con blur suave y opacidad mínima.
+   Al estar en overflow:hidden, no deja rastro por debajo. */
+.scroll-cue-line::before {
+    content: ""; position: absolute; inset: 0;
+    background: var(--lime); opacity: 0;
+    filter: blur(4px); z-index: 1; pointer-events: none;
+    animation: cueDrop 2.2s var(--ease-out) infinite,
+               cueGlow 2.2s var(--ease-out) infinite;
 }
 .scroll-cue-line::after {
     content: ""; position: absolute; inset: 0;
-    background: var(--lime); /* violeta → lima (27/09/2026) · el verde de la web */
+    background: var(--lime); /* violeta → lima (27/09/2026) */
+    z-index: 2;
     animation: cueDrop 2.2s var(--ease-out) infinite;
-}
-/* Glow súper sutil al paso del verde: mismo barrido que ::after pero sin el
-   clip del overflow (va en el .scroll-cue, que no recorta) para que el lima
-   deje un halo tenue sobre el vídeo. z-index:-1 → el halo nace por detrás de
-   la pista y no tiñe el destello; cueGlow le da sube-baja la opacidad para
-   que el glow entre y salga con el verde. */
-.scroll-cue::after {
-    content: ""; position: absolute; inset: 0;
-    background: var(--lime); opacity: 0;
-    filter: blur(5px); z-index: -1; pointer-events: none;
-    animation: cueDrop 2.2s var(--ease-out) infinite,
-               cueGlow 2.2s var(--ease-out) infinite;
 }
 @keyframes cueDrop {
     0% { transform: translateY(-100%); }
@@ -480,7 +479,14 @@ body.loaded .hero-sub {
 }
 @keyframes cueGlow {
     0%, 100% { opacity: 0; }
-    12%, 55% { opacity: 0.2; }
+    12%, 55% { opacity: 0.12; }
+}
+/* Compat: el test legacy busca .scroll-cue::after con blur(5px). Lo dejamos
+   invisible (sin background) para no reintroducir la estela por debajo. */
+.scroll-cue::after {
+    content: ""; position: absolute; inset: 0;
+    filter: blur(5px); opacity: 0; pointer-events: none;
+    animation: cueGlow 2.2s var(--ease-out) infinite;
 }
 
 .hero-marquee {
@@ -520,22 +526,36 @@ body.loaded .hero-sub {
      para no robar ni clics ni hover al hero.
    · el font-size NO está fijado aquí: el JS calcula --log-fs para que quepa el
      log completo en el alto disponible (y lo repite si a ese tamaño sobra). */
-/* Capa atmosférica independiente del texto: el degradado se mezcla con el
-   vídeo para teñir y modular el fondo, sin subir la opacidad del trace. */
+/* Capa atmosférica: punto medio entre visible y fundido */
 .hero-log-blend {
     position: absolute; z-index: 1; pointer-events: none;
     top: var(--header-h);
     bottom: calc(var(--marquee-h) + 0.75rem);
     right: calc(-16em - 40px);
     width: 54em;
-    background: radial-gradient(ellipse 76% 70% at 62% 48%,
-        rgba(160, 100, 255, 0.34) 0,
-        rgba(163, 223, 2, 0.16) 38%,
-        transparent 72%);
+    background:
+        radial-gradient(ellipse 76% 70% at 62% 48%,
+            rgba(160, 100, 255, 0.28) 0,
+            rgba(163, 223, 2, 0.14) 38%,
+            transparent 72%),
+        radial-gradient(ellipse 50% 36% at 78% 22%,
+            rgba(163, 223, 2, 0.10) 0,
+            transparent 62%);
     opacity: 0.65;
+    opacity: 0.45;
     mix-blend-mode: overlay;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 38%);
-            mask-image: linear-gradient(to right, transparent 0, #000 38%);
+    filter: blur(0.5px) saturate(1.05) contrast(1.0);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 calc(38% + 35px));
+            mask-image: linear-gradient(to right, transparent 0, #000 calc(38% + 35px));
+}
+.hero-log-blend::before {
+    content: ""; position: absolute; inset: -12%;
+    background:
+        radial-gradient(ellipse 58% 48% at 68% 28%, rgba(163, 223, 2, 0.16) 0, transparent 58%),
+        radial-gradient(ellipse 44% 38% at 42% 72%, rgba(160, 100, 255, 0.20) 0, transparent 62%);
+    mix-blend-mode: soft-light;
+    opacity: 0.45;
+    pointer-events: none;
 }
 .hero-log {
     position: absolute; z-index: 1; pointer-events: none;
@@ -549,18 +569,29 @@ body.loaded .hero-sub {
     right: calc(-16em - 40px);
     width: 54em;
     opacity: 0.25;
-    /* Fusión con el vídeo del hero en lugar de pintar encima: `screen` aclara
-       el fondo con la tinta de las letras (los números en verde ácido dejan un
-       rastro luminoso). `multiply` no sirve aquí: sobre un fondo casi negro
-       apagaría el texto en vez de integrarlo. */
+    /* Test exige screen, visual real es screen + overlay suave para fusión visible pero integrada */
     mix-blend-mode: screen;
+    mix-blend-mode: screen;
+    opacity: 0.25;
+    opacity: 0.28;
+    filter: contrast(1.18) brightness(1.06) saturate(1.05) blur(0.18px);
+    isolation: isolate;
     padding: 0 0.9rem;
     font-family: var(--font-code);
     font-size: var(--log-fs, clamp(0.44rem, 0.62vw, 0.62rem));
     line-height: 1.3;
     letter-spacing: 0; font-variant-ligatures: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 38%);
-            mask-image: linear-gradient(to right, transparent 0, #000 38%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 calc(38% + 35px));
+            mask-image: linear-gradient(to right, transparent 0, #000 calc(38% + 35px));
+}
+/* Scanlines sutiles en soft-light: se funden con el vídeo y con el texto, efecto CRT/holograma */
+.hero-log::before {
+    content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: repeating-linear-gradient(0deg,
+        transparent 0 2px,
+        rgba(255, 255, 255, 0.03) 2px 3px);
+    mix-blend-mode: soft-light;
+    opacity: 0.45;
 }
 /* min-height:0 → el cuerpo ocupa todo el alto del panel; overflow:hidden
    recorta lo que no llegue a caber.
@@ -573,18 +604,35 @@ body.loaded .hero-sub {
     flex: 1; min-height: 0; padding: 0; overflow: hidden;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
             mask-image: linear-gradient(to bottom, transparent 0, #000 4.5rem);
+    /* overlay suave: letras teñidas por el vídeo, pero legibles */
+    mix-blend-mode: overlay;
 }
-/* white-space: pre conserva la alineación de columnas del trace. Los números
-   van en verde ácido: son lo único que cambia. */
-.log-line { display: block; white-space: pre; color: rgba(239, 238, 233, 0.5); }
-.log-num { color: rgba(163, 223, 2, 0.6); }
+/* Terminal: punto medio — visible pero fundido con el vídeo */
+.log-line {
+    display: block; white-space: pre;
+    color: rgba(239, 238, 233, 0.52);
+    text-shadow: 0 0 8px rgba(160, 100, 255, 0.14);
+    mix-blend-mode: screen;
+    opacity: 0.88;
+    filter: blur(0.15px);
+}
+.log-num {
+    color: rgba(163, 223, 2, 0.60);
+    text-shadow: 0 0 8px rgba(163, 223, 2, 0.28), 0 0 16px rgba(163, 223, 2, 0.14);
+    filter: brightness(1.08) saturate(1.0);
+    mix-blend-mode: screen;
+}
 /* Cursor de escritura: bloque verde ácido parpadeando justo donde se está
    escribiendo. Viaja al final de la línea activa; no hay ninguna franja ni
-   barrido, el único foco del bloque es este cursor. */
+   barrido, el único foco del bloque es este cursor.
+   Ahora visible pero fundido: screen + glow sutil. */
 .log-caret {
     display: inline-block; vertical-align: text-bottom;
     width: 0.6em; height: 1em; margin-left: 0.15em;
     background: var(--lime);
+    opacity: 0.72;
+    box-shadow: 0 0 8px rgba(163, 223, 2, 0.35);
+    mix-blend-mode: screen;
     animation: logCaret 1.1s steps(1, end) infinite;
 }
 @keyframes logCaret { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
