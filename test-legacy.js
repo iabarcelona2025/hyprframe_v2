@@ -13,6 +13,12 @@ const dom = new JSDOM(html, {
 });
 const { window } = dom;
 const doc = window.document;
+/* --- minimal browser API stubs jsdom lacks --- */
+window.matchMedia = (q) => ({
+    matches: false, media: q,
+    addEventListener() {}, removeEventListener() {},
+    addListener() {}, removeListener() {},
+});
 const indexDoc = new JSDOM(index).window.document;
 const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
@@ -81,6 +87,22 @@ try {
     assert.match(playRule, /translate: -50% -50%;/);
     assert.doesNotMatch(playRule, /transform:/, "the hover scale must not drift the circle off the poster centre");
 
+    /* ── Custom cursor: el mismo que en la landing y en las fichas GENERATED ── */
+    assert.match(script, /const CURSOR_KEY = "hfCursor"/, "legacy.js guarda la posición del cursor");
+    assert.match(script, /sessionStorage\.getItem\(CURSOR_KEY\)/, "legacy.js restaura la posición del cursor al cargar");
+    assert.match(script, /sessionStorage\.setItem\(CURSOR_KEY/, "legacy.js persiste la posición del cursor al mover el ratón");
+    assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"),
+        "la página lleva los dos nodos del cursor");
+    for (const id of ["cursorDot", "cursorRing"]) {
+        assert.equal(doc.getElementById(id).getAttribute("aria-hidden"), "true", `${id} es decorativo`);
+    }
+    // La cruceta (styles.css, z-index 9999) debe pintar por encima del modal de vídeo,
+    // que es a pantalla completa: si no, el efecto desaparece mientras se ve una película.
+    const stylesCss = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+    const cursorZ = Number(stylesCss.match(/\.cursor-dot, \.cursor-ring \{[^}]*z-index: (\d+)/)[1]);
+    const modalZ = Number(legacyCss.match(/\.film-modal \{[^}]*z-index: (\d+)/)[1]);
+    assert.ok(cursorZ > modalZ, `el cursor (${cursorZ}) debe quedar por encima del modal (${modalZ})`);
+
     window.eval(script);
     const burger = doc.getElementById("burger");
     const menu = doc.getElementById("menuOverlay");
@@ -91,6 +113,16 @@ try {
     const key = (name, shiftKey = false) => doc.dispatchEvent(new window.KeyboardEvent("keydown", {
         key: name, shiftKey, bubbles: true, cancelable: true,
     }));
+
+    // El cursor crece sobre los interactivos: las tarjetas de película son <a> y el
+    // cierre del modal es <button>, los dos cubiertos por el selector genérico.
+    firstCard.dispatchEvent(new window.MouseEvent("mouseenter", { bubbles: false }));
+    assert.ok(doc.body.classList.contains("cursor-large"), "hover sobre una tarjeta agranda el cursor");
+    firstCard.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
+    assert.ok(!doc.body.classList.contains("cursor-large"), "mouseleave restaura el cursor");
+    closeButton.dispatchEvent(new window.MouseEvent("mouseenter", { bubbles: false }));
+    assert.ok(doc.body.classList.contains("cursor-large"), "hover sobre el cierre del modal agranda el cursor");
+    closeButton.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
 
     burger.click();
     assert.ok(doc.body.classList.contains("menu-open"));
@@ -172,6 +204,18 @@ try {
     assert.equal(image.src, image.dataset.fallbackSrc, "fallback to the real Vimeo thumbnail");
     image.dispatchEvent(new window.Event("error"));
     assert.ok(image.classList.contains("is-unavailable"), "poster remains legible offline");
+    // La versión ES comparte legacy.js y legacy.css por symlink: los dos nodos del
+    // cursor y las versiones de los assets no pueden desincronizarse de la EN.
+    const esHtml = fs.readFileSync(path.join(root, "es", "legacy.html"), "utf8");
+    const esDoc = new JSDOM(esHtml).window.document;
+    assert.ok(esDoc.getElementById("cursorDot") && esDoc.getElementById("cursorRing"),
+        "es/legacy.html lleva los dos nodos del cursor");
+    const version = (src, asset) => src.match(new RegExp(`${asset}\\?v=(\\d+)`))[1];
+    for (const asset of ["legacy.js", "legacy.css"]) {
+        assert.equal(version(esHtml, asset), version(html, asset),
+            `es/legacy.html pide otra versión de ${asset} que legacy.html`);
+    }
+
     assert.deepEqual(errors, [], "no runtime errors");
     console.log("PASS  Captured: root navigation, six films, video modal, keyboard and image fallback");
 } finally {
