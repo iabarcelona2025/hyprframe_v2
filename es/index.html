@@ -34,16 +34,15 @@
     })();
     </script>
 
-    <!-- ─── Consent Mode v2 de Google — APAGADO ───────────────────────────── -->
+    <!-- ─── Consent Mode v2 de Google — ACTIVADO ──────────────────────────── -->
     <script>
-        window.HYPRFRAME_CONSENT_MODE = false;
+        window.HYPRFRAME_CONSENT_MODE = true;
         window.dataLayer = window.dataLayer || [];
         if (window.HYPRFRAME_CONSENT_MODE) {
             window.gtag = function gtag() { dataLayer.push(arguments); };
             window.gtag('consent', 'default', {
                 'analytics_storage': 'denied',
-                'ad_storage': 'denied',
-                'region': ['ES']
+                'ad_storage': 'denied'
             });
         }
     </script>

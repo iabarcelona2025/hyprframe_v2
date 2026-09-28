@@ -40,19 +40,18 @@
     })();
     </script>
 
-    <!-- ─── Consent Mode v2 de Google — APAGADO ─────────────────────────────
+    <!-- ─── Consent Mode v2 de Google — ACTIVADO ────────────────────────────
          Mismo interruptor que en legacy.html y project-node.html, para que el
          comportamiento sea uniforme. Esta página aún no carga gtag.js: si se
          añade, hay que ponerlo DESPUÉS de este bloque. -->
     <script>
-        window.HYPRFRAME_CONSENT_MODE = false;
+        window.HYPRFRAME_CONSENT_MODE = true;
         window.dataLayer = window.dataLayer || [];
         if (window.HYPRFRAME_CONSENT_MODE) {
             window.gtag = function gtag() { dataLayer.push(arguments); };
             window.gtag('consent', 'default', {
                 'analytics_storage': 'denied',
-                'ad_storage': 'denied',
-                'region': ['ES']
+                'ad_storage': 'denied'
             });
         }
     </script>

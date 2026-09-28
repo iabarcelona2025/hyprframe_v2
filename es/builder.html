@@ -9,6 +9,22 @@
     <meta name="robots" content="noindex, follow">
     <meta name="description" content="Cinematic Look Builder: traduce configuraciones técnicas de cámara en descripciones visuales listas para LLMs." />
     <meta name="theme-color" content="#050505" />
+
+    <!-- ─── Consent Mode v2 de Google — ACTIVADO ─────────────────────────────
+         Mismo interruptor que en legacy.html y las páginas de proyecto, para
+         que el comportamiento sea uniforme. El builder no carga gtag.js: si
+         se añade, hay que ponerlo DESPUÉS de este bloque. -->
+    <script>
+        window.HYPRFRAME_CONSENT_MODE = true;
+        window.dataLayer = window.dataLayer || [];
+        if (window.HYPRFRAME_CONSENT_MODE) {
+            window.gtag = function gtag() { dataLayer.push(arguments); };
+            window.gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied'
+            });
+        }
+    </script>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicons/favicon-96x96.png" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg" />
