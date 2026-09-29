@@ -117,6 +117,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
+    const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
+    const crossDegs = [...crossKf.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1]));
     check("white typography uses a subtly warm off-white instead of pure white",
         /--fg:\s*#efeee9;/.test(css) &&
         /\.hero-title\s*\{[^}]*font-weight:\s*700[^}]*color:\s*rgba\(239, 238, 233, 0\.7\)/.test(css));
@@ -128,25 +130,37 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /@keyframes heroSubtitleFade\s*\{\s*from\s*\{\s*opacity:\s*0;\s*\}\s*to\s*\{\s*opacity:\s*1;\s*\}/.test(css));
     check("hero subtitle is immediately visible with reduced motion",
         /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.hero-sub,\s*body\.loaded\s+\.hero-sub\s*\{\s*opacity:\s*1;\s*animation:\s*none;/.test(css));
-    check("cross-turn: ping-pong ×(0°) ↔ +(45°), alternate y hold en cada extremo",
-        /crossTurn\s+1\.3s\s+ease-in-out\s+infinite\s+alternate/.test(css) &&
-        /@keyframes crossTurn\s*\{\s*0%,\s*[\d.]+%\s*\{\s*transform:\s*rotate\(0deg\);?/.test(css) &&
-        /[\d.]+%,\s*100%\s*\{\s*transform:\s*rotate\(45deg\);?\s*\}\s*\}/.test(css),
-        "ver @keyframes crossTurn / .cross-turn");
-    check("cross-turn: × y + reposan ~0.2 s más sin ralentizar el giro",
-        /0%,\s*19\.5%/.test(css) && /25\.5%/.test(css) &&
-        /74\.5%/.test(css) && /80\.5%,\s*100%/.test(css) &&
-        Math.abs(2 * 1.3 * 0.195 - (2 * 1.1 * 0.14 + 0.2)) < 0.01 &&
-        Math.abs(1.3 * (0.805 - 0.195) - 1.1 * (0.86 - 0.14)) < 0.01);
+    // giro continuo de izquierda a derecha (horario) en loop: sin `alternate`
+    // la dirección no se invierte nunca; cada barrido avanza 45° y el ciclo
+    // 90°, así que al repetir el × queda en una posición ópticamente idéntica
+    // a la de salida (90° ≡ 0°) y el loop engancha sin salto.
+    check("cross-turn: gira siempre hacia la derecha en loop (sin `alternate`)",
+        /\.cross-turn\s*\{[^}]*animation:\s*crossTurn\s+2\.6s\s+ease-in-out\s+infinite;/.test(css) &&
+        !/crossTurn[^;}]*alternate/.test(css),
+        "ver .cross-turn / @keyframes crossTurn");
+    check("cross-turn: 45° por barrido y 90° por ciclo (el loop cierra sin salto)",
+        crossDegs.length === 8 &&
+        crossDegs[0] === 0 && crossDegs[7] === 90 &&
+        crossDegs[3] - crossDegs[0] === 45 && crossDegs[7] - crossDegs[3] === 45,
+        `grados: ${crossDegs.join(", ") || "no encontrados"}`);
+    check("cross-turn: pausas y velocidad intactas (2.6 s = 2 × el ciclo de 1.3 s)",
+        /0%,\s*9\.75%/.test(css) && /59\.75%/.test(css) &&
+        /87\.25%/.test(css) && /90\.25%,\s*100%/.test(css) &&
+        // cada barrido (wind-up + giro + asentado) dura lo que duraba antes
+        Math.abs(2.6 * (0.4025 - 0.0975) - 1.3 * (0.805 - 0.195)) < 1e-9 &&
+        // y cada pausa también: 0.507 s entre barridos = 2 × 0.2535 s
+        Math.abs(2.6 * (0.5975 - 0.4025) - 2 * 1.3 * 0.195) < 1e-9);
     // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
     // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
-    const crossKf = (css.match(/@keyframes crossTurn\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
-    const crossDegs = [...crossKf.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1]));
     check("cross-turn: overshoot sutil de comienzo (wind-up < 0°) y de final (pasa de 45° y vuelve)",
         crossDegs.length >= 4 &&
-        crossDegs[0] === 0 && crossDegs[crossDegs.length - 1] === 45 &&
         Math.min(...crossDegs) < 0 && Math.min(...crossDegs) >= -8 &&
-        Math.max(...crossDegs) > 45 && Math.max(...crossDegs) <= 53,
+        Math.max(...crossDegs) > 90 && Math.max(...crossDegs) <= 98 &&
+        // el rebote vuelve justo al reposo del paso, y el segundo barrido es
+        // el primero desplazado 45°: mismo wind-up, mismo recorrido, mismo
+        // overshoot (el ritmo no cambia, solo que ya no vuelve atrás)
+        crossDegs[3] === 45 && crossDegs[7] === 90 &&
+        crossDegs.slice(4).every((deg, i) => deg === crossDegs[i] + 45),
         `grados: ${crossDegs.join(", ") || "no encontrados"}`);
     check("cross-turn gira desde el centro del símbolo (transform-origin en la tinta, no en la caja)",
         /\.cross-turn\s*\{[^}]*transform-origin:\s*0\.3em\s+0\.5185em/.test(css),
