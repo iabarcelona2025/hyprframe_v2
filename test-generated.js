@@ -57,11 +57,10 @@ const seenTitles = new Map();
 
 assert.ok(!script.includes("1227346538"), "generated.js no hardcodea el vídeo de N.O.D.E.");
 assert.match(script, /dataset\.vimeo/, "generated.js lee el vídeo del marcado de cada página");
-// El cursor arranca en la última posición guardada: al volver con atrás/adelante
-// la página se recarga y la cruceta reaparecía en el centro hasta mover el ratón.
-assert.match(script, /const CURSOR_KEY = "hfCursor"/, "generated.js guarda la posición del cursor");
-assert.match(script, /sessionStorage\.getItem\(CURSOR_KEY\)/, "generated.js restaura la posición del cursor al cargar");
-assert.match(script, /sessionStorage\.setItem\(CURSOR_KEY/, "generated.js persiste la posición del cursor al mover el ratón");
+// El cursor propio (cruceta, punto y rollover) está desactivado desde el 29/09/2026:
+// generated.js ya no lo arranca y las diez fichas no llevan sus nodos.
+assert.doesNotMatch(script, /CURSOR_KEY|hfCursor|cursorDot|cursorRing|cursor-large/,
+    "generated.js no arranca ningún cursor propio");
 
 /* Reproducción bajo demanda de una pieza: Vimeo no se carga hasta el play, solo
    el propio Vimeo revela el reproductor (ni el load del iframe ni un mensaje de
@@ -143,7 +142,7 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=30");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=6");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=7");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -198,7 +197,8 @@ for (const page of PAGES) {
             `${page.file}: el enlace no va justo bajo la sinopsis`);
         assert.ok(!doc.querySelector(".node-related__heading a"),
             `${page.file}: el enlace sigue junto a RELATED PROJECTS`);
-        assert.ok(doc.getElementById("cursorDot") && doc.getElementById("cursorRing"));
+        assert.ok(!doc.getElementById("cursorDot") && !doc.getElementById("cursorRing"),
+            `${page.file}: sigue el nodo del cursor`);
 
         /* ── Enlaces e imágenes locales que existen de verdad ── */
         for (const link of doc.querySelectorAll("main a, .site-header a, .menu-links a")) {
@@ -528,7 +528,7 @@ for (const file of ALL) {
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
     assert.match(es, /generated\.css\?v=30/);
-    assert.match(es, /generated\.js\?v=6/);
+    assert.match(es, /generated\.js\?v=7/);
 }
 
 /* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */

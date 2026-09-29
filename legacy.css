@@ -218,9 +218,9 @@ body.menu-open, body.modal-open { overflow: hidden; }
 
 /* ── Accessible film player ───────────────────────────────── */
 .film-modal {
-    /* 10000 → 9998 (28/09/2026): la cruceta del cursor vive en styles.css con
-       z-index 9999 y el modal la tapaba al abrirse. Sigue por encima de todo lo
-       demás de esta página (cabecera 960, menú 850, grano 900). */
+    /* 10000 → 9998 (28/09/2026): la cruceta del cursor vivía en styles.css con
+       z-index 9999 y el modal la tapaba al abrirse; ya no hay cursor propio
+       (29/09/2026) y este valor sigue siendo el más alto de la página. */
     position: fixed; inset: 0; z-index: 9998;
     display: grid; place-items: center; padding: clamp(1rem, 4vw, 3rem);
     overflow-y: auto; background: rgba(0, 0, 0, 0.88);

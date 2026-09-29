@@ -67,6 +67,16 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
         !doc.body.textContent.includes("ALL RIGHTS RESERVED") &&
         !doc.body.textContent.includes("BARCELONA"));
 
+    /* ─── 2b. Custom cursor removed (crosshair, dot and rollover) ── */
+    check("No cursor nodes (.cursor-dot / .cursor-ring) in the page",
+        doc.querySelector(".cursor-dot") === null &&
+        doc.querySelector(".cursor-ring") === null);
+    check("No cursor wiring left in 404.js",
+        !/CURSOR_KEY|hfCursor|cursorDot|cursorRing|cursor-large/.test(js));
+    const stylesCss = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+    check("No crosshair / dot / rollover rules left in the shared stylesheet",
+        !/\.cursor-dot|\.cursor-ring|cursor-large/.test(stylesCss + css));
+
     /* ─── 3. "NOTHING TO SEE HERE" above 404 & 404 reduced by 30% ── */
     const DISPLAY_TEXT = "NOTHING TO SEE HERE";
     const glitchError = doc.getElementById("glitchError");

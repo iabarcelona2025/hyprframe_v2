@@ -60,55 +60,7 @@
         }
     }
 
-    /* ── 2. Custom cursor ─────────────────────────────────── */
-    const dot = document.getElementById("cursorDot");
-    const ring = document.getElementById("cursorRing");
-
-    if (!isTouch && !reduced && dot && ring) {
-        /* El cursor arranca donde se quedó el ratón la última vez. Al volver con
-           atrás/adelante del navegador la página se recarga (el servidor manda
-           no-store, así que no hay bfcache) y la cruceta aparecía en el centro
-           hasta que el usuario movía el ratón. */
-        const CURSOR_KEY = "hfCursor";
-        let mx = innerWidth / 2, my = innerHeight / 2;
-        try {
-            const saved = sessionStorage.getItem(CURSOR_KEY);
-            if (saved) {
-                const parts = saved.split(",");
-                const sx = Number(parts[0]), sy = Number(parts[1]);
-                if (Number.isFinite(sx) && Number.isFinite(sy)) {
-                    // Acotado por si la ventana cambió de tamaño entre recargas.
-                    mx = Math.min(Math.max(sx, 0), innerWidth);
-                    my = Math.min(Math.max(sy, 0), innerHeight);
-                }
-            }
-        } catch (err) { /* storage bloqueado: se queda el centro */ }
-        let rx = mx, ry = my;
-        let savedX = mx, savedY = my;
-
-        addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
-
-        (function cursorLoop() {
-            rx += (mx - rx) * 0.16;
-            ry += (my - ry) * 0.16;
-            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
-            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
-            // Guarda la posición (como mucho una escritura por frame) para que la
-            // siguiente carga —atrás/adelante incluidos— arranque desde aquí.
-            if (mx !== savedX || my !== savedY) {
-                savedX = mx; savedY = my;
-                try { sessionStorage.setItem(CURSOR_KEY, `${mx},${my}`); } catch (err) {}
-            }
-            requestAnimationFrame(cursorLoop);
-        })();
-
-        document.querySelectorAll("a, button, .service-row, input, textarea").forEach((el) => {
-            el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
-            el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
-        });
-    }
-
-    /* ── 3. Header state + scroll progress ────────────────── */
+    /* ── 2. Header state + scroll progress ────────────────── */
     const header = document.getElementById("siteHeader");
     const progress = document.getElementById("scrollProgress");
 
@@ -120,7 +72,7 @@
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    /* ── 4. Hero marquee: keep both halves wider than the viewport ── */
+    /* ── 3. Hero marquee: keep both halves wider than the viewport ── */
     const heroMarquee = document.querySelector(".hero-marquee");
     const marqueeTrack = heroMarquee && heroMarquee.querySelector(".marquee-track");
     if (marqueeTrack && marqueeTrack.firstElementChild) {
@@ -151,7 +103,7 @@
         }
     }
 
-    /* ── 5. Reveal on scroll (generic) ────────────────────── */
+    /* ── 4. Reveal on scroll (generic) ────────────────────── */
     const revealIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
             if (e.isIntersecting) { e.target.classList.add("in"); revealIO.unobserve(e.target); }
@@ -172,7 +124,7 @@
         lineIO.observe(el);
     });
 
-    /* ── 6. Hero word rotator ─────────────────────────────── */
+    /* ── 5. Hero word rotator ─────────────────────────────── */
     // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).
     // Motion: the outgoing word briefly anticipates downward, then exits through
     // the top; the incoming word rises from below and settles with an overshoot.
@@ -718,7 +670,7 @@
         }
     }
 
-    /* ── 7. Statement: word-by-word light-up on scroll ────── */
+    /* ── 6. Statement: word-by-word light-up on scroll ────── */
     const statement = document.getElementById("statementText");
     if (statement) {
         const words = [...statement.querySelectorAll("span")];
@@ -742,7 +694,7 @@
         lightWords();
     }
 
-    /* ── 8. Work rows: floating follower image ────────────── */
+    /* ── 7. Work rows: floating follower image ────────────── */
     const follower = document.getElementById("workFollower");
     const followerImg = document.getElementById("workFollowerImg");
     const rows = [...document.querySelectorAll(".work-row")];
@@ -783,7 +735,7 @@
         rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
     }
 
-    /* ── 9. Stats count-up ────────────────────────────────── */
+    /* ── 8. Stats count-up ────────────────────────────────── */
     document.querySelectorAll("[data-count]").forEach((el) => {
         const target = parseInt(el.dataset.count, 10);
         const io = new IntersectionObserver((entries) => {
@@ -802,7 +754,7 @@
         io.observe(el);
     });
 
-    /* ── 10. Magnetic elements ────────────────────────────── */
+    /* ── 9. Magnetic elements ────────────────────────────── */
     if (!isTouch && !reduced) {
         document.querySelectorAll(".magnetic").forEach((el) => {
             el.addEventListener("mousemove", (e) => {
@@ -819,7 +771,7 @@
         });
     }
 
-    /* ── 11. Fullscreen menu ──────────────────────────────── */
+    /* ── 10. Fullscreen menu ──────────────────────────────── */
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
 

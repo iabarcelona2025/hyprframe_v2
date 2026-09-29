@@ -81,16 +81,6 @@
         return banner;
     }
 
-    // El cursor custom crece sobre los elementos interactivos, pero script.js
-    // hace su binding al cargar y este banner se inyecta después: lo replicamos.
-    function bindCursorGrow(banner) {
-        if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
-        banner.querySelectorAll("button").forEach((btn) => {
-            btn.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
-            btn.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
-        });
-    }
-
     // En la landing no interrumpimos la intro: el banner entra cuando el
     // preloader termina (body.loaded). En el resto de páginas entra enseguida.
     function reveal(banner) {
@@ -133,7 +123,6 @@
             if (button) decide(button.dataset.consent, banner);
         });
         document.body.appendChild(banner);
-        bindCursorGrow(banner);
         reveal(banner);
     }
 
