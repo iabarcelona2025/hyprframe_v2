@@ -76,18 +76,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
     line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
-/* N.O.D.E. uses the same Montserrat family as the other 9 pages: the letters
-   inherit var(--font-head) from the h1, and the dots are drawn as pure-CSS
-   boxes (identical size, baseline-anchored) so the rhythm never depends on the
-   side bearings of the font's "." glyph — which vary per font and made the
-   last dot look detached — but they inherit currentColor and sit on the
-   Montserrat baseline, so the whole word respects Montserrat metrics. */
+/* N.O.D.E. usa la misma familia Montserrat que las otras 9 páginas: letras y
+   puntos son texto normal del h1 (Montserrat 700), así que los cuatro puntos
+   son el carácter «.» de la propia fuente, con su tamaño y sus espacios
+   laterales. Las cajas CSS que los dibujaban (.node-hero__dot) se quitaron
+   (29/09/2026). */
 .node-hero__word { white-space: nowrap; font-family: var(--font-head); font-weight: 700; }
-.node-hero__dot {
-    display: inline-block; width: 0.165em; height: 0.15em;
-    margin: 0 0.025em;
-    background: currentColor; vertical-align: baseline;
-}
 .node-hero__teaser { font-family: var(--font-head); font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
 .node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
 .node-hero__explore {

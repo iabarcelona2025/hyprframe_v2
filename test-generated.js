@@ -142,7 +142,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=25");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=26");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=6");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -302,9 +302,16 @@ for (const page of PAGES) {
 /* ── N.O.D.E.: el marcado y el texto que solo tiene la pieza de referencia ── */
 {
     const doc = new JSDOM(read("project-node.html")).window.document;
-    // El titular dibuja sus cuatro puntos con cajas CSS uniformes, sin el punto
-    // final y sin el fotograma que abría la página.
-    assert.equal(doc.querySelectorAll(".node-hero__dot").length, 4, "los cuatro puntos del titular son cajas CSS");
+    // El titular escribe sus cuatro puntos como texto —el carácter «.» de
+    // Montserrat—, sin cajas CSS y sin el fotograma que abría la página. Así el
+    // texto visible coincide con el nombre accesible, y copiar o buscar el
+    // titular da «N.O.D.E.» y no «NODE». Lo mismo en la versión ES.
+    for (const [file, page] of [["project-node.html", doc], ["es/project-node.html", new JSDOM(read("es/project-node.html")).window.document]]) {
+        assert.equal(page.querySelectorAll(".node-hero__dot").length, 0, `${file}: los puntos del titular siguen siendo cajas CSS`);
+        assert.equal(page.querySelector(".node-hero__word").textContent, "N.O.D.E.", `${file}: el titular no lleva sus cuatro puntos como texto`);
+        assert.equal(page.querySelector("h1").textContent, page.querySelector("h1").getAttribute("aria-label"),
+            `${file}: el texto visible del titular y su nombre accesible no coinciden`);
+    }
     // El opener se pinta con un color plano (el reproductor sí usa una máscara degradada).
     const openerRule = ruleOf(squash(stripComments(css)), ".node-hero__image");
     assert.match(openerRule, /background: var\(--bg\);/);
@@ -444,6 +451,9 @@ assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líne
 // N.O.D.E. respeta Montserrat igual que las otras 9.
 assert.match(css, /\.node-hero__word \{[^}]*font-family: var\(--font-head\)/, "N.O.D.E. usa Montserrat");
 assert.match(css, /\.node-hero__teaser \{[^}]*font-family: var\(--font-head\)/, "el teaser usa Montserrat");
+// Sus puntos son el carácter «.» de esa misma fuente: las cajas CSS se quitaron
+// y no queda ninguna regla que las dibuje (el nombre solo sobrevive en un comentario).
+assert.ok(!/node-hero__dot/.test(generatedFlat), "generated.css conserva las cajas de los puntos de N.O.D.E.");
 
 /* ── ← ALL WORK fuera: la salida de la sección vive en otros dos sitios ── */
 assert.ok(!/\.node-back/.test(css), "generated.css conserva las reglas de .node-back");
@@ -472,7 +482,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=25/);
+    assert.match(es, /generated\.css\?v=26/);
     assert.match(es, /generated\.js\?v=6/);
 }
 
