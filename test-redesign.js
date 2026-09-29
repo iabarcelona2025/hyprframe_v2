@@ -196,38 +196,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         && doc.body.style.overflow === ""
         && burger.getAttribute("aria-label") === "Open menu");
 
-    // cursor hover state
+    /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");
     link.dispatchEvent(new window.MouseEvent("mouseenter", { bubbles: false }));
-    check("hover enlarges cursor", doc.body.classList.contains("cursor-large"));
+    check("hover no enlarges any cursor", !doc.body.classList.contains("cursor-large"));
     link.dispatchEvent(new window.MouseEvent("mouseleave", { bubbles: false }));
-    check("mouseleave restores cursor", !doc.body.classList.contains("cursor-large"));
-
-    // el cursor grande es una cruceta: mismo grosor, color y modo de fusión que el aro
-    check("el aro del cursor ya no es un círculo",
-        !/\.cursor-ring \{[^}]*border:/.test(css)
-        && !/\.cursor-dot, \.cursor-ring \{[^}]*border-radius/.test(css));
-    // 1px de grosor y el 60% de la caja de largo: al ser un porcentaje, el hover
-    // la acorta en la misma proporción (25px en reposo, 53px sobre interactivos).
-    check("la cruceta son dos trazos de 1px",
-        /\.cursor-ring::before, \.cursor-ring::after \{/.test(css)
-        && /\.cursor-ring::before \{ width: 1px; height: 60%; \}/.test(css)
-        && /\.cursor-ring::after \{ width: 60%; height: 1px; \}/.test(css));
-    check("el largo es proporcional: mismo porcentaje en reposo y en hover",
-        !/body\.cursor-large \.cursor-ring::(before|after)[^}]*\{[^}]*(width|height):/.test(css));
-    check("la cruceta conserva el color del aro",
-        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*background: rgba\(255, 255, 255, 0\.7\)/.test(css));
-    check("la cruceta conserva el modo de fusión",
-        /\.cursor-dot, \.cursor-ring \{[^}]*mix-blend-mode: difference/.test(css));
-    check("el cruce deja libre el punto central (máscara con hueco)",
-        /\.cursor-ring::before, \.cursor-ring::after \{[^}]*mask: radial-gradient\(circle at center, transparent (?:4\.5px|2px), #000 (?:5px|2\.5px)\)/.test(css));
-    check("la cruceta crece y se vuelve violeta sobre los interactivos",
-        /body\.cursor-large \.cursor-ring \{ width: 88px; height: 88px; \}/.test(css)
-        && /body\.cursor-large \.cursor-ring::before,\s*body\.cursor-large \.cursor-ring::after \{\s*background: var\(--violet\);\s*-webkit-mask: none; mask: none;/.test(css));
-    check("el cursor arranca donde se quedó el ratón (sobrevive a atrás/adelante)",
-        /const CURSOR_KEY = "hfCursor"/.test(js)
-        && /sessionStorage\.getItem\(CURSOR_KEY\)/.test(js)
-        && /sessionStorage\.setItem\(CURSOR_KEY/.test(js));
+    check("mouseleave keeps the body clean", !doc.body.classList.contains("cursor-large"));
+    check("no cursor nodes left in the page",
+        !/cursor-dot|cursor-ring|cursorDot|cursorRing/.test(html));
+    check("no crosshair / dot / rollover rules left in styles.css",
+        !/\.cursor-dot|\.cursor-ring|cursor-large/.test(css));
+    check("script.js no wires the cursor any more",
+        !/CURSOR_KEY|hfCursor|cursorDot|cursorRing|cursor-large/.test(js));
 
     // pista de scroll del hero con vídeo: fuera la etiqueta, línea de 3px (27/09/2026)
     const cue = doc.querySelector(".scroll-cue");
