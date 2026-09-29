@@ -313,7 +313,8 @@ for (const page of PAGES) {
     assert.equal(explore.getAttribute("href"), "#film");
     assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"),
         "EXPLORE vive bajo el titular, no dentro del fondo del opener");
-    assert.equal(explore.firstChild.textContent.trim(), "EXPLORE");
+    assert.equal(explore.textContent.trim(), "↓");
+    assert.equal(explore.getAttribute("aria-label"), "Explore film");
     for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51", "EXPLORE THE FILM", "01 / THE FILM", "02 / THE STORY", "03 / KEEP EXPLORING"]) {
         assert.ok(!doc.body.textContent.includes(removed), `vuelve texto retirado de la maqueta: ${removed}`);
     }
