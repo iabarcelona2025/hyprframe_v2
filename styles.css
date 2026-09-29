@@ -1290,12 +1290,15 @@ section { position: relative; }
     display: flex; justify-content: center; text-align: center; gap: 1rem; flex-wrap: wrap;
     margin-top: 1rem; padding-top: 1.5rem;
     border-top: 1px solid var(--line);
-    font-family: var(--font-mono); font-size: 0.65rem;
+    /* Versión web/escritorio: 1px menos que el token base (0.65rem = 10,4px
+       → 9,4px con la raíz a 16px). El móvil conserva su propio tamaño. */
+    font-family: var(--font-mono); font-size: calc(0.65rem - 1px);
     letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
 }
 .footer-row a:hover { color: var(--fg); }
 
-/* En móvil, el copyright ocupa 4px menos sin alterar su tamaño en escritorio. */
+/* En móvil el copyright ocupa 4px menos que el token base (0.65rem): el recorte
+   de 1px de la versión web/escritorio no se aplica aquí. */
 @media (max-width: 640px) {
     .footer-row { font-size: calc(0.65rem - 4px); }
 }

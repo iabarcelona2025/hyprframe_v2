@@ -95,7 +95,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.contact-title\s*\{\s*font-size:\s*clamp\(3rem, min\(9\.5vw, 10vh\), 8\.5rem\)/.test(css));
     const pageFooter = doc.querySelector(".site-footer");
     check("footer copyright stays legible at the Contact anchor",
-        /\.footer-row\s*\{[^}]*font-size:\s*0\.65rem;[^}]*color:\s*var\(--muted\)/.test(css));
+        /\.footer-row\s*\{[^}]*font-size:\s*calc\(0\.65rem - 1px\);[^}]*color:\s*var\(--muted\)/.test(css));
+    check("the copyright is 1px smaller on the web/desktop version and keeps its own size on mobile",
+        /\.footer-row\s*\{[^}]*font-size:\s*calc\(0\.65rem - 1px\);/.test(css) &&
+        /@media \(max-width: 640px\)\s*\{\s*\.footer-row\s*\{\s*font-size:\s*calc\(0\.65rem - 4px\);\s*\}\s*\}/.test(css));
     check("Contact is compacted so the footer follows closely and can be seen sooner",
         !!contactSection && contactSection.parentElement.nextElementSibling === pageFooter &&
         /\.contact\s*\{[^}]*padding:\s*clamp\(4\.5rem, 8vw, 7rem\) var\(--pad\) clamp\(2\.5rem, 4vw, 3\.5rem\)/.test(css) &&
