@@ -105,6 +105,31 @@
     const play = document.getElementById("playFilm");
     const playerBox = play ? play.closest(".node-player") : null;
     const vimeoId = playerBox ? playerBox.dataset.vimeo : "";
+    const isMobileVideo = window.matchMedia("(max-width: 560px)").matches;
+
+    /* Vimeo normally plays embeds inline on phones. playsinline=0 hands the
+       play action to Vimeo's native fullscreen player on mobile; desktop keeps
+       the existing inline iframe. The Fullscreen API and orientation lock are
+       best-effort fallbacks for mobile browsers that expose them. */
+    function lockMobileLandscape() {
+        if (!isMobileVideo || !window.screen?.orientation?.lock) return;
+        try {
+            const pending = window.screen.orientation.lock("landscape");
+            if (pending?.catch) pending.catch(() => {});
+        } catch (err) { /* orientation lock needs fullscreen on some browsers */ }
+    }
+
+    function requestMobileFullscreen(iframe) {
+        if (!isMobileVideo) return;
+        const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen;
+        if (typeof request === "function") {
+            try {
+                const pending = request.call(iframe);
+                if (pending?.then) pending.then(lockMobileLandscape).catch(() => {});
+            } catch (err) { /* Vimeo's playsinline=0 fallback still applies */ }
+        }
+        lockMobileLandscape();
+    }
 
     if (play && playerBox && vimeoId) {
         const pieceTitle = playerBox.dataset.title || document.title;
@@ -112,7 +137,8 @@
         play.addEventListener("click", () => {
             const iframe = document.createElement("iframe");
             iframe.title = `${pieceTitle} — HYPRFRAME`;
-            iframe.src = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&dnt=1&transparent=0`;
+            const mobileFullscreenParam = isMobileVideo ? "&playsinline=0" : "";
+            iframe.src = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&dnt=1&transparent=0${mobileFullscreenParam}`;
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.setAttribute("allowfullscreen", "");
             // The iframe's load event may fire before Vimeo paints its player (white flash).
@@ -152,6 +178,7 @@
             }
             addEventListener("message", onPlayerMessage);
             playerBox.replaceChildren(iframe);
+            requestMobileFullscreen(iframe);
             iframe.focus();
         });
     }

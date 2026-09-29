@@ -143,7 +143,7 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=25");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=5");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=6");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -473,7 +473,7 @@ for (const file of ALL) {
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
     assert.match(es, /generated\.css\?v=25/);
-    assert.match(es, /generated\.js\?v=5/);
+    assert.match(es, /generated\.js\?v=6/);
 }
 
 /* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */
