@@ -249,7 +249,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
        reserva una segunda línea solo para el enlace. (29/09/2026) */
     .node-hero__bottom {
         position: absolute;
-        left: var(--pad); right: var(--pad); bottom: 1.5rem;
+        left: var(--pad); right: clamp(2.5rem, 7vw, 3rem); bottom: 1.5rem;
         padding: 0;
     }
     .node-hero__explore { font-size: 0.56rem; }
@@ -263,8 +263,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
        botón de play igual de centrado. (28/09/2026) */
     .node-player { width: 100%; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
-    .node-pager { gap: 0.8rem; padding-bottom: 1rem; }
-    .node-pager__link { gap: 0.4rem; }
+    .node-pager { gap: 0.55rem; padding-bottom: 0.75rem; }
+    .node-pager__link { gap: 0.25rem; }
     .node-pager__link, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
     .node-pager__arrow { font-size: 0.95rem; }
 }
