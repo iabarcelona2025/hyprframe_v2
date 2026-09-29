@@ -694,12 +694,23 @@ em { font-style: normal; color: var(--violet); }
 .violet { color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Montserrat carga ital 800). */
 .italic { font-style: italic; }
-/* × de HUMAN INTUITION × MACHINE SYNTHESIS: ping-pong entre × (0°) y + (45°)
-   con ease-in-out, pausa en cada posición y OVERSHOOT sutil en los dos extremos.
+/* × de HUMAN INTUITION × MACHINE SYNTHESIS: giro CONTINUO hacia la derecha
+   (sentido horario), en loop y sin retroceder nunca = movimiento de izquierda
+   a derecha continuo, con las pausas, la velocidad y el OVERSHOOT de siempre.
+   Antes era un ping-pong × (0°) ↔ + (45°) con `alternate`: giraba a la derecha
+   y volvía sobre sus pasos. Ahora solo gira a la derecha.
+   Cómo cierra el loop sin salto: el × es simétrico a 90° (90° y 0° pintan el
+   mismo glifo), así que el ciclo son DOS barridos de 45° = 90° en total y al
+   repetir vuelve a arrancar desde una posición ópticamente idéntica a la de
+   salida. Un solo barrido de 45° por ciclo no vale: al reiniciar, el + de 45°
+   saltaría de golpe al × de 0°, y ese salto sí se ve.
+   Duración: 2.6 s = 2 × 1.3 s, o sea el ciclo de siempre repetido dos veces
+   (cada barrido y cada pausa duran EXACTAMENTE lo mismo que antes, ver
+   @keyframes): el × va al mismo ritmo, solo que encadenando vueltas.
    font-style: normal para que el glifo conserve su simetría de 4-fold
    (reposo × y + perfectos); inline-block para el transform.
-   alternate cierra el loop sin salto; transform-origin: centro visual exacto
-   de la tinta del × en Montserrat 700, el peso que hereda de .about-title
+   transform-origin: centro visual exacto de la tinta del × en Montserrat 700,
+   el peso que hereda de .about-title
    (ink x:[90,510] y:[137,563] @1000upm; con line-height 1.02 la baseline cae
    a 0.8685em del top de la caja → centro de la tinta en 0.3em, 0.5185em).
    Sin esto, el giro default orbita el centro de la caja, ~0.15em más arriba. */
@@ -708,24 +719,37 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.3em 0.5185em;
-    animation: crossTurn 1.3s ease-in-out infinite alternate;
+    /* sin `alternate`: la dirección no se invierte nunca; 2.6 s = dos
+       barridos de 45° (el segundo deja el × como estaba al empezar). */
+    animation: crossTurn 2.6s ease-in-out infinite;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
-   quita la sensación de movimiento mecánico):
+   quita la sensación de movimiento mecánico). Cada barrido avanza 45° y son
+   dos por ciclo (45° + 45° = 90° ≡ 0°: ahí está el loop):
+     · pausa    → 0.51 s quieto en la posición de reposo (× o +, da igual).
      · comienzo → wind-up a -4°: retrocede un pelo y de ahí arranca el barrido.
-     · tramo    → -4° → 49° con ease-in-out (velocidad 0 en ambos topes).
-     · final    → rebote de asentamiento: sobrepasa los 45° hasta 49° y vuelve.
+     · tramo    → 53° de recorrido con ease-in-out (velocidad 0 en los topes):
+                  arranca en -4° y desemboca 4° más allá de los 45° del paso.
+     · final    → rebote de asentamiento: desde esos 49° vuelve a los 45°.
    ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
    velocidad debe morir en el extremo; ease-in-out en el barrido largo.
-   `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
-   el de final se aplican igual al × (0°) y al + (45°).
-   Pausa en cada extremo: ~0.51 s (antes ~0.31 s); la rotación dura lo mismo. */
+   Los dos barridos son idénticos (mismos tiempos, mismos grados de recorrido)
+   y el segundo desemboca en 90°, que se ve igual que el 0° del primero: al
+   repetir, el × retoma desde ahí sin ningún salto y sigue hacia la derecha.
+   Los porcentajes son los del ciclo de 1.3 s de antes repartidos en 2.6 s,
+   así que pausas y velocidad no cambian. */
 @keyframes crossTurn {
-    0%, 19.5%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
-    25.5%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
-    74.5%       { transform: rotate(49deg); animation-timing-function: ease-out; }
-    80.5%, 100% { transform: rotate(45deg); }
+    /* barrido 1: 0° → 45° */
+    0%, 9.75%    { transform: rotate(0deg);  animation-timing-function: ease-out; }    /* pausa ~0.25 s */
+    12.75%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; } /* wind-up */
+    37.25%       { transform: rotate(49deg); animation-timing-function: ease-out; }    /* fin del barrido */
+    40.25%, 50%  { transform: rotate(45deg); }                                         /* asentado + pausa */
+    /* barrido 2: 45° → 90° (y 90° ≡ 0°, así que el loop engancha sin salto) */
+    59.75%       { transform: rotate(45deg); animation-timing-function: ease-out; }    /* fin de la pausa */
+    62.75%       { transform: rotate(41deg); animation-timing-function: ease-in-out; } /* wind-up */
+    87.25%       { transform: rotate(94deg); animation-timing-function: ease-out; }    /* fin del barrido */
+    90.25%, 100% { transform: rotate(90deg); }                                         /* asentado + pausa */
 }
 
 /* ── Sections base ───────────────────────────────────────── */
