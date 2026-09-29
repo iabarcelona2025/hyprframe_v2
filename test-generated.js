@@ -142,7 +142,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=26");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=30");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=6");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -436,7 +436,7 @@ assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
 // Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
 // font-family/weight separados para que N.O.D.E. respete Montserrat.
 assert.match(css,
-    /\.node-hero h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.99rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)/,
+    /\.node-hero h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.82rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)/,
     "las diez páginas comparten la misma clamp del titular en Montserrat");
 const h1Rules = css.match(/\.node-hero h1 \{[^}]*\}/g);
 assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
@@ -476,13 +476,58 @@ assert.match(ruleOf(generatedFlat, ".node-player"), /width: 85\.5%;/,
 assert.match(ruleOf(generatedFlat, ".node-player"), /aspect-ratio: 16 \/ 9;/,
     "el alto crece en proporción porque la caja conserva su aspect-ratio");
 
+/* ── La línea de 1px bajo el vídeo: fuera ──
+   El label que abre THE STORY no lleva borde (se probó acortarla al ancho de
+   la caja de vídeo y la decisión final es quitarla). KEEP EXPLORING conserva
+   su línea de borde a borde vía la regla base del label. (29/09/2026) */
+assert.match(ruleOf(generatedFlat, ".node-story > .node-section-label"), /width: 85\.5%; margin-inline: auto; border-top: 0;/,
+    "el label de THE STORY sin línea, al ancho de la caja de vídeo (texto en su borde izquierdo)");
+assert.ok(!/\.node-story > \.node-section-label::before/.test(generatedFlat),
+    "no queda ningún ::before dibujando la línea bajo el vídeo");
+assert.equal(generatedFlat.match(/border-top: 0;/g).length, 1,
+    "solo el label de THE STORY quita su borde: KEEP EXPLORING conserva el suyo");
+assert.match(css, /\.node-section-label \{ padding: 1rem 0; border-top: 1px solid var\(--line\); \}/,
+    "la regla base del label conserva su 1px gris (la de KEEP EXPLORING)");
+assert.match(mobileBlock, /\.node-story > \.node-section-label \{ width: 100%; \}/,
+    "en móvil, con el vídeo al 100%, THE STORY vuelve a ir de borde a borde");
+
+/* ── Opener: el titular baja a la altura de la flecha y la flecha se alinea
+   con el borde derecho de la caja de vídeo ──
+   El titular vive en la fila inferior junto a EXPLORE (misma altura,
+   align-items center); la flecha recula el margen exacto que .node-player
+   deja a su derecha, y el label del hero es su caja de referencia en móvil.
+   (29/09/2026) */
+for (const file of ALL) {
+    const doc = new JSDOM(read(file)).window.document;
+    assert.ok(doc.querySelector(".node-hero__bottom > .node-hero__title"),
+        `${file}: el titular no vive en la fila inferior`);
+    assert.ok(!doc.querySelector(".node-hero__image .node-hero__title"),
+        `${file}: el titular sigue dentro del campo liso del opener`);
+    assert.ok(doc.querySelector(".node-hero__bottom > .node-hero__explore"),
+        `${file}: la flecha sigue en la fila inferior`);
+}
+assert.match(ruleOf(generatedFlat, ".node-hero__bottom"),
+    /display: flex; align-items: center; justify-content: space-between;/,
+    "titular y flecha a la misma altura, en los extremos de la fila");
+assert.match(ruleOf(generatedFlat, ".node-hero__title"),
+    /margin-left: clamp\(1\.25rem, 4vw, 4rem\);/,
+    "el titular conserva su posición horizontal de siempre");
+assert.ok(!/position: absolute/.test(ruleOf(generatedFlat, ".node-hero__title")),
+    "el titular ya no está posicionado en absoluto");
+assert.match(generatedFlat, /\.node-hero__explore \{ margin-right: calc\(\(100% - 85\.5%\) \/ 2\); \}/,
+    "la flecha recula el margen exacto que deja la caja de vídeo a su derecha");
+assert.match(mobileBlock, /\.node-hero__explore \{ margin-right: 0; font-size: 0\.56rem; \}/,
+    "en móvil la flecha no lleva el margen de escritorio");
+assert.match(ruleOf(generatedFlat, ".node-hero"), /position: relative;/,
+    "el hero ancla la fila inferior absoluta en móvil");
+
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
 for (const file of ALL) {
     const es = read(`es/${file}`);
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=26/);
+    assert.match(es, /generated\.css\?v=30/);
     assert.match(es, /generated\.js\?v=6/);
 }
 
