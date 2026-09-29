@@ -510,13 +510,15 @@ body.loaded .hero-sub {
 .hero-marquee .marquee-dot,
 .marquee-dot {
     display: inline-block;
-    width: 7px;
-    height: 7px;
-    font-size: 7px;
-    line-height: 7px;
+    width: 5px;
+    height: 5px;
+    font-size: 5px;
+    line-height: 5px;
     border-radius: 50%;
     background-color: currentColor;
     vertical-align: middle;
+    position: relative;
+    top: -0.1em;
     overflow: hidden;
     text-align: center;
     letter-spacing: normal;
