@@ -243,6 +243,15 @@ body.menu-open .menu-overlay a { visibility: visible; }
         font-size: calc(0.5em + 6px);
         white-space: nowrap;
     }
+    /* En móvil, EXPLORE comparte la fila inferior del opener con el título:
+       el nombre queda a la izquierda y la llamada a la derecha, a la misma
+       altura. Al sacarlo del flujo no se altera este ajuste en escritorio ni se
+       reserva una segunda línea solo para el enlace. (29/09/2026) */
+    .node-hero__bottom {
+        position: absolute;
+        left: var(--pad); right: var(--pad); bottom: 1.5rem;
+        padding: 0;
+    }
     .node-hero__explore { font-size: 0.56rem; }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
