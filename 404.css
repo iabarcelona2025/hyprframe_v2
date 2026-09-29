@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   HYPRFRAME — 404 / FRAME NOT FOUND (ERROR + 404 + VOLVER A INICIO)
+   HYPRFRAME — 404 / FRAME NOT FOUND ("NOTHING TO SEE HERE" + 404 + VOLVER A INICIO)
    Palette: #050505 bg / #efeee9 fg / #a064ff violet / #a3df02 lime
    ═══════════════════════════════════════════════════════════ */
 
@@ -100,7 +100,7 @@ header {
     box-sizing: border-box;
 }
 
-/* ── Glitch Display (ERROR + 404) ────────────────────────── */
+/* ── Glitch Display ("NOTHING TO SEE HERE" + 404) ────────── */
 .glitch-display {
     position: relative;
     cursor: pointer;
@@ -114,20 +114,23 @@ header {
     gap: 0;
 }
 
-/* ERROR: exactly half the size of 404 */
+/* "NOTHING TO SEE HERE": full phrase, so it gets its own responsive size
+   (much smaller than 404) instead of half of --size-404, which would overflow. */
 .glitch-error {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: calc(var(--size-404) * 0.5);
-    line-height: 0.9;
-    letter-spacing: -0.02em;
+    font-size: clamp(1.1rem, 5.4vw, 4.2rem);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
     color: var(--fg);
     text-transform: uppercase;
     position: relative;
     display: inline-block;
+    max-width: 100%;
+    text-wrap: balance;
     text-shadow: 0 0 35px rgba(160, 100, 255, 0.25);
     transition: transform 0.25s var(--ease-out), color 0.25s;
-    margin-bottom: clamp(0.2rem, 1vh, 0.5rem);
+    margin-bottom: clamp(0.35rem, 1.6vh, 0.9rem);
 }
 
 /* 404: reduced by 30% */
@@ -146,7 +149,7 @@ header {
     transition: transform 0.25s var(--ease-out), color 0.25s;
 }
 
-/* Glitch pseudo-elements for both ERROR and 404 */
+/* Glitch pseudo-elements for both "NOTHING TO SEE HERE" and 404 */
 .glitch-error::before,
 .glitch-error::after,
 .glitch-number::before,

@@ -73,8 +73,19 @@
     const glitchError = document.getElementById("glitchError");
     const glitchNumber = document.getElementById("glitchNumber");
 
+    /* Headline shown above the 404 (replaces the old error label). */
+    const DISPLAY_TEXT = "NOTHING TO SEE HERE";
+
     const glitchGlyphs404 = ["404", "4Ø4", "4_4", "4#4", "4?4", "!0!", "404"];
-    const glitchGlyphsErr = ["ERROR", "ERRØR", "ERR__", "ER#0R", "E??OR", "ERROR"];
+    const glitchGlyphsErr = [
+        DISPLAY_TEXT,
+        "N0THING T0 SEE HERE",
+        "N_THING TO SEE HERE",
+        "NOT#ING TO SEE HER3",
+        "N??HING TO SEE HERE",
+        "NOTHING T_ SEE H#RE",
+        DISPLAY_TEXT
+    ];
     let isGlitching = false;
 
     const runGlitchBurst = () => {
@@ -99,8 +110,8 @@
                 glitchNumber.textContent = "404";
                 glitchNumber.setAttribute("data-text", "404");
                 if (glitchError) {
-                    glitchError.textContent = "ERROR";
-                    glitchError.setAttribute("data-text", "ERROR");
+                    glitchError.textContent = DISPLAY_TEXT;
+                    glitchError.setAttribute("data-text", DISPLAY_TEXT);
                 }
                 isGlitching = false;
             }
