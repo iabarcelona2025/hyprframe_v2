@@ -3,7 +3,7 @@
    - No footer
    - "NOTHING TO SEE HERE" above 404
    - 404 reduced by 30%
-   - Centered VOLVER A INICIO button
+   - Centered BACK TO WEB button
 */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
@@ -88,9 +88,10 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
         /\.glitch-error\s*\{[\s\S]*?font-size:\s*clamp\(1\.1rem,\s*5\.4vw,\s*4\.2rem\)/.test(css) &&
         !css.includes("calc(var(--size-404) * 0.5)"));
 
-    /* ─── 4. Centered Button VOLVER A INICIO ──────────────── */
+    /* ─── 4. Centered Button BACK TO WEB ──────────────────── */
     const btnHome = doc.getElementById("ctaHome");
-    check("Button VOLVER A INICIO is present", !!btnHome && btnHome.textContent.includes("VOLVER A INICIO"));
+    check("Button BACK TO WEB is present", !!btnHome && btnHome.textContent.includes("BACK TO WEB"));
+    check('Old "VOLVER A INICIO" label is gone', !doc.body.textContent.includes("VOLVER A INICIO"));
     check("Button links to /index.html", btnHome?.getAttribute("href") === "/index.html");
     check("Only 1 CTA link exists", doc.querySelectorAll(".cta-actions a").length === 1);
 
