@@ -507,6 +507,21 @@ body.loaded .hero-sub {
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+.hero-marquee .marquee-dot,
+.marquee-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    font-size: 7px;
+    line-height: 7px;
+    border-radius: 50%;
+    background-color: currentColor;
+    vertical-align: middle;
+    overflow: hidden;
+    text-align: center;
+    letter-spacing: normal;
+}
+
 /* ── HERO · LOG DE INFERENCIA (trace del modelo) ───────────────
    Panel tipo terminal a la derecha del hero con el trace de un forward pass
    (script.js §6c). El texto es literal: lo único que se mueve son los números,
