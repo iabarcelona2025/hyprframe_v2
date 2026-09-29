@@ -1278,6 +1278,11 @@ section { position: relative; }
 }
 .footer-row a:hover { color: var(--fg); }
 
+/* En móvil, el copyright ocupa 4px menos sin alterar su tamaño en escritorio. */
+@media (max-width: 640px) {
+    .footer-row { font-size: calc(0.65rem - 4px); }
+}
+
 /* ── Responsive header ───────────────────────────────────── */
 @media (max-width: 1024px) {
     .main-nav { display: none; }

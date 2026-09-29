@@ -161,6 +161,10 @@
             .cookie-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; }
             .cookie-actions .cookie-btn { flex: 1 1 auto; }
         }
+
+        @media (max-width: 640px) {
+            .mobile-copyright { font-size: 3px !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 flex items-start justify-center pt-6 md:pt-10">
@@ -377,7 +381,7 @@
                         <i data-lucide="refresh-cw" class="w-4 h-4 group-active:rotate-180 transition-transform"></i>
                         GENERAR
                     </button>
-                    <p class="text-center text-[7px] text-zinc-500 uppercase tracking-widest opacity-60">© 2026 Hyprframe. Todos los derechos reservados.</p>
+                    <p class="text-center text-[7px] text-zinc-500 uppercase tracking-widest opacity-60 mobile-copyright">© 2026 Hyprframe. Todos los derechos reservados.</p>
                 </div>
             </div>
         </div>

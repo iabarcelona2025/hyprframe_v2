@@ -143,7 +143,7 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=25");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=5");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=6");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -313,7 +313,8 @@ for (const page of PAGES) {
     assert.equal(explore.getAttribute("href"), "#film");
     assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"),
         "EXPLORE vive bajo el titular, no dentro del fondo del opener");
-    assert.equal(explore.firstChild.textContent.trim(), "EXPLORE");
+    assert.equal(explore.textContent.trim(), "↓");
+    assert.equal(explore.getAttribute("aria-label"), "Explore film");
     for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51", "EXPLORE THE FILM", "01 / THE FILM", "02 / THE STORY", "03 / KEEP EXPLORING"]) {
         assert.ok(!doc.body.textContent.includes(removed), `vuelve texto retirado de la maqueta: ${removed}`);
     }
@@ -472,7 +473,7 @@ for (const file of ALL) {
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
     assert.match(es, /generated\.css\?v=25/);
-    assert.match(es, /generated\.js\?v=5/);
+    assert.match(es, /generated\.js\?v=6/);
 }
 
 /* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */
