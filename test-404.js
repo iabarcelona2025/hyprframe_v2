@@ -1,7 +1,7 @@
 /* Smoke test: tests 404.html, 404.css, and 404.js for the requested design:
    - No top menu
    - No footer
-   - ERROR above 404 at half size
+   - "NOTHING TO SEE HERE" above 404
    - 404 reduced by 30%
    - Centered VOLVER A INICIO button
 */
@@ -67,19 +67,26 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
         !doc.body.textContent.includes("ALL RIGHTS RESERVED") &&
         !doc.body.textContent.includes("BARCELONA"));
 
-    /* ─── 3. ERROR above 404 & 404 reduced by 30% ─────────── */
+    /* ─── 3. "NOTHING TO SEE HERE" above 404 & 404 reduced by 30% ── */
+    const DISPLAY_TEXT = "NOTHING TO SEE HERE";
     const glitchError = doc.getElementById("glitchError");
     const glitchNumber = doc.getElementById("glitchNumber");
-    check("ERROR element is present", !!glitchError && glitchError.textContent.trim() === "ERROR");
+    check('"NOTHING TO SEE HERE" element is present',
+        !!glitchError && glitchError.textContent.trim() === DISPLAY_TEXT);
+    check('"NOTHING TO SEE HERE" mirrors data-text for the glitch layers',
+        !!glitchError && glitchError.getAttribute("data-text") === DISPLAY_TEXT);
+    check('Old "ERROR" label is gone',
+        glitchError && !/ERROR/i.test(glitchError.textContent));
     check("404 number is present", !!glitchNumber && glitchNumber.textContent.trim() === "404");
-    check("ERROR precedes 404 in DOM",
+    check('"NOTHING TO SEE HERE" precedes 404 in DOM',
         glitchError && glitchNumber && glitchError.nextElementSibling === glitchNumber);
 
     // CSS size checks
     check("CSS defines --size-404 reduced by 30% (clamp with ~5.6rem and ~15.4rem)",
         css.includes("--size-404") && css.includes("5.6rem") && css.includes("15.4rem"));
-    check("CSS defines ERROR at exactly half the size of 404 (calc(var(--size-404) * 0.5))",
-        css.includes("calc(var(--size-404) * 0.5)"));
+    check('CSS sizes .glitch-error with its own clamp (1.1rem … 4.2rem), not half of --size-404',
+        /\.glitch-error\s*\{[\s\S]*?font-size:\s*clamp\(1\.1rem,\s*5\.4vw,\s*4\.2rem\)/.test(css) &&
+        !css.includes("calc(var(--size-404) * 0.5)"));
 
     /* ─── 4. Centered Button VOLVER A INICIO ──────────────── */
     const btnHome = doc.getElementById("ctaHome");
@@ -111,6 +118,15 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
     const glitchTrigger = doc.getElementById("glitchTrigger");
     glitchTrigger.click();
     check("Clicking glitch trigger runs without error", errors.length === 0);
+    check("Glitch script knows the new label (no leftover 'ERROR' reset value)",
+        js.includes('"NOTHING TO SEE HERE"') && !js.includes('"ERROR"'));
+
+    // Let the glitch burst finish, then confirm it restores the label
+    await new Promise((r) => setTimeout(r, 900));
+    check("Glitch burst restores 'NOTHING TO SEE HERE'",
+        glitchError.textContent.trim() === DISPLAY_TEXT &&
+        glitchError.getAttribute("data-text") === DISPLAY_TEXT,
+        glitchError.textContent);
 
     if (failures === 0) {
         console.log("\n✅ ALL TESTS PASSED");
