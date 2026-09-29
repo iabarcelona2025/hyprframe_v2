@@ -1265,9 +1265,9 @@ section { position: relative; }
 
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
-    /* La rejilla se apila: los iconos de social media quedan bajo el formulario,
-       así que el degradado baja con ellos (65% → 84%). */
-    .contact { background: radial-gradient(80% 60% at 85% 84%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
+    /* La rejilla se apila: los enlaces a social media quedan bajo el formulario;
+       el degradado lila se sitúa más arriba, a su altura (84% → 72%). */
+    .contact { background: radial-gradient(80% 60% at 85% 72%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
