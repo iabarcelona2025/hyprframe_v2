@@ -106,8 +106,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // palabras sueltas destacadas en lila (--violet) dentro de los titulares, en cursiva
     const violetWords = [...doc.querySelectorAll(".violet")].map((el) => el.textContent);
-    check("palabras en lila: WORK, HUMAN, MACHINE, Ai (DNAi) y Cinematic (CLB)",
-        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai|Cinematic", violetWords.join("|"));
+    check("palabras en lila: WORK, HUMAN, MACHINE, Ai (DNAi), Cinematic (CLB) y MAKE IT (Contact)",
+        violetWords.join("|") === "WORK|HUMAN|MACHINE|Ai|Cinematic|MAKE IT", violetWords.join("|"));
     check("cada palabra en lila vive dentro de su .line-inner",
         [...doc.querySelectorAll(".violet")].every((el) => el.closest(".line-inner")),
         [...doc.querySelectorAll(".violet")].map((el) => el.closest(".line-inner") ? "ok" : "fuera").join(","));
@@ -239,7 +239,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // count-up: 1400ms animation triggered by IO stub
     const counts = [...doc.querySelectorAll("[data-count]")].map((el) => el.textContent);
-    check("stats counted up to targets", counts[0] === "10" && counts[1] === "7",
+    check("stats counted up to targets", counts[0] === "15" && counts[1] === "7",
         counts.join(", "));
 
     // ── hero log (trace de inferencia del modelo) ──
@@ -263,9 +263,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.hero-log\s*\{[^}]*opacity:\s*0?\.25\b/.test(css) &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
-    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo más amplio (38%)",
+    check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo más amplio (calc(38% + 35px))",
         !/TENSOR BUFFER/.test(html) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 calc\(38% \+ 35px\)\)/.test(css));
     check("DNAi: el rollover desplaza suavemente los títulos de los servicios",
         /\.service-body h3\s*\{[^}]*transform:\s*translateX\(0\)[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css) &&
         /\.service-row:hover \.service-body h3\s*\{[^}]*transform:\s*translateX\(0\.8rem\)/.test(css));
@@ -355,7 +355,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         `${logLines.length} líneas en ventana, la cabecera del bloque avanza`);
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
-        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 38%\)/.test(css));
+        /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 calc\(38% \+ 35px\)\)/.test(css));
     check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
         /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
         /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
