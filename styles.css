@@ -1377,4 +1377,9 @@ section { position: relative; }
     .clb-gallery-track, .clb-reflection-track { animation: none; transform: none; }
     .statement-text span { opacity: 1; }
     .preloader { display: none; }
+    /* La intro pedida a propósito (?intro=1, o el preview de desarrollo) se ve
+       igual, con su barrido: la petición explícita manda sobre el atajo de
+       «reducir movimiento», que aquí solo ahorraría el contador que se quiere
+       revisar. El resto de la página sigue quieta. (30/09/2026) */
+    html.hf-force-intro .preloader { display: flex; transition-duration: 0.9s !important; }
 }

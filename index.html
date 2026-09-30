@@ -27,14 +27,29 @@
        Si ya se ha reproducido en esta pestaña, marcamos <html> con .hf-skip-intro
        antes del primer frame: así el preloader nunca se llega a pintar (sin
        parpadeo) al volver a la landing desde legacy.html, builder.html, etc.
-       ?intro=1 fuerza la reproducción aunque ya se haya visto (para revisarla).
+       ?intro=1 fuerza la reproducción aunque ya se haya visto (y también con
+       «reducir movimiento», porque es una petición explícita); ?intro=0 la
+       silencia. En el preview de desarrollo (localhost / e2b.app) se reproduce
+       siempre, para poder revisarla: ?intro=0 es la única forma de callarla ahí.
        Si el almacenamiento está bloqueado, se comporta como siempre. */
     (function () {
+        var html = document.documentElement;
+        var search = location.search;
+        var dev = /(localhost|127\.0\.0\.1|e2b\.app)/.test(location.hostname);
+        var off = /[?&]intro=0(?:&|$)/.test(search);
+        var force = /[?&]intro=1(?:&|$)/.test(search) || dev;
+        if (off) {
+            html.classList.add("hf-skip-intro");
+        } else if (force) {
+            html.classList.add("hf-force-intro");
+        }
         try {
-            if (/[?&]intro=1(?:&|$)/.test(location.search)) {
+            if (off) {
+                sessionStorage.setItem("hfIntroSeen", "1");
+            } else if (force) {
                 sessionStorage.removeItem("hfIntroSeen");
             } else if (sessionStorage.getItem("hfIntroSeen") === "1") {
-                document.documentElement.classList.add("hf-skip-intro");
+                html.classList.add("hf-skip-intro");
             }
         } catch (e) { /* storage no disponible */ }
     })();
@@ -70,7 +85,7 @@
          Va en la misma petición que el resto de familias para no abrir otra
          conexión; si no llega, cae a Fira Code / Roboto Mono / Courier New. -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=107" />
+    <link rel="stylesheet" href="styles.css?v=108" />
 </head>
 
 <body>
@@ -466,7 +481,7 @@
         };
     })();
     </script>
-    <script src="script.js?v=21" defer></script>
+    <script src="script.js?v=22" defer></script>
     <script src="cookies.js?v=3" defer></script>
 </body>
 </html>

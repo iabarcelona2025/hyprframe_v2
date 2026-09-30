@@ -16,9 +16,9 @@ const check = (name, cond, extra = "") => {
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function boot(storage = {}) {
+function boot(storage = {}, url = "https://hyprframe.com/") {
     const dom = new JSDOM(html, {
-        url: "http://localhost:8080/",
+        url,
         pretendToBeVisual: true,
         runScripts: "outside-only",
     });
@@ -94,6 +94,38 @@ function boot(storage = {}) {
     window.eval(js);
     await wait(600);
     check("storage bloqueado: el contador sube igualmente", parseInt(doc3.getElementById("preCount").textContent, 10) > 0);
+
+    /* ── Preview de desarrollo (localhost / e2b.app): la intro se ve SIEMPRE ──
+       El host de desarrollo marca <html> con .hf-force-intro y limpia la marca
+       de sesión, así que da igual haberla visto: se reproduce. ?intro=0 es la
+       única forma de callarla ahí. (30/09/2026) */
+    ({ window, errors } = boot({ hfIntroSeen: "1" }, "http://localhost:8080/"));
+    inlineScripts.forEach((s) => window.eval(s));
+    const doc4 = window.document;
+    check("preview: <html> con .hf-force-intro aunque la intro ya se haya visto",
+        doc4.documentElement.classList.contains("hf-force-intro")
+        && !doc4.documentElement.classList.contains("hf-skip-intro"));
+    window.eval(js);
+    check("preview: el preloader sigue en el DOM y la cuenta arranca",
+        !!doc4.getElementById("preloader") && !doc4.body.classList.contains("loaded"));
+    await wait(600);
+    check("preview: el contador sube", parseInt(doc4.getElementById("preCount").textContent, 10) > 0);
+
+    ({ window, errors } = boot({}, "http://localhost:8080/?intro=0"));
+    inlineScripts.forEach((s) => window.eval(s));
+    const doc5 = window.document;
+    check("preview + ?intro=0: intro silenciada", doc5.documentElement.classList.contains("hf-skip-intro"));
+    window.eval(js);
+    check("preview + ?intro=0: preloader fuera del DOM y hero visible",
+        doc5.getElementById("preloader") === null && doc5.body.classList.contains("loaded"));
+
+    /* ── ?intro=1 en producción: petición explícita, también con reduce-motion ── */
+    ({ window, errors } = boot({ hfIntroSeen: "1" }, "https://hyprframe.com/?intro=1"));
+    inlineScripts.forEach((s) => window.eval(s));
+    const doc6 = window.document;
+    check("producción + ?intro=1: .hf-force-intro y sin .hf-skip-intro",
+        doc6.documentElement.classList.contains("hf-force-intro")
+        && !doc6.documentElement.classList.contains("hf-skip-intro"));
 
     console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAILURE(S)`);
     process.exit(failures === 0 ? 0 : 1);

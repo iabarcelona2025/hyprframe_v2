@@ -12,6 +12,9 @@
     // al volver a la landing desde legacy.html / builder.html no se repite.
     const INTRO_KEY = "hfIntroSeen";
     const introSeen = document.documentElement.classList.contains("hf-skip-intro");
+    // ?intro=1 (y el preview de desarrollo) piden la intro expresamente, así que
+    // también se salta el atajo de «reducir movimiento»: quien la pide, la ve.
+    const introForced = document.documentElement.classList.contains("hf-force-intro");
     const preloader = document.getElementById("preloader");
     const preCount = document.getElementById("preCount");
     const preBar = document.getElementById("preBar");
@@ -37,7 +40,7 @@
     } else {
         try { sessionStorage.setItem(INTRO_KEY, "1"); } catch (e) { /* storage no disponible */ }
 
-        if (reduced) {
+        if (reduced && !introForced) {
             finishPreload(true);
         } else {
             let n = 0;
