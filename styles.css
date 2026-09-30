@@ -242,7 +242,7 @@ html.hf-skip-intro .preloader { display: none; }
 .header-meta > .lang-switch {
     padding-left: 1.5rem;
     border-left: 1px solid var(--line);
-    font-size: calc(0.72rem - 1px); /* 1px más pequeño que el tamaño base */
+    font-size: calc(0.72rem - 3px); /* 2px más pequeño que el tamaño actual */
 }
 .header-meta > .lang-switch::before,
 .menu-lang .lang-switch::before {
@@ -1204,19 +1204,102 @@ section { position: relative; }
 
 /* ── ABOUT ───────────────────────────────────────────────── */
 .about { padding: clamp(6rem, 15vw, 11rem) var(--pad); }
+.about-heading {
+    display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    align-items: center;
+    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
 .about-title {
     font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(2.6rem, 8vw, 7rem);
     line-height: 1.02; letter-spacing: 0.04em; text-transform: uppercase;
-    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+    width: 100%; max-width: 100%; min-width: 0;
+    margin-bottom: 0;
 }
-.about-grid {
-    display: grid; grid-template-columns: 1.2fr 1fr;
-    gap: clamp(2rem, 6vw, 5rem); align-items: start;
+.about-emblem-wrap {
+    position: relative; display: block; width: auto;
+    height: clamp(14rem, 32vw, 30rem); aspect-ratio: 720 / 1977;
+    justify-self: center; translate: calc(25% - 80px - clamp(2rem, 7vw, 7rem) + 50px) 0;
+    overflow: visible;
 }
-.about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
+.about-emblem {
+    position: absolute; top: 0; left: 0; z-index: 1;
+    width: auto; max-width: none; height: 100%; object-fit: contain;
+    transform: translateX(calc(100% + 15px));
+    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1), filter 0.8s ease-out;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap .about-emblem {
+    transform: translateX(0); filter: none;
+    transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem {
+    transform: translateX(calc(100% + 15px)); filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition-delay: 0s;
+}
+.about-emblem-wrap::after {
+    content: ""; position: absolute; top: 0; left: 0; z-index: 2;
+    width: 50%; height: 100%; pointer-events: none; opacity: 0;
+    background: linear-gradient(112deg, transparent 39%, rgba(255, 255, 255, 0.22) 49%, rgba(255, 255, 255, 0.06) 53%, transparent 63%);
+    background-size: 250% 100%; background-position: 100% 0;
+    -webkit-mask: url("assets/images/anagrama-trans-aligned.png") center / 100% 100% no-repeat;
+    mask: url("assets/images/anagrama-trans-aligned.png") center / 100% 100% no-repeat;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered)::after {
+    animation: about-emblem-sheen 1.2s ease-in-out 1.3s 1 both;
+}
+.about-emblem-wipe {
+    position: absolute; top: -5px; left: 50%; z-index: 3;
+    width: calc(50% + 55px); height: calc(100% + 30px);
+    background: linear-gradient(to right, transparent 0, var(--bg) 7px, var(--bg) calc(100% - 30px), transparent 100%);
+}
+.about-emblem-reflection {
+    position: absolute; top: calc(100% + 0.1rem); left: 0;
+    width: 50%; height: clamp(1rem, 2.5vw, 1.15rem); overflow: hidden;
+    opacity: 0; transform: scaleY(-1); transform-origin: center;
+    translate: calc(100% + 15px) 0;
+    transition: translate 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+            mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+    pointer-events: none;
+}
+.about-emblem-reflection img {
+    position: absolute; left: 0; bottom: 0;
+    width: 100%; height: auto; max-width: none;
+    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition: filter 0.8s ease-out;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection {
+    opacity: 0.16; translate: 0 0; transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection img {
+    filter: none; transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection {
+    translate: calc(100% + 15px) 0; transition-delay: 0s;
+    opacity: 0.16; animation: about-emblem-reflection-hide 0s linear 0.8s forwards;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection img {
+    filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22)); transition-delay: 0s;
+}
+@keyframes about-emblem-reflection-hide { to { opacity: 0; } }
+@keyframes about-emblem-sheen {
+    0% { opacity: 0; background-position: 100% 0; }
+    18% { opacity: 0.25; }
+    72% { opacity: 0.12; background-position: 0 0; }
+    100% { opacity: 0; background-position: 0 0; }
+}
+.about-grid { display: block; }
+.stats {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 4vw, 3.5rem);
+}
+.about-copy {
+    color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch;
+    margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
+}
 .about-copy strong { font-weight: 500; }
-.stats { display: flex; flex-direction: column; gap: 2.2rem; }
+.stat { min-width: 0; }
 .stat-num {
     display: block;
     /* same face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title (now 700) */
@@ -1232,9 +1315,11 @@ section { position: relative; }
     display: block; margin-top: 0.5rem;
 }
 
-@media (max-width: 860px) {
-    .about-grid { grid-template-columns: 1fr; }
-    .stats { flex-direction: row; flex-wrap: wrap; gap: 2.5rem; }
+@media (max-width: 600px) {
+    .about-heading { gap: 0.15rem; }
+    .about-emblem-wrap { height: clamp(8rem, 30vw, 11rem); translate: calc(25% - 0.5rem - 35px) 0; }
+    .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
+    .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
@@ -1696,6 +1781,10 @@ label.cookie-purpose-head { cursor: pointer; }
     [data-reveal] { opacity: 1; transform: none; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem { transition: none; transform: translateX(0); filter: none; }
+    .about-emblem-wrap::after { display: none; animation: none; }
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection { opacity: 0.16; translate: 0 0; transition: none; transition-delay: 0s; animation: none; }
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection img { filter: none; transition: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     /* El log se queda quieto: script.js pinta el trace con los valores de
        partida y no arranca el rAF (el bloque global ya corta las animations). */

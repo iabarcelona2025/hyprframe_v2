@@ -146,7 +146,18 @@
         }),
         { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
     );
-    document.querySelectorAll("[data-reveal]").forEach((el) => revealIO.observe(el));
+    document.querySelectorAll("[data-reveal]:not([data-reveal-late])").forEach((el) => revealIO.observe(el));
+
+    /* About stats wait until they are farther into the viewport, so the user
+       has to continue scrolling down before the counters animate in. */
+    const lateRevealMargin = Math.round(window.innerHeight * 0.28);
+    const lateRevealIO = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+            if (e.isIntersecting) { e.target.classList.add("in"); lateRevealIO.unobserve(e.target); }
+        }),
+        { threshold: 0.18, rootMargin: `0px 0px -${lateRevealMargin}px 0px` }
+    );
+    document.querySelectorAll("[data-reveal-late]").forEach((el) => lateRevealIO.observe(el));
 
     /* line-mask reveals on section titles */
     const lineIO = new IntersectionObserver(
@@ -159,6 +170,28 @@
         el.classList.add("reveal-lines");
         lineIO.observe(el);
     });
+
+    /* El anagrama vuelve a ocultarse bajo la plancha al seguir bajando por
+       About; al subir de nuevo, se desliza otra vez hacia fuera. */
+    const aboutTitle = document.querySelector(".about-title");
+    const aboutEmblem = document.querySelector(".about-emblem-wrap");
+    if (!reduced && aboutTitle && aboutEmblem) {
+        let previousScrollY = window.scrollY;
+        const updateEmblemForScroll = () => {
+            const currentScrollY = window.scrollY;
+            const headingTop = aboutTitle.getBoundingClientRect().top;
+            const coverThreshold = 0;
+            const revealThreshold = -80;
+
+            if (currentScrollY > previousScrollY && aboutTitle.classList.contains("in") && headingTop <= coverThreshold) {
+                aboutEmblem.classList.add("is-covered");
+            } else if (currentScrollY < previousScrollY && headingTop > revealThreshold) {
+                aboutEmblem.classList.remove("is-covered");
+            }
+            previousScrollY = currentScrollY;
+        };
+        window.addEventListener("scroll", updateEmblemForScroll, { passive: true });
+    }
 
     /* ── 5. Hero word rotator ─────────────────────────────── */
     // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).

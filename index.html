@@ -87,7 +87,7 @@
          Va en la misma petición que el resto de familias para no abrir otra
          conexión; si no llega, cae a Fira Code / Roboto Mono / Courier New. -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=117" />
+    <link rel="stylesheet" href="styles.css?v=154" />
 </head>
 
 <body>
@@ -279,22 +279,32 @@
         <!-- ══════════ ABOUT + NUMBERS ══════════ -->
         <section class="about" id="about">
             <p class="kicker" data-reveal><span class="pulse"></span> HYPRFRAME</p>
-            <h2 class="about-title">
-                <span class="line"><span class="line-inner"><span class="violet italic">HUMAN</span></span></span>
-                <span class="line"><span class="line-inner">INTUITION<span class="accent cross-turn">×</span></span></span>
-                <span class="line"><span class="line-inner"><span class="violet italic">MACHINE</span> SYNTHESIS</span></span>
-            </h2>
+            <div class="about-heading">
+                <h2 class="about-title">
+                    <span class="line"><span class="line-inner"><span class="violet italic">HUMAN</span></span></span>
+                    <span class="line"><span class="line-inner">INTUITION<span class="accent cross-turn">×</span></span></span>
+                    <span class="line"><span class="line-inner"><span class="violet italic">MACHINE</span> SYNTHESIS</span></span>
+                </h2>
+                <div class="about-emblem-wrap">
+                    <img class="about-emblem" src="assets/images/anagrama-trans-aligned.png" alt="" aria-hidden="true" />
+                    <span class="about-emblem-wipe" aria-hidden="true"></span>
+                    <div class="about-emblem-reflection" aria-hidden="true">
+                        <img src="assets/images/anagrama-trans-aligned.png" alt="" />
+                    </div>
+                </div>
+            </div>
             <div class="about-grid">
-                <p class="about-copy" data-reveal><strong>HYPRFRAME</strong> explores the intersection of human intuition and machine synthesis. Specialized in AI-generated video and motion design, creating visual narratives that shape new perspectives and storytelling.   <div class="stats">
-                    <div class="stat" data-reveal>
+                <p class="about-copy" data-reveal><strong>HYPRFRAME</strong> explores the intersection of human intuition and machine synthesis. Specialized in AI-generated video and motion design, creating visual narratives that shape new perspectives and storytelling.</p>
+                <div class="stats">
+                    <div class="stat" data-reveal data-reveal-late>
                         <span class="stat-num"><span data-count="15">0</span>+</span>
                         <span class="stat-label">AI FILMS &amp; CAMPAIGNS</span>
                     </div>
-                    <div class="stat" data-reveal data-reveal-delay="1">
+                    <div class="stat" data-reveal data-reveal-late data-reveal-delay="1">
                         <span class="stat-num"><span data-count="7">0</span></span>
                         <span class="stat-label">CORE DISCIPLINES</span>
                     </div>
-                    <div class="stat" data-reveal data-reveal-delay="2">
+                    <div class="stat" data-reveal data-reveal-late data-reveal-delay="2">
                         <span class="stat-num">∞</span>
                         <span class="stat-label">POSSIBLE WORLDS</span>
                     </div>
@@ -487,7 +497,7 @@
         };
     })();
     </script>
-    <script src="script.js?v=26" defer></script>
+    <script src="script.js?v=30" defer></script>
     <script src="smooth-scroll.js?v=1" defer></script>
     <script src="cookies.js?v=5" defer></script>
 </body>
