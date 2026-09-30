@@ -1317,7 +1317,8 @@ section { position: relative; }
 
 @media (max-width: 600px) {
     .about-heading { gap: 0.15rem; }
-    .about-emblem-wrap { height: clamp(8rem, 30vw, 11rem); translate: calc(25% - 0.5rem - 35px) 0; }
+    /* Anagrama del About: +25px a la derecha en móvil (30/09/2026) · −35px → −10px. */
+    .about-emblem-wrap { height: clamp(8rem, 30vw, 11rem); translate: calc(25% - 0.5rem - 10px) 0; }
     .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
     .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
 }
