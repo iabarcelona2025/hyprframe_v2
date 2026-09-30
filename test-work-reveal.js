@@ -17,7 +17,7 @@ for (const page of ['index.html', 'es/index.html']) {
             assert.ok(row.dataset.img, `missing image on ${row.textContent.trim()}`);
             assert.ok(fs.existsSync(path.join(root, row.dataset.img)), row.dataset.img);
         }
-        assert.match(doc.querySelector('link[href^="styles.css?"]').href, /v=108$/);
+        assert.match(doc.querySelector('link[href^="styles.css?"]').href, /v=109$/);
     });
 }
 
