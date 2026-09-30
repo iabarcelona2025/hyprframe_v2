@@ -148,6 +148,13 @@
         // ese transform continuo obliga a remuestrear la textura en cada frame y
         // compite con el scroll. Se reanuda al parar y, al ser un ciclo de 18 s,
         // no se nota.
+        //
+        // (30/09/2026) Aquí se probó también a sostener el fotograma durante el
+        // gesto —congelar el vídeo mientras la rueda mueve la página— para
+        // esquivar la invalidación de las capas de mezcla del hero. Se ha
+        // RETIRADO: la ganancia no compensaba que el vídeo se parara a la vista.
+        // El vídeo se reproduce siempre; lo que se ajusta para el scroll está en
+        // el terminal (script.js §6c) y en el grano (styles.css .grain).
         let scrollIdle = 0;
         const markScrolling = () => {
             docEl.classList.add("is-scrolling");

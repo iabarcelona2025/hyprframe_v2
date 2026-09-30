@@ -83,12 +83,25 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
      animación es una transformación compuesta (GPU) de un raster cacheado en
      vez de un repintado del ruido de 300×300 tileado.
    - contain: strict: aísla la capa del resto del árbol de pintura.
-   El grano se ve igual: mismas opacidades, mismo tile, mismos keyframes. */
+   El grano se ve igual: mismas opacidades, mismo tile.
+
+   Y (30/09/2026, 2ª pasada) el grano no se anima: `animation: none`. Una
+   animación en bucle infinito obliga al compositor a entregar un frame nuevo
+   4,4 veces por segundo AUNQUE la página esté quieta y el usuario no toque
+   nada, así que la GPU no llegaba a entrar en reposo en ninguna página del
+   sitio. Lo que aporta el grano es el dither anti-banding del degradado, y eso
+   funciona igual de bien estático: medido, su movimiento mueve el píxel ±1,8
+   niveles (1σ) a una opacidad de 0,05, es decir, no se ve.
+   `none` y no `paused`: con `paused` el compositor sigue teniendo una
+   animación viva en su lista; con `none` desaparece de verdad. Los @keyframes
+   se conservan (no cuestan nada) por si se quiere volver atrás.
+   Antes de esto se probó a correrlo solo mientras se desplaza; se ha quitado
+   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b. */
 .grain {
     position: fixed; inset: -5%; z-index: 900; pointer-events: none;
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grainShift 0.9s steps(4) infinite;
+    animation: none;
     will-change: transform;
     contain: strict;
 }
