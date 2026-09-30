@@ -141,7 +141,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=30");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=31");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=7");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -480,16 +480,61 @@ assert.match(ruleOf(generatedFlat, ".node-player"), /aspect-ratio: 16 \/ 9;/,
    El label que abre THE STORY no lleva borde (se probó acortarla al ancho de
    la caja de vídeo y la decisión final es quitarla). KEEP EXPLORING conserva
    su línea de borde a borde vía la regla base del label. (29/09/2026) */
-assert.match(ruleOf(generatedFlat, ".node-story > .node-section-label"), /width: 85\.5%; margin-inline: auto; border-top: 0;/,
-    "el label de THE STORY sin línea, al ancho de la caja de vídeo (texto en su borde izquierdo)");
 assert.ok(!/\.node-story > \.node-section-label::before/.test(generatedFlat),
     "no queda ningún ::before dibujando la línea bajo el vídeo");
 assert.equal(generatedFlat.match(/border-top: 0;/g).length, 1,
     "solo el label de THE STORY quita su borde: KEEP EXPLORING conserva el suyo");
 assert.match(css, /\.node-section-label \{ padding: 1rem 0; border-top: 1px solid var\(--line\); \}/,
     "la regla base del label conserva su 1px gris (la de KEEP EXPLORING)");
-assert.match(mobileBlock, /\.node-story > \.node-section-label \{ width: 100%; \}/,
-    "en móvil, con el vídeo al 100%, THE STORY vuelve a ir de borde a borde");
+
+/* ── THE STORY, justificado por la izquierda con el h2 de cada página ──
+   El rótulo abre la historia sobre la misma columna que el titular: sin ancho
+   propio (antes copiaba el 85,5% de la caja de vídeo y su texto quedaba
+   sangrado 7,25% a la derecha del h2) y con la rejilla de la historia sin
+   relleno lateral, así que los dos arrancan en el borde del contenido que fija
+   padding-inline del section. (30/09/2026)
+   Y el hueco hasta el h2, recortado: el relleno superior de la rejilla pasa de
+   clamp(3.5rem, 8vw, 8rem) a clamp(1.25rem, 2.4vw, 2.25rem). Medido en el
+   navegador a 1440px, el titular pasa de arrancar a 131,2px del rótulo a 50,5px
+   (3,5% del ancho), la proporción de la referencia de diseño. */
+const storyLabel = ruleOf(generatedFlat, ".node-story > .node-section-label");
+assert.match(storyLabel, /margin-inline: 0; border-top: 0;/,
+    "el rótulo de THE STORY suelta la medida de la caja de vídeo y vuelve al borde del contenido");
+assert.ok(!/width:/.test(storyLabel), "el rótulo de THE STORY no lleva ancho propio");
+assert.ok(!/\.node-story > \.node-section-label[\s\S]{0,200}?\{[^}]*width/.test(generatedFlat)
+    && !/\.node-story > \.node-section-label[\s\S]{0,200}?\{[^}]*width/.test(mobileBlock),
+    "ninguna regla —tampoco la de móvil— devuelve el ancho de la caja de vídeo al rótulo");
+assert.match(generatedFlat, /\.node-film, \.node-story, \.node-related \{ padding-inline: var\(--pad\); \}/,
+    "el rótulo y el h2 comparten el borde del contenido (--pad)");
+assert.match(ruleOf(generatedFlat, ".node-story__grid"),
+    /padding: clamp\(1\.25rem, 2\.4vw, 2\.25rem\) 0 clamp\(3\.5rem, 8vw, 7rem\);/,
+    "la rejilla de la historia solo respira en vertical y el h2 queda pegado al rótulo");
+/* La pila del título (rótulo + h2) tiene que quedar a la izquierda en las diez
+   páginas: mismas clases, un solo <span> en el rótulo y sin estilos propios. */
+for (const file of ALL) {
+    const doc = new JSDOM(read(file)).window.document;
+    const label = doc.querySelector(".node-story > .node-section-label");
+    assert.ok(label, `${file}: THE STORY no abre la historia`);
+    assert.equal(label.children.length, 1, `${file}: el rótulo de THE STORY lleva más de un texto`);
+    assert.equal(label.querySelectorAll("span").length, 1, `${file}: el rótulo repite texto`);
+    assert.ok(doc.querySelector(".node-story__grid > h2"),
+        `${file}: el h2 de la historia no abre la rejilla`);
+    for (const tag of doc.querySelectorAll(".node-story [style]")) {
+        assert.ok(!tag.getAttribute("style"), `${file}: la historia lleva estilos inline que rompen la alineación`);
+    }
+}
+assert.match(mobileBlock, /\.node-story__grid \{ padding-top: clamp\(3\.5rem, 8vw, 8rem\); \}/,
+    "en móvil el hueco rótulo→h2 conserva su medida (el recorte es de la versión web)");
+
+/* ── El aire entre la caja de vídeo y THE STORY ──
+   Lo daba solo el relleno del propio rótulo (1rem = 16px), así que la historia
+   arrancaba pegada al vídeo. Ahora lo abre la sección, con el mismo eje que el
+   resto de la retícula: en 1440px, del vídeo al rótulo hay 72px. El móvil
+   conserva sus 16px. (30/09/2026) */
+assert.match(ruleOf(generatedFlat, ".node-story"), /padding-top: clamp\(2rem, 4vw, 3\.5rem\);/,
+    "la historia abre su propio aire bajo el vídeo");
+assert.match(mobileBlock, /\.node-story \{ padding-top: 0; \}/,
+    "en móvil la historia conserva el hueco de siempre bajo el vídeo");
 
 /* ── Opener: el titular baja a la altura de la flecha y la flecha se alinea
    con el borde derecho de la caja de vídeo ──
@@ -521,13 +566,30 @@ assert.match(mobileBlock, /\.node-hero__explore \{ margin-right: 0; font-size: 0
 assert.match(ruleOf(generatedFlat, ".node-hero"), /position: relative;/,
     "el hero ancla la fila inferior absoluta en móvil");
 
+/* ── Opener: el hueco entre el paginador y el titular, recortado ──
+   El campo liso del opener y el relleno inferior del paginador se reducen a la
+   mitad en la versión web (escritorio): el hueco entre el paginador y el
+   titular pasa de ~235px a ~121px en 1440×900. El móvil mantiene su campo y su
+   relleno propios, donde la fila inferior va anclada al hero y el hueco ya era
+   mucho más corto. (30/09/2026) */
+assert.match(ruleOf(generatedFlat, ".node-hero__image"),
+    /height: clamp\(84px, 11svh, 120px\);/,
+    "el campo liso del opener vuelve a crecer por encima de la mitad");
+assert.match(ruleOf(generatedFlat, ".node-pager"),
+    /padding-bottom: clamp\(0\.8rem, 1\.5vw, 1\.35rem\);/,
+    "el paginador recupera el relleno largo bajo el contador");
+assert.match(mobileBlock, /\.node-hero__image \{ height: clamp\(110px, 18svh, 145px\); \}/,
+    "el campo liso del móvil no es el de escritorio");
+assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0\.5rem; \}/,
+    "en móvil manda el relleno corto del paginador");
+
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
 for (const file of ALL) {
     const es = read(`es/${file}`);
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=30/);
+    assert.match(es, /generated\.css\?v=31/);
     assert.match(es, /generated\.js\?v=7/);
 }
 

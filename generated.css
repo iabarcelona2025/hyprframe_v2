@@ -30,7 +30,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-pager {
     display: flex; align-items: baseline; justify-content: center;
     gap: clamp(0.9rem, 2vw, 1.75rem);
-    padding-bottom: clamp(1rem, 2vw, 1.75rem);
+    /* 30/09/2026: el relleno inferior se recorta (1rem/2vw/1.75rem →
+       0.8rem/1.5vw/1.35rem, ~23% menos) para que el grupo quede más cerca del
+       titular, junto con el campo liso de abajo. En móvil manda su propio
+       bloque (≤560px: 0.5rem). */
+    padding-bottom: clamp(0.8rem, 1.5vw, 1.35rem);
 }
 .node-pager__link {
     display: inline-flex; align-items: baseline; gap: 0.55rem;
@@ -51,8 +55,15 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-pager__link:focus-visible .node-pager__arrow { color: var(--lime); }
 .node-pager__link:hover .node-pager__arrow { transform: translateX(-0.3rem); }
 .node-pager__link--next:hover .node-pager__arrow { transform: translateX(0.3rem); }
+/* El campo liso que separaba el paginador del titular era el que abría el hueco
+   más grande del opener: se recorta a la mitad (170px/23svh/250px →
+   84px/11svh/120px) manteniendo su forma —piso hasta 764px de alto, techo desde
+   1091px—, así que en 1440×900 pasa de 207px a 99px y, con el relleno del
+   paginador, el hueco entre el paginador y el titular baja de ~235px a ~121px.
+   El móvil conserva su campo (≤560px: 110px/18svh/145px), donde la fila
+   inferior va anclada al hero y el hueco ya era mucho más corto. (30/09/2026) */
 .node-hero__image {
-    position: relative; height: clamp(170px, 23svh, 250px);
+    position: relative; height: clamp(84px, 11svh, 120px);
     isolation: isolate; overflow: hidden;
     background: var(--bg);
 }
@@ -119,12 +130,16 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-film, .node-story, .node-related { padding-inline: var(--pad); }
 .node-film { padding-top: clamp(3rem, 6vw, 5rem); scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
-/* El label de THE STORY, debajo del vídeo, sin línea (se probó acortarla al
-   ancho de la caja; la decisión final fue quitarla) y alineado con la caja de
-   vídeo: misma medida (85,5% centrado), así el texto arranca en el borde
-   izquierdo del vídeo. KEEP EXPLORING conserva su línea de borde a borde.
-   (29/09/2026) */
-.node-story > .node-section-label { width: 85.5%; margin-inline: auto; border-top: 0; }
+/* El label de THE STORY, debajo del vídeo, sin línea. Antes copiaba el ancho de
+   la caja de vídeo (85,5% centrado), así que su texto arrancaba 7,25% a la
+   derecha del titular; ahora ocupa la columna entera, de modo que THE STORY y el
+   h2 de cada página comparten el mismo borde izquierdo (el del contenido, el
+   que marca padding-inline: var(--pad) del section). Con el relleno de la rejilla
+   recortado (ver .node-story__grid), el rótulo queda pegado a su titular: medido a
+   1440px, del rótulo al h2 hay 50,5px en vez de los 131,2px de antes, que es la
+   proporción de la referencia de diseño (3,5% del ancho). KEEP EXPLORING
+   conserva su línea y su relleno. (29/09/2026 · 30/09/2026) */
+.node-story > .node-section-label { margin-inline: 0; border-top: 0; }
 .node-section-label span:first-child { color: var(--violet); }
 .node-story h2, .node-related h2 {
     font: 700 clamp(3rem, 8vw, 8rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
@@ -188,11 +203,24 @@ body.menu-open .menu-overlay a { visibility: visible; }
     pointer-events: none;
     transition: --film-stripe 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
 }
-.node-story { padding-top: 0; }
+/* El aire entre la caja de vídeo y THE STORY lo daba solo el relleno del propio
+   rótulo (1rem), así que la historia arrancaba pegada al vídeo. La sección abre
+   ahora su propio hueco: en 1440px, del vídeo al rótulo hay ~74px en vez de 16.
+   El rótulo y su rejilla conservan sus rellenos (el h2 sigue a 50,5px del
+   rótulo). (30/09/2026) */
+.node-story { padding-top: clamp(2rem, 4vw, 3.5rem); }
+/* El relleno superior de la rejilla abría el hueco entre THE STORY y el h2: se
+   recorta a un tercio del original con el mismo eje —clamp(3.5rem, 8vw, 8rem) →
+   clamp(1.25rem, 2.4vw, 2.25rem): 2.4vw es 8vw/3 y los topes también van a un
+   tercio—, así que conserva su forma: piso hasta 833px de ancho, techo desde
+   1500px. Medido a 1440px, el h2 pasa de arrancar a 131,2px del rótulo a 50,5px
+   (3,5% del ancho, la proporción de la referencia de diseño) y queda pegado a su
+   rótulo como un antetítulo. El piso inferior y el ritmo de la columna de la
+   sinopsis no cambian. (30/09/2026) */
 .node-story__grid {
     display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
-    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(3.5rem, 8vw, 7rem);
+    padding: clamp(1.25rem, 2.4vw, 2.25rem) 0 clamp(3.5rem, 8vw, 7rem);
 }
 .node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
@@ -283,9 +311,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
         padding: 0;
     }
     .node-hero__explore { margin-right: 0; font-size: 0.56rem; }
-    /* El vídeo ocupa el 100% en móvil: THE STORY vuelve a ir de borde a borde
-       (el texto arranca en el borde izquierdo del vídeo, como en escritorio). */
-    .node-story > .node-section-label { width: 100%; }
+    /* En móvil el rótulo de THE STORY ya iba de borde a borde desde la regla
+       base (sin ancho propio) y sus huecos conservan las medidas de siempre: ni
+       el acercamiento al h2 ni el aire extra bajo el vídeo de la versión web
+       bajan al móvil. (30/09/2026) */
+    .node-story { padding-top: 0; }
+    .node-story__grid { padding-top: clamp(3.5rem, 8vw, 8rem); }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
