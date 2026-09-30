@@ -7,6 +7,10 @@
 :root {
     --bg: #050505;
     --bg-soft: #0c0c0e;
+    /* Fondo de las páginas legales: un gris oscuro que las separa del negro
+       de la web sin salirse de la paleta. Contrasta con --fg (12:1) y con
+       --muted (~4,7:1), así que el texto pequeño de las tablas sigue legible. */
+    --bg-legal: #1e1e21;
     --fg: #efeee9;
     --muted: #8b8b8b;
     --violet: #a064ff;
@@ -1328,10 +1332,189 @@ section { position: relative; }
 }
 .footer-row a:hover { color: var(--fg); }
 
+/* Enlaces legales del pie: política de cookies y vía para cambiar o retirar
+   el consentimiento (mismo cuerpo que el resto del pie, sin subrayado). */
+.footer-legal { display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; }
+.footer-legal a,
+.footer-legal button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+    transition: color 0.3s var(--ease-out);
+}
+.footer-legal a:hover,
+.footer-legal button:hover { color: var(--fg); }
+
 /* En móvil el copyright ocupa 4px menos que el token base (0.65rem): el recorte
    de 1px de la versión web/escritorio no se aplica aquí. */
 @media (max-width: 640px) {
     .footer-row { font-size: calc(0.65rem - 4px); }
+}
+
+/* ── Página legal (política de cookies) ──────────────────── */
+/* Fondo gris oscuro: distingue la política (y cualquier futura página legal)
+   de las páginas de contenido. Se pinta también en <html> para que el área de
+   rebote del scroll y el propio lienzo usen el mismo gris. */
+body.page-legal { background: var(--bg-legal); }
+html:has(body.page-legal) { background: var(--bg-legal); }
+.legal { padding: clamp(3rem, 7vw, 5rem) var(--pad) clamp(3rem, 6vw, 5rem); }
+.legal-inner { max-width: 70ch; margin: 0 auto; }
+/* Logo de la web dentro del propio escrito, enlazado a la portada. Sin cabecera
+   fija: la página es solo texto, así que el logo abre la columna y hace de
+   ancla visual. Misma escala que en la cabecera del sitio. */
+/* El logo va centrado en la columna, como cabecera de la página; el texto de
+   debajo sigue alineado a la izquierda (display: flex + justify-content evita
+   tocar la alineación del escrito). */
+.legal-logo {
+    display: flex; justify-content: center;
+    margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+.legal-logo img {
+    display: block; width: auto;
+    height: clamp(41.4px, 4.485vw, 59.8px);
+}
+.legal-kicker {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--violet);
+}
+.legal h1 {
+    font-family: var(--font-head); font-weight: 800;
+    font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.02;
+    text-transform: uppercase; letter-spacing: 0.01em;
+    margin: 0.8rem 0 0.9rem;
+}
+.legal-updated {
+    font-family: var(--font-mono); font-size: 0.62rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.legal h2 {
+    font-family: var(--font-head); font-weight: 700;
+    font-size: clamp(1rem, 2.2vw, 1.25rem); line-height: 1.2;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin: 2.6rem 0 0.8rem;
+}
+.legal h3 {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--violet); margin: 1.6rem 0 0.5rem;
+}
+.legal p, .legal li {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.95rem; line-height: 1.75;
+    color: rgba(239, 238, 233, 0.78);
+}
+.legal p + p { margin-top: 0.9rem; }
+.legal ul { list-style: none; margin: 0.8rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.legal li { padding-left: 1.1rem; position: relative; }
+.legal li::before { content: "·"; position: absolute; left: 0; color: var(--violet); }
+.legal strong { font-weight: 500; color: var(--fg); }
+.legal a {
+    color: var(--fg); text-decoration: underline;
+    text-decoration-color: rgba(160, 100, 255, 0.7); text-underline-offset: 3px;
+    transition: color 0.3s;
+}
+.legal a:hover { color: var(--violet); }
+.legal-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.legal-table th, .legal-table td {
+    text-align: left; vertical-align: top;
+    padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--line);
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.78rem; line-height: 1.55;
+    color: rgba(239, 238, 233, 0.78);
+}
+.legal-table th {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--violet); white-space: nowrap;
+}
+.legal-note {
+    margin-top: 1rem; padding: 0.9rem 1rem;
+    border: 1px solid var(--line); background: rgba(12, 12, 14, 0.75);
+}
+/* Secciones de la política: cada bloque (esenciales, analítica, vídeo) lleva
+   su título y su estado a la derecha, como las tarjetas de preferencias. */
+.legal-group { margin-top: 1.8rem; }
+.legal-group-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+}
+.legal-group-head h3 { margin: 1.2rem 0 0.5rem; }
+.legal-state {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* Listas sin viñeta: los '·' de .legal li no encajan con los párrafos enlazados
+   ni con los dos tipos de cookie, que se leen como texto corrido. */
+.legal-list, .legal-links { list-style: none; }
+.legal-list li, .legal-links li { padding-left: 0; }
+.legal-list li::before, .legal-links li::before { content: none; }
+.legal-list li, .legal-links li { margin-bottom: 0.55rem; }
+
+/* Tabla de cookies: nombre y caducidad en mono, finalidad en el cuerpo. */
+.legal-table { table-layout: fixed; }
+.legal-table th:nth-child(1), .legal-table td:nth-child(1) { width: 22%; }
+.legal-table th:nth-child(3), .legal-table td:nth-child(3) { width: 14%; }
+.legal-table td { font-size: 0.8rem; }
+.legal-table td:first-child {
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--fg); word-break: break-word;
+}
+.legal-table td code, .legal-group code {
+    font-family: var(--font-code); font-size: 0.86em;
+    color: var(--violet);
+}
+.legal-note-inline {
+    display: block; margin-top: 0.15rem;
+    font-size: 0.62rem; color: var(--muted);
+}
+
+/* Interruptor de finalidad de la propia política: apagado por defecto, guarda
+   la decisión al instante (vía de alta o de retirada del consentimiento). */
+.legal-switch {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin: 1rem 0 0.4rem;
+}
+.legal-switch input {
+    appearance: none; -webkit-appearance: none;
+    position: relative; flex: 0 0 auto;
+    width: 44px; height: 24px; border-radius: 100px;
+    border: 1px solid var(--line); background: rgba(239, 238, 233, 0.12);
+    cursor: pointer; transition: background 0.35s var(--ease-out), border-color 0.35s;
+}
+.legal-switch input::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--fg); transition: transform 0.35s var(--ease-out);
+}
+.legal-switch input:checked { background: var(--lime); border-color: transparent; }
+.legal-switch input:checked::after { transform: translateX(20px); background: #0a0a0a; }
+.legal-switch span {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted);
+}
+.legal-switch input:checked + span { color: var(--fg); }
+
+.legal-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    margin-top: 1rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.7rem 1.2rem; border-radius: 100px;
+    border: 1px solid var(--line); background: transparent; color: var(--fg);
+    cursor: pointer;
+    transition: background 0.35s, color 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.legal-btn:hover {
+    background: var(--violet); border-color: transparent;
+    box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
+}
+.legal-back {
+    margin-top: 2.8rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
 }
 
 /* ── Responsive header ───────────────────────────────────── */
@@ -1361,53 +1544,120 @@ section { position: relative; }
 .keep-case { text-transform: none; }
 
 /* ── Cookie consent ──────────────────────────────────────── */
-/* Mismo lenguaje que el header al hacer scroll: fondo semitransparente
-   + backdrop-blur + hairline. Se ancla a la retícula de --pad. */
+/* Barra de ancho completo pegada al borde inferior, con el mismo material que
+   la cabecera fija cuando el visitante hace scroll: gris translúcido, blur de
+   16px y hairline arriba. Conformidad: aceptar y rechazar van en la misma fila
+   y con el mismo peso, sin pasos añadidos; «Preferencias» despliega el panel de
+   finalidades, que es también la vía para cambiar o retirar la decisión. */
 .cookie-banner {
-    position: fixed; left: var(--pad); bottom: var(--pad);
+    position: fixed; left: 0; right: 0; bottom: 0;
     z-index: 960; /* sobre el nav (800), el menú (850) y el grain (900);
                      bajo el cursor (980) y el preloader (9500) */
-    width: min(380px, calc(100vw - 2 * var(--pad)));
-    padding: 1rem 1.15rem 1.1rem;
-    background: rgba(5, 5, 5, 0.68);
-    backdrop-filter: blur(16px) saturate(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid var(--line);
-    opacity: 0; transform: translateY(14px);
+    /* Gris translúcido como la barra de referencia, con el mismo desenfoque que
+       la cabecera fija del landing. La opacidad (0.62) deja leer el contenido
+       que queda detrás sin perder contraste: el texto va en blanco al 92%. */
+    background: rgba(46, 46, 48, 0.62);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    opacity: 0; transform: translateY(100%);
     transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
 }
 .cookie-banner.show { opacity: 1; transform: none; }
-.cookie-title {
-    font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
-    letter-spacing: 0.28em; text-transform: uppercase; color: var(--violet);
-    margin-bottom: 0.5rem;
+
+/* Contenido: texto a la izquierda (hasta media pantalla en escritorio) y las
+   acciones a la derecha, con un filete vertical entre ambos como en la barra
+   de referencia. */
+.cookie-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    padding: 0.85rem var(--pad);
 }
 .cookie-text {
     font-family: var(--font-body); font-weight: 300;
-    font-size: 0.72rem; line-height: 1.6; letter-spacing: 0.01em;
-    color: rgba(239, 238, 233, 0.72);
-    margin-bottom: 0.95rem;
+    font-size: 0.78rem; line-height: 1.5; letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 60ch;
 }
-.cookie-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cookie-link {
+    color: var(--fg); text-decoration: underline;
+    text-decoration-color: rgba(239, 238, 233, 0.55); text-underline-offset: 3px;
+    transition: color 0.3s, text-decoration-color 0.3s;
+}
+.cookie-link:hover { color: var(--violet); text-decoration-color: var(--violet); }
+
+.cookie-actions {
+    display: flex; align-items: center; gap: clamp(0.75rem, 1.6vw, 1.4rem);
+    flex: 0 0 auto;
+}
+.cookie-actions::before {
+    content: ""; align-self: stretch; width: 1px;
+    background: rgba(255, 255, 255, 0.22); margin-right: clamp(0.1rem, 0.6vw, 0.5rem);
+}
 .cookie-btn {
-    font-family: var(--font-mono); font-weight: 700;
-    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
-    padding: 0.6rem 1.1rem; border-radius: 100px;
+    font-family: var(--font-body); font-weight: 400;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    padding: 0.6rem 1.35rem; border-radius: 3px;
     border: 1px solid var(--line);
     transition: background 0.35s, color 0.35s, border-color 0.35s, box-shadow 0.35s;
 }
-.cookie-accept { background: var(--lime); color: #0a0a0a; border-color: transparent; }
-.cookie-accept:hover {
-    background: var(--violet); color: var(--fg);
-    box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
+.cookie-config {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    color: var(--muted); padding: 0.35rem 0.15rem;
+    transition: color 0.3s;
 }
-.cookie-reject { color: rgba(239, 238, 233, 0.6); }
-.cookie-reject:hover { color: var(--fg); border-color: rgba(239, 238, 233, 0.4); }
+.cookie-config:hover { color: var(--fg); }
 
-/* Móvil: barra a lo ancho, pegada al borde inferior */
-@media (max-width: 640px) {
-    .cookie-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; }
-    .cookie-actions .cookie-btn { flex: 1 1 auto; }
+/* Aceptar (sólido, claro) y rechazar (fantasma, mismo cuerpo y misma altura):
+   la decisión negativa no cuesta más que la positiva. */
+.cookie-accept { background: var(--fg); color: #0a0a0a; border-color: transparent; }
+.cookie-accept:hover { background: var(--lime); box-shadow: 0 0 24px rgba(163, 223, 2, 0.35); }
+.cookie-reject { background: transparent; color: var(--fg); border-color: rgba(239, 238, 233, 0.32); }
+.cookie-reject:hover { border-color: var(--fg); box-shadow: 0 0 24px rgba(239, 238, 233, 0.12); }
+
+/* Panel de finalidades: se despliega encima de la barra, con el mismo material
+   y ancho completo. Nada premarcado y la analítica apagada por defecto. */
+.cookie-prefs {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 1rem var(--pad) 1.15rem;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.85rem clamp(1.5rem, 4vw, 3rem);
+}
+.cookie-prefs[hidden] { display: none; }
+.cookie-purpose { display: grid; gap: 0.2rem; }
+.cookie-purpose-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    font-family: var(--font-body); font-weight: 500;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    color: var(--fg);
+}
+label.cookie-purpose-head { cursor: pointer; }
+.cookie-purpose-state { color: var(--muted); font-size: 0.72rem; }
+.cookie-purpose-desc {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.72rem; line-height: 1.55;
+    color: rgba(239, 238, 233, 0.6);
+}
+.cookie-toggle {
+    accent-color: var(--lime);
+    width: 1rem; height: 1rem; cursor: pointer;
+}
+.cookie-prefs .cookie-actions { grid-column: 1 / -1; }
+.cookie-prefs .cookie-actions::before { content: none; }
+.cookie-save { background: var(--fg); color: #0a0a0a; border-color: transparent; }
+.cookie-save:hover { background: var(--violet); color: var(--fg); box-shadow: 0 0 24px rgba(160, 100, 255, 0.45); }
+
+/* Móvil: el texto arriba y las acciones debajo, cada una a lo ancho, para que
+   el pulgar no tenga que apuntar a nada pequeño. */
+@media (max-width: 720px) {
+    .cookie-bar { flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 0.9rem 1rem; }
+    .cookie-text { font-size: 0.75rem; }
+    .cookie-actions { gap: 0.5rem; flex-wrap: wrap; justify-content: space-between; }
+    .cookie-actions::before { display: none; }
+    .cookie-actions .cookie-btn { flex: 1 1 auto; text-align: center; }
+    .cookie-config { flex: 0 0 auto; }
+    .cookie-prefs { grid-template-columns: 1fr; padding: 1rem; }
 }
 
 /* ── Reduced motion ──────────────────────────────────────── */

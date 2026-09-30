@@ -271,6 +271,17 @@ header {
     transform: translate(2px, -2px);
 }
 
+/* ── Enlace legal del pie de error ───────────────────────── */
+/* La 404 no monta la barra de consentimiento (es una página de error sin
+   scripts del sitio): solo enlaza la política de cookies. */
+.legal-404 {
+    margin-top: 1.5rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+}
+.legal-404 a { color: var(--muted); transition: color 0.3s var(--ease-out); }
+.legal-404 a:hover { color: var(--fg); }
+
 /* ── Accessibility & Reduced Motion ──────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     .glitch-error::before,

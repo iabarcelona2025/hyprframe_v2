@@ -272,7 +272,9 @@ for (const page of PAGES) {
             assert.ok(card.querySelector(".node-card__title").textContent.trim().length > 2);
             assert.notEqual(card.getAttribute("href"), page.file, `${page.file}: se enlaza a sí misma`);
         });
-        assert.equal(doc.querySelector(".footer-row").textContent.trim(), "© 2026 HYPRFRAME. All rights reserved.");
+        const footer = doc.querySelector(".footer-row");
+        assert.equal(footer.querySelector("span").textContent.trim(), "© 2026 HYPRFRAME. All rights reserved.");
+        assert.match(footer.textContent, /Cookie policy/, `${page.file}: el pie enlaza la política de cookies`);
 
         /* ── Comportamiento: menú móvil, cabecera y reproductor bajo demanda ── */
         window.eval(script);
