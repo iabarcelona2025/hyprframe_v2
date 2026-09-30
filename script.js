@@ -651,7 +651,33 @@
             function frame(now) {
                 raf = requestAnimationFrame(frame);
                 if (now - last < TICK) return;
+                // Hueco real desde el último paso. En el primer frame tras
+                // start() last = 0 (centinela), así que vale el propio TICK; en
+                // el resto el throttle de arriba ya garantiza el mínimo.
+                const gap = last ? now - last : TICK;
                 last = now;
+                // Con la rueda en marcha el terminal se calla. Rendimiento
+                // (30/09/2026): cada paso reescribe ~81 campos, y cada
+                // reescritura invalida la línea, el filtro de su span y la
+                // cadena de mezclas del panel — unos 1.620 cambios de nodo de
+                // texto por segundo compitiendo en el HILO PRINCIPAL con el
+                // propio scroll, que lo escribe smooth-scroll.js desde rAF (con
+                // el wheel anulado, el scroll ya no puede correr en el
+                // compositor). Callarlo mientras se desplaza libera ese hilo
+                // justo en el frame que lo necesita; a 6 px y ~15 % de alfa,
+                // unos cientos de ms sin escribir no se ven, y el rAF sigue
+                // vivo para reanudar al instante.
+                // El reloj se desplaza con el hueco (`t0 += gap`), así que
+                // `elapsed` no avanza: al volver se retoma donde estaba, sin
+                // soltar de golpe los caracteres acumulados ni saltarse un ciclo
+                // de contadores. Se usa `is-scrolling` porque ya es la señal
+                // única de «hay desplazamiento» del sitio (la pone y la quita
+                // smooth-scroll.js); en táctil, con «reducir movimiento» o con
+                // ?smooth=0 nunca se marca y todo queda como estaba.
+                if (document.documentElement.classList.contains("is-scrolling")) {
+                    t0 += gap;
+                    return;
+                }
                 elapsed = now - t0;
                 currentElapsed = elapsed;
 
