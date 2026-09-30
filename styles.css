@@ -1316,9 +1316,19 @@ section { position: relative; }
 }
 
 @media (max-width: 600px) {
-    .about-heading { gap: 0.15rem; }
-    /* Anagrama del About: +25px a la derecha en móvil (30/09/2026) · −35px → −10px. */
-    .about-emblem-wrap { height: clamp(8rem, 30vw, 11rem); translate: calc(25% - 0.5rem - 10px) 0; }
+    /* El anagrama de la derecha NUNCA debe pisar las letras de "HUMAN
+       INTUITION × MACHINE SYNTHESIS" (30/09/2026). El ajuste anterior
+       desplazaba el bloque con un `translate` que, según el ancho exacto del
+       móvil, podía salir en negativo y meter el anagrama dentro de la
+       columna del texto (el texto puede llegar a envolver hasta el borde de
+       su columna). Se sustituye por un planteamiento a prueba de solapes:
+       - más separación real entre columnas (gap),
+       - un margen de seguridad propio en el texto (padding-right),
+       - el anagrama más pequeño y sin desplazamiento extra (solo centrado
+         en su columna), así siempre queda hueco de sobra entre ambos. */
+    .about-heading { gap: 0.5rem; }
+    .about-title { padding-right: 0.6rem; }
+    .about-emblem-wrap { height: clamp(6.5rem, 22vw, 9rem); translate: 0 0; }
     .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
     .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
 }
