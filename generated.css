@@ -141,10 +141,16 @@ body.menu-open .menu-overlay a { visibility: visible; }
    conserva su línea y su relleno. (29/09/2026 · 30/09/2026) */
 .node-story > .node-section-label { margin-inline: 0; border-top: 0; }
 .node-section-label span:first-child { color: var(--violet); }
+/* THE STORY en verde corporativo en las 10 páginas Generated; KEEP EXPLORING
+   sigue en violeta vía la regla de arriba. (30/09/2026) */
+.node-story > .node-section-label span:first-child { color: var(--lime); }
 .node-story h2, .node-related h2 {
     font: 700 clamp(3rem, 8vw, 8rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.025em; text-transform: uppercase;
 }
+/* Palabras en lila de cada h2 (THE STORY + RELATED PROJECTS) en cursiva,
+   EN y ES: THE FIRE, SNOW, PROJECTS, RELACIONADOS, etc. (30/09/2026) */
+.node-story h2 .violet, .node-related h2 .violet { font-style: italic; }
 .node-player { position: relative; aspect-ratio: 16 / 9; width: 85.5%; margin-inline: auto; background: #000; overflow: hidden; } /* 90% → 85.5% (27/09/2026) · 5% más de reducción sobre el 90% */
 .node-player > img {
     width: 100%; height: 100%; object-fit: cover;
