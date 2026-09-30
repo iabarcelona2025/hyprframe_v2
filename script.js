@@ -732,28 +732,90 @@
         }
     }
 
-    /* ── 6. Statement: word-by-word light-up on scroll ────── */
+    /* ── 6. Statement: barrido de encendido, de letra en letra ── */
+    // Antes cada palabra saltaba de golpe a la clase .lit y el violeta del
+    // acento llegaba con un cambio seco. Ahora el texto se reparte en letras y
+    // cada una recibe su grado de encendido en --lit (0 → 1): el frente de luz
+    // avanza con un degradado de SPREAD letras —siempre hay unas cuantas a
+    // medio encender entre las apagadas y las encendidas— y el valor que se
+    // pinta sigue al del scroll con un amortiguado corto, normalizado por
+    // tiempo, así que ni el salto de la rueda ni un desplazamiento rápido se
+    // notan en el texto. (30/09/2026)
     const statement = document.getElementById("statementText");
-    if (statement) {
-        const words = [...statement.querySelectorAll("span")];
-        const section = statement.closest("section");
-        let ticking = false;
+    if (statement && !reduced) {
+        /* Reparto en letras: cada palabra pasa a ser un tramo de <span>, uno por
+           letra y con las clases de su palabra (.accent, .italic). Los nodos de
+           texto que separan las palabras se quedan donde están, de modo que los
+           saltos de línea siguen en los mismos espacios. */
+        const letters = [];
+        [...statement.querySelectorAll("span")].forEach((word) => {
+            const run = document.createDocumentFragment();
+            for (const char of word.textContent) {
+                const letter = document.createElement("span");
+                letter.className = word.className;
+                letter.textContent = char;
+                run.appendChild(letter);
+                letters.push(letter);
+            }
+            word.replaceWith(run);
+        });
 
-        function lightWords() {
+        const section = statement.closest("section");
+        const total = letters.length;
+        const SPREAD = Math.max(2, total / 16);  // letras que tarda cada una en encenderse
+        const painted = new Float32Array(total); // valor que ya está en el DOM
+        let head = 0;                            // frente de luz, en letras
+        let raf = 0, last = 0, first = true;
+
+        // Encendido que le toca a la letra i: continuo, y a 1 una vez que el
+        // frente la ha rebasado por completo.
+        const level = (i) => Math.min(Math.max((head - i) / SPREAD, 0), 1);
+
+        function headFromScroll() {
             const rect = section.getBoundingClientRect();
             const start = innerHeight * 0.85;
             const end = innerHeight * 0.25;
-            const total = start - end;
-            const done = Math.min(Math.max((start - rect.top) / (total + rect.height * 0.35), 0), 1);
-            words.forEach((w, i) => {
-                w.classList.toggle("lit", done * words.length > i);
-            });
-            ticking = false;
+            const travel = start - end;
+            const done = Math.min(Math.max((start - rect.top) / (travel + rect.height * 0.35), 0), 1);
+            // A done 0 el frente arranca una SPREAD por delante de la primera
+            // letra (todas apagadas); a done 1 acaba una SPREAD por detrás de la
+            // última (todas encendidas).
+            head = done * (total - 1 + SPREAD * 2) - SPREAD;
         }
-        addEventListener("scroll", () => {
-            if (!ticking) { requestAnimationFrame(lightWords); ticking = true; }
-        }, { passive: true });
-        lightWords();
+
+        function frame(now) {
+            const dt = last ? Math.min(now - last, 64) : 16;
+            last = now;
+            const snap = first;                      // primer trazo: cada letra se coloca en su sitio
+            // Decaimiento exponencial —la solución exacta del amortiguado—, que
+            // se compone igual a 60 y a 120 Hz y no depende del ritmo de refresco.
+            const k = snap ? 0 : Math.exp(-dt / 80);
+            first = false;
+            let moving = false;
+            for (let i = 0; i < total; i++) {
+                const goal = level(i);
+                let value = goal + (painted[i] - goal) * k;
+                if (Math.abs(goal - value) < 0.002) value = goal;   // lo que queda no se ve
+                else moving = true;
+                if (value !== painted[i] || snap) {
+                    painted[i] = value;
+                    letters[i].style.setProperty("--lit", value.toFixed(3));
+                }
+            }
+            // El bucle solo vive mientras hay barrido: en reposo no queda ni un
+            // rAF pendiente (la sección ocupa casi una pantalla y no hay nada
+            // que hacer con ella quieta).
+            raf = moving ? requestAnimationFrame(frame) : 0;
+        }
+
+        function sweep() {
+            headFromScroll();
+            if (!raf) { last = 0; raf = requestAnimationFrame(frame); }
+        }
+
+        addEventListener("scroll", sweep, { passive: true });
+        addEventListener("resize", sweep, { passive: true });
+        sweep();
     }
 
     /* ── 7. Work rows: floating follower image ────────────── */

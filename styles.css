@@ -797,12 +797,37 @@ section { position: relative; }
     line-height: 1.2; letter-spacing: 0.02em;
     max-width: 22ch;
 }
-.statement-text span {
-    opacity: 0.14;
-    transition: opacity 0.45s ease, color 0.45s ease;
+/* «--lit» es el grado de encendido de cada letra, de 0 (apagada) a 1
+   (encendida). La escribe script.js durante el barrido del scroll (§6): el
+   texto se reparte en letras y cada una lleva su valor, así que la luz pasa de
+   una a la siguiente sin escalones. Registrada como <number> para poder usarla
+   dentro de un calc() —opacidad— y de un color-mix() —el violeta del acento—.
+   Sin script se queda en su valor de partida: el texto se ve como siempre,
+   apagado. (30/09/2026) */
+@property --lit {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
 }
-.statement-text span.lit { opacity: 1; }
-.statement-text span.accent.lit { color: var(--violet); }
+/* Sin transition de CSS a propósito: el barrido ya llega continuo desde el
+   scroll y una transición por letra reiniciaría su cuenta en cada frame (el
+   encendido se quedaría atrás y temblaría). El suavizado lo pone script.js con
+   un amortiguado corto, independiente del ritmo de refresco. */
+/* La geometría no cambia al repartir el texto: entre cajas inline no hay
+   kerning ni ligaduras, así que se apagan en las dos formas —palabra entera y
+   letra suelta— y una línea nunca se recoloca al arrancar el script. */
+.statement-text span {
+    font-kerning: none;
+    font-variant-ligatures: none;
+    opacity: calc(0.14 + 0.86 * var(--lit, 0));
+}
+/* El violeta no entra de golpe al final de la palabra: se mezcla con el blanco
+   a la vez que la letra se enciende, así que el color acompaña al barrido.
+   Donde no hay color-mix() la declaración se descarta y queda el violeta plano
+   de .accent. */
+.statement-text span.accent {
+    color: color-mix(in srgb, var(--violet) calc(var(--lit, 0) * 100%), var(--fg));
+}
 
 /* ── Oculto por petición del cliente (24/09/2026):
       texto lateral de info de la sección WORK.
@@ -1677,7 +1702,9 @@ label.cookie-purpose-head { cursor: pointer; }
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .clb-gallery-track, .clb-reflection-track { animation: none; transform: none; }
-    .statement-text span { opacity: 1; }
+    /* El barrido del statement no se monta (script.js §6 no reparte el texto en
+       letras), así que aquí las palabras se dan por encendidas de una vez. */
+    .statement-text span { --lit: 1; opacity: 1; }
     .preloader { display: none; }
     /* La intro pedida a propósito (?intro=1, o el preview de desarrollo) se ve
        igual, con su barrido: la petición explícita manda sobre el atajo de

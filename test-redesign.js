@@ -177,9 +177,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800/.test(html)
         && !/family=Kanit/.test(html));
 
-    // statement words lit (IO-independent scroll calc; rect.top=0 in jsdom → fully lit)
-    const lit = doc.querySelectorAll("#statementText span.lit").length;
-    check("statement words lit on scroll calc", lit > 0, `${lit} words lit`);
+    // statement: el encendido es continuo, letra a letra (script.js §6). En jsdom
+    // el rect de la sección es 0 → el scroll la da por pasada entera y todas las
+    // letras se quedan escritas a 1 (el barrido en sí se mide en test-statement.js).
+    const statementSpans = [...doc.querySelectorAll("#statementText span")];
+    const lit = statementSpans.filter((span) => span.style.getPropertyValue("--lit") === "1.000").length;
+    check("statement letters lit on scroll calc", statementSpans.length > 40 && lit === statementSpans.length,
+        `${lit}/${statementSpans.length} letters`);
 
     // menu toggle
     const burger = doc.getElementById("burger");
