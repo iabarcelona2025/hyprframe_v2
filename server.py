@@ -12,6 +12,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 ROOT = os.path.dirname(os.path.abspath(__file__))
 WATCH = ["index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
          "404.html", "404.css", "404.js",
+         # Páginas legales.
+         "cookie-policy.html", "es/cookie-policy.html",
          # Páginas de la sección GENERATED (vídeo): todas comparten generated.css/js.
          "project-node.html", "project-deep.html", "project-polestar5.html", "project-distant.html",
          "project-exit.html", "project-stained.html", "project-asics.html", "project-farewell.html",

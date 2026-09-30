@@ -1,7 +1,7 @@
 const fs = require("fs");
 const { JSDOM } = require("jsdom");
 
-const pages = ["index.html","legacy.html","builder.html","project-asics.html","project-deep.html",
+const pages = ["index.html","legacy.html","builder.html","cookie-policy.html","project-asics.html","project-deep.html",
 "project-distant.html","project-exit.html","project-farewell.html","project-iad.html",
 "project-node.html","project-polestar5.html","project-ryuu.html","project-stained.html"];
 

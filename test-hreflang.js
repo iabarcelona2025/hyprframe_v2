@@ -11,6 +11,7 @@ const origin = "https://hyprframe.com/";
 const pages = [
     "index.html",
     "legacy.html",
+    "cookie-policy.html",
     ...fs.readdirSync(__dirname).filter(file => /^project-.*\.html$/.test(file)).sort(),
 ];
 
