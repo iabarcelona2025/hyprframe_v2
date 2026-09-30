@@ -1,7 +1,8 @@
-/* Scroll con inercia (sección 11 de script.js): qué se activa, cómo se mueve y
-   qué NO debe cambiar. Se ejecuta el script real contra el index real en jsdom,
-   con reloj y scroll simulados, para poder afirmar cosas exactas que el
-   navegador headless no permite medir (allí el rAF va a ~1 fps).
+/* Scroll con inercia (smooth-scroll.js, compartido por todo el sitio): qué se
+   activa, cómo se mueve, dónde está cargado y qué NO debe cambiar. Se ejecuta el
+   script real contra el index real en jsdom, con reloj y scroll simulados, para
+   poder afirmar cosas exactas que el navegador headless no permite medir (allí
+   el rAF va a ~1 fps).
 
    Lo que se fija aquí:
    - Se activa solo con puntero fino y sin «reducir movimiento»; ?smooth=0 lo apaga.
@@ -12,6 +13,8 @@
    - Teclado y anclas del documento usan la misma inercia.
    - Cuando está activo, el CSS deja de animar los saltos de ancla y el vídeo del
      hero pausa su «respiración» mientras se desplaza.
+   - Todas las páginas públicas (landing, 20 fichas, legacy y 404) lo cargan, y
+     todas piden la misma versión de styles.css.
    (30/09/2026) */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -20,7 +23,7 @@ const { JSDOM } = require("jsdom");
 
 const root = __dirname;
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const js = fs.readFileSync(path.join(root, "script.js"), "utf8");
+const js = fs.readFileSync(path.join(root, "smooth-scroll.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
 let failures = 0;
@@ -30,8 +33,9 @@ const check = (name, cond, extra = "") => {
 };
 
 /* Arranca la landing con un reloj virtual y un scroll de mentira. */
-function boot({ url = "https://hyprframe.com/", touch = false, reduced = false, height = 6000, innerH = 800 } = {}) {
-    const dom = new JSDOM(html, { url, pretendToBeVisual: true, runScripts: "outside-only" });
+function boot({ url = "https://hyprframe.com/", pagina = "index.html", touch = false, reduced = false, height = 6000, innerH = 800 } = {}) {
+    const fuente = pagina === "index.html" ? html : fs.readFileSync(path.join(root, pagina), "utf8");
+    const dom = new JSDOM(fuente, { url, pretendToBeVisual: true, runScripts: "outside-only" });
     const { window } = dom;
     const doc = window.document;
     const state = { y: 0, now: 0, queue: [] };
@@ -66,7 +70,7 @@ function boot({ url = "https://hyprframe.com/", touch = false, reduced = false, 
     window.cancelAnimationFrame = () => {};
     window.performance.now = () => state.now;
 
-    window.eval(js);
+    window.eval(js);   // smooth-scroll.js
     const step = (ms = 16.7) => {
         state.now += ms;
         const pending = state.queue;
@@ -244,6 +248,79 @@ const smoothEnabled = (page) => page.doc.documentElement.classList.contains("hf-
         /html\.hf-smooth \{ scroll-behavior: auto; \}/.test(css));
     check("styles.css pausa la respiración del vídeo mientras se desplaza",
         /html\.is-scrolling \.hero-video \{ animation-play-state: paused; \}/.test(css));
+}
+
+/* ── 9a. Y funciona igual en una ficha de proyecto (que no carga script.js) ─ */
+{
+    const ficha = boot({ pagina: "project-node.html", url: "https://hyprframe.com/project-node.html" });
+    check("ficha de proyecto: activa html.hf-smooth", smoothEnabled(ficha));
+    ficha.wheel(900);
+    ficha.frames(140);
+    check("ficha de proyecto: la rueda recorre con inercia", Math.abs(ficha.state.y - 900) < 1,
+        `y=${ficha.state.y.toFixed(2)}`);
+
+    const fichaEs = boot({ pagina: "es/project-node.html", url: "https://hyprframe.com/es/project-node.html" });
+    check("ficha en español: activa html.hf-smooth", smoothEnabled(fichaEs));
+
+    const legado = boot({ pagina: "legacy.html", url: "https://hyprframe.com/legacy.html" });
+    check("legacy: activa html.hf-smooth", smoothEnabled(legado));
+
+    const noEncontrada = boot({ pagina: "404.html", url: "https://hyprframe.com/404.html" });
+    check("404: activa html.hf-smooth", smoothEnabled(noEncontrada));
+}
+
+/* ── 9b. Cobertura: el archivo va en todas las páginas públicas ──────────── */
+{
+    const paginas = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")),
+                     ...fs.readdirSync(path.join(root, "es")).filter((f) => f.endsWith(".html")).map((f) => `es/${f}`)];
+    const publicas = paginas.filter((f) => !f.endsWith("builder.html"));   // herramienta interna
+    const sinScript = publicas.filter((f) => {
+        const t = fs.readFileSync(path.join(root, f), "utf8");
+        return !/<script src="\/?smooth-scroll\.js\?v=\d+" defer><\/script>/.test(t);
+    });
+    check(`todas las páginas públicas cargan smooth-scroll.js (${publicas.length})`,
+        sinScript.length === 0, sinScript.join(", "));
+
+    // Los 404 usan ruta absoluta porque se sirven en cualquier profundidad.
+    const malRuta = publicas.filter((f) => {
+        const t = fs.readFileSync(path.join(root, f), "utf8");
+        const m = t.match(/<script src="([^"]*smooth-scroll\.js[^"]*)" defer>/);
+        return m && (f.includes("404") ? !m[1].startsWith("/") : m[1].startsWith("/"));
+    });
+    check("la ruta es absoluta solo en los 404", malRuta.length === 0, malRuta.join(", "));
+
+    // Una sola versión de styles.css en todo el sitio: con versiones distintas,
+    // quien tenga la vieja en caché ve una hoja antigua en unas páginas y no en otras.
+    const versiones = new Set();
+    for (const f of publicas) {
+        const m = fs.readFileSync(path.join(root, f), "utf8").match(/href="\/?styles\.css\?v=(\d+)"/);
+        if (m) versiones.add(m[1]);
+    }
+    check("styles.css se pide con una única versión en todo el sitio",
+        versiones.size === 1, [...versiones].join(", "));
+
+    // El árbol español comparte los assets con el inglés por enlaces simbólicos
+    // (es/styles.css -> ../styles.css); sólo los .html son copias, porque son los
+    // que se traducen. Un archivo copiado en vez de enlazado se queda atrás en
+    // silencio en cuanto se toca el original, así que se comprueba el enlace.
+    const enlaces = fs.readdirSync(path.join(root, "es"), { withFileTypes: true })
+        .filter((d) => !d.name.endsWith(".html") && !d.name.startsWith("."));
+    const noEnlazados = enlaces.filter((d) => !d.isSymbolicLink());
+    check(`el árbol español comparte los assets por enlace (${enlaces.length} archivos)`,
+        noEnlazados.length === 0, noEnlazados.map((d) => d.name).join(", "));
+    const malDestino = enlaces.filter((d) => {
+        const destino = fs.readlinkSync(path.join(root, "es", d.name));
+        return destino !== `../${d.name}` || !fs.existsSync(path.join(root, d.name));
+    });
+    check("cada enlace apunta a su archivo de la raíz",
+        malDestino.length === 0, malDestino.map((d) => d.name).join(", "));
+
+    // Y el archivo compartido no lleva dentro lógica de la portada.
+    const suelto = fs.readFileSync(path.join(root, "smooth-scroll.js"), "utf8");
+    check("smooth-scroll.js no arrastra código de la landing",
+        !/introCount|marquee|heroBreath|siteHeader/.test(suelto));
+    check("script.js ya no duplica la inercia",
+        !/smoothRequested/.test(fs.readFileSync(path.join(root, "script.js"), "utf8")));
 }
 
 /* ── 10. Al asentarse, el vídeo del hero puede volver a respirar ─────────── */
