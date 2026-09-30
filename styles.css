@@ -242,7 +242,7 @@ html.hf-skip-intro .preloader { display: none; }
 .header-meta > .lang-switch {
     padding-left: 1.5rem;
     border-left: 1px solid var(--line);
-    font-size: calc(0.72rem - 1px); /* 1px más pequeño que el tamaño base */
+    font-size: calc(0.72rem - 3px); /* 2px más pequeño que el tamaño actual */
 }
 .header-meta > .lang-switch::before,
 .menu-lang .lang-switch::before {
