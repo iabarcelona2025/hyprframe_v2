@@ -43,6 +43,11 @@
             let n = 0;
             const started = performance.now();
             const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
+            // La curva (6% del resto por paso, mínimo 1) tarda siempre 46 pasos en
+            // llegar a 100, así que la cadencia fija la duración: 46 × 28 ms =
+            // 1,29 s (antes 46 × 40 ms = 1,84 s). El suelo MIN_DURATION sigue sin
+            // morder: la curva ya dura más que él por sí sola. (30/09/2026)
+            const TICK_MS = 28;
             const tick = setInterval(() => {
                 // ease-out curve toward 100
                 n += Math.max(1, Math.round((100 - n) * 0.06));
@@ -56,7 +61,7 @@
                     preCount.textContent = n;
                     preBar.style.width = n + "%";
                 }
-            }, 40);
+            }, TICK_MS);
         }
     }
 

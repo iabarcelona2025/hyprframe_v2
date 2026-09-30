@@ -54,7 +54,18 @@ function boot(storage = {}) {
     const mid = parseInt(doc.getElementById("preCount").textContent, 10);
     check("1ª visita: el contador sube", mid > 0 && mid < 100, "count=" + mid);
     check("1ª visita: flag guardada en sessionStorage", window.sessionStorage.getItem("hfIntroSeen") === "1");
-    await wait(3200);
+    /* El contador tarda 46 pasos de 28 ms = 1,29 s en llegar a 100 (antes 46 ×
+       40 ms = 1,84 s). Se mide desde el arranque del script, no con una espera
+       fija, para que un cambio de cadencia no pase desapercibido. (30/09/2026) */
+    const t0 = Date.now();
+    while (doc.getElementById("preCount").textContent !== "100" && Date.now() - t0 < 6000) {
+        await wait(10);
+    }
+    const reached = Date.now() - t0 + 600;
+    check("1ª visita: el contador tarda ~1,29 s (46 pasos × 28 ms)",
+        doc.getElementById("preCount").textContent === "100" && reached > 900 && reached < 2000,
+        "contador a 100 a los " + reached + "ms");
+    await wait(2000);
     check("1ª visita: contador a 100 y body.loaded", doc.getElementById("preCount").textContent === "100"
         && doc.body.classList.contains("loaded"));
     check("1ª visita: preloader con .done", doc.getElementById("preloader").classList.contains("done"));
