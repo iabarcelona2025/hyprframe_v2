@@ -818,61 +818,6 @@
         sweep();
     }
 
-    /* ── 6d. About: el marco de la marca sale del negro ───── */
-    // El picto del about entra con una perspectiva de cámara: nace dentro del
-    // negro —pequeño, girado hacia dentro, desenfocado y casi transparente, con
-    // la silueta dibujada por el ruido— y se endereza hacia el plano de la
-    // página según se desplaza hacia la mitad de la pantalla. El valor va de
-    // 1 (dentro del negro) a 0 (fuera del todo) y sigue al scroll con el mismo
-    // amortiguado corto que el barrido del statement (§6), normalizado por
-    // tiempo; al llegar a los extremos se suelta la clase .emerging, de modo que
-    // el marco en reposo es una imagen limpia, sin transformación ni filtro.
-    // (30/09/2026)
-    const frameMark = document.querySelector(".about-frame");
-    if (frameMark && !reduced) {
-        let raf = 0, last = 0, first = true, painted = -1, goal = 1;
-
-        function markGoal() {
-            // Con su propia caja, no con la de la sección: así la salida del
-            // negro ocurre mientras el marco sube por la mitad baja de la
-            // pantalla, que es donde se ve.
-            const rect = frameMark.getBoundingClientRect();
-            const enter = (innerHeight * 0.98 - rect.top) / (innerHeight * 0.55);
-            const exit = (rect.bottom - innerHeight * 0.12) / (innerHeight * 0.4);
-            return 1 - Math.min(Math.max(Math.min(enter, exit), 0), 1);
-        }
-
-        function markFrame(now) {
-            const dt = last ? Math.min(now - last, 64) : 16;
-            last = now;
-            const snap = first;                      // primer trazo: el marco se coloca donde está
-            // Decaimiento exponencial: la misma curva a 60 y a 120 Hz.
-            let value = snap ? goal : goal + (painted - goal) * Math.exp(-dt / 80);
-            if (Math.abs(goal - value) < 0.002) value = goal;   // lo que queda no se ve
-            first = false;
-            if (value !== painted) {
-                painted = value;
-                frameMark.style.setProperty("--frame-dark", value.toFixed(3));
-            }
-            // La clase solo está viva mientras el marco viaja entre los dos
-            // extremos: en reposo el CSS vuelve a su estado limpio (sin
-            // transformación, sin filtro y sin capa compuesta).
-            frameMark.classList.toggle("emerging", painted > 0.001 && painted < 0.999);
-            raf = painted === goal ? 0 : requestAnimationFrame(markFrame);
-        }
-
-        function markSweep() {
-            goal = markGoal();
-            if (!raf) { last = 0; raf = requestAnimationFrame(markFrame); }
-        }
-
-        addEventListener("scroll", markSweep, { passive: true });
-        addEventListener("resize", markSweep, { passive: true });
-        // Al cargar: el marco se coloca de golpe donde le toca (si la sección
-        // todavía no se ha alcanzado, dentro del negro).
-        markSweep();
-    }
-
     /* ── 7. Work rows: floating follower image ────────────── */
     const follower = document.getElementById("workFollower");
     const followerImg = document.getElementById("workFollowerImg");

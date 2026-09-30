@@ -1211,61 +1211,10 @@ section { position: relative; }
     margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
 }
 .about-grid {
-    display: grid; grid-template-columns: 1.2fr 1fr auto;
+    display: grid; grid-template-columns: 1.2fr 1fr;
     gap: clamp(2rem, 6vw, 5rem); align-items: start;
 }
 .about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
-
-/* ── ABOUT: marco de la marca (anagrama) ─────────────────── */
-/* El picto (assets/images/anagrama-trans.png) cierra el bloque por la derecha,
-   alineado con las cifras. Decorativo: sin texto alternativo, fuera del árbol
-   de accesibilidad y sin capturar el cursor. Mientras la sección entra en
-   pantalla sale del negro con una perspectiva de cámara —nace pequeño, girado
-   hacia dentro y a oscuras, con la silueta dibujada por el ruido, y se endereza
-   hacia el plano de la página—. El grado lo escribe script.js §6d en
-   --frame-dark (0 = del todo fuera del negro, 1 = dentro del negro) y, en
-   reposo, la clase .emerging desaparece: ni transformación, ni filtro, ni capa
-   compuesta detrás del marco. (30/09/2026) */
-@property --frame-dark {
-    syntax: "<number>";
-    inherits: true; /* el img y el ruido leen el valor escrito en .about-frame */
-    initial-value: 0;
-}
-.about-frame {
-    position: relative;
-    justify-self: end; align-self: start;
-    /* Ancho = alto del bloque de cifras al que acompaña (proporción 1:5,77). */
-    width: clamp(2.1rem, 3.7vw, 3.6rem);
-    pointer-events: none;
-}
-.about-frame img { display: block; width: 100%; height: auto; }
-/* El ruido: el mismo tile del grano del sitio —pero más grueso— recortado a la
-   silueta del marco con su propia máscara. Mientras el marco está dentro del
-   negro es lo único que se ve de él (una silueta de grano que se condensa en la
-   pieza sólida); al salir, se apaga. */
-.about-frame-noise {
-    position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 150px 150px;
-    mix-blend-mode: screen;
-    opacity: 0;
-    -webkit-mask-image: url("assets/images/anagrama-trans.png");
-    mask-image: url("assets/images/anagrama-trans.png");
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-}
-.about-frame.emerging img {
-    transform-origin: 0% 50%;   /* bisagra en el larguero: el brazo entra desde el fondo */
-    transform:
-        perspective(900px)
-        translate3d(calc(16% * var(--frame-dark)), calc(-5% * var(--frame-dark)), calc(-90px * var(--frame-dark)))
-        rotateY(calc(38deg * var(--frame-dark)))
-        rotateX(calc(-9deg * var(--frame-dark)))
-        scale(calc(1 - 0.32 * var(--frame-dark)));
-    opacity: calc(1 - 0.94 * var(--frame-dark));
-    filter: blur(calc(7px * var(--frame-dark)));
-}
-.about-frame.emerging .about-frame-noise { opacity: calc(0.55 * var(--frame-dark) * var(--frame-dark)); }
 .about-copy strong { font-weight: 500; }
 .stats { display: flex; flex-direction: column; gap: 2.2rem; }
 .stat-num {
@@ -1286,9 +1235,6 @@ section { position: relative; }
 @media (max-width: 860px) {
     .about-grid { grid-template-columns: 1fr; }
     .stats { flex-direction: row; flex-wrap: wrap; gap: 2.5rem; }
-    /* Una columna: el marco deja de tener columna propia y se queda como marca
-       suelta tras las cifras, alineado al margen izquierdo. */
-    .about-frame { width: clamp(1.5rem, 5vw, 2.2rem); justify-self: start; margin-top: 0.5rem; }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
@@ -1759,9 +1705,6 @@ label.cookie-purpose-head { cursor: pointer; }
     /* El barrido del statement no se monta (script.js §6 no reparte el texto en
        letras), así que aquí las palabras se dan por encendidas de una vez. */
     .statement-text span { --lit: 1; opacity: 1; }
-    /* El marco del about tampoco sale del negro: se queda ya fuera, nítido. */
-    .about-frame img { transform: none; opacity: 1; filter: none; }
-    .about-frame-noise { opacity: 0; }
     .preloader { display: none; }
     /* La intro pedida a propósito (?intro=1, o el preview de desarrollo) se ve
        igual, con su barrido: la petición explícita manda sobre el atajo de
