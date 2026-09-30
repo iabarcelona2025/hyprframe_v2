@@ -12,6 +12,9 @@
     // al volver a la landing desde legacy.html / builder.html no se repite.
     const INTRO_KEY = "hfIntroSeen";
     const introSeen = document.documentElement.classList.contains("hf-skip-intro");
+    // ?intro=1 (y el preview de desarrollo) piden la intro expresamente, así que
+    // también se salta el atajo de «reducir movimiento»: quien la pide, la ve.
+    const introForced = document.documentElement.classList.contains("hf-force-intro");
     const preloader = document.getElementById("preloader");
     const preCount = document.getElementById("preCount");
     const preBar = document.getElementById("preBar");
@@ -37,12 +40,17 @@
     } else {
         try { sessionStorage.setItem(INTRO_KEY, "1"); } catch (e) { /* storage no disponible */ }
 
-        if (reduced) {
+        if (reduced && !introForced) {
             finishPreload(true);
         } else {
             let n = 0;
             const started = performance.now();
             const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
+            // La curva (6% del resto por paso, mínimo 1) tarda siempre 46 pasos en
+            // llegar a 100, así que la cadencia fija la duración: 46 × 28 ms =
+            // 1,29 s (antes 46 × 40 ms = 1,84 s). El suelo MIN_DURATION sigue sin
+            // morder: la curva ya dura más que él por sí sola. (30/09/2026)
+            const TICK_MS = 28;
             const tick = setInterval(() => {
                 // ease-out curve toward 100
                 n += Math.max(1, Math.round((100 - n) * 0.06));
@@ -56,21 +64,49 @@
                     preCount.textContent = n;
                     preBar.style.width = n + "%";
                 }
-            }, 40);
+            }, TICK_MS);
         }
     }
 
     /* ── 2. Header state + scroll progress ────────────────── */
+    // Rendimiento (30/09/2026): antes cada evento de scroll leía scrollHeight
+    // (fuerza recálculo de layout) y escribía `width: %` (layout + pintado de la
+    // línea). Ahora el alto del documento se cachea —se recalcula solo cuando
+    // cambia de verdad, con ResizeObserver— y el avance se escribe como
+    // `transform: scaleX()`, que no toca layout ni pintura. Un rAF agrupa todos
+    // los eventos de scroll de un mismo frame en una sola escritura.
     const header = document.getElementById("siteHeader");
     const progress = document.getElementById("scrollProgress");
+    let scrollMax = 0;
 
-    function onScroll() {
-        header.classList.toggle("scrolled", scrollY > 40);
-        const max = document.documentElement.scrollHeight - innerHeight;
-        progress.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + "%";
+    function measureScrollMax() {
+        scrollMax = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     }
+
+    function paintScrollProgress() {
+        const ratio = scrollMax > 0 ? Math.min(scrollY / scrollMax, 1) : 0;
+        progress.style.transform = `scaleX(${ratio})`;
+    }
+
+    let scrollTicking = false;
+    function onScroll() {
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+            scrollTicking = false;
+            header.classList.toggle("scrolled", scrollY > 40);
+            paintScrollProgress();
+        });
+    }
+
+    measureScrollMax();
     addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", measureScrollMax);
+    // La página cambia de alto al cargar imágenes o abrir el menú.
+    if (window.ResizeObserver) new ResizeObserver(measureScrollMax).observe(document.body);
+    addEventListener("load", measureScrollMax);
     onScroll();
+    paintScrollProgress();
 
     /* ── 3. Hero marquee: keep both halves wider than the viewport ── */
     const heroMarquee = document.querySelector(".hero-marquee");
@@ -707,29 +743,46 @@
         let tx = fx, ty = fy;                            // target (mouse)
         let followerActive = false;
 
+        // Rendimiento (30/09/2026): el bucle corría siempre, con o sin fila
+        // señalada, gastando un rAF por frame durante toda la landing. Ahora
+        // solo vive mientras hay una fila activa: mismo suavizado, sin coste
+        // cuando el cursor no está sobre el listado.
+        let followerRaf = 0;
+        function followerLoop() {
+            fx += (tx - fx) * 0.1;
+            fy += (ty - fy) * 0.1;
+            follower.style.left = fx + "px";
+            follower.style.top = fy + "px";
+            followerRaf = requestAnimationFrame(followerLoop);
+        }
+        function followerStart() {
+            if (!followerRaf) followerRaf = requestAnimationFrame(followerLoop);
+        }
+        function followerStop() {
+            cancelAnimationFrame(followerRaf);
+            followerRaf = 0;
+        }
+
         rows.forEach((row) => {
             row.addEventListener("mouseenter", () => {
                 followerImg.src = row.dataset.img;
                 follower.classList.add("visible");
                 followerActive = true;
+                followerStart();
             });
             row.addEventListener("mouseleave", () => {
                 follower.classList.remove("visible");
                 followerActive = false;
+                followerStop();
             });
         });
 
         addEventListener("mousemove", (e) => { tx = e.clientX; ty = e.clientY; });
 
-        (function followerLoop() {
-            fx += (tx - fx) * 0.1;
-            fy += (ty - fy) * 0.1;
-            if (followerActive) {
-                follower.style.left = fx + "px";
-                follower.style.top = fy + "px";
-            }
-            requestAnimationFrame(followerLoop);
-        })();
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) followerStop();
+            else if (followerActive) followerStart();
+        });
 
         // preload all hover images so swaps are instant
         rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
@@ -786,4 +839,7 @@
     burger.addEventListener("click", () => toggleMenu());
     overlay.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => toggleMenu(false)));
     addEventListener("keydown", (e) => { if (e.key === "Escape") toggleMenu(false); });
+
+
+    
 })();

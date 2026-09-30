@@ -36,6 +36,15 @@ html {
     scroll-behavior: smooth;
     background: var(--bg);
 }
+/* Scroll con inercia (script.js, solo escritorio con puntero fino): el
+   movimiento lo escribe el tween en cada frame, así que la animación nativa de
+   los saltos de ancla estorbaría. La clase la pone el propio script cuando lo
+   activa; sin ella —táctil, «reducir movimiento» o ?smooth=0— todo queda igual.
+   Mientras se desplaza, la «respiración» del vídeo del hero se pausa: ese
+   transform continuo reescala la textura en cada frame y compite con el scroll
+   (es un ciclo de 18 s, así que la pausa no se percibe). (30/09/2026) */
+html.hf-smooth { scroll-behavior: auto; }
+html.is-scrolling .hero-video { animation-play-state: paused; }
 
 body {
     background: var(--bg);
@@ -64,11 +73,24 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
 :focus-visible { outline: 2px solid var(--violet); outline-offset: 4px; }
 
 /* ── Grain overlay ───────────────────────────────────────── */
+/* Rendimiento (30/09/2026): el grano es una capa FIJA a pantalla completa que
+   se anima en bucle, así que se pinta muchas veces por segundo y su superficie
+   se paga entera en cada una.
+   - inset: -50% → -5%: el elemento medía 2×2 pantallas (4× superficie) para un
+     desplazamiento máximo de ±3%; con -5% sobra para que el borde nunca se
+     descubra y la superficie pintada baja a ~1,2 pantallas (-70%).
+   - will-change: transform: sube la capa a su propio layer, de modo que la
+     animación es una transformación compuesta (GPU) de un raster cacheado en
+     vez de un repintado del ruido de 300×300 tileado.
+   - contain: strict: aísla la capa del resto del árbol de pintura.
+   El grano se ve igual: mismas opacidades, mismo tile, mismos keyframes. */
 .grain {
-    position: fixed; inset: -50%; z-index: 900; pointer-events: none;
+    position: fixed; inset: -5%; z-index: 900; pointer-events: none;
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     animation: grainShift 0.9s steps(4) infinite;
+    will-change: transform;
+    contain: strict;
 }
 @keyframes grainShift {
     0% { transform: translate(0, 0); }
@@ -121,18 +143,35 @@ html.hf-skip-intro .preloader { display: none; }
 }
 
 /* ── Scroll progress ─────────────────────────────────────── */
+/* Rendimiento (30/09/2026): la barra se movía con `width: %`, que en cada frame
+   de scroll dispara recálculo de estilo + layout + repintado de la línea (y
+   obligaba a leer el alto del documento en el mismo frame). Ahora el ancho es
+   fijo y el avance es un `scaleX()`: transformación compuesta, sin layout y sin
+   pintado. script.js escribe la misma transformación. */
 .scroll-progress {
-    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    position: fixed; top: 0; left: 0; height: 3px; width: 100%;
     background: linear-gradient(90deg, var(--violet), var(--lime));
+    transform: scaleX(0); transform-origin: 0 50%;
+    will-change: transform;
     z-index: 980;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
+/* Rendimiento (30/09/2026): la cabecera es fija y lleva backdrop-filter, así que
+   el navegador remuestrea el fondo que tiene detrás. Dos ajustes:
+   - `transform: translateZ(0)`: la sube a su propio layer, de modo que su pintura
+     (y la del fondo difuminado) no arrastra al resto de la página.
+   - fuera `backdrop-filter` de la lista de transiciones: animar el radio del
+     difuminado obligaba a remuestrear la franja entera en cada frame de los
+     0,4 s siguientes a cruzar el umbral de scroll (y al subir y bajarlo, se
+     repetía). El paso a «scrolled» sigue animando relleno y fondo; el blur
+     entra con él, sin animación propia. */
 .site-header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 800;
     display: flex; align-items: center; justify-content: space-between;
     padding: 1.4rem var(--pad);
-    transition: padding 0.4s var(--ease-out), background 0.4s, backdrop-filter 0.4s;
+    transform: translateZ(0);
+    transition: padding 0.4s var(--ease-out), background 0.4s;
 }
 .site-header.scrolled {
     padding: 0.8rem var(--pad);
@@ -1377,4 +1416,9 @@ section { position: relative; }
     .clb-gallery-track, .clb-reflection-track { animation: none; transform: none; }
     .statement-text span { opacity: 1; }
     .preloader { display: none; }
+    /* La intro pedida a propósito (?intro=1, o el preview de desarrollo) se ve
+       igual, con su barrido: la petición explícita manda sobre el atajo de
+       «reducir movimiento», que aquí solo ahorraría el contador que se quiere
+       revisar. El resto de la página sigue quieta. (30/09/2026) */
+    html.hf-force-intro .preloader { display: flex; transition-duration: 0.9s !important; }
 }
