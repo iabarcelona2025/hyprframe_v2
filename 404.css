@@ -4,8 +4,8 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-    /* 404 size reduced by 30% from clamp(8rem, 26vw, 22rem) */
-    --size-404: clamp(5.6rem, 18.2vw, 15.4rem);
+    /* 15px less than the current responsive 404 size at every viewport width. */
+    --size-404: clamp(calc(5.6rem - 15px), calc(18.2vw - 15px), calc(15.4rem - 15px));
 }
 
 /* ── Base fullscreen layout without header or footer ─────── */
@@ -119,7 +119,8 @@ header {
 .glitch-error {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(1.1rem, 5.4vw, 4.2rem);
+    /* 15px smaller on larger screens; retain a readable 1rem mobile floor. */
+    font-size: clamp(1rem, calc(5.4vw - 15px), calc(4.2rem - 15px));
     line-height: 0.95;
     letter-spacing: 0.01em;
     color: var(--fg);
@@ -133,7 +134,7 @@ header {
     margin-bottom: clamp(0.35rem, 1.6vh, 0.9rem);
 }
 
-/* 404: reduced by 30% */
+/* 404: an additional 15px smaller across the responsive range. */
 .glitch-number {
     font-family: var(--font-display);
     font-weight: 800;

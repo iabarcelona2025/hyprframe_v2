@@ -55,6 +55,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const doc = window.document;
     const css = fs.readFileSync(path.join(__dirname, "styles.css"), "utf8");
 
+    const aboutKicker = doc.querySelector("#about > .kicker");
+    check("About kicker displays THE STUDIO", aboutKicker && aboutKicker.textContent.trim() === "THE STUDIO");
+    check("About copy moves 25px closer on web only; mobile keeps its base spacing",
+        /\.about-heading\s*\{[^}]*margin-bottom:\s*clamp\(2\.5rem, 6vw, 4\.5rem\)/.test(css) &&
+        /@media \(min-width: 861px\)[\s\S]*?\.about-heading\s*\{[^}]*margin-bottom:\s*calc\(clamp\(2\.5rem, 6vw, 4\.5rem\) - 25px\)/.test(css));
+    check("Entire About block moves up 30px on web only",
+        /\.about\s*\{\s*padding:\s*clamp\(6rem, 15vw, 11rem\) var\(--pad\);/.test(css) &&
+        /@media \(min-width: 861px\)\s*\{[^}]*\.about\s*\{\s*padding-top:\s*calc\(clamp\(6rem, 15vw, 11rem\) - 30px\)/.test(css));
+    check("About stats move 10px closer to their description on web only",
+        /\.about-copy\s*\{[^}]*margin:\s*0 0 clamp\(2\.5rem, 6vw, 4\.5rem\)/.test(css) &&
+        /@media \(min-width: 861px\)[\s\S]*?\.about-copy\s*\{[^}]*margin-bottom:\s*calc\(clamp\(2\.5rem, 6vw, 4\.5rem\) - 10px\)/.test(css));
     check("clock removed from header", doc.getElementById("clock") === null);
 
     // reveals + line-mask titles observed → .in applied by IO stub
@@ -114,6 +125,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("las palabras en lila llevan cursiva (.italic)",
         [...doc.querySelectorAll(".violet")].every((el) => el.classList.contains("italic")),
         [...doc.querySelectorAll(".violet")].map((el) => el.classList.contains("italic") ? "ok" : "recta").join(","));
+    const mobileAboutBlock = (css.match(/@media \(max-width: 600px\)\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
+    check("About: título y anagrama se apilan en móvil para evitar solapes",
+        /\.about-heading\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(mobileAboutBlock) &&
+        /\.about-emblem-wrap\s*\{[^}]*justify-self:\s*end/.test(mobileAboutBlock));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
@@ -135,7 +150,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     // 90°, así que al repetir el × queda en una posición ópticamente idéntica
     // a la de salida (90° ≡ 0°) y el loop engancha sin salto.
     check("cross-turn: gira siempre hacia la derecha en loop (sin `alternate`)",
-        /\.cross-turn\s*\{[^}]*animation:\s*crossTurn\s+2\.6s\s+ease-in-out\s+infinite;/.test(css) &&
+        /\.cross-turn\s*\{[^}]*animation:\s*crossTurn\s+1\.8s\s+ease-in-out\s+infinite;/.test(css) &&
         !/crossTurn[^;}]*alternate/.test(css),
         "ver .cross-turn / @keyframes crossTurn");
     check("cross-turn: 45° por barrido y 90° por ciclo (el loop cierra sin salto)",
@@ -143,13 +158,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         crossDegs[0] === 0 && crossDegs[7] === 90 &&
         crossDegs[3] - crossDegs[0] === 45 && crossDegs[7] - crossDegs[3] === 45,
         `grados: ${crossDegs.join(", ") || "no encontrados"}`);
-    check("cross-turn: pausas y velocidad intactas (2.6 s = 2 × el ciclo de 1.3 s)",
+    check("cross-turn: ciclo acelerado a 1.8s (~44% más rápido) y misma curva de giro",
+        /\.cross-turn\s*\{[^}]*animation:\s*crossTurn\s+1\.8s\s+ease-in-out\s+infinite;/.test(css) &&
         /0%,\s*9\.75%/.test(css) && /59\.75%/.test(css) &&
         /87\.25%/.test(css) && /90\.25%,\s*100%/.test(css) &&
-        // cada barrido (wind-up + giro + asentado) dura lo que duraba antes
-        Math.abs(2.6 * (0.4025 - 0.0975) - 1.3 * (0.805 - 0.195)) < 1e-9 &&
-        // y cada pausa también: 0.507 s entre barridos = 2 × 0.2535 s
-        Math.abs(2.6 * (0.5975 - 0.4025) - 2 * 1.3 * 0.195) < 1e-9);
+        Math.abs(2.6 / 1.8 - 1.4444444444) < 1e-9);
     // overshoot sutil: el × se estira antes de salir (0° → -4°) y se pasa de
     // largo al llegar (49° → 45°), en lugar de arrancar y frenar en seco.
     check("cross-turn: overshoot sutil de comienzo (wind-up < 0°) y de final (pasa de 45° y vuelve)",
@@ -158,7 +171,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         Math.max(...crossDegs) > 90 && Math.max(...crossDegs) <= 98 &&
         // el rebote vuelve justo al reposo del paso, y el segundo barrido es
         // el primero desplazado 45°: mismo wind-up, mismo recorrido, mismo
-        // overshoot (el ritmo no cambia, solo que ya no vuelve atrás)
+        // overshoot (mismo recorrido por barrido y sin invertir dirección)
         crossDegs[3] === 45 && crossDegs[7] === 90 &&
         crossDegs.slice(4).every((deg, i) => deg === crossDegs[i] + 45),
         `grados: ${crossDegs.join(", ") || "no encontrados"}`);
@@ -288,7 +301,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
             && row.firstElementChild.getAttribute("aria-hidden") === "true"));
     check("DNAi: el + conserva su animación (gira 135° y se vuelve lima al hover)",
         /\.service-row:hover \.service-plus\s*\{\s*transform:\s*rotate\(135deg\);\s*color:\s*var\(--lime\);\s*\}/.test(css)
-        && /\.service-plus\s*\{[^}]*transition:\s*transform\s+0\.7s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css));
+        && /\.service-plus\s*\{[^}]*transition:\s*transform\s+0\.35s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css));
     check("DNAi: rejilla de dos columnas y + visible también por debajo de 900px",
         /\.service-row\s*\{[^}]*grid-template-columns:\s*6rem 1fr;/.test(css)
         && /@media \(max-width: 900px\) \{[\s\S]*?\.service-row \{ grid-template-columns: 3\.5rem 1fr; \}/.test(css)
@@ -378,6 +391,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         !/\.hero-log\s*\{[^}]*background:/.test(css) &&
         !/\.hero-log\s*\{[^}]*border:/.test(css) &&
         heroLog.children.length === 1 && heroLog.firstElementChild.hasAttribute("data-log-lines"));
+
+    const preloaderInner = doc.querySelector(".preloader-inner");
+    const preloaderBar = doc.querySelector(".preloader-bar");
+    check("preloader countdown is centered in the screen with a vertical stack",
+        /\.preloader\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center/.test(css) &&
+        /\.preloader-inner\s*\{[^}]*flex-direction:\s*column;[^}]*align-items:\s*center/.test(css) &&
+        doc.getElementById("preCount").parentElement === preloaderInner &&
+        doc.getElementById("preCount").nextElementSibling === preloaderBar);
+    check("preloader progress is a 20px by 2px gray track with a lime fill",
+        /\.preloader-bar\s*\{[^}]*width:\s*20px;[^}]*height:\s*2px;[^}]*background:\s*var\(--muted\)/.test(css) &&
+        /\.preloader-bar span\s*\{[^}]*background:\s*var\(--lime\)/.test(css));
 
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);

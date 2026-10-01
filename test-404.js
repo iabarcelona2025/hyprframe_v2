@@ -92,10 +92,10 @@ window.HTMLCanvasElement.prototype.getContext = () => ({
         glitchError && glitchNumber && glitchError.nextElementSibling === glitchNumber);
 
     // CSS size checks
-    check("CSS defines --size-404 reduced by 30% (clamp with ~5.6rem and ~15.4rem)",
-        css.includes("--size-404") && css.includes("5.6rem") && css.includes("15.4rem"));
-    check('CSS sizes .glitch-error with its own clamp (1.1rem … 4.2rem), not half of --size-404',
-        /\.glitch-error\s*\{[\s\S]*?font-size:\s*clamp\(1\.1rem,\s*5\.4vw,\s*4\.2rem\)/.test(css) &&
+    check("CSS reduces 404 by 15px across its responsive size range",
+        /--size-404:\s*clamp\(calc\(5\.6rem - 15px\),\s*calc\(18\.2vw - 15px\),\s*calc\(15\.4rem - 15px\)\)/.test(css));
+    check('CSS reduces “NOTHING TO SEE HERE” by 15px while keeping a readable mobile minimum',
+        /\.glitch-error\s*\{[\s\S]*?font-size:\s*clamp\(1rem,\s*calc\(5\.4vw - 15px\),\s*calc\(4\.2rem - 15px\)\)/.test(css) &&
         !css.includes("calc(var(--size-404) * 0.5)"));
 
     /* ─── 4. Centered Button BACK TO WEB ──────────────────── */

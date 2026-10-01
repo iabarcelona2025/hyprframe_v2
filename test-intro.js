@@ -109,7 +109,11 @@ function boot(storage = {}, url = "https://hyprframe.com/") {
     check("preview: el preloader sigue en el DOM y la cuenta arranca",
         !!doc4.getElementById("preloader") && !doc4.body.classList.contains("loaded"));
     await wait(600);
-    check("preview: el contador sube", parseInt(doc4.getElementById("preCount").textContent, 10) > 0);
+    const previewCount = parseInt(doc4.getElementById("preCount").textContent, 10);
+    const previewBar = parseFloat(doc4.getElementById("preBar").style.width);
+    check("preview: contador y barra progresan sincronizados",
+        previewCount > 0 && previewCount < 100 && previewBar === previewCount,
+        `count=${previewCount}, bar=${previewBar}%`);
 
     ({ window, errors } = boot({}, "http://localhost:8080/?intro=0"));
     inlineScripts.forEach((s) => window.eval(s));

@@ -130,13 +130,9 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
    el preloader se oculta desde el primer frame, sin llegar a pintarse. */
 html.hf-skip-intro .preloader { display: none; }
 .preloader-inner {
-    display: flex; align-items: baseline; gap: 1.5rem;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.65rem;
     font-family: var(--font-head);
-}
-@media (min-width: 901px) {
-    .preloader-inner {
-        transform: translateX(-40px);
-    }
 }
 .preloader-count {
     font-size: 12px;
@@ -151,12 +147,12 @@ html.hf-skip-intro .preloader { display: none; }
     letter-spacing: 0.35em; color: var(--fg);
 }
 .preloader-bar {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-    background: rgba(255, 255, 255, 0.08);
+    width: 20px; height: 2px; overflow: hidden;
+    background: var(--muted);
 }
 .preloader-bar span {
     display: block; height: 100%; width: 0%;
-    background: var(--violet);
+    background: var(--lime);
 }
 
 /* ── Scroll progress ─────────────────────────────────────── */
@@ -707,7 +703,7 @@ em { font-style: normal; color: var(--violet); }
 .italic { font-style: italic; }
 /* × de HUMAN INTUITION × MACHINE SYNTHESIS: giro CONTINUO hacia la derecha
    (sentido horario), en loop y sin retroceder nunca = movimiento de izquierda
-   a derecha continuo, con las pausas, la velocidad y el OVERSHOOT de siempre.
+   a derecha continuo, con la misma curva y el OVERSHOOT, ahora más rápido.
    Antes era un ping-pong × (0°) ↔ + (45°) con `alternate`: giraba a la derecha
    y volvía sobre sus pasos. Ahora solo gira a la derecha.
    Cómo cierra el loop sin salto: el × es simétrico a 90° (90° y 0° pintan el
@@ -715,9 +711,8 @@ em { font-style: normal; color: var(--violet); }
    repetir vuelve a arrancar desde una posición ópticamente idéntica a la de
    salida. Un solo barrido de 45° por ciclo no vale: al reiniciar, el + de 45°
    saltaría de golpe al × de 0°, y ese salto sí se ve.
-   Duración: 2.6 s = 2 × 1.3 s, o sea el ciclo de siempre repetido dos veces
-   (cada barrido y cada pausa duran EXACTAMENTE lo mismo que antes, ver
-   @keyframes): el × va al mismo ritmo, solo que encadenando vueltas.
+   El ciclo se acorta de 2.6 s a 1.8 s (≈44% más rápido); se conserva la misma
+   curva de giro, con wind-up, overshoot y pausas, pero todo sucede antes.
    font-style: normal para que el glifo conserve su simetría de 4-fold
    (reposo × y + perfectos); inline-block para el transform.
    transform-origin: centro visual exacto de la tinta del × en Montserrat 700,
@@ -730,15 +725,15 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.3em 0.5185em;
-    /* sin `alternate`: la dirección no se invierte nunca; 2.6 s = dos
-       barridos de 45° (el segundo deja el × como estaba al empezar). */
-    animation: crossTurn 2.6s ease-in-out infinite;
+    /* sin `alternate`: la dirección no se invierte nunca; dos barridos de 45°
+       cierran el loop en 1.8 s. */
+    animation: crossTurn 1.8s ease-in-out infinite;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
    quita la sensación de movimiento mecánico). Cada barrido avanza 45° y son
    dos por ciclo (45° + 45° = 90° ≡ 0°: ahí está el loop):
-     · pausa    → 0.51 s quieto en la posición de reposo (× o +, da igual).
+     · pausa    → 0.35 s quieto entre los dos barridos (× o +, da igual).
      · comienzo → wind-up a -4°: retrocede un pelo y de ahí arranca el barrido.
      · tramo    → 53° de recorrido con ease-in-out (velocidad 0 en los topes):
                   arranca en -4° y desemboca 4° más allá de los 45° del paso.
@@ -748,11 +743,11 @@ em { font-style: normal; color: var(--violet); }
    Los dos barridos son idénticos (mismos tiempos, mismos grados de recorrido)
    y el segundo desemboca en 90°, que se ve igual que el 0° del primero: al
    repetir, el × retoma desde ahí sin ningún salto y sigue hacia la derecha.
-   Los porcentajes son los del ciclo de 1.3 s de antes repartidos en 2.6 s,
-   así que pausas y velocidad no cambian. */
+   La curva porcentual se conserva; el ciclo de 1.8 s reduce cada tramo y pausa
+   un 31% respecto a los 2.6 s anteriores (ritmo global ≈44% más rápido). */
 @keyframes crossTurn {
     /* barrido 1: 0° → 45° */
-    0%, 9.75%    { transform: rotate(0deg);  animation-timing-function: ease-out; }    /* pausa ~0.25 s */
+    0%, 9.75%    { transform: rotate(0deg);  animation-timing-function: ease-out; }    /* pausa ~0.18 s */
     12.75%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; } /* wind-up */
     37.25%       { transform: rotate(49deg); animation-timing-function: ease-out; }    /* fin del barrido */
     40.25%, 50%  { transform: rotate(45deg); }                                         /* asentado + pausa */
@@ -1020,7 +1015,7 @@ section { position: relative; }
        que se fue. Mismos tipo, tamaño, color y animación: al pasar por encima
        gira 135° (de + a ×) y se vuelve lima. */
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
-    transition: transform 0.7s var(--ease-out), color 0.5s var(--ease-out);
+    transition: transform 0.35s var(--ease-out), color 0.5s var(--ease-out);
 }
 .service-row:hover .service-plus { transform: rotate(135deg); color: var(--lime); }
 
@@ -1316,21 +1311,30 @@ section { position: relative; }
 }
 
 @media (max-width: 600px) {
-    /* El anagrama de la derecha NUNCA debe pisar las letras de "HUMAN
-       INTUITION × MACHINE SYNTHESIS" (30/09/2026). El ajuste anterior
-       desplazaba el bloque con un `translate` que, según el ancho exacto del
-       móvil, podía salir en negativo y meter el anagrama dentro de la
-       columna del texto (el texto puede llegar a envolver hasta el borde de
-       su columna). Se sustituye por un planteamiento a prueba de solapes:
-       - más separación real entre columnas (gap),
-       - un margen de seguridad propio en el texto (padding-right),
-       - el anagrama más pequeño y sin desplazamiento extra (solo centrado
-         en su columna), así siempre queda hueco de sobra entre ambos. */
-    .about-heading { gap: 0.5rem; }
-    .about-title { padding-right: 0.6rem; }
-    .about-emblem-wrap { height: clamp(6.5rem, 22vw, 9rem); translate: 0 0; }
+    /* En móvil, título y anagrama ocupan filas distintas. Así las palabras
+       largas del titular no pueden desbordar su columna hacia el anagrama,
+       incluso en pantallas estrechas o con métricas de fuente distintas. */
+    .about-heading {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+    .about-title { padding-right: 0; }
+    .about-emblem-wrap {
+        justify-self: end;
+        height: clamp(6.5rem, 22vw, 9rem);
+        translate: 0 0;
+    }
     .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
     .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
+}
+
+@media (min-width: 861px) {
+    /* Web/escritorio únicamente: sube todo el bloque About 30px en total. */
+    .about { padding-top: calc(clamp(6rem, 15vw, 11rem) - 30px); }
+    /* Acerca 25px el texto descriptivo al titular en escritorio. */
+    .about-heading { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 25px); }
+    /* También acerca 10px las estadísticas al texto descriptivo. */
+    .about-copy { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 10px); }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
