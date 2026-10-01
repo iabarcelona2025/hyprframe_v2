@@ -158,9 +158,17 @@
     document.querySelectorAll("[data-reveal-late]").forEach((el) => lateRevealIO.observe(el));
 
     /* line-mask reveals on section titles */
+    const aboutTitle = document.querySelector(".about-title");
+    const aboutEmblem = document.querySelector(".about-emblem-wrap");
     const lineIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
-            if (e.isIntersecting) { e.target.classList.add("in"); lineIO.unobserve(e.target); }
+            if (e.isIntersecting) {
+                e.target.classList.add("in");
+                if (e.target === aboutEmblem && aboutTitle) {
+                    aboutTitle.classList.add("in");
+                }
+                lineIO.unobserve(e.target);
+            }
         }),
         { threshold: 0.3 }
     );
@@ -168,22 +176,24 @@
         el.classList.add("reveal-lines");
         lineIO.observe(el);
     });
+    if (aboutEmblem) lineIO.observe(aboutEmblem);
 
     /* El anagrama vuelve a ocultarse bajo la plancha al seguir bajando por
        About; al subir de nuevo, se desliza otra vez hacia fuera. */
-    const aboutTitle = document.querySelector(".about-title");
-    const aboutEmblem = document.querySelector(".about-emblem-wrap");
     if (!reduced && aboutTitle && aboutEmblem) {
         let previousScrollY = window.scrollY;
         const updateEmblemForScroll = () => {
             const currentScrollY = window.scrollY;
-            const headingTop = aboutTitle.getBoundingClientRect().top;
+            const emblemTop = Math.max(
+                aboutTitle.getBoundingClientRect().top,
+                aboutEmblem.getBoundingClientRect().top
+            );
             const coverThreshold = 0;
             const revealThreshold = -80;
 
-            if (currentScrollY > previousScrollY && aboutTitle.classList.contains("in") && headingTop <= coverThreshold) {
+            if (currentScrollY > previousScrollY && (aboutTitle.classList.contains("in") || aboutEmblem.classList.contains("in")) && emblemTop <= coverThreshold) {
                 aboutEmblem.classList.add("is-covered");
-            } else if (currentScrollY < previousScrollY && headingTop > revealThreshold) {
+            } else if (currentScrollY < previousScrollY && emblemTop > revealThreshold) {
                 aboutEmblem.classList.remove("is-covered");
             }
             previousScrollY = currentScrollY;

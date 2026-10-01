@@ -1325,21 +1325,55 @@ section { position: relative; }
 }
 
 @media (max-width: 600px) {
-    /* En móvil, título y anagrama ocupan filas distintas. Así las palabras
-       largas del titular no pueden desbordar su columna hacia el anagrama,
-       incluso en pantallas estrechas o con métricas de fuente distintas. */
-    .about-heading {
+    /* En móvil, el anagrama y su animación se sitúan debajo del texto
+       descriptivo (.about-copy) y centrados horizontalmente. Como el emblema
+       visible ocupa la mitad izquierda (50%) de .about-emblem-wrap y la mitad
+       derecha aloja la plancha de ocultación (.about-emblem-wipe), desplazar
+       el contenedor un +25% de su propio ancho centra exactamente el anagrama
+       y su animación en la pantalla. */
+    .about {
+        display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 0.75rem;
     }
-    .about-title { padding-right: 0; }
+    .about-heading,
+    .about-grid {
+        display: contents;
+    }
+    .about > .kicker { order: 1; }
+    .about-title {
+        order: 2;
+        padding-right: 0;
+        margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+    }
+    .about-copy {
+        order: 3;
+    }
     .about-emblem-wrap {
-        justify-self: end;
+        order: 4;
+        justify-self: center;
         height: clamp(6.5rem, 22vw, 9rem);
-        translate: 0 0;
+        margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
+        translate: 25% 0;
     }
-    .about-emblem-wipe {
-        width: calc(50% + var(--pad));
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem {
+        transform: translateX(calc(100% + 15px));
+        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+        transition-delay: 0s;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in)::after {
+        animation: none;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection {
+        opacity: 0;
+        translate: calc(100% + 15px) 0;
+        transition-delay: 0s;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection img {
+        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+        transition-delay: 0s;
+    }
+    .stats {
+        order: 5;
     }
     .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
     .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
@@ -1813,10 +1847,16 @@ label.cookie-purpose-head { cursor: pointer; }
     [data-reveal] { opacity: 1; transform: none; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
-    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem { transition: none; transform: translateX(0); filter: none; }
+    .about-emblem,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem { transition: none; transform: translateX(0); filter: none; }
     .about-emblem-wrap::after { display: none; animation: none; }
-    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection { opacity: 0.16; translate: 0 0; transition: none; transition-delay: 0s; animation: none; }
-    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection img { filter: none; transition: none; }
+    .about-emblem-reflection,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection { opacity: 0.16; translate: 0 0; transition: none; transition-delay: 0s; animation: none; }
+    .about-emblem-reflection img,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection img,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection img { filter: none; transition: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     /* El log se queda quieto: script.js pinta el trace con los valores de
        partida y no arranca el rAF (el bloque global ya corta las animations). */

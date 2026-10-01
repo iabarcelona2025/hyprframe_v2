@@ -126,15 +126,21 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         [...doc.querySelectorAll(".violet")].every((el) => el.classList.contains("italic")),
         [...doc.querySelectorAll(".violet")].map((el) => el.classList.contains("italic") ? "ok" : "recta").join(","));
     const mobileAboutBlock = (css.match(/@media \(max-width: 600px\)\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
-    check("About: título y anagrama se apilan en móvil para evitar solapes",
-        /\.about-heading\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(mobileAboutBlock) &&
-        /\.about-emblem-wrap\s*\{[^}]*justify-self:\s*end/.test(mobileAboutBlock));
+    check("About en móvil: anagrama y su animación debajo del texto descriptivo y centrados",
+        /\.about\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(mobileAboutBlock) &&
+        /\.about-heading,\s*\.about-grid\s*\{[^}]*display:\s*contents/.test(mobileAboutBlock) &&
+        /\.about\s*>\s*\.kicker\s*\{[^}]*order:\s*1/.test(mobileAboutBlock) &&
+        /\.about-title\s*\{[^}]*order:\s*2/.test(mobileAboutBlock) &&
+        /\.about-copy\s*\{[^}]*order:\s*3/.test(mobileAboutBlock) &&
+        /\.about-emblem-wrap\s*\{[^}]*order:\s*4;[^}]*justify-self:\s*center;[\s\S]*?translate:\s*25%\s+0/.test(mobileAboutBlock) &&
+        /\.stats\s*\{[^}]*order:\s*5/.test(mobileAboutBlock) &&
+        doc.querySelector(".about-emblem-wrap").classList.contains("in"));
     check("Sin desbordamiento horizontal en móvil (html/body/main/.about/.work-row recortados)",
         /html\s*\{[^}]*overflow-x:\s*hidden/.test(css) &&
         /main\s*\{[^}]*overflow-x:\s*hidden/.test(css) &&
         /\.about\s*\{[^}]*overflow:\s*hidden/.test(css) &&
         /\.work-row\s*\{[^}]*overflow:\s*hidden/.test(css) &&
-        /\.about-emblem-wipe\s*\{[^}]*width:\s*calc\(50%\s*\+\s*var\(--pad\)\)/.test(mobileAboutBlock));
+        !/\.about-emblem-wipe\s*\{/.test(mobileAboutBlock));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
