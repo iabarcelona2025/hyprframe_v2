@@ -129,6 +129,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("About: título y anagrama se apilan en móvil para evitar solapes",
         /\.about-heading\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(mobileAboutBlock) &&
         /\.about-emblem-wrap\s*\{[^}]*justify-self:\s*end/.test(mobileAboutBlock));
+    check("Sin desbordamiento horizontal en móvil (html/body/main/.about/.work-row recortados)",
+        /html\s*\{[^}]*overflow-x:\s*hidden/.test(css) &&
+        /main\s*\{[^}]*overflow-x:\s*hidden/.test(css) &&
+        /\.about\s*\{[^}]*overflow:\s*hidden/.test(css) &&
+        /\.work-row\s*\{[^}]*overflow:\s*hidden/.test(css) &&
+        /\.about-emblem-wipe\s*\{[^}]*width:\s*calc\(50%\s*\+\s*var\(--pad\)\)/.test(mobileAboutBlock));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");
