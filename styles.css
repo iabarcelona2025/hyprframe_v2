@@ -39,6 +39,9 @@
 html {
     scroll-behavior: smooth;
     background: var(--bg);
+    overflow-x: hidden;
+    overflow-x: clip;
+    max-width: 100%;
 }
 /* Scroll con inercia (script.js, solo escritorio con puntero fino): el
    movimiento lo escribe el tween en cada frame, así que la animación nativa de
@@ -58,6 +61,16 @@ body {
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+}
+
+main {
+    overflow-x: hidden;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
 }
 
 ::selection { background: var(--violet); color: var(--fg); }
@@ -102,7 +115,7 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
    Antes de esto se probó a correrlo solo mientras se desplaza; se ha quitado
    también porque el grano no era lo que hacía pesado el scroll — ver §3.10b. */
 .grain {
-    position: fixed; inset: -5%; z-index: 900; pointer-events: none;
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     animation: none;
@@ -848,6 +861,7 @@ section { position: relative; }
     padding: var(--work-row-pad) var(--pad);
     border-bottom: 1px solid var(--line);
     position: relative;
+    overflow: hidden;
     transition: padding-block 0.55s var(--ease-out), padding-left 0.5s var(--ease-out), background 0.5s;
 }
 .work-row:hover, .work-row:focus-visible {
@@ -1198,7 +1212,7 @@ section { position: relative; }
 }
 
 /* ── ABOUT ───────────────────────────────────────────────── */
-.about { padding: clamp(6rem, 15vw, 11rem) var(--pad); }
+.about { padding: clamp(6rem, 15vw, 11rem) var(--pad); overflow: hidden; }
 .about-heading {
     display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
     align-items: center;
@@ -1323,6 +1337,9 @@ section { position: relative; }
         justify-self: end;
         height: clamp(6.5rem, 22vw, 9rem);
         translate: 0 0;
+    }
+    .about-emblem-wipe {
+        width: calc(50% + var(--pad));
     }
     .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
     .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
