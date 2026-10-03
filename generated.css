@@ -325,13 +325,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
 @media (max-width: 560px) {
     /* Compact mobile opener: the empty black field no longer dominates the
        title and the film starts closer to the call to action. */
-    .node-hero { padding-top: 5.5rem; }
+    .node-hero { padding-top: calc(5.5rem + 20px); }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
     /* El campo liso y el recorte de −140px metían las flechas y el contador
        dentro del vídeo. En móvil el paginador queda justo encima de la caja. */
     .node-hero__image { height: 0; }
     .node-hero__meta-row { padding-bottom: 0; }
-    .node-film { margin-top: 0; padding-top: 0.75rem; }
+    .node-film { margin-top: 0; padding-top: calc(0.75rem + 20px); }
     /* Mobile: título adaptable en una sola línea — nunca se corta.
        clamp(1.125rem, 5.5vw, 2.6rem) cabe en 320px para el titular más largo
        (DEEP IN THE FOREST, 18 chars) con margen: 5.5vw@320=17.6px, floor 18px,

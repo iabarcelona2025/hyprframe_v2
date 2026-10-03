@@ -175,7 +175,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=74");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=76");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=26");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -643,8 +643,8 @@ assert.match(generatedFlat, /\.node-pager \{[^}]*padding-bottom: 0;/,
     "el paginador no añade aire bajo el contador");
 assert.match(mobileBlock, /\.node-hero__image \{ height: 0; \}/,
     "en móvil el campo liso no separa el paginador de la caja");
-assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: 0\.75rem; \}/,
-    "en móvil las flechas y el contador quedan justo encima de la caja");
+assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: calc\(0\.75rem \+ 20px\); \}/,
+    "en móvil las flechas y el contador quedan 20px más separadas de la caja");
 assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
 
@@ -654,7 +654,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=74/);
+    assert.match(es, /generated\.css\?v=76/);
     assert.match(es, /generated\.js\?v=26/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
