@@ -176,7 +176,7 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=76");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=26");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=27");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -655,7 +655,7 @@ for (const file of ALL) {
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
     assert.match(es, /generated\.css\?v=76/);
-    assert.match(es, /generated\.js\?v=26/);
+    assert.match(es, /generated\.js\?v=27/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 
@@ -674,8 +674,10 @@ assert.match(script, /method: "requestFullscreen"/,
     "al volver a horizontal durante la reproducción se pide el fullscreen otra vez");
 assert.doesNotMatch(script, /orientation\.lock\(/,
     "no se bloquea el landscape: el usuario tiene que poder girar a vertical");
-assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,80}scrollBy\(0, -40\)[\s\S]{0,180}getBoundingClientRect\(\)/,
-    "en web el salto de 40px es instantáneo y el thumbnail se mide después, 40px más abajo");
+assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,80}scrollBy\(0, -40\)[\s\S]{0,900}pager\.getBoundingClientRect\(\)[\s\S]{0,200}scrollBy\(0, pagerRect\.top - safeTop\)[\s\S]{0,200}player\.getBoundingClientRect\(\)/,
+    "en web el salto de 40px es instantáneo, el paginador se rescata si se queda fuera y el thumbnail se mide después");
+assert.equal((script.match(/pager\.getBoundingClientRect\(\)/g) || []).length, 1,
+    "el rescate del paginador vive una sola vez y dentro de la rama de escritorio");
 assert.match(script, /layer\.style\.top = `\$\{target\.top\}px`/,
     "el thumbnail que se amplía aterriza en la caja de vídeo ya desplazada");
 assert.match(script, /is-windowed/, "el play de la web marca la caja como ventana");
@@ -873,8 +875,11 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
 }
 
 /* El thumbnail que se amplía al entrar desde el landing aterriza en la caja
-   ya bajada 40px en web, y no se desplaza en móvil. */
-function arrivalThumbnailTop(web) {
+   ya bajada 40px en web, y no se desplaza en móvil. `pagerTop` es lo que el
+   paginador mide justo después de ese salto: 299px en una ventana normal y
+   −69px en las pantallas anchas y bajas (2560×1080, 3440×1440), donde la caja
+   16:9 al 85,5% es más alta que la ventana y se quedaba fuera por arriba. */
+function arrivalThumbnailTop(web, pagerTop = 299) {
     return new Promise((resolve) => {
         const dom = new JSDOM(read("project-node.html"), {
             url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
@@ -883,6 +888,7 @@ function arrivalThumbnailTop(web) {
         const doc = window.document;
         const player = doc.querySelector(".node-player");
         const image = player.querySelector("img");
+        const pager = doc.querySelector(".node-pager");
         let scrollDelta = 0;
         window.matchMedia = (query) => ({
             matches: web && query.includes("min-width: 561px"),
@@ -891,6 +897,15 @@ function arrivalThumbnailTop(web) {
         });
         player.scrollIntoView = () => {};
         window.scrollBy = (x, y) => { scrollDelta += typeof x === "object" ? (x.top || 0) : (y || 0); };
+        /* El paginador va por encima de la caja (36px a 1440×900 y 2560×1080) y
+           mide 25px de alto; la línea segura es el borde inferior de la cabecera
+           (0 en jsdom) + 8px. El rescate lee este rect una sola vez, después del
+           salto de −40px, y solo en web. */
+        let pagerReads = 0;
+        pager.getBoundingClientRect = () => {
+            pagerReads++;
+            return { left: 600, top: pagerTop, width: 240, height: 25, right: 840, bottom: pagerTop + 25, x: 600, y: pagerTop, toJSON() { return this; } };
+        };
         player.getBoundingClientRect = () => {
             const top = 300 - scrollDelta;
             return { left: 72, top, width: 800, height: 450, right: 872, bottom: top + 450, x: 72, y: top, toJSON() { return this; } };
@@ -903,9 +918,15 @@ function arrivalThumbnailTop(web) {
         setTimeout(() => {
             const layer = doc.querySelector(".work-transition--arrival");
             assert.ok(layer, "el click del landing deja el thumbnail de llegada");
-            assert.equal(scrollDelta, web ? -40 : 0, web ? "web: el ancla sube 40px" : "móvil: el ancla no se mueve");
-            assert.equal(layer.style.top, web ? "340px" : "300px",
-                web ? "web: el thumbnail baja 40px y coincide con el vídeo" : "móvil: el thumbnail no baja");
+            const rescued = web && pagerTop < 8;                       // el rescate suma pagerTop − 8px al scroll
+            assert.equal(scrollDelta, web ? -40 + (rescued ? pagerTop - 8 : 0) : 0,
+                web ? (rescued ? "web: además del ancla de 40px, el scroll se devuelve para dejar el paginador bajo la cabecera"
+                               : "web: el ancla sube 40px y el paginador ya estaba a salvo")
+                    : "móvil: el ancla no se mueve");
+            assert.equal(layer.style.top, web ? `${340 - (rescued ? pagerTop - 8 : 0)}px` : "300px",
+                web ? "web: el thumbnail se mide después del rescate y sigue aterrizando en el vídeo" : "móvil: el thumbnail no baja");
+            assert.equal(pagerReads, web ? 1 : 0,
+                web ? "web: el rescate comprueba el paginador una vez" : "móvil: el rescate no toca el paginador");
             assert.equal(layer.style.left, "72px");
             assert.equal(layer.style.width, "800px");
             assert.equal(layer.style.height, "450px");
@@ -915,7 +936,14 @@ function arrivalThumbnailTop(web) {
     });
 }
 
-Promise.all([arrivalThumbnailTop(true), arrivalThumbnailTop(false)]).then(() => {
+Promise.all([
+    arrivalThumbnailTop(true),
+    arrivalThumbnailTop(false),
+    /* 2560×1080 y 3440×1440: la caja 16:9 al 85,5% es más alta que la ventana,
+       así que el paginador medía −69px al llegar desde el landing; el rescate
+       devuelve el scroll 77px para dejarlo visible. */
+    arrivalThumbnailTop(true, -69),
+]).then(() => {
     console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
 }).catch((error) => {
     console.error(error);

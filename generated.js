@@ -107,7 +107,22 @@
                 player.scrollIntoView({ block: "center", behavior: "instant" });
                 // Web only: raise the anchor 40px so the film, and the thumbnail
                 // measured just below, land 40px lower. Mobile stays centered.
-                if (window.matchMedia("(min-width: 561px)").matches) window.scrollBy(0, -40);
+                if (window.matchMedia("(min-width: 561px)").matches) {
+                    window.scrollBy(0, -40);
+                    // En pantallas anchas y bajas (2560×1080, 3440×1440…) la caja
+                    // 16:9 al 85,5% es más alta que la ventana: centrarla obligaba a
+                    // bajar tanto que el paginador (flechas y contador) quedaba por
+                    // encima del borde superior. Se devuelve el scroll justo lo
+                    // necesario para dejarlo visible bajo la cabecera fija, y solo si
+                    // de verdad se ha quedado fuera. El thumbnail se mide después de
+                    // este ajuste, así que sigue aterrizando en la caja. (03/10/2026)
+                    const pager = document.querySelector(".node-pager");
+                    if (pager) {
+                        const safeTop = (header ? header.getBoundingClientRect().bottom : 0) + 8;
+                        const pagerRect = pager.getBoundingClientRect();
+                        if (pagerRect.top < safeTop) window.scrollBy(0, pagerRect.top - safeTop);
+                    }
+                }
                 root.style.scrollBehavior = previousBehavior;
                 const target = player.getBoundingClientRect();
                 requestAnimationFrame(() => requestAnimationFrame(() => {
