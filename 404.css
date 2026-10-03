@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
-   HYPRFRAME — 404 / FRAME NOT FOUND (ERROR + 404 + VOLVER A INICIO)
+   HYPRFRAME — 404 / FRAME NOT FOUND ("NOTHING TO SEE HERE" + 404 + VOLVER A INICIO)
    Palette: #050505 bg / #efeee9 fg / #a064ff violet / #a3df02 lime
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-    /* 404 size reduced by 30% from clamp(8rem, 26vw, 22rem) */
-    --size-404: clamp(5.6rem, 18.2vw, 15.4rem);
+    /* 15px less than the current responsive 404 size at every viewport width. */
+    --size-404: clamp(calc(5.6rem - 15px), calc(18.2vw - 15px), calc(15.4rem - 15px));
 }
 
 /* ── Base fullscreen layout without header or footer ─────── */
@@ -100,7 +100,7 @@ header {
     box-sizing: border-box;
 }
 
-/* ── Glitch Display (ERROR + 404) ────────────────────────── */
+/* ── Glitch Display ("NOTHING TO SEE HERE" + 404) ────────── */
 .glitch-display {
     position: relative;
     cursor: pointer;
@@ -114,23 +114,27 @@ header {
     gap: 0;
 }
 
-/* ERROR: exactly half the size of 404 */
+/* "NOTHING TO SEE HERE": full phrase, so it gets its own responsive size
+   (much smaller than 404) instead of half of --size-404, which would overflow. */
 .glitch-error {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: calc(var(--size-404) * 0.5);
-    line-height: 0.9;
-    letter-spacing: -0.02em;
+    /* 15px smaller on larger screens; retain a readable 1rem mobile floor. */
+    font-size: clamp(1rem, calc(5.4vw - 15px), calc(4.2rem - 15px));
+    line-height: 0.95;
+    letter-spacing: 0.01em;
     color: var(--fg);
     text-transform: uppercase;
     position: relative;
     display: inline-block;
+    max-width: 100%;
+    text-wrap: balance;
     text-shadow: 0 0 35px rgba(160, 100, 255, 0.25);
     transition: transform 0.25s var(--ease-out), color 0.25s;
-    margin-bottom: clamp(0.2rem, 1vh, 0.5rem);
+    margin-bottom: clamp(0.35rem, 1.6vh, 0.9rem);
 }
 
-/* 404: reduced by 30% */
+/* 404: an additional 15px smaller across the responsive range. */
 .glitch-number {
     font-family: var(--font-display);
     font-weight: 800;
@@ -146,7 +150,7 @@ header {
     transition: transform 0.25s var(--ease-out), color 0.25s;
 }
 
-/* Glitch pseudo-elements for both ERROR and 404 */
+/* Glitch pseudo-elements for both "NOTHING TO SEE HERE" and 404 */
 .glitch-error::before,
 .glitch-error::after,
 .glitch-number::before,
@@ -267,6 +271,17 @@ header {
 .btn-primary:hover .btn-arrow {
     transform: translate(2px, -2px);
 }
+
+/* ── Enlace legal del pie de error ───────────────────────── */
+/* La 404 no monta la barra de consentimiento (es una página de error sin
+   scripts del sitio): solo enlaza la política de cookies. */
+.legal-404 {
+    margin-top: 1.5rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+}
+.legal-404 a { color: var(--muted); transition: color 0.3s var(--ease-out); }
+.legal-404 a:hover { color: var(--fg); }
 
 /* ── Accessibility & Reduced Motion ──────────────────────── */
 @media (prefers-reduced-motion: reduce) {

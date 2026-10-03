@@ -4,19 +4,37 @@
    Brand tokens, navigation, grain and footer come from styles.css.
    The .node-* names are kept from the first page of the section (N.O.D.E.). */
 
+/* En GENERATED la cabecera muestra desde el primer frame su estado final fijado. */
+.site-header {
+    padding: 0.8rem var(--pad);
+    background: rgba(5, 5, 5, 0.65);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+}
+.site-header .logo img { height: 46px; }
+
 /* Keep the close control on top of the fullscreen menu on mobile. */
 body.menu-open .site-header { z-index: 900; }
 body.menu-open { overflow: hidden; }
 .menu-overlay a { visibility: hidden; }
 body.menu-open .menu-overlay a { visibility: visible; }
 
-.node-hero { padding: clamp(7.5rem, 11vw, 10rem) var(--pad) 0; }
+/* position: relative ancla la fila inferior en móvil, donde es absolute
+   (bottom: 1.5rem): sin el hero como caja de referencia la fila se colocaba
+   respecto al viewport (ICB), fuera del opener. (29/09/2026) */
+.node-hero { position: relative; padding: clamp(7.5rem, 11vw, 10rem) var(--pad) 0; }
 .node-hero__top, .node-section-label {
     display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
     font: 400 0.65rem/1.5 var(--font-mono);
     letter-spacing: 0.21em; text-transform: uppercase; color: var(--muted);
 }
-.node-hero__top { padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+.node-hero__top { padding-bottom: 0; }
+.node-hero__meta-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center; padding-bottom: calc(clamp(3rem, 5vw, 4.5rem) - 15px);
+}
+.node-hero__top { grid-column: 1; }
+.node-pager { grid-column: 2; justify-self: center; }
 .node-hero__top .kicker { margin: 0; font-size: inherit; letter-spacing: inherit; }
 /* Prev / next, between the kicker and the title. The old template paged through
    the portfolio with a bare arrow-colon-arrow row; the section keeps that triad
@@ -25,19 +43,33 @@ body.menu-open .menu-overlay a { visibility: visible; }
    Which piece each arrow leads to lives in the link's aria-label, and the cycle
    follows SELECTED WORK on the landing. */
 .node-pager {
-    display: flex; align-items: baseline; justify-content: center;
+    position: relative; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
     gap: clamp(0.9rem, 2vw, 1.75rem);
-    padding-bottom: clamp(1rem, 2vw, 1.75rem);
+    /* 30/09/2026: el relleno inferior se recorta (1rem/2vw/1.75rem →
+       0.8rem/1.5vw/1.35rem, ~23% menos) para que el grupo quede más cerca del
+       titular, junto con el campo liso de abajo. En móvil manda su propio
+       bloque (≤560px: 0.5rem). */
+    padding-bottom: 0;
 }
 .node-pager__link {
-    display: inline-flex; align-items: baseline; gap: 0.55rem;
+    position: relative; z-index: 1; cursor: pointer; pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 0.55rem;
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
     text-transform: uppercase; color: var(--muted); white-space: nowrap;
     transition: color 0.3s;
 }
 .node-pager__arrow {
-    font-size: 1.05rem; color: var(--violet);
-    transition: transform 0.45s var(--ease-out), color 0.3s;
+    display: block; flex: none; width: 21.5px; height: 24.82px;
+    background: var(--violet);
+    clip-path: polygon(0 50%, 100% 0, 100% 100%);
+    transition: transform 0.45s var(--ease-out), background-color 0.3s;
+}
+.node-pager__link--next .node-pager__arrow {
+    clip-path: polygon(100% 50%, 0 0, 0 100%);
+}
+@media (forced-colors: active) {
+    .node-pager__arrow { background: ButtonText; }
 }
 .node-pager__count {
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
@@ -45,15 +77,32 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-pager__link:hover, .node-pager__link:focus-visible { color: var(--fg); }
 .node-pager__link:hover .node-pager__arrow,
-.node-pager__link:focus-visible .node-pager__arrow { color: var(--lime); }
+.node-pager__link:focus-visible .node-pager__arrow { background-color: var(--lime); }
 .node-pager__link:hover .node-pager__arrow { transform: translateX(-0.3rem); }
 .node-pager__link--next:hover .node-pager__arrow { transform: translateX(0.3rem); }
+/* El campo liso que separaba el paginador del titular era el que abría el hueco
+   más grande del opener: se recorta a la mitad (170px/23svh/250px →
+   84px/11svh/120px) manteniendo su forma —piso hasta 764px de alto, techo desde
+   1091px—, así que en 1440×900 pasa de 207px a 99px y, con el relleno del
+   paginador, el hueco entre el paginador y el titular baja de ~235px a ~121px.
+   El móvil conserva su campo (≤560px: 110px/18svh/145px), donde la fila
+   inferior va anclada al hero y el hueco ya era mucho más corto. (30/09/2026) */
 .node-hero__image {
-    position: relative; height: clamp(170px, 23svh, 250px);
+    position: relative; height: calc(clamp(84px, 11svh, 120px) - 80px);
     isolation: isolate; overflow: hidden;
     background: var(--bg);
 }
-.node-hero__title { position: absolute; bottom: clamp(1rem, 2vw, 2rem); left: clamp(1.25rem, 4vw, 4rem); right: 1rem; max-width: calc(100% - 2rem); }
+/* El titular vive en la fila inferior junto a la flecha EXPLORE (antes estaba
+   dentro de .node-hero__image, que ahora queda como campo liso vacío bajo el
+   paginador): a la misma altura que la flecha (align-items: center de la fila)
+   y en su posición horizontal de siempre (el margen reproduce el left que
+   llevaba como absolute). (29/09/2026) */
+.node-hero__title { margin-left: clamp(1.25rem, 4vw, 4rem); max-width: calc(100% - 2rem); }
+.node-player > .node-hero__title {
+    position: absolute; z-index: 3; top: clamp(1rem, 2.2vw, 2rem); left: 0;
+    margin-left: 0; max-width: calc(100% - 2rem); padding: .55rem 1.2rem .55rem clamp(1rem, 2.5vw, 2.25rem);
+    background: rgba(128, 128, 128, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); pointer-events: none;
+}
 /* One size for the ten titles of the section, and the longest one sets it: the
    h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
    — 456px of the 478px available at 561px, the tightest point above the mobile
@@ -66,54 +115,64 @@ body.menu-open .menu-overlay a { visibility: visible; }
    wider on these titles (+9% to +19%), and at 7.2vw DEEP needed 111% of the box.
    Anything longer than 26 characters (title + bracket) has to be re-measured
    before shipping.
+   Piso 2.82rem − 15px (29/09/2026): el titular ahora comparte la fila inferior
+   con la flecha EXPLORE, que reserva a la derecha el margen exacto que deja la
+   caja de vídeo ((100% − 85.5%) / 2): a 561px, el punto más apretado, le
+   quedan 444px en vez de 478 — a 29.1px DEEP necesita ~412px, con ~7% de
+   margen. El piso rige hasta 689px, donde 6.4vw − 15 lo alcanza.
    Mobile (≤560px) uses a smaller, fully fluid clamp with white-space: nowrap
    so every title — including the longest — fits in a single line without being
    cut by the opener's overflow. */
-.node-hero h1 {
+.node-hero h1, .node-player h1 {
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: clamp(calc(2.99rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px));
+    font-size: clamp(calc(2.397rem - 21.25px), calc(5.44vw - 21.25px), calc(5.44rem - 21.25px));
     line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
-/* N.O.D.E. uses the same Montserrat family as the other 9 pages: the letters
-   inherit var(--font-head) from the h1, and the dots are drawn as pure-CSS
-   boxes (identical size, baseline-anchored) so the rhythm never depends on the
-   side bearings of the font's "." glyph — which vary per font and made the
-   last dot look detached — but they inherit currentColor and sit on the
-   Montserrat baseline, so the whole word respects Montserrat metrics. */
+/* N.O.D.E. usa la misma familia Montserrat que las otras 9 páginas: letras y
+   puntos son texto normal del h1 (Montserrat 700), así que los cuatro puntos
+   son el carácter «.» de la propia fuente, con su tamaño y sus espacios
+   laterales. Las cajas CSS que los dibujaban (.node-hero__dot) se quitaron
+   (29/09/2026). */
+.node-player h1 { color: rgba(239, 238, 233, 0.8); }
 .node-hero__word { white-space: nowrap; font-family: var(--font-head); font-weight: 700; }
-.node-hero__dot {
-    display: inline-block; width: 0.165em; height: 0.15em;
-    margin: 0 0.025em;
-    background: currentColor; vertical-align: baseline;
-}
 .node-hero__teaser { font-family: var(--font-head); font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
-.node-hero__bottom { display: flex; justify-content: flex-end; padding: 1.3rem 0; }
-.node-hero__explore {
-    display: inline-flex; align-items: center; gap: 1.75rem;
-    font: 400 0.65rem/1 var(--font-mono); letter-spacing: 0.17em;
-    transition: color 0.3s;
-}
-.node-hero__explore span { font-size: 1.3rem; }
-.node-hero__explore:hover { color: var(--lime); }
+/* La fila inferior del opener: el titular a la izquierda (en su posición
+   habitual) y la flecha a la derecha, a la misma altura (align-items center).
+   La flecha se acerca a la caja de vídeo con el margen exacto que esta deja a
+   su derecha ((100% - 85.5%) / 2, ver .node-player), así que su extremo
+   derecho queda alineado con el borde derecho del vídeo. (29/09/2026) */
 .node-film, .node-story, .node-related { padding-inline: var(--pad); }
-.node-film { padding-top: clamp(3rem, 6vw, 5rem); scroll-margin-top: 5rem; }
+.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: -90px; scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
+/* El label de THE STORY, debajo del vídeo, sin línea. Antes copiaba el ancho de
+   la caja de vídeo (85,5% centrado), así que su texto arrancaba 7,25% a la
+   derecha del titular; ahora ocupa la columna entera, de modo que THE STORY y el
+   h2 de cada página comparten el mismo borde izquierdo (el del contenido, el
+   que marca padding-inline: var(--pad) del section). Con el relleno de la rejilla
+   recortado (ver .node-story__grid), el rótulo queda pegado a su titular: medido a
+   1440px, del rótulo al h2 hay 50,5px en vez de los 131,2px de antes, que es la
+   proporción de la referencia de diseño (3,5% del ancho). KEEP EXPLORING
+   conserva su línea y su relleno. (29/09/2026 · 30/09/2026) */
+.node-story > .node-section-label { margin-inline: 0; border-top: 0; }
 .node-section-label span:first-child { color: var(--violet); }
+/* THE STORY en verde corporativo en las 10 páginas Generated; KEEP EXPLORING
+   sigue en violeta vía la regla de arriba. (30/09/2026) */
+.node-story > .node-section-label span:first-child { color: var(--lime); }
 .node-story h2, .node-related h2 {
     font: 700 clamp(3rem, 8vw, 8rem)/0.98 var(--font-head); /* 800 → 700 (25/09/2026) */
     letter-spacing: 0.025em; text-transform: uppercase;
 }
+/* Palabras en lila de cada h2 (THE STORY + RELATED PROJECTS) en cursiva,
+   EN y ES: THE FIRE, SNOW, PROJECTS, RELACIONADOS, etc. (30/09/2026) */
+.node-story h2 .violet, .node-related h2 .violet { font-style: italic; }
 .node-player { position: relative; aspect-ratio: 16 / 9; width: 85.5%; margin-inline: auto; background: #000; overflow: hidden; } /* 90% → 85.5% (27/09/2026) · 5% más de reducción sobre el 90% */
 .node-player > img {
     width: 100%; height: 100%; object-fit: cover;
-    filter: grayscale(0.35) saturate(0.8) brightness(0.8);
-    transition: transform 0.9s var(--ease-out), filter 0.6s;
+    transition: transform 0.9s var(--ease-out);
 }
-.node-player:hover > img, .node-player:focus-within > img {
-    transform: scale(1.06); filter: grayscale(0) saturate(1) brightness(0.95);
-}
+.node-player:hover > img, .node-player:focus-within > img { transform: scale(1.06); }
 .node-player__play {
     position: absolute; inset: 0; width: 100%; height: 100%;
     display: grid; place-items: center;
@@ -163,11 +222,24 @@ body.menu-open .menu-overlay a { visibility: visible; }
     pointer-events: none;
     transition: --film-stripe 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
 }
-.node-story { padding-top: 0; }
+/* El aire entre la caja de vídeo y THE STORY lo daba solo el relleno del propio
+   rótulo (1rem), así que la historia arrancaba pegada al vídeo. La sección abre
+   ahora su propio hueco: en 1440px, del vídeo al rótulo hay ~74px en vez de 16.
+   El rótulo y su rejilla conservan sus rellenos (el h2 sigue a 50,5px del
+   rótulo). (30/09/2026) */
+.node-story { padding-top: clamp(2rem, 4vw, 3.5rem); }
+/* El relleno superior de la rejilla abría el hueco entre THE STORY y el h2: se
+   recorta a un tercio del original con el mismo eje —clamp(3.5rem, 8vw, 8rem) →
+   clamp(1.25rem, 2.4vw, 2.25rem): 2.4vw es 8vw/3 y los topes también van a un
+   tercio—, así que conserva su forma: piso hasta 833px de ancho, techo desde
+   1500px. Medido a 1440px, el h2 pasa de arrancar a 131,2px del rótulo a 50,5px
+   (3,5% del ancho, la proporción de la referencia de diseño) y queda pegado a su
+   rótulo como un antetítulo. El piso inferior y el ritmo de la columna de la
+   sinopsis no cambian. (30/09/2026) */
 .node-story__grid {
     display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
     align-items: start; gap: clamp(2.5rem, 6vw, 8rem);
-    padding: clamp(3.5rem, 8vw, 8rem) 0 clamp(3.5rem, 8vw, 7rem);
+    padding: clamp(1.25rem, 2.4vw, 2.25rem) 0 clamp(3.5rem, 8vw, 7rem);
 }
 .node-story h2 { font-size: clamp(calc(3rem - 25px), calc(6.4vw - 25px), calc(7rem - 25px)); }
 .node-story__copy { padding-bottom: 0.5rem; }
@@ -220,18 +292,21 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-related__heading { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 560px) {
-    .node-hero { padding-top: 7rem; }
+    /* Compact mobile opener: the empty black field no longer dominates the
+       title and the film starts closer to the call to action. */
+    .node-hero { padding-top: 5.5rem; }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-hero__image { height: clamp(160px, 25svh, 210px); }
-    .node-hero__title { left: 1rem; right: 1rem; bottom: 1.5rem; max-width: calc(100% - 2rem); }
+    .node-hero__image { height: calc(clamp(110px, 18svh, 145px) - 80px); }
+    .node-film { padding-top: 1.75rem; }
     /* Mobile: título adaptable en una sola línea — nunca se corta.
        clamp(1.125rem, 5.5vw, 2.6rem) cabe en 320px para el titular más largo
        (DEEP IN THE FOREST, 18 chars) con margen: 5.5vw@320=17.6px, floor 18px,
-       ~11.7×font para Montserrat 700 uppercase → ~210px en 248px disponibles.
+       ~11.7×font para Montserrat 700 uppercase → ~210px; en la fila le quedan
+       ~239px (fila 271px − margen izq. 20px − flecha ~12px).
        white-space: nowrap garantiza una sola línea; el teaser va debajo en
        bloque pequeño para no competir por ancho. */
-    .node-hero h1 {
-        font-size: clamp(1.125rem, 5.5vw, 2.6rem);
+    .node-hero h1, .node-player h1 {
+        font-size: clamp(calc(0.95625rem - 8.5px), calc(4.675vw - 8.5px), calc(2.21rem - 8.5px));
         white-space: nowrap;
         letter-spacing: -0.02em;
         line-height: 0.9;
@@ -243,7 +318,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
         font-size: calc(0.5em + 6px);
         white-space: nowrap;
     }
-    .node-hero__explore { font-size: 0.56rem; }
+    /* En móvil el rótulo de THE STORY ya iba de borde a borde desde la regla
+       base (sin ancho propio) y sus huecos conservan las medidas de siempre: ni
+       el acercamiento al h2 ni el aire extra bajo el vídeo de la versión web
+       bajan al móvil. (30/09/2026) */
+    .node-story { padding-top: 0; }
+    .node-story__grid { padding-top: clamp(3.5rem, 8vw, 8rem); }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
@@ -254,11 +334,82 @@ body.menu-open .menu-overlay a { visibility: visible; }
        botón de play igual de centrado. (28/09/2026) */
     .node-player { width: 100%; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
-    .node-pager { gap: 0.8rem; padding-bottom: 1rem; }
-    .node-pager__link { gap: 0.4rem; }
+    .node-pager { gap: 0.35rem; padding-bottom: 0; }
+    .node-pager__link { gap: 0.15rem; }
     .node-pager__link, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-pager__arrow { font-size: 0.95rem; }
+    .node-hero__meta-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+    .node-hero__top .kicker { font-size: 0.42rem; letter-spacing: 0.05em; white-space: nowrap; }
+    .node-pager__arrow { width: 11.05px; height: 12.76px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .node-card__image img, .node-player > img, .node-pager__arrow { transition: none; }
 }
+
+/* Black interstitial is below the fixed site header and the top progress line. */
+.work-transition {
+    position: fixed; z-index: 2000; pointer-events: none;
+    background-size: cover; background-repeat: no-repeat; transform: scale(1);
+    transform-origin: center;
+    -webkit-mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+            mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+    transition: left .42s cubic-bezier(.16,1,.3,1), top .42s cubic-bezier(.16,1,.3,1),
+        width .42s cubic-bezier(.16,1,.3,1), height .42s cubic-bezier(.16,1,.3,1),
+        transform .42s cubic-bezier(.16,1,.3,1), opacity .22s ease-out;
+}
+.work-transition::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    opacity: 1; transition: opacity .22s ease-out;
+}
+.work-transition.is-opening { transform: scale(1); }
+.work-transition.is-opening::after { opacity: 0; }
+.work-transition--departure.is-opening { transform: scale(1.28); }
+.work-transition--arrival.is-dissolving { opacity: 0; }
+.hf-entry-black {
+    position: fixed; inset: 0; z-index: 700; background: #050505;
+    opacity: 1; pointer-events: none; transition: opacity .6s ease;
+}
+.hf-entry-black.is-fading { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
+}
+
+/* Related Projects is intentionally retained in the markup, but disabled so
+   its card images and section do not load/show until explicitly re-enabled. */
+.node-related { display: none; }
+
+/* Starting playback fades out the title panel while dimming the page around
+   the player; the elevated video itself remains at full brightness. */
+.node-player > .node-hero__title { transition: opacity .8s ease; }
+.node-player.is-playing { z-index: 901; }
+.node-player.is-playing > .node-hero__title { opacity: 0; }
+.film-page-dimmer {
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
+    background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity 1s ease;
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+body.film-is-playing .node-pager { z-index: 901; }
+.node-pager::after {
+    content: ""; position: absolute; inset: -0.2rem; z-index: 5;
+    background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
+    transition: opacity 1s ease;
+}
+body.film-is-playing .node-pager::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .node-pager::after { transition-duration: .01ms; }
+}
+.film-page-dimmer.is-visible { opacity: 1; }
+.film-page-dimmer.is-clearing { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .node-player > .node-hero__title, .film-page-dimmer { transition-duration: .01ms; }
+}
+
+/* Desktop playback expands the player box itself to the browser fullscreen. */
+.node-player:fullscreen,
+.node-player:-webkit-full-screen {
+    position: fixed; inset: 0; z-index: 2147483647;
+    width: 100vw; height: 100vh; height: 100dvh; max-width: none;
+    aspect-ratio: auto; margin: 0; background: #000; overflow: hidden;
+}
+.node-player:fullscreen iframe,
+.node-player:-webkit-full-screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }

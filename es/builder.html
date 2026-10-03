@@ -10,10 +10,12 @@
     <meta name="description" content="Cinematic Look Builder: traduce configuraciones técnicas de cámara en descripciones visuales listas para LLMs." />
     <meta name="theme-color" content="#050505" />
 
-    <!-- ─── Consent Mode v2 de Google — ACTIVADO ─────────────────────────────
-         Mismo interruptor que en legacy.html y las páginas de proyecto, para
-         que el comportamiento sea uniforme. El builder no carga gtag.js: si
-         se añade, hay que ponerlo DESPUÉS de este bloque. -->
+    <!-- ─── Consent Mode v2 de Google — ACTIVADO ────────────────────────────
+         Interruptor único en las 28 páginas, colocado ANTES del gtag.js donde la
+         página lo carga: los consent defaults arrancan en 'denied' y cookies.js
+         comunica la decisión del visitante con gtag('consent','update').
+         Esta página no carga gtag.js: si algún día se añade, hay que ponerlo
+         DESPUÉS de este bloque. -->
     <script>
         window.HYPRFRAME_CONSENT_MODE = true;
         window.dataLayer = window.dataLayer || [];
@@ -114,52 +116,77 @@
             .prompt-container-fixed { height: 0; min-height: 0; }
         }
 
-        /* Cookie consent */
+        /* Cookie consent — el mismo widget (cookies.js) que en el resto del
+           sitio, con el lenguaje del builder: glass-panel, Inter y acento
+           violeta. Barra inferior de ancho completo, como en la web. */
         .cookie-banner {
-            position: fixed; left: 1.5rem; bottom: 1.5rem;
-            z-index: 60;
-            width: calc(100vw - 3rem);
-            max-width: 360px;
-            padding: 1rem 1.1rem 1.1rem;
-            background: rgba(23, 23, 23, 0.8);
+            position: fixed; left: 0; right: 0; bottom: 0;
+            z-index: 60; /* por encima de los desplegables (z-50 de Tailwind) */
+            background: rgba(46, 46, 48, 0.72);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: #e5e7eb;
-            opacity: 0; transform: translateY(14px);
+            opacity: 0; transform: translateY(100%);
             transition: opacity .4s ease, transform .4s ease;
         }
         .cookie-banner.show { opacity: 1; transform: none; }
-        .cookie-title {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.6rem; font-weight: 500;
-            letter-spacing: 0.22em; text-transform: uppercase;
-            color: #a78bfa; margin-bottom: 0.5rem;
+        .cookie-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1.5rem; padding: 0.85rem 1.5rem;
         }
         .cookie-text {
             font-family: 'Inter', sans-serif; font-weight: 300;
-            font-size: 0.75rem; line-height: 1.55;
-            color: rgba(229, 231, 235, 0.7);
-            margin-bottom: 0.9rem;
+            font-size: 0.78rem; line-height: 1.5; max-width: 60ch;
+            color: rgba(229, 231, 235, 0.78);
         }
-        .cookie-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .cookie-link { color: #e5e7eb; text-decoration: underline; text-decoration-color: rgba(167,139,250,.7); text-underline-offset: 3px; }
+        .cookie-link:hover { color: #a78bfa; }
+        .cookie-actions { display: flex; align-items: center; gap: 1rem; flex: 0 0 auto; }
+        .cookie-actions::before { content: ""; align-self: stretch; width: 1px; background: rgba(255,255,255,0.12); }
         .cookie-btn {
-            font-family: 'Inter', sans-serif; font-weight: 600;
-            font-size: 0.7rem; letter-spacing: 0.04em;
-            padding: 0.55rem 1rem; border-radius: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: transparent; color: rgba(229, 231, 235, 0.7);
-            cursor: pointer;
-            transition: background .25s ease, color .25s ease, border-color .25s ease;
+            font-family: 'Inter', sans-serif; font-weight: 400;
+            font-size: 0.82rem; padding: 0.55rem 1.3rem; border-radius: 0.35rem;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: transparent; color: #e5e7eb; cursor: pointer;
+            transition: background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
         }
-        .cookie-accept { background: #7c3aed; color: #efeee9; border-color: transparent; }
-        .cookie-accept:hover { background: #6d28d9; }
-        .cookie-reject:hover { color: #e5e7eb; border-color: rgba(255, 255, 255, 0.3); }
+        .cookie-accept { background: #efeee9; color: #0a0a0a; border-color: transparent; }
+        .cookie-accept:hover { background: #a78bfa; color: #0a0a0a; }
+        .cookie-reject:hover { border-color: rgba(255,255,255,0.45); }
+        .cookie-config {
+            font-family: 'Inter', sans-serif; font-weight: 300;
+            font-size: 0.82rem; color: rgba(229,231,235,0.6);
+            background: none; border: 0; cursor: pointer; transition: color .25s ease;
+        }
+        .cookie-config:hover { color: #e5e7eb; }
+        .cookie-prefs {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem 1.5rem 1.15rem;
+            display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 0.85rem 2.5rem;
+        }
+        .cookie-prefs[hidden] { display: none; }
+        .cookie-purpose { display: grid; gap: .2rem; }
+        .cookie-purpose-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; font-family: 'Inter', sans-serif; font-weight: 500; font-size: .82rem; color: #e5e7eb; }
+        label.cookie-purpose-head { cursor: pointer; }
+        .cookie-purpose-state { color: rgba(229,231,235,.5); font-size: .72rem; }
+        .cookie-purpose-desc { font-family: 'Inter', sans-serif; font-weight: 300; font-size: .72rem; line-height: 1.55; color: rgba(229,231,235,.6); }
+        .cookie-toggle { accent-color: #a78bfa; width: 1rem; height: 1rem; cursor: pointer; }
+        .cookie-prefs .cookie-actions { grid-column: 1 / -1; }
+        .cookie-prefs .cookie-actions::before { content: none; }
+        .cookie-save { background: #efeee9; color: #0a0a0a; border-color: transparent; }
+        .cookie-save:hover { background: #a78bfa; color: #0a0a0a; }
+
+        @media (max-width: 720px) {
+            .cookie-bar { flex-direction: column; align-items: stretch; gap: .8rem; padding: .9rem 1rem; }
+            .cookie-actions { flex-wrap: wrap; justify-content: space-between; }
+            .cookie-actions::before { display: none; }
+            .cookie-prefs { grid-template-columns: 1fr; padding: 1rem; }
+        }
 
         @media (max-width: 640px) {
-            .cookie-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; }
-            .cookie-actions .cookie-btn { flex: 1 1 auto; }
+            .mobile-copyright { font-size: 3px !important; }
         }
     </style>
 </head>
@@ -377,7 +404,13 @@
                         <i data-lucide="refresh-cw" class="w-4 h-4 group-active:rotate-180 transition-transform"></i>
                         GENERAR
                     </button>
-                    <p class="text-center text-[7px] text-zinc-500 uppercase tracking-widest opacity-60">© 2026 Hyprframe. Todos los derechos reservados.</p>
+                    <p class="text-center text-[7px] text-zinc-500 uppercase tracking-widest opacity-60 mobile-copyright">© 2026 Hyprframe. Todos los derechos reservados.</p>
+
+                    <p class="text-center text-[8px] text-zinc-500 uppercase tracking-widest opacity-60 mt-2">
+                        <a class="hover:text-zinc-300 transition-colors" href="cookie-policy.html">Política de cookies</a>
+                        <span class="mx-1">·</span>
+                        <button type="button" class="hover:text-zinc-300 transition-colors" data-cookie-settings>Configurar cookies</button>
+                    </p>
                 </div>
             </div>
         </div>
@@ -425,6 +458,6 @@
         const _0x1a=[{name:"None",desc:"(Sin mapeo de perfil)"},{name:"ARRI LogC4",desc:"17 stops DR / estándar Alexa 35"},{name:"Sony S-Log3",desc:"Estilo Cineon / Alta latitud en sombras"},{name:"RED Log3G10",desc:"Mapeo IPP2 / Gris medio 10 stops"},{name:"Blackmagic Film Gen 5",desc:"Roll-off avanzado en altas luces"},{name:"Canon C-Log3",desc:"1600% DR / Balance 34.3 IRE"},{name:"Panasonic V-Log",desc:"Tonos medios lineales / Compatibilidad Varicam"}];const _0x2b={"Neutro / Bypass":[{name:"None",desc:"(Neutro digital)"}],"Película en color (Negativo)":[{name:"Kodak Portra 160/400/800",desc:"Piel natural / Tonos bronce"},{name:"Kodak Ektar 100",desc:"Vívido / Grano fino"},{name:"Kodak Gold 200",desc:"Cálido / Vintage"},{name:"Kodak ColorPlus 200",desc:"Nostálgico / Tendencia amarilla"},{name:"Kodak Ultramax 400",desc:"Saturado / Versátil"},{name:"Fujifilm Superia 400",desc:"Matices verdes / Sombras"},{name:"CineStill 800T",desc:"Tungsteno / Halos rojos"},{name:"CineStill 50D",desc:"Cinematográfico luz de día"},{name:"Wolfen NC500",desc:"Urbano / Desaturado"},{name:"Phoenix 200",desc:"Experimental Harman / Textura"},{name:"Aerocolor IV",desc:"Vibrante / Claridad aérea"}],"Blanco y negro":[{name:"Kodak Tri-X 400",desc:"Grano clásico / Contraste"},{name:"Kodak T-MAX 100/400",desc:"Nitidez tabular ultraprecisa"},{name:"Ilford HP5 Plus 400",desc:"Gama de grises flexible"},{name:"Ilford FP4 Plus 125",desc:"Grano muy fino / Luz de día"},{name:"Ilford Delta 100/400/3200",desc:"Máxima definición"},{name:"Fomapan 100/200/400",desc:"Económico / Look europeo clásico"},{name:"Rollei Retro 80s",desc:"Contraste profundo / Tacto IR"}],"Diapositiva / Especial":[{name:"Fujifilm Provia 100F",desc:"Color realista / Alta fidelidad"},{name:"Kodak Ektachrome E100",desc:"Azul limpio / Grano fino"},{name:"Fujifilm Velvia 50/100",desc:"Paisaje hipersaturado"},{name:"LomoChrome Purple",desc:"Mapeo color-swap IR"},{name:"LomoChrome Metropolis",desc:"Urban-noir desaturado"}]};const _0x3c=i=>document.getElementById(i);function initDropdowns(){_0x3c("profile-dropdown").innerHTML=_0x1a.map(p=>`<div class="stock-option px-3 py-2 text-[11px] cursor-pointer border-b border-white/5" onclick="selectProfile('${p.name}', '${p.desc}')"><span class="font-bold">${p.name}</span> <span class="text-zinc-500">${p.desc}</span></div>`).join('');let h='';for(const c in _0x2b){h+=`<div class="px-3 py-1 bg-white/5 text-[9px] font-bold uppercase text-violet-400">${c}</div>`;_0x2b[c].forEach(s=>{h+=`<div class="stock-option px-3 py-2 text-[11px] cursor-pointer border-b border-white/5" onclick="selectStock('${s.name}', '${s.desc}')"><span class="font-bold">${s.name}</span> <span class="text-zinc-500">${s.desc}</span></div>`});}_0x3c("stock-dropdown").innerHTML=h;}function toggleProfileDropdown(){_0x3c("profile-dropdown").classList.toggle("hidden");_0x3c("stock-dropdown").classList.add("hidden");}function toggleStockDropdown(){_0x3c("stock-dropdown").classList.toggle("hidden");_0x3c("profile-dropdown").classList.add("hidden");}function updateExclusion(){let p=_0x3c("camera-profile").value,s=_0x3c("stock").value,pb=_0x3c("profile-button"),sb=_0x3c("stock-button");sb.classList.toggle("opacity-30",p!=="None");sb.style.pointerEvents=p!=="None"?"none":"auto";pb.classList.toggle("opacity-30",s!=="None");pb.style.pointerEvents=s!=="None"?"none":"auto";let iL=p!=="None";['saturation','halation','grain','contrast','skinLuma'].forEach(i=>{let e=_0x3c(i),w=_0x3c(`wrap-${i}`);e.disabled=iL;if(w){w.style.opacity=iL?"0.3":"1";w.style.pointerEvents=iL?"none":"auto";}});}function setSliderValues(s,h,g,v,w,c,l){_0x3c("saturation").value=s;updateVal("satValue",parseFloat(s).toFixed(2));_0x3c("halation").value=h;updateVal("halValue",parseFloat(h).toFixed(2));_0x3c("grain").value=g;updateVal("grnValue",parseFloat(g).toFixed(2));_0x3c("vignette").value=v;updateVal("vigValue",parseFloat(v).toFixed(2));_0x3c("whitePoint").value=w;updateVal("whiteValue",w+"K");_0x3c("contrast").value=c;updateVal("conValue",c+":1");_0x3c("skinLuma").value=l;updateVal("lumaValue",l+" IRE");}function selectProfile(n,d){_0x3c("profile-display").innerHTML=`${n} <span class="text-[10px] opacity-50 ml-1 font-normal">${d}</span>`;_0x3c("camera-profile").value=n;_0x3c("profile-dropdown").classList.add("hidden");if(n!=="None"){_0x3c("stock").value="None";_0x3c("stock-display").innerText="None";}updateExclusion();setSliderValues(5,0,0,0,5600,32,65);}function selectStock(n,d){_0x3c("stock-display").innerHTML=`${n} <span class="text-[10px] opacity-50 ml-1 font-normal">${d}</span>`;_0x3c("stock").value=n;_0x3c("stock-dropdown").classList.add("hidden");if(n!=="None"){_0x3c("camera-profile").value="None";_0x3c("profile-display").innerText="None";}updateExclusion();let isBW=_0x2b["Blanco y negro"].some(s=>s.name===n);if(n==="None")setSliderValues(5,0,0,0,5600,32,65);else if(isBW){if(n.includes("Tri-X"))setSliderValues(0,1.8,6.5,1.5,5500,75,60);else if(n.includes("T-MAX"))setSliderValues(0,.5,2.5,1,5600,55,65);else if(n.includes("HP5"))setSliderValues(0,.8,3.5,1.2,5600,45,62);else if(n.includes("FP4"))setSliderValues(0,.3,.8,.8,5600,42,65);else if(n.includes("Delta"))setSliderValues(0,.2,.4,.6,5600,48,65);else if(n.includes("Fomapan"))setSliderValues(0,1.2,5.5,1.5,5500,60,60);else if(n.includes("Rollei"))setSliderValues(0,.2,1,2,5800,95,70);else setSliderValues(0,1,2,1,5600,32,65);}else if(n.includes("Portra"))setSliderValues(4.8,1.2,1.8,1,5400,30,65);else if(n.includes("Ektar"))setSliderValues(6.8,.8,.6,1,5600,48,62);else if(n.includes("Gold"))setSliderValues(5.8,1.5,3.5,1.3,5900,38,64);else if(n.includes("800T"))setSliderValues(5.5,8.5,4.5,1.5,3200,42,58);else if(n.includes("Velvia"))setSliderValues(9.2,1.5,1.5,1.4,5400,55,60);else if(n.includes("Metropolis"))setSliderValues(2.2,.6,4.2,1.8,5200,65,48);else if(n.includes("Provia 100F"))setSliderValues(5.3,.8,1.8,1,5600,48,65);else setSliderValues(5,1.2,2,1,5600,32,65);}function typeWriterEffect(e,t,i){let l=_0x3c(e);if(l.twInterval)clearInterval(l.twInterval);let c=0;l.twInterval=setInterval(()=>{c+=4;let r=t.substring(0,c);if(i)l.innerHTML=r.replace(/\n/g,"<br>")+'<span class="opacity-50 animate-pulse">|</span>';else l.innerText=r+"|";if(c>=t.length){clearInterval(l.twInterval);if(i)l.innerHTML=t.replace(/\n/g,"<br>");else l.innerText=t;}},5);}function generarTodo(){let c=_0x3c("camera").value,l=_0x3c("lens").value,f=_0x3c("distance").value,a=_0x3c("aperture").value,p=_0x3c("camera-profile").value,s=_0x3c("stock").value,sa=parseFloat(_0x3c("saturation").value),ha=parseFloat(_0x3c("halation").value),g=parseFloat(_0x3c("grain").value),v=parseFloat(_0x3c("vignette").value),w=_0x3c("whitePoint").value,co=parseInt(_0x3c("contrast").value),sk=parseInt(_0x3c("skinLuma").value),iL=p!=="None";let j={metadata:{engine:"hyprframe.com",version:"3.1.19",created_at:new Date().toLocaleString()},setup:{camera:c,lens:l,focal_length:parseInt(f)},mapping:{camera_profile:iL?p:null,film_stock:s==="None"?null:s},look:{saturation:iL?null:sa,halation:iL?null:ha,film_grain:iL?null:g,vignette:v,color_temperature:parseInt(w),contrast:iL?null:co,skin_tone_ire:iL?null:sk}};if(a!=="None")j.setup.aperture=a;typeWriterEffect("resultado",JSON.stringify(j,null,2),!1);let _p=[];_p.push(`[MASTER CINEMATOGRAPHY DATA]: Physical camera simulation parameters. Cinematographic capture system: ${c}.`);let ld=`Optical Configuration: ${l} lens at ${f}. `;if(l.includes("Anamorphic"))ld+="Oval bokeh, anamorphic horizontal flares, blue lens streaks, widescreen squeeze mapping. ";if(a!=="None")ld+=`Depth of field dictated by physical aperture set at ${a}. `;_p.push(ld);if(iL){let pd=`[LOG PROFILE TRANSFORMATION: ${p}]. `;if(p.includes("LogC4"))pd+="ARRI LogC4 curve: Ultra-wide 17-stop dynamic range mapping, soft highlight roll-off, desaturated cinematic baseline, true neutral color response, low initial contrast.";else if(p.includes("S-Log3"))pd+="Sony S-Log3 curve: Cineon-based logarithmic progression, extended latitude in deep shadows, muted color matrix ready for custom LUT application.";else if(p.includes("Log3G10"))pd+="RED Log3G10 mapping: Wide dynamic range expansion, precise 10-stop mid-gray baseline, IPP2 pipeline compliance, cinematic highlight retention.";else if(p.includes("Gen 5"))pd+="Blackmagic Gen 5 Film profile: Highly uniform highlight roll-off, natural shadow recovery, filmic colorimetry with extended dynamic latitude.";else if(p.includes("C-Log3"))pd+="Canon C-Log3 curve: 1600% dynamic range envelope, linear shadow behavior, 34.3 IRE balance point for cinematic flexibility.";else if(p.includes("V-Log"))pd+="Panasonic V-Log curve: Strict linear mid-tone mapping, Varicam colorimetry matching, highly uniform desaturation, and faithful neutral gray reproduction.";else pd+="Professional ultra-flat image response, milky washed-out shadows, extreme low contrast, desaturated neutral color science, preserved highlights.";_p.push(pd);}else if(s!=="None"){let sd=`[EMULSION SIMULATION: ${s}]. `;if(s.includes("Portra"))sd+="KODAK PORTRA legendary skin response: warm, organic bronze-pink skin tones with pastel-mapped highlights. Smooth tonal roll-off in the shadows with a slight warm-yellow bias.";else if(s.includes("Ektar 100"))sd+="KODAK EKTAR high-chroma negative: vibrant primary reds and deep blues. Sharp edges with professional landscape color fidelity and slightly cool shadow response.";else if(s.includes("Gold 200"))sd+="KODAK GOLD warm consumer aesthetic: distinct golden-yellow highlights and earthy undertones. Nostalgic color shift with high density in yellow/orange channels.";else if(s.includes("ColorPlus 200"))sd+="KODAK COLORPLUS retro look: warm, slightly yellowish-green bias. Nostalgic 90s consumer film color science with muted blues.";else if(s.includes("Ultramax 400"))sd+="KODAK ULTRAMAX punchy versatility: high-density blue and red channels, classic consumer color palette with vibrant primary colors.";else if(s.includes("Superia 400"))sd+="FUJIFILM SUPERIA signature greens: Fuji's 4th color layer technology, emerald-green shadow shifts, and magenta-biased skin tones. Classic urban color science.";else if(s.includes("800T"))sd+="CineStill 800T tungsten cinematic color science: deep cool/cyan bias in daylight, unique red-channel blooming response around highlights due to remjet-removal.";else if(s.includes("50D"))sd+="CineStill 50D daylight cinematic color: clean, realistic skin tones with professional film-print color fidelity and specialized highlight rendering.";else if(s.includes("Wolfen NC500"))sd+="WOLFEN NC500 urban-industrial look: desaturated earthy tones and muted greens with dense charcoal color shifts. Raw, non-commercial chemical aesthetic.";else if(s.includes("Phoenix 200"))sd+="HARMAN PHOENIX experimental emulsion: unique non-standard color mapping with high density in reds and golds, producing unexpected color shifts.";else if(s.includes("Aerocolor IV"))sd+="AEROCOLOR aerial heritage: vibrant sky blues and warm terrestrial tones with an exceptionally clean color profile.";else if(s.includes("Tri-X 400"))sd+="KODAK Tri-X 400 classic monochrome aesthetic: iconic silver-halide tonal mapping with dramatic mid-tone response.";else if(s.includes("T-MAX"))sd+="KODAK T-MAX modern monochrome: smooth, linear tonal gradations and precise optical rendering.";else if(s.includes("HP5 Plus"))sd+="ILFORD HP5 Plus 400: flexible gray range with soft, classic photojournalism tonal mapping.";else if(s.includes("FP4 Plus"))sd+="ILFORD FP4 Plus 125 traditional monochrome: wide tonal range with classic highlight preservation.";else if(s.includes("Delta"))sd+="ILFORD DELTA range modern monochrome: clinical B&W precision with highly accurate tonal separation.";else if(s.includes("Fomapan"))sd+="FOMAPAN affordable European monochrome look: moody tonal response with a nostalgic 20th-century aesthetic.";else if(s.includes("Rollei Retro 80s"))sd+="ROLLEI Retro intense IR-sensitivity: dark dramatic skies, glowing foliage effects, and unique spectral response.";else if(s.includes("Provia 100F"))sd+="Natural color fidelity, professional reversal slide aesthetic, high-fidelity accuracy in color reproduction.";else if(s.includes("Ektachrome E100"))sd+="KODAK EKTACHROME E100 modern reversal: brilliant neutral whites, precise primary color separation, and professional slide color science.";else if(s.includes("Velvia 50/100"))sd+="FUJICHROME Velvia landscape legend: hyper-vivid color shifts, signature emerald greens, and intense chromatic response.";else if(s.includes("Purple"))sd+="LomoChrome Purple aggressive infrared-mimic emulsion: complete color-swap mapping greens to vibrant magentas. Preserved earthy skin tones with golden-bronze ochre undertones. Skies shifted to emerald.";else if(s.includes("Metropolis"))sd+="LomoChrome Metropolis signature look: 'urban-noir' color palette. Suppression of greens/yellows to grey-olive with industrial blue-sepia undertones.";_p.push(sd);}let ss="";if(sa===0)ss="Zero chroma, absolute monochromatic grayscale.";else if(sa<=1.5)ss="Extremely muted, almost black and white with faint color traces.";else if(sa<=2.5)ss="Severely desaturated, bleached color palette, minimal color information.";else if(sa<=3.5)ss="Subdued and washed out, pastel-like color retention.";else if(sa<=4.5)ss="Low-key color intensity, restrained and moody palette.";else if(sa<=5.5)ss="Natural color balance, faithful chromatic response.";else if(sa<=6.5)ss="Slightly elevated saturation, healthy and vibrant baseline.";else if(sa<=7.5)ss="Richly saturated, deep color density, cinematic pop.";else if(sa<=8.5)ss="Highly vivid primary colors, aggressive chromatic punch.";else ss="Hyper-vivid, intense color pop, neon-like oversaturation.";if(!iL)_p.push(`Visual Palette: ${ss}`);let hs="";if(ha===0)hs="No light bleeding, zero glow, sharp highlight edges.";else if(ha<=1.5)hs="Micro-halation, barely noticeable organic edge softening.";else if(ha<=2.5)hs="Subtle highlight roll-off, slight organic glow.";else if(ha<=3.5)hs="Gentle blooming, warm aura around strong light sources.";else if(ha<=4.5)hs="Noticeable light blooming, cinematic softening of highlights.";else if(ha<=5.5)hs="Distinct red-tinged halation, classic motion picture film glow.";else if(ha<=6.5)hs="Pronounced halation, prominent red/orange light bleeding.";else if(ha<=7.5)hs="Heavy ethereal blooming, dreamlike light diffusion.";else if(ha<=8.5)hs="Aggressive glow, thick optical bleed dominating high contrast edges.";else hs="Extreme light bleed, massive glow artifacts, highly stylized blooming.";if(!iL)_p.push(`Light Response: ${hs}`);let gs="";if(g===0)gs="Clean digital sensor surface, zero noise, clinical clarity.";else if(g<=1.5)gs="Ultra-fine film grain, microscopic texture, highly polished.";else if(g<=2.5)gs="Extremely fine cinematic grain, barely perceptible micro-texture.";else if(g<=3.5)gs="Subtle organic film grain, clean 35mm motion picture feel.";else if(g<=4.5)gs="Noticeable organic grain, professional analog stock character.";else if(g<=5.5)gs="Classic 35mm grain structure, distinct silver-halide texture.";else if(g<=6.5)gs="Coarse silver-halide structure, gritty cinematic surface.";else if(g<=7.5)gs="Heavy analog grain, distinct 16mm film texture.";else if(g<=8.5)gs="Very heavy atmospheric grain, rough vintage documentary feel.";else gs="Extreme gritty noise, massive organic grain artifacts, aggressive film texture.";if(!iL)_p.push(`Texture: ${gs}`);let vs="";if(v===0)vs="Zero vignetting, uniform brightness across the frame.";else if(v<=1.5)vs="Micro-vignette, nearly imperceptible edge shading.";else if(v<=2.5)vs="Subtle corner softening, natural lens light drop.";else if(v<=3.5)vs="Gentle vignette, slight drawing of the eye to the center.";else if(v<=4.5)vs="Visible vignette, moderate corner darkening.";else if(v<=5.5)vs="Distinct lens shading, classic vintage optic fall-off.";else if(v<=6.5)vs="Pronounced corner fall-off, heavily distinct frame edges.";else if(v<=7.5)vs="Strong vignette, moody peripheral darkening.";else if(v<=8.5)vs="Heavy vignette, tunnel-like focus, dramatic light shaping.";else vs="Extreme light obstruction, black corners, intense centered attention.";_p.push(`Optic Fall-off: ${vs}`);let cs="";if(co<=10)cs="Ultra-low contrast, extreme flat tonal range, washed-out milky shadows.";else if(co<=20)cs="Very low contrast, raised black levels, faded vintage aesthetic.";else if(co<=30)cs="Soft cinematic contrast, gentle light roll-off, retained shadow detail.";else if(co<=40)cs="Moderate-low contrast, smooth midtones, forgiving dynamic range.";else if(co<=50)cs="Balanced dynamic range, standard cinematic contrast.";else if(co<=60)cs="Slightly punchy contrast, well-defined shadows, solid midtone separation.";else if(co<=70)cs="Punchy contrast, defined shadow areas, high micro-contrast.";else if(co<=80)cs="Strong contrast, deep heavy blacks, bright punchy highlights.";else if(co<=90)cs="High contrast chiaroscuro, crushed shadows, dramatic lighting ratios.";else cs="Extreme contrast, violently crushed blacks, harsh hard lighting, aggressive pop.";if(!iL)_p.push(`Lighting Ratios: ${cs}`);let ls="";if(sk<=10)ls="Extremely underexposed skin, deep silhouette, total loss of facial detail.";else if(sk<=20)ls="Severely underexposed skin, heavy shadows masking features.";else if(sk<=30)ls="Low-key exposure, moody underexposed skin tones, dramatic shadow play.";else if(sk<=40)ls="Darkly lit skin, soft cinematic underexposure.";else if(sk<=50)ls="Dimly lit skin, natural low-light feel, subdued midtones.";else if(sk<=60)ls="Slightly moody skin exposure, rich density (approx. 55-60 IRE).";else if(sk<=70)ls="Perfectly exposed skin, balanced and glowing midtones (65 IRE standard).";else if(sk<=80)ls="Bright key exposure, luminous skin tones, commercial high-key feel.";else if(sk<=90)ls="High-key overexposure, extremely bright glowing skin tones, near clipping.";else ls="Severely overexposed skin, blown-out facial highlights, washed-out detail.";if(!iL)_p.push(`Exposure: ${ls}`);_p.push(`White Balance: ${w}K`);typeWriterEffect('promptResultado',_p.join("\n\n"),!0);}function copyToClipboard(i){let t=_0x3c(i).innerText,e=document.createElement('textarea');e.value=t;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);let c=_0x3c('copyToast');c.style.opacity="1";setTimeout(()=>c.style.opacity="0",2e3);}function updateVal(i,v){_0x3c(i).innerText=v;}window.onload=()=>{initDropdowns();lucide.createIcons();updateExclusion();};
     </script>
 
-    <script src="cookies.js?v=2" defer></script>
+    <script src="cookies.js?v=5" defer></script>
 </body>
 </html>

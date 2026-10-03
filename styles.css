@@ -7,6 +7,10 @@
 :root {
     --bg: #050505;
     --bg-soft: #0c0c0e;
+    /* Fondo de las páginas legales: un gris oscuro que las separa del negro
+       de la web sin salirse de la paleta. Contrasta con --fg (12:1) y con
+       --muted (~4,7:1), así que el texto pequeño de las tablas sigue legible. */
+    --bg-legal: #1e1e21;
     --fg: #efeee9;
     --muted: #8b8b8b;
     --violet: #a064ff;
@@ -35,7 +39,19 @@
 html {
     scroll-behavior: smooth;
     background: var(--bg);
+    overflow-x: hidden;
+    overflow-x: clip;
+    max-width: 100%;
 }
+/* Scroll con inercia (script.js, solo escritorio con puntero fino): el
+   movimiento lo escribe el tween en cada frame, así que la animación nativa de
+   los saltos de ancla estorbaría. La clase la pone el propio script cuando lo
+   activa; sin ella —táctil, «reducir movimiento» o ?smooth=0— todo queda igual.
+   Mientras se desplaza, la «respiración» del vídeo del hero se pausa: ese
+   transform continuo reescala la textura en cada frame y compite con el scroll
+   (es un ciclo de 18 s, así que la pausa no se percibe). (30/09/2026) */
+html.hf-smooth { scroll-behavior: auto; }
+html.is-scrolling .hero-video { animation-play-state: paused; }
 
 body {
     background: var(--bg);
@@ -45,6 +61,16 @@ body {
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+}
+
+main {
+    overflow-x: hidden;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
 }
 
 ::selection { background: var(--violet); color: var(--fg); }
@@ -64,11 +90,37 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
 :focus-visible { outline: 2px solid var(--violet); outline-offset: 4px; }
 
 /* ── Grain overlay ───────────────────────────────────────── */
+/* Rendimiento (30/09/2026): el grano es una capa FIJA a pantalla completa que
+   se anima en bucle, así que se pinta muchas veces por segundo y su superficie
+   se paga entera en cada una.
+   - inset: -50% → -5%: el elemento medía 2×2 pantallas (4× superficie) para un
+     desplazamiento máximo de ±3%; con -5% sobra para que el borde nunca se
+     descubra y la superficie pintada baja a ~1,2 pantallas (-70%).
+   - will-change: transform: sube la capa a su propio layer, de modo que la
+     animación es una transformación compuesta (GPU) de un raster cacheado en
+     vez de un repintado del ruido de 300×300 tileado.
+   - contain: strict: aísla la capa del resto del árbol de pintura.
+   El grano se ve igual: mismas opacidades, mismo tile.
+
+   Y (30/09/2026, 2ª pasada) el grano no se anima: `animation: none`. Una
+   animación en bucle infinito obliga al compositor a entregar un frame nuevo
+   4,4 veces por segundo AUNQUE la página esté quieta y el usuario no toque
+   nada, así que la GPU no llegaba a entrar en reposo en ninguna página del
+   sitio. Lo que aporta el grano es el dither anti-banding del degradado, y eso
+   funciona igual de bien estático: medido, su movimiento mueve el píxel ±1,8
+   niveles (1σ) a una opacidad de 0,05, es decir, no se ve.
+   `none` y no `paused`: con `paused` el compositor sigue teniendo una
+   animación viva en su lista; con `none` desaparece de verdad. Los @keyframes
+   se conservan (no cuestan nada) por si se quiere volver atrás.
+   Antes de esto se probó a correrlo solo mientras se desplaza; se ha quitado
+   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b. */
 .grain {
-    position: fixed; inset: -50%; z-index: 900; pointer-events: none;
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grainShift 0.9s steps(4) infinite;
+    animation: none;
+    will-change: transform;
+    contain: strict;
 }
 @keyframes grainShift {
     0% { transform: translate(0, 0); }
@@ -76,51 +128,6 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
     50% { transform: translate(3%, -2%); }
     75% { transform: translate(-3%, -3%); }
     100% { transform: translate(2%, 2%); }
-}
-
-/* ── Custom cursor ───────────────────────────────────────── */
-.cursor-dot, .cursor-ring {
-    position: fixed; top: 0; left: 0; z-index: 9999;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    mix-blend-mode: difference;
-}
-.cursor-dot { width: 3px; height: 3px; background: #fff; border-radius: 50%; }
-/* Cruceta en lugar del aro: dos trazos cruzados de 1px —mismo grosor, mismo
-   color y mismo modo de fusión (difference) que tenía el círculo— centrados en
-   el cursor y creciendo con él hasta 88px sobre los elementos interactivos. */
-.cursor-ring {
-    width: 42px; height: 42px;
-    transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out), opacity 0.35s;
-}
-.cursor-ring::before, .cursor-ring::after {
-    content: ""; position: absolute; inset: 0; margin: auto;
-    background: rgba(255, 255, 255, 0.7);
-    /* la máscara abre un hueco redondo en el centro: los brazos no deben pasar
-       por encima del punto (.cursor-dot), porque dos capas en difference se
-       restan y el cruce se mancharía de negro — 3px de punto → hueco de 2px */
-    -webkit-mask: radial-gradient(circle at center, transparent 2px, #000 2.5px);
-            mask: radial-gradient(circle at center, transparent 2px, #000 2.5px);
-    transition: background 0.35s;
-}
-/* Los brazos no cruzan la caja entera: miden el 60% del otro eje, así que la
-   cruceta es más corta en reposo (25px en la caja de 42px) y, como el largo es
-   un porcentaje, se acorta en la misma proporción al crecer en hover (53px en la
-   de 88px). La relación entre los dos estados no cambia (2,1×) y el grosor
-   sigue siendo 1px. */
-.cursor-ring::before { width: 1px; height: 60%; } /* el trazo vertical */
-.cursor-ring::after { width: 60%; height: 1px; } /* el horizontal */
-/* al crecer, el punto se oculta: el violeta pasa al relleno y el hueco sobra */
-body.cursor-large .cursor-ring { width: 88px; height: 88px; }
-body.cursor-large .cursor-ring::before,
-body.cursor-large .cursor-ring::after {
-    background: var(--violet);
-    -webkit-mask: none; mask: none;
-}
-body.cursor-large .cursor-dot { opacity: 0; }
-
-@media (hover: none), (pointer: coarse) {
-    .cursor-dot, .cursor-ring { display: none; }
 }
 
 /* ── Preloader ───────────────────────────────────────────── */
@@ -136,48 +143,81 @@ body.cursor-large .cursor-dot { opacity: 0; }
    el preloader se oculta desde el primer frame, sin llegar a pintarse. */
 html.hf-skip-intro .preloader { display: none; }
 .preloader-inner {
-    display: flex; align-items: baseline; gap: 1.5rem;
+    position: relative;
+    display: grid; place-items: center;
+    width: min(42vw, 164px); min-width: 136px;
+    aspect-ratio: 1;
     font-family: var(--font-head);
 }
-@media (min-width: 901px) {
-    .preloader-inner {
-        transform: translateX(-40px);
-    }
+.preloader-orbits {
+    position: absolute; top: calc(12.5% + 4.5px); left: calc(12.5% + 4.5px);
+    display: block; width: calc(75% - 9px); height: calc(75% - 9px);
+    overflow: visible;
+    opacity: 0.8;
 }
+.preloader-triangle {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1px;
+    opacity: 1; transition: opacity 0.3s ease-out;
+    vector-effect: non-scaling-stroke;
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+.preloader-triangle--outer { animation: preloader-spin-clockwise 0.62s linear infinite; }
+.preloader-triangle--inner { animation: preloader-spin-counterclockwise 0.48s linear infinite; }
 .preloader-count {
-    font-size: 12px;
-    /* Misma tipografía que el menú fijo superior (Space Mono), en blanco.
-       Space Mono solo se carga en 400/700: 400 es el peso del menú. */
+    position: relative; z-index: 1;
+    min-width: 3ch; text-align: center;
+    font-size: 12px; line-height: 1;
+    /* Misma Space Mono del menú fijo superior, en blanco y con cifras tabulares. */
     font-family: var(--font-mono); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--fg);
     letter-spacing: 0.04em;
 }
-.preloader-word {
-    font-size: clamp(1rem, 3vw, 1.75rem); font-weight: 700;
-    letter-spacing: 0.35em; color: var(--fg);
+.preloader.triangles-fading .preloader-triangle {
+    opacity: 0; transition: opacity 0.3s ease-out;
 }
-.preloader-bar {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-    background: rgba(255, 255, 255, 0.08);
+.preloader.is-complete .preloader-triangle,
+.preloader.done .preloader-triangle { animation-play-state: paused; }
+@keyframes preloader-spin-clockwise {
+    to { transform: rotate(360deg); }
 }
-.preloader-bar span {
-    display: block; height: 100%; width: 0%;
-    background: var(--violet);
+@keyframes preloader-spin-counterclockwise {
+    to { transform: rotate(-360deg); }
 }
 
 /* ── Scroll progress ─────────────────────────────────────── */
+/* Rendimiento (30/09/2026): la barra se movía con `width: %`, que en cada frame
+   de scroll dispara recálculo de estilo + layout + repintado de la línea (y
+   obligaba a leer el alto del documento en el mismo frame). Ahora el ancho es
+   fijo y el avance es un `scaleX()`: transformación compuesta, sin layout y sin
+   pintado. script.js escribe la misma transformación. */
 .scroll-progress {
-    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    position: fixed; top: 0; left: 0; height: 3px; width: 100%;
     background: linear-gradient(90deg, var(--violet), var(--lime));
+    transform: scaleX(0); transform-origin: 0 50%;
+    will-change: transform;
     z-index: 980;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
+/* Rendimiento (30/09/2026): la cabecera es fija y lleva backdrop-filter, así que
+   el navegador remuestrea el fondo que tiene detrás. Dos ajustes:
+   - `transform: translateZ(0)`: la sube a su propio layer, de modo que su pintura
+     (y la del fondo difuminado) no arrastra al resto de la página.
+   - fuera `backdrop-filter` de la lista de transiciones: animar el radio del
+     difuminado obligaba a remuestrear la franja entera en cada frame de los
+     0,4 s siguientes a cruzar el umbral de scroll (y al subir y bajarlo, se
+     repetía). El paso a «scrolled» sigue animando relleno y fondo; el blur
+     entra con él, sin animación propia. */
 .site-header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 800;
     display: flex; align-items: center; justify-content: space-between;
     padding: 1.4rem var(--pad);
-    transition: padding 0.4s var(--ease-out), background 0.4s, backdrop-filter 0.4s;
+    transform: translateZ(0);
+    transition: padding 0.4s var(--ease-out), background 0.4s;
 }
 .site-header.scrolled {
     padding: 0.8rem var(--pad);
@@ -231,7 +271,7 @@ html.hf-skip-intro .preloader { display: none; }
 .header-meta > .lang-switch {
     padding-left: 1.5rem;
     border-left: 1px solid var(--line);
-    font-size: calc(0.72rem - 1px); /* 1px más pequeño que el tamaño base */
+    font-size: calc(0.72rem - 3px); /* 2px más pequeño que el tamaño actual */
 }
 .header-meta > .lang-switch::before,
 .menu-lang .lang-switch::before {
@@ -507,6 +547,23 @@ body.loaded .hero-sub {
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+.hero-marquee .marquee-dot,
+.marquee-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    font-size: 5px;
+    line-height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
+    vertical-align: middle;
+    position: relative;
+    top: -0.1em;
+    overflow: hidden;
+    text-align: center;
+    letter-spacing: normal;
+}
+
 /* ── HERO · LOG DE INFERENCIA (trace del modelo) ───────────────
    Panel tipo terminal a la derecha del hero con el trace de un forward pass
    (script.js §6c). El texto es literal: lo único que se mueve son los números,
@@ -677,12 +734,22 @@ em { font-style: normal; color: var(--violet); }
 .violet { color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Montserrat carga ital 800). */
 .italic { font-style: italic; }
-/* × de HUMAN INTUITION × MACHINE SYNTHESIS: ping-pong entre × (0°) y + (45°)
-   con ease-in-out, pausa en cada posición y OVERSHOOT sutil en los dos extremos.
+/* × de HUMAN INTUITION × MACHINE SYNTHESIS: giro CONTINUO hacia la derecha
+   (sentido horario), en loop y sin retroceder nunca = movimiento de izquierda
+   a derecha continuo, con la misma curva y el OVERSHOOT, ahora más rápido.
+   Antes era un ping-pong × (0°) ↔ + (45°) con `alternate`: giraba a la derecha
+   y volvía sobre sus pasos. Ahora solo gira a la derecha.
+   Cómo cierra el loop sin salto: el × es simétrico a 90° (90° y 0° pintan el
+   mismo glifo), así que el ciclo son DOS barridos de 45° = 90° en total y al
+   repetir vuelve a arrancar desde una posición ópticamente idéntica a la de
+   salida. Un solo barrido de 45° por ciclo no vale: al reiniciar, el + de 45°
+   saltaría de golpe al × de 0°, y ese salto sí se ve.
+   El ciclo se acorta de 2.6 s a 1.8 s (≈44% más rápido); se conserva la misma
+   curva de giro, con wind-up, overshoot y pausas, pero todo sucede antes.
    font-style: normal para que el glifo conserve su simetría de 4-fold
    (reposo × y + perfectos); inline-block para el transform.
-   alternate cierra el loop sin salto; transform-origin: centro visual exacto
-   de la tinta del × en Montserrat 700, el peso que hereda de .about-title
+   transform-origin: centro visual exacto de la tinta del × en Montserrat 700,
+   el peso que hereda de .about-title
    (ink x:[90,510] y:[137,563] @1000upm; con line-height 1.02 la baseline cae
    a 0.8685em del top de la caja → centro de la tinta en 0.3em, 0.5185em).
    Sin esto, el giro default orbita el centro de la caja, ~0.15em más arriba. */
@@ -691,24 +758,37 @@ em { font-style: normal; color: var(--violet); }
     font-style: normal;
     color: var(--lime); /* verde corporativo */
     transform-origin: 0.3em 0.5185em;
-    animation: crossTurn 1.3s ease-in-out infinite alternate;
+    /* sin `alternate`: la dirección no se invierte nunca; dos barridos de 45°
+       cierran el loop en 1.8 s. */
+    animation: crossTurn 1.8s ease-in-out infinite;
 }
 /* El giro no arranca ni aterriza en seco: se estira un poco antes de salir y
    se pasa de largo al llegar, como un muelle (≈4°, imperceptible pero que
-   quita la sensación de movimiento mecánico):
+   quita la sensación de movimiento mecánico). Cada barrido avanza 45° y son
+   dos por ciclo (45° + 45° = 90° ≡ 0°: ahí está el loop):
+     · pausa    → 0.35 s quieto entre los dos barridos (× o +, da igual).
      · comienzo → wind-up a -4°: retrocede un pelo y de ahí arranca el barrido.
-     · tramo    → -4° → 49° con ease-in-out (velocidad 0 en ambos topes).
-     · final    → rebote de asentamiento: sobrepasa los 45° hasta 49° y vuelve.
+     · tramo    → 53° de recorrido con ease-in-out (velocidad 0 en los topes):
+                  arranca en -4° y desemboca 4° más allá de los 45° del paso.
+     · final    → rebote de asentamiento: desde esos 49° vuelve a los 45°.
    ease-out en los dos tramos cortos (wind-up y retorno) porque en ambos la
    velocidad debe morir en el extremo; ease-in-out en el barrido largo.
-   `alternate` reproduce el bucle en espejo, así que el overshoot de comienzo y
-   el de final se aplican igual al × (0°) y al + (45°).
-   Pausa en cada extremo: ~0.51 s (antes ~0.31 s); la rotación dura lo mismo. */
+   Los dos barridos son idénticos (mismos tiempos, mismos grados de recorrido)
+   y el segundo desemboca en 90°, que se ve igual que el 0° del primero: al
+   repetir, el × retoma desde ahí sin ningún salto y sigue hacia la derecha.
+   La curva porcentual se conserva; el ciclo de 1.8 s reduce cada tramo y pausa
+   un 31% respecto a los 2.6 s anteriores (ritmo global ≈44% más rápido). */
 @keyframes crossTurn {
-    0%, 19.5%   { transform: rotate(0deg);  animation-timing-function: ease-out; }
-    25.5%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; }
-    74.5%       { transform: rotate(49deg); animation-timing-function: ease-out; }
-    80.5%, 100% { transform: rotate(45deg); }
+    /* barrido 1: 0° → 45° */
+    0%, 9.75%    { transform: rotate(0deg);  animation-timing-function: ease-out; }    /* pausa ~0.18 s */
+    12.75%       { transform: rotate(-4deg); animation-timing-function: ease-in-out; } /* wind-up */
+    37.25%       { transform: rotate(49deg); animation-timing-function: ease-out; }    /* fin del barrido */
+    40.25%, 50%  { transform: rotate(45deg); }                                         /* asentado + pausa */
+    /* barrido 2: 45° → 90° (y 90° ≡ 0°, así que el loop engancha sin salto) */
+    59.75%       { transform: rotate(45deg); animation-timing-function: ease-out; }    /* fin de la pausa */
+    62.75%       { transform: rotate(41deg); animation-timing-function: ease-in-out; } /* wind-up */
+    87.25%       { transform: rotate(94deg); animation-timing-function: ease-out; }    /* fin del barrido */
+    90.25%, 100% { transform: rotate(90deg); }                                         /* asentado + pausa */
 }
 
 /* ── Sections base ───────────────────────────────────────── */
@@ -738,19 +818,135 @@ section { position: relative; }
 }
 
 /* ── STATEMENT ───────────────────────────────────────────── */
-.statement { padding: clamp(7rem, 18vw, 14rem) var(--pad); }
+.statement {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(7rem, 18vw, 14rem) var(--pad);
+}
+/* Metaballs propios, inspirados en el efecto de unión/separación de h2a.lu.
+   El filtro actúa solo sobre los círculos, nunca sobre el texto. La opacidad
+   se aplica DESPUÉS del umbral alfa para conservar los puentes entre formas. */
+.statement-background {
+    --statement-edge-tv: 0.35;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+}
+.statement-background::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, var(--bg) 0%, transparent 85%),
+        linear-gradient(0deg, var(--bg), transparent 22%, transparent 78%, var(--bg));
+}
+/* Old-TV chromatic fringe, alpha-clipped to the circular silhouettes. */
+.statement-tv-chroma {
+    opacity: var(--statement-edge-tv, 0);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+.statement-background.has-liquid .statement-tv-chroma { display: none; }
+.statement-metaballs {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: var(--violet);
+    filter: blur(1px);
+}
+/* Fallback: el color húmedo aparece solo en el contacto entre círculos. */
+.statement-watercolor { opacity: 0.96; mix-blend-mode: normal; }
+/* Native WebGL enhancement: fallback stays intact until the first frame.
+   Mask / blend layers belong only to the fallback and must not double-render. */
+.statement-liquid {
+    position: absolute; inset: 0; width: 100%; height: 100%; display: none;
+    filter: blur(1px);
+}
+.statement-background.has-liquid .statement-liquid { display: block; }
+.statement-background.has-liquid .statement-metaballs { display: none; }
+/* Bolas del statement ocultas temporalmente; se conservan sus capas SVG/WebGL. */
+.statement-background > .statement-metaballs,
+.statement-background > .statement-liquid { display: none !important; }
+.statement-background.has-liquid.is-animating .statement-orb { animation-play-state: paused; }
+.statement-metaball-field { opacity: 0.32; }
+.statement-body { fill: var(--violet); }
+.statement-orb {
+    animation: statement-orbit-a 22s ease-in-out infinite;
+    animation-play-state: paused;
+}
+.statement-background.is-animating .statement-orb { animation-play-state: running; }
+.statement-orb--2 { animation-name: statement-orbit-b; animation-duration: 19s; }
+.statement-orb--3 { animation-name: statement-orbit-c; animation-duration: 24s; }
+.statement-orb--4 { animation-name: statement-orbit-d; animation-duration: 21s; }
+.statement-orb--5 { animation-name: statement-orbit-e; animation-duration: 18s; }
+@keyframes statement-orbit-a {
+    0%, 100% { transform: translate(-140px, -130px); }
+    50% { transform: translate(-40px, 10px); }
+}
+@keyframes statement-orbit-b {
+    0%, 100% { transform: translate(90px, 65px); }
+    50% { transform: translate(-310px, -200px); }
+}
+@keyframes statement-orbit-c {
+    0%, 100% { transform: translate(80px, -70px); }
+    50% { transform: translate(-300px, 120px); }
+}
+@keyframes statement-orbit-d {
+    0%, 100% { transform: translate(-90px, 65px); }
+    50% { transform: translate(250px, -210px); }
+}
+@keyframes statement-orbit-e {
+    0%, 100% { transform: translate(-140px, 65px); }
+    50% { transform: translate(180px, -160px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .statement-orb { animation: none; }
+}
 .statement-text {
     font-family: var(--font-head); font-weight: 600; /* 700 → 600 (25/09/2026) */
     font-size: clamp(1.9rem, 5.4vw, 4.6rem);
     line-height: 1.2; letter-spacing: 0.02em;
     max-width: 22ch;
 }
-.statement-text span {
-    opacity: 0.14;
-    transition: opacity 0.45s ease, color 0.45s ease;
+/* «--lit» es el grado de encendido de cada letra, de 0 (apagada) a 1
+   (encendida). La escribe script.js durante el barrido del scroll (§6): el
+   texto se reparte en letras y cada una lleva su valor, así que la luz pasa de
+   una a la siguiente sin escalones. Registrada como <number> para poder usarla
+   dentro de un calc() —opacidad— y de un color-mix() —el violeta del acento—.
+   Sin script se queda en su valor de partida: el texto se ve como siempre,
+   apagado. (30/09/2026) */
+@property --lit {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
 }
-.statement-text span.lit { opacity: 1; }
-.statement-text span.accent.lit { color: var(--violet); }
+/* Sin transition de CSS a propósito: el barrido ya llega continuo desde el
+   scroll y una transición por letra reiniciaría su cuenta en cada frame (el
+   encendido se quedaría atrás y temblaría). El suavizado lo pone script.js con
+   un amortiguado corto, independiente del ritmo de refresco. */
+/* La geometría no cambia al repartir el texto: entre cajas inline no hay
+   kerning ni ligaduras, así que se apagan en las dos formas —palabra entera y
+   letra suelta— y una línea nunca se recoloca al arrancar el script. */
+.statement-text span {
+    font-kerning: none;
+    font-variant-ligatures: none;
+    opacity: calc(0.14 + 0.86 * var(--lit, 0));
+    /* Sombra oscura en cada glifo: se lee como proyección cuando el color
+       animado pasa por debajo del texto, y acompaña el barrido de --lit. */
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.34), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+/* El violeta no entra de golpe al final de la palabra: se mezcla con el blanco
+   a la vez que la letra se enciende, así que el color acompaña al barrido.
+   Donde no hay color-mix() la declaración se descarta y queda el violeta plano
+   de .accent. */
+.statement-text span.accent {
+    color: color-mix(in srgb, var(--violet) calc(var(--lit, 0) * 100%), var(--fg));
+}
 
 /* ── Oculto por petición del cliente (24/09/2026):
       texto lateral de info de la sección WORK.
@@ -776,13 +972,14 @@ section { position: relative; }
     padding: var(--work-row-pad) var(--pad);
     border-bottom: 1px solid var(--line);
     position: relative;
+    overflow: hidden;
     transition: padding-block 0.55s var(--ease-out), padding-left 0.5s var(--ease-out), background 0.5s;
 }
 .work-row:hover, .work-row:focus-visible {
     /* Foto y degradado arrancan primero; solo la apertura espera 0,3 s.
        Al salir, la caja vuelve a su tamaño sin demora. */
     transition-delay: 0.3s, 0s, 0s;
-    padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075);
+    padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075 + 22.5px);
 }
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
@@ -943,7 +1140,7 @@ section { position: relative; }
        que se fue. Mismos tipo, tamaño, color y animación: al pasar por encima
        gira 135° (de + a ×) y se vuelve lima. */
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
-    transition: transform 0.7s var(--ease-out), color 0.5s var(--ease-out);
+    transition: transform 0.35s var(--ease-out), color 0.5s var(--ease-out);
 }
 .service-row:hover .service-plus { transform: rotate(135deg); color: var(--lime); }
 
@@ -1126,20 +1323,103 @@ section { position: relative; }
 }
 
 /* ── ABOUT ───────────────────────────────────────────────── */
-.about { padding: clamp(6rem, 15vw, 11rem) var(--pad); }
+.about { padding: clamp(6rem, 15vw, 11rem) var(--pad); overflow: hidden; }
+.about-heading {
+    display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    align-items: center;
+    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
 .about-title {
     font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
     font-size: clamp(2.6rem, 8vw, 7rem);
     line-height: 1.02; letter-spacing: 0.04em; text-transform: uppercase;
-    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+    width: 100%; max-width: 100%; min-width: 0;
+    margin-bottom: 0;
 }
-.about-grid {
-    display: grid; grid-template-columns: 1.2fr 1fr;
-    gap: clamp(2rem, 6vw, 5rem); align-items: start;
+.about-emblem-wrap {
+    position: relative; display: block; width: auto;
+    height: clamp(14rem, 32vw, 30rem); aspect-ratio: 720 / 1977;
+    justify-self: center; translate: calc(25% - 80px - clamp(2rem, 7vw, 7rem) + 50px) 0;
+    overflow: visible;
 }
-.about-copy { color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch; }
+.about-emblem {
+    position: absolute; top: 0; left: 0; z-index: 1;
+    width: auto; max-width: none; height: 100%; object-fit: contain;
+    transform: translateX(calc(100% + 15px));
+    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1), filter 0.8s ease-out;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap .about-emblem {
+    transform: translateX(0); filter: none;
+    transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem {
+    transform: translateX(calc(100% + 15px)); filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition-delay: 0s;
+}
+.about-emblem-wrap::after {
+    content: ""; position: absolute; top: 0; left: 0; z-index: 2;
+    width: 50%; height: 100%; pointer-events: none; opacity: 0;
+    background: linear-gradient(112deg, transparent 39%, rgba(255, 255, 255, 0.22) 49%, rgba(255, 255, 255, 0.06) 53%, transparent 63%);
+    background-size: 250% 100%; background-position: 100% 0;
+    -webkit-mask: url("assets/images/anagrama-trans-aligned.png") center / 100% 100% no-repeat;
+    mask: url("assets/images/anagrama-trans-aligned.png") center / 100% 100% no-repeat;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered)::after {
+    animation: about-emblem-sheen 1.2s ease-in-out 1.3s 1 both;
+}
+.about-emblem-wipe {
+    position: absolute; top: -5px; left: 50%; z-index: 3;
+    width: calc(50% + 55px); height: calc(100% + 30px);
+    background: linear-gradient(to right, transparent 0, var(--bg) 7px, var(--bg) calc(100% - 30px), transparent 100%);
+}
+.about-emblem-reflection {
+    position: absolute; top: calc(100% + 0.1rem); left: 0;
+    width: 50%; height: clamp(1rem, 2.5vw, 1.15rem); overflow: hidden;
+    opacity: 0; transform: scaleY(-1); transform-origin: center;
+    translate: calc(100% + 15px) 0;
+    transition: translate 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+            mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+    pointer-events: none;
+}
+.about-emblem-reflection img {
+    position: absolute; left: 0; bottom: 0;
+    width: 100%; height: auto; max-width: none;
+    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+    transition: filter 0.8s ease-out;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection {
+    opacity: 0.16; translate: 0 0; transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection img {
+    filter: none; transition-delay: 0.3s;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection {
+    translate: calc(100% + 15px) 0; transition-delay: 0s;
+    opacity: 0.16; animation: about-emblem-reflection-hide 0s linear 0.8s forwards;
+}
+.about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection img {
+    filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22)); transition-delay: 0s;
+}
+@keyframes about-emblem-reflection-hide { to { opacity: 0; } }
+@keyframes about-emblem-sheen {
+    0% { opacity: 0; background-position: 100% 0; }
+    18% { opacity: 0.25; }
+    72% { opacity: 0.12; background-position: 0 0; }
+    100% { opacity: 0; background-position: 0 0; }
+}
+.about-grid { display: block; }
+.stats {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 4vw, 3.5rem);
+}
+.about-copy {
+    color: rgba(239, 238, 233, 0.72); font-weight: 300; max-width: 52ch;
+    margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
+}
 .about-copy strong { font-weight: 500; }
-.stats { display: flex; flex-direction: column; gap: 2.2rem; }
+.stat { min-width: 0; }
 .stat-num {
     display: block;
     /* same face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title (now 700) */
@@ -1155,9 +1435,68 @@ section { position: relative; }
     display: block; margin-top: 0.5rem;
 }
 
-@media (max-width: 860px) {
-    .about-grid { grid-template-columns: 1fr; }
-    .stats { flex-direction: row; flex-wrap: wrap; gap: 2.5rem; }
+@media (max-width: 600px) {
+    /* En móvil, el anagrama y su animación se sitúan debajo del texto
+       descriptivo (.about-copy) y centrados horizontalmente. Como el emblema
+       visible ocupa la mitad izquierda (50%) de .about-emblem-wrap y la mitad
+       derecha aloja la plancha de ocultación (.about-emblem-wipe), desplazar
+       el contenedor un +25% de su propio ancho centra exactamente el anagrama
+       y su animación en la pantalla. */
+    .about {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .about-heading,
+    .about-grid {
+        display: contents;
+    }
+    .about > .kicker { order: 1; }
+    .about-title {
+        order: 2;
+        padding-right: 0;
+        margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+    }
+    .about-copy {
+        order: 3;
+    }
+    .about-emblem-wrap {
+        order: 4;
+        justify-self: center;
+        height: clamp(6.5rem, 22vw, 9rem);
+        margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
+        translate: 25% 0;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem {
+        transform: translateX(calc(100% + 15px));
+        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+        transition-delay: 0s;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in)::after {
+        animation: none;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection {
+        opacity: 0;
+        translate: calc(100% + 15px) 0;
+        transition-delay: 0s;
+    }
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection img {
+        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
+        transition-delay: 0s;
+    }
+    .stats {
+        order: 5;
+    }
+    .stat-num { font-size: clamp(2rem, 8vw, 3rem); }
+    .stat-label { font-size: 0.58rem; letter-spacing: 0.12em; }
+}
+
+@media (min-width: 861px) {
+    /* Web/escritorio únicamente: sube todo el bloque About 30px en total. */
+    .about { padding-top: calc(clamp(6rem, 15vw, 11rem) - 30px); }
+    /* Acerca 25px el texto descriptivo al titular en escritorio. */
+    .about-heading { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 25px); }
+    /* También acerca 10px las estadísticas al texto descriptivo. */
+    .about-copy { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 10px); }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
@@ -1248,9 +1587,9 @@ section { position: relative; }
 
 @media (max-width: 860px) {
     .contact-grid { grid-template-columns: 1fr; }
-    /* La rejilla se apila: los iconos de social media quedan bajo el formulario,
-       así que el degradado baja con ellos (65% → 84%). */
-    .contact { background: radial-gradient(80% 60% at 85% 84%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
+    /* La rejilla se apila: los enlaces a social media quedan bajo el formulario;
+       el degradado lila se sitúa más arriba, a su altura (84% → 72%). */
+    .contact { background: radial-gradient(80% 60% at 85% 72%, rgba(160, 100, 255, 0.16), transparent 60%), var(--bg); }
 }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
@@ -1273,10 +1612,197 @@ section { position: relative; }
     display: flex; justify-content: center; text-align: center; gap: 1rem; flex-wrap: wrap;
     margin-top: 1rem; padding-top: 1.5rem;
     border-top: 1px solid var(--line);
-    font-family: var(--font-mono); font-size: 0.65rem;
+    /* Versión web/escritorio: 1px menos que el token base (0.65rem = 10,4px
+       → 9,4px con la raíz a 16px). El móvil conserva su propio tamaño. */
+    font-family: var(--font-mono); font-size: calc(0.65rem - 1px);
     letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
 }
 .footer-row a:hover { color: var(--fg); }
+
+/* Enlaces legales del pie: política de cookies y vía para cambiar o retirar
+   el consentimiento (mismo cuerpo que el resto del pie, sin subrayado). */
+.footer-legal { display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; }
+.footer-legal a,
+.footer-legal button {
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+    transition: color 0.3s var(--ease-out);
+}
+.footer-legal a:hover,
+.footer-legal button:hover { color: var(--fg); }
+
+/* En móvil el copyright ocupa 4px menos que el token base (0.65rem): el recorte
+   de 1px de la versión web/escritorio no se aplica aquí. */
+@media (max-width: 640px) {
+    .footer-row { font-size: calc(0.65rem - 4px); }
+}
+
+/* ── Página legal (política de cookies) ──────────────────── */
+/* Fondo gris oscuro: distingue la política (y cualquier futura página legal)
+   de las páginas de contenido. Se pinta también en <html> para que el área de
+   rebote del scroll y el propio lienzo usen el mismo gris. */
+body.page-legal { background: var(--bg-legal); }
+html:has(body.page-legal) { background: var(--bg-legal); }
+.legal { padding: clamp(3rem, 7vw, 5rem) var(--pad) clamp(3rem, 6vw, 5rem); }
+.legal-inner { max-width: 70ch; margin: 0 auto; }
+/* Logo de la web dentro del propio escrito, enlazado a la portada. Sin cabecera
+   fija: la página es solo texto, así que el logo abre la columna y hace de
+   ancla visual. Misma escala que en la cabecera del sitio. */
+/* El logo va centrado en la columna, como cabecera de la página; el texto de
+   debajo sigue alineado a la izquierda (display: flex + justify-content evita
+   tocar la alineación del escrito). */
+.legal-logo {
+    display: flex; justify-content: center;
+    margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+.legal-logo img {
+    display: block; width: auto;
+    height: clamp(41.4px, 4.485vw, 59.8px);
+}
+.legal-kicker {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--violet);
+}
+.legal h1 {
+    font-family: var(--font-head); font-weight: 800;
+    font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.02;
+    text-transform: uppercase; letter-spacing: 0.01em;
+    margin: 0.8rem 0 0.9rem;
+}
+.legal-updated {
+    font-family: var(--font-mono); font-size: 0.62rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.legal h2 {
+    font-family: var(--font-head); font-weight: 700;
+    font-size: clamp(1rem, 2.2vw, 1.25rem); line-height: 1.2;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin: 2.6rem 0 0.8rem;
+}
+.legal h3 {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--violet); margin: 1.6rem 0 0.5rem;
+}
+.legal p, .legal li {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.95rem; line-height: 1.75;
+    color: rgba(239, 238, 233, 0.78);
+}
+.legal p + p { margin-top: 0.9rem; }
+.legal ul { list-style: none; margin: 0.8rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.legal li { padding-left: 1.1rem; position: relative; }
+.legal li::before { content: "·"; position: absolute; left: 0; color: var(--violet); }
+.legal strong { font-weight: 500; color: var(--fg); }
+.legal a {
+    color: var(--fg); text-decoration: underline;
+    text-decoration-color: rgba(160, 100, 255, 0.7); text-underline-offset: 3px;
+    transition: color 0.3s;
+}
+.legal a:hover { color: var(--violet); }
+.legal-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.legal-table th, .legal-table td {
+    text-align: left; vertical-align: top;
+    padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--line);
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.78rem; line-height: 1.55;
+    color: rgba(239, 238, 233, 0.78);
+}
+.legal-table th {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--violet); white-space: nowrap;
+}
+.legal-note {
+    margin-top: 1rem; padding: 0.9rem 1rem;
+    border: 1px solid var(--line); background: rgba(12, 12, 14, 0.75);
+}
+/* Secciones de la política: cada bloque (esenciales, analítica, vídeo) lleva
+   su título y su estado a la derecha, como las tarjetas de preferencias. */
+.legal-group { margin-top: 1.8rem; }
+.legal-group-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+}
+.legal-group-head h3 { margin: 1.2rem 0 0.5rem; }
+.legal-state {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* Listas sin viñeta: los '·' de .legal li no encajan con los párrafos enlazados
+   ni con los dos tipos de cookie, que se leen como texto corrido. */
+.legal-list, .legal-links { list-style: none; }
+.legal-list li, .legal-links li { padding-left: 0; }
+.legal-list li::before, .legal-links li::before { content: none; }
+.legal-list li, .legal-links li { margin-bottom: 0.55rem; }
+
+/* Tabla de cookies: nombre y caducidad en mono, finalidad en el cuerpo. */
+.legal-table { table-layout: fixed; }
+.legal-table th:nth-child(1), .legal-table td:nth-child(1) { width: 22%; }
+.legal-table th:nth-child(3), .legal-table td:nth-child(3) { width: 14%; }
+.legal-table td { font-size: 0.8rem; }
+.legal-table td:first-child {
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--fg); word-break: break-word;
+}
+.legal-table td code, .legal-group code {
+    font-family: var(--font-code); font-size: 0.86em;
+    color: var(--violet);
+}
+.legal-note-inline {
+    display: block; margin-top: 0.15rem;
+    font-size: 0.62rem; color: var(--muted);
+}
+
+/* Interruptor de finalidad de la propia política: apagado por defecto, guarda
+   la decisión al instante (vía de alta o de retirada del consentimiento). */
+.legal-switch {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin: 1rem 0 0.4rem;
+}
+.legal-switch input {
+    appearance: none; -webkit-appearance: none;
+    position: relative; flex: 0 0 auto;
+    width: 44px; height: 24px; border-radius: 100px;
+    border: 1px solid var(--line); background: rgba(239, 238, 233, 0.12);
+    cursor: pointer; transition: background 0.35s var(--ease-out), border-color 0.35s;
+}
+.legal-switch input::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--fg); transition: transform 0.35s var(--ease-out);
+}
+.legal-switch input:checked { background: var(--lime); border-color: transparent; }
+.legal-switch input:checked::after { transform: translateX(20px); background: #0a0a0a; }
+.legal-switch span {
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted);
+}
+.legal-switch input:checked + span { color: var(--fg); }
+
+.legal-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    margin-top: 1rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.7rem 1.2rem; border-radius: 100px;
+    border: 1px solid var(--line); background: transparent; color: var(--fg);
+    cursor: pointer;
+    transition: background 0.35s, color 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.legal-btn:hover {
+    background: var(--violet); border-color: transparent;
+    box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
+}
+.legal-back {
+    margin-top: 2.8rem;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+}
 
 /* ── Responsive header ───────────────────────────────────── */
 @media (max-width: 1024px) {
@@ -1305,53 +1831,120 @@ section { position: relative; }
 .keep-case { text-transform: none; }
 
 /* ── Cookie consent ──────────────────────────────────────── */
-/* Mismo lenguaje que el header al hacer scroll: fondo semitransparente
-   + backdrop-blur + hairline. Se ancla a la retícula de --pad. */
+/* Barra de ancho completo pegada al borde inferior, con el mismo material que
+   la cabecera fija cuando el visitante hace scroll: gris translúcido, blur de
+   16px y hairline arriba. Conformidad: aceptar y rechazar van en la misma fila
+   y con el mismo peso, sin pasos añadidos; «Preferencias» despliega el panel de
+   finalidades, que es también la vía para cambiar o retirar la decisión. */
 .cookie-banner {
-    position: fixed; left: var(--pad); bottom: var(--pad);
+    position: fixed; left: 0; right: 0; bottom: 0;
     z-index: 960; /* sobre el nav (800), el menú (850) y el grain (900);
                      bajo el cursor (980) y el preloader (9500) */
-    width: min(380px, calc(100vw - 2 * var(--pad)));
-    padding: 1rem 1.15rem 1.1rem;
-    background: rgba(5, 5, 5, 0.68);
-    backdrop-filter: blur(16px) saturate(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid var(--line);
-    opacity: 0; transform: translateY(14px);
+    /* Gris translúcido como la barra de referencia, con el mismo desenfoque que
+       la cabecera fija del landing. La opacidad (0.62) deja leer el contenido
+       que queda detrás sin perder contraste: el texto va en blanco al 92%. */
+    background: rgba(46, 46, 48, 0.62);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    opacity: 0; transform: translateY(100%);
     transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
 }
 .cookie-banner.show { opacity: 1; transform: none; }
-.cookie-title {
-    font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
-    letter-spacing: 0.28em; text-transform: uppercase; color: var(--violet);
-    margin-bottom: 0.5rem;
+
+/* Contenido: texto a la izquierda (hasta media pantalla en escritorio) y las
+   acciones a la derecha, con un filete vertical entre ambos como en la barra
+   de referencia. */
+.cookie-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    padding: 0.85rem var(--pad);
 }
 .cookie-text {
     font-family: var(--font-body); font-weight: 300;
-    font-size: 0.72rem; line-height: 1.6; letter-spacing: 0.01em;
-    color: rgba(239, 238, 233, 0.72);
-    margin-bottom: 0.95rem;
+    font-size: 0.78rem; line-height: 1.5; letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 60ch;
 }
-.cookie-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cookie-link {
+    color: var(--fg); text-decoration: underline;
+    text-decoration-color: rgba(239, 238, 233, 0.55); text-underline-offset: 3px;
+    transition: color 0.3s, text-decoration-color 0.3s;
+}
+.cookie-link:hover { color: var(--violet); text-decoration-color: var(--violet); }
+
+.cookie-actions {
+    display: flex; align-items: center; gap: clamp(0.75rem, 1.6vw, 1.4rem);
+    flex: 0 0 auto;
+}
+.cookie-actions::before {
+    content: ""; align-self: stretch; width: 1px;
+    background: rgba(255, 255, 255, 0.22); margin-right: clamp(0.1rem, 0.6vw, 0.5rem);
+}
 .cookie-btn {
-    font-family: var(--font-mono); font-weight: 700;
-    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
-    padding: 0.6rem 1.1rem; border-radius: 100px;
+    font-family: var(--font-body); font-weight: 400;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    padding: 0.6rem 1.35rem; border-radius: 3px;
     border: 1px solid var(--line);
     transition: background 0.35s, color 0.35s, border-color 0.35s, box-shadow 0.35s;
 }
-.cookie-accept { background: var(--lime); color: #0a0a0a; border-color: transparent; }
-.cookie-accept:hover {
-    background: var(--violet); color: var(--fg);
-    box-shadow: 0 0 26px rgba(160, 100, 255, 0.45);
+.cookie-config {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    color: var(--muted); padding: 0.35rem 0.15rem;
+    transition: color 0.3s;
 }
-.cookie-reject { color: rgba(239, 238, 233, 0.6); }
-.cookie-reject:hover { color: var(--fg); border-color: rgba(239, 238, 233, 0.4); }
+.cookie-config:hover { color: var(--fg); }
 
-/* Móvil: barra a lo ancho, pegada al borde inferior */
-@media (max-width: 640px) {
-    .cookie-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; width: auto; }
-    .cookie-actions .cookie-btn { flex: 1 1 auto; }
+/* Aceptar (sólido, claro) y rechazar (fantasma, mismo cuerpo y misma altura):
+   la decisión negativa no cuesta más que la positiva. */
+.cookie-accept { background: var(--fg); color: #0a0a0a; border-color: transparent; }
+.cookie-accept:hover { background: var(--lime); box-shadow: 0 0 24px rgba(163, 223, 2, 0.35); }
+.cookie-reject { background: transparent; color: var(--fg); border-color: rgba(239, 238, 233, 0.32); }
+.cookie-reject:hover { border-color: var(--fg); box-shadow: 0 0 24px rgba(239, 238, 233, 0.12); }
+
+/* Panel de finalidades: se despliega encima de la barra, con el mismo material
+   y ancho completo. Nada premarcado y la analítica apagada por defecto. */
+.cookie-prefs {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 1rem var(--pad) 1.15rem;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.85rem clamp(1.5rem, 4vw, 3rem);
+}
+.cookie-prefs[hidden] { display: none; }
+.cookie-purpose { display: grid; gap: 0.2rem; }
+.cookie-purpose-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    font-family: var(--font-body); font-weight: 500;
+    font-size: 0.82rem; letter-spacing: 0.01em;
+    color: var(--fg);
+}
+label.cookie-purpose-head { cursor: pointer; }
+.cookie-purpose-state { color: var(--muted); font-size: 0.72rem; }
+.cookie-purpose-desc {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 0.72rem; line-height: 1.55;
+    color: rgba(239, 238, 233, 0.6);
+}
+.cookie-toggle {
+    accent-color: var(--lime);
+    width: 1rem; height: 1rem; cursor: pointer;
+}
+.cookie-prefs .cookie-actions { grid-column: 1 / -1; }
+.cookie-prefs .cookie-actions::before { content: none; }
+.cookie-save { background: var(--fg); color: #0a0a0a; border-color: transparent; }
+.cookie-save:hover { background: var(--violet); color: var(--fg); box-shadow: 0 0 24px rgba(160, 100, 255, 0.45); }
+
+/* Móvil: el texto arriba y las acciones debajo, cada una a lo ancho, para que
+   el pulgar no tenga que apuntar a nada pequeño. */
+@media (max-width: 720px) {
+    .cookie-bar { flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 0.9rem 1rem; }
+    .cookie-text { font-size: 0.75rem; }
+    .cookie-actions { gap: 0.5rem; flex-wrap: wrap; justify-content: space-between; }
+    .cookie-actions::before { display: none; }
+    .cookie-actions .cookie-btn { flex: 1 1 auto; text-align: center; }
+    .cookie-config { flex: 0 0 auto; }
+    .cookie-prefs { grid-template-columns: 1fr; padding: 1rem; }
 }
 
 /* ── Reduced motion ──────────────────────────────────────── */
@@ -1365,12 +1958,65 @@ section { position: relative; }
     [data-reveal] { opacity: 1; transform: none; }
     .hero-sub, body.loaded .hero-sub { opacity: 1; animation: none; }
     .line-inner { transform: none; }
+    .about-emblem,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem { transition: none; transform: translateX(0); filter: none; }
+    .about-emblem-wrap::after { display: none; animation: none; }
+    .about-emblem-reflection,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection { opacity: 0.16; translate: 0 0; transition: none; transition-delay: 0s; animation: none; }
+    .about-emblem-reflection img,
+    .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem-reflection img,
+    .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection img { filter: none; transition: none; }
     .cross-turn { animation: none; transform: none; } /* reposo en ×, no en + */
     /* El log se queda quieto: script.js pinta el trace con los valores de
        partida y no arranca el rAF (el bloque global ya corta las animations). */
     .rotator-item { transform: none; opacity: 0; }
     .rotator-item.is-active { opacity: 0.7; }
     .clb-gallery-track, .clb-reflection-track { animation: none; transform: none; }
-    .statement-text span { opacity: 1; }
+    /* El barrido del statement no se monta (script.js §6 no reparte el texto en
+       letras), así que aquí las palabras se dan por encendidas de una vez. */
+    .statement-text span { --lit: 1; opacity: 1; }
     .preloader { display: none; }
+    /* La intro pedida a propósito (?intro=1, o el preview de desarrollo) se ve
+       igual, con su barrido: la petición explícita manda sobre el atajo de
+       «reducir movimiento», que aquí solo ahorraría el contador que se quiere
+       revisar. El resto de la página sigue quieta. (30/09/2026) */
+    html.hf-force-intro .preloader { display: flex; transition-duration: 0.9s !important; }
+}
+
+@media (max-width: 600px) {
+    /* Mantiene parte de los círculos a la vista en el recorte vertical. */
+    .statement-metaballs { width: 150%; margin-left: -45%; }
+    .statement-metaball-field { opacity: 0.25; }
+}
+
+/* Cross-page GENERATED thumbnail handoff. The clone keeps the row's crop and
+   soft left edge, then expands into the matching film poster. */
+.work-transition {
+    position: fixed; z-index: 2000; pointer-events: none;
+    background-size: cover; background-repeat: no-repeat;
+    transform: scale(1); transform-origin: center;
+    -webkit-mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+            mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+    transition: left .42s cubic-bezier(.16,1,.3,1), top .42s cubic-bezier(.16,1,.3,1),
+        width .42s cubic-bezier(.16,1,.3,1), height .42s cubic-bezier(.16,1,.3,1),
+        transform .42s cubic-bezier(.16,1,.3,1), opacity .22s ease-out;
+}
+.work-transition::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    opacity: 1; transition: opacity .22s ease-out;
+}
+.work-transition.is-opening { transform: scale(1); }
+.work-transition.is-opening::after { opacity: 0; }
+.work-transition--departure.is-opening { transform: scale(1.28); }
+.work-transition--arrival.is-dissolving { opacity: 0; }
+.hf-entry-black {
+    position: fixed; inset: 0; z-index: 700; background: #050505;
+    opacity: 1; pointer-events: none; transition: opacity .6s ease;
+}
+.hf-entry-black.is-fading { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }

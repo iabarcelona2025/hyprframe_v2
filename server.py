@@ -10,8 +10,10 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-WATCH = ["index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
+WATCH = ["statement-liquid.js", "index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
          "404.html", "404.css", "404.js",
+         # Páginas legales.
+         "cookie-policy.html", "es/cookie-policy.html",
          # Páginas de la sección GENERATED (vídeo): todas comparten generated.css/js.
          "project-node.html", "project-deep.html", "project-polestar5.html", "project-distant.html",
          "project-exit.html", "project-stained.html", "project-asics.html", "project-farewell.html",
@@ -88,9 +90,9 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         if self.path in ("/", ""):
-            page_404 = os.path.join(ROOT, "404.html")
+            page_index = os.path.join(ROOT, "index.html")
             try:
-                with open(page_404, "rb") as f:
+                with open(page_index, "rb") as f:
                     content = f.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -129,11 +131,11 @@ class Handler(SimpleHTTPRequestHandler):
                         _clients.remove(q)
             return
 
-        # Serve 404.html directly on root for immediate preview
+        # Serve index.html directly on root
         if self.path in ("/", ""):
-            page_404 = os.path.join(ROOT, "404.html")
+            page_index = os.path.join(ROOT, "index.html")
             try:
-                with open(page_404, "rb") as f:
+                with open(page_index, "rb") as f:
                     content = f.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")

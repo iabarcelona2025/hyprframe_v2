@@ -158,7 +158,7 @@ const consentOf = (window) => {
         .filter((a) => a[0] === "consent" && a[1] === "default")
         .map((a) => a[2]);
 
-    // Las 26 páginas envían el interruptor encendido, con defaults 'denied'
+    // Las 28 páginas envían el interruptor encendido, con defaults 'denied'
     // globales (sin restricción de región: todo el EEE queda cubierto), y el
     // bloque va ANTES del gtag.js cuando la página lo carga.
     const projectPages = [
@@ -171,6 +171,7 @@ const consentOf = (window) => {
         "index.html", "legacy.html", "builder.html", ...projectPages,
         "es/index.html", "es/legacy.html", "es/builder.html",
         ...projectPages.map((p) => "es/" + p),
+        "cookie-policy.html", "es/cookie-policy.html",
     ];
     for (const page of allPages) {
         const src = fs.readFileSync(path.join(root, page), "utf8");
@@ -265,6 +266,212 @@ const consentOf = (window) => {
     check("CLB: define sus propios estilos del banner",
         /\.cookie-banner\s*\{/.test(fs.readFileSync(path.join(root, "builder.html"), "utf8")));
     check("CLB: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
+
+    /* ── 14. Barra conforme: información, enlace y alternativas ── */
+    ctx = boot("legacy.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    const banner = bannerOf(ctx.doc);
+    const policyLink = banner.querySelector(".cookie-link");
+    check("Barra: enlaza la política de cookies",
+        !!policyLink && policyLink.getAttribute("href") === "cookie-policy.html");
+    check("Barra: aceptar y rechazar comparten fila y peso",
+        !!banner.querySelector(".cookie-actions .cookie-accept") &&
+        !!banner.querySelector(".cookie-actions .cookie-reject") &&
+        banner.querySelector(".cookie-accept") !== banner.querySelector(".cookie-reject"));
+    check("Barra: hay una tercera vía, configurar por finalidades",
+        !!banner.querySelector("[data-cookie-config]"));
+    check("Barra: nada premarcado",
+        banner.querySelector("[data-purpose='analytics']").checked === false);
+    check("Barra: el panel de preferencias arranca cerrado",
+        banner.querySelector("#cookiePrefs").hidden === true);
+
+    /* ── 15. Consentimiento por finalidades ── */
+    banner.querySelector("[data-cookie-config]").click();
+    await wait(20);
+    check("Configurar: el panel se despliega",
+        banner.querySelector("#cookiePrefs").hidden === false &&
+        banner.querySelector("[data-cookie-config]").getAttribute("aria-expanded") === "true");
+    banner.querySelector("[data-cookie-save]").click();
+    await wait(50);
+    check("Guardar sin analítica: decisión denied", consentOf(ctx.window) === "denied");
+    let record = JSON.parse(ctx.window.localStorage.getItem("hfCookieConsent"));
+    check("Registro: guarda finalidades, fecha y versión",
+        record.purposes && record.purposes.necessary === true &&
+        record.purposes.analytics === false &&
+        typeof record.ts === "number" && record.v === 2,
+        JSON.stringify(record));
+
+    ctx = boot("legacy.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    bannerOf(ctx.doc).querySelector("[data-cookie-config]").click();
+    bannerOf(ctx.doc).querySelector("[data-purpose='analytics']").checked = true;
+    bannerOf(ctx.doc).querySelector("[data-cookie-save]").click();
+    await wait(50);
+    check("Guardar con analítica: decisión granted", consentOf(ctx.window) === "granted");
+    record = JSON.parse(ctx.window.localStorage.getItem("hfCookieConsent"));
+    check("Guardar con analítica: la finalidad queda registrada",
+        record.purposes.analytics === true);
+    check("Guardar con analítica: consent update granted",
+        consentUpdates(ctx.window).at(-1)?.analytics_storage === "granted");
+
+    /* ── 16. Retirada del consentimiento desde el pie de página ── */
+    ctx = boot("legacy.html", {
+        hfCookieConsent: JSON.stringify({ value: "granted", until: Date.now() + 864e5 }),
+    });
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    check("Con decisión guardada: no hay barra y se comunica a Google",
+        !bannerOf(ctx.doc) && consentUpdates(ctx.window).length === 1);
+    const settingsBtn = ctx.doc.querySelector("[data-cookie-settings]");
+    check("Pie: el botón «Configurar cookies» está en la página", !!settingsBtn);
+    settingsBtn.click();
+    await wait(60);
+    check("Pie: «Configurar cookies» reabre la barra", !!bannerOf(ctx.doc));
+    check("Barra reabierta: el interruptor refleja la decisión guardada",
+        bannerOf(ctx.doc).querySelector("#cookieAnalytics").checked === true);
+    bannerOf(ctx.doc).querySelector(".cookie-reject").click();
+    await wait(50);
+    check("Retirar: la nueva decisión es denied", consentOf(ctx.window) === "denied");
+    check("Retirar: consent update denied",
+        consentUpdates(ctx.window).at(-1)?.analytics_storage === "denied");
+
+    /* ── 17. Enlaces legales en las 28 páginas y política en EN/ES ── */
+    for (const page of allPages) {
+        const src = fs.readFileSync(path.join(root, page), "utf8");
+        check(`${page}: enlaza la política y ofrece configurar`,
+            /href="cookie-policy\.html"/.test(src) && /data-cookie-settings/.test(src));
+    }
+    for (const page of ["404.html", "es/404.html"]) {
+        const src = fs.readFileSync(path.join(root, page), "utf8");
+        check(`${page}: enlaza la política (sin barra: no carga cookies.js)`,
+            /\/cookie-policy\.html/.test(src) && !/cookies\.js/.test(src));
+    }
+    const policyEn = fs.readFileSync(path.join(root, "cookie-policy.html"), "utf8");
+    const policyEs = fs.readFileSync(path.join(root, "es", "cookie-policy.html"), "utf8");
+    check("Política EN: tabla con las cookies reales del sitio",
+        /hfCookieConsent/.test(policyEn) && /_ga_G-6MW201KGC9/.test(policyEn) &&
+        /_ga</.test(policyEn) && /2 years/.test(policyEn) && /6 months/.test(policyEn));
+    check("Política: documenta las cookies de Vimeo y su dnt=1",
+        /__cf_bm/.test(policyEn) && /vimeo_player_/.test(policyEn) &&
+        /dnt=1/.test(policyEn) && /Vimeo's cookie policy/.test(policyEn));
+    check("Política: secciones y estados como la referencia",
+        /Essential Cookies/.test(policyEn) && /Analytics Cookies/.test(policyEn) &&
+        /Video Cookies/.test(policyEn) && (policyEn.match(/Always active/g) || []).length === 2);
+    check("Política: caducidad del registro = la del widget (180 días = 6 meses)",
+        /6 months/.test(policyEn) && /REMEMBER_MS/.test(cookiesJs) &&
+        /180 \* 24 \* 60 \* 60 \* 1000/.test(cookiesJs));
+    check("Política ES: traducida y con retirada del consentimiento",
+        /Política de cookies/.test(policyEs) && /data-cookie-settings/.test(policyEs) &&
+        /AEPD/.test(policyEs));
+    check("Política: hreflang recíproco EN ↔ ES",
+        /hreflang="es" href="https:\/\/hyprframe\.com\/es\/cookie-policy\.html"/.test(policyEn) &&
+        /hreflang="en" href="https:\/\/hyprframe\.com\/cookie-policy\.html"/.test(policyEs));
+    check("Política: entra en el sitemap",
+        /https:\/\/hyprframe\.com\/cookie-policy\.html/.test(fs.readFileSync(path.join(root, "sitemap.xml"), "utf8")));
+
+    /* ── 18. Barra inferior de ancho completo, como la referencia ── */
+    const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+    const barRule = (css.match(/\.cookie-banner \{[\s\S]*?\}/) || [""])[0];
+    const headerRule = (css.match(/\.site-header\.scrolled \{[\s\S]*?\}/) || [""])[0];
+    check("Barra: ocupa el ancho completo y va pegada abajo",
+        /position: fixed/.test(barRule) && /left: 0/.test(barRule) && /right: 0/.test(barRule) &&
+        /bottom: 0/.test(barRule));
+    check("Barra: gris translúcido con desenfoque, como la cabecera fija",
+        /rgba\(46, 46, 48, 0\.62\)/.test(barRule) && /backdrop-filter: blur\(16px\)/.test(barRule));
+    check("Barra: el desenfoque es el mismo material que el de la cabecera",
+        /backdrop-filter: blur\(16px\)/.test(barRule) &&
+        /backdrop-filter: blur\(14px\)/.test(headerRule));
+
+    ctx = boot("legacy.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    const bar = bannerOf(ctx.doc);
+    check("Barra: el texto es el de la referencia",
+        /This website uses cookies\. For more information, see our/.test(bar.textContent));
+    check("Barra: botones Accept, Decline y Preferences",
+        bar.querySelector(".cookie-accept").textContent.trim() === "Accept" &&
+        bar.querySelector(".cookie-reject").textContent.trim() === "Decline" &&
+        bar.querySelector("[data-cookie-config]").textContent.trim() === "Preferences");
+    check("Barra: el enlace es «Cookie Policy»",
+        bar.querySelector(".cookie-link").textContent.trim() === "Cookie Policy");
+    check("Barra: sin título de encabezado (como en la referencia)",
+        !bar.querySelector(".cookie-title"));
+    check("Barra: aceptar y rechazar siguen en la misma fila",
+        !!bar.querySelector(".cookie-actions .cookie-accept") &&
+        !!bar.querySelector(".cookie-actions .cookie-reject"));
+    check("Barra: preferencias abre el panel por finalidades",
+        !!bar.querySelector("#cookiePrefs") && bar.querySelector("#cookiePrefs").hidden === true);
+
+    /* ── 19. Interruptor de analítica en la propia política ── */
+    ctx = boot("cookie-policy.html");
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    const toggle = ctx.doc.querySelector("[data-cookie-policy-toggle]");
+    check("Política: lista los cinco navegadores con su enlace de ayuda",
+        ["Chrome", "Firefox", "Safari", "Edge", "Brave"].every((b) => policyEn.includes("Cookie settings in ") && policyEn.includes(b)) &&
+        (policyEn.match(/<li><a href="https:\/\/support\./g) || []).length === 5 &&
+        /support\.brave\.app\/hc\/en-us\/articles\/360048833872/.test(policyEn) &&
+        policyEs.includes("Configuración de cookies en Brave"));
+    check("Política: hay interruptor de analítica", !!toggle);
+    check("Política: arranca apagado sin decisión", toggle.checked === false);
+    check("Política: sin decisión guardada la barra sigue apareciendo", !!bannerOf(ctx.doc));
+    toggle.checked = true;
+    toggle.dispatchEvent(new ctx.window.Event("change", { bubbles: true }));
+    await wait(40);
+    check("Política: encender el interruptor guarda granted", consentOf(ctx.window) === "granted");
+    check("Política: y lo comunica a Google",
+        consentUpdates(ctx.window).at(-1)?.analytics_storage === "granted");
+    toggle.checked = false;
+    toggle.dispatchEvent(new ctx.window.Event("change", { bubbles: true }));
+    await wait(40);
+    check("Política: apagarlo retira el consentimiento", consentOf(ctx.window) === "denied");
+
+    ctx = boot("cookie-policy.html", {
+        hfCookieConsent: JSON.stringify({ value: "granted", until: Date.now() + 864e5 }),
+    });
+    ctx.window.eval(cookiesJs);
+    await wait(60);
+    check("Política: al volver, el interruptor refleja la decisión",
+        ctx.doc.querySelector("[data-cookie-policy-toggle]").checked === true);
+
+    /* ── 20. Fondo gris oscuro de la página legal ── */
+    check("Política: el <body> se marca como página legal",
+        /<body class="page-legal">/.test(policyEn) && /<body class="page-legal">/.test(policyEs));
+    const legalRule = (css.match(/body\.page-legal \{([^}]*)\}/) || ["", ""])[1];
+    const legalToken = (css.match(/--bg-legal:\s*([^;]+);/) || ["", ""])[1].trim();
+    check("Política: el fondo es un gris oscuro, no el negro de la web",
+        /background:\s*var\(--bg-legal\)/.test(legalRule) && /^#[0-9a-f]{6}$/i.test(legalToken) &&
+        legalToken.toLowerCase() !== "#050505",
+        legalToken);
+    check("Política: el gris se pinta también en <html> (lienzo del scroll)",
+        /html:has\(body\.page-legal\)\s*\{\s*background:\s*var\(--bg-legal\)/.test(css));
+    const grey = legalToken.replace("#", "").match(/../g).map((h) => parseInt(h, 16));
+    check("Política: el gris va en el rango oscuro (cada canal entre 16 y 64)",
+        grey.every((c) => c >= 16 && c <= 64), grey.join(","));
+    check("Política: gris neutro (sin dominante de color)",
+        Math.max(...grey) - Math.min(...grey) <= 4, grey.join(","));
+    check("El resto de páginas conservan el negro de la web",
+        /body \{\s*background:\s*var\(--bg\)/.test(css.replace(/\n/g, " ")) ||
+        /\nbody \{[\s\S]*?background: var\(--bg\)/.test(css));
+
+    /* ── 20. Página sin cabecera: logo dentro del escrito, sin ES/EN ── */
+    for (const [file, source] of [["EN", policyEn], ["ES", policyEs]]) {
+        check(`Política ${file}: sin cabecera fija ni selector de idioma`,
+            !/site-header/.test(source) && !/lang-switch/.test(source));
+        check(`Política ${file}: el logo va dentro del escrito y enlaza a portada`,
+            /class="legal-logo" href="(\.\.\/)?index\.html#top"/.test(source) &&
+            /class="legal-logo"[\s\S]{0,200}?assets\/images\/logo\.png/.test(source));
+        check(`Política ${file}: fuera la sección de contacto`,
+            !/Who to contact/.test(source) && !/Con quién contactar/.test(source) &&
+            !/wa\.me\/34645795080/.test(source));
+    }
+    check("El logo de la política va centrado en la columna",
+        /\.legal-logo \{[\s\S]*?display: flex; justify-content: center;/.test(css));
+    check("El logo de la política usa la misma escala que la cabecera del sitio",
+        /\.legal-logo img \{[\s\S]*?height: clamp\(41\.4px, 4\.485vw, 59\.8px\)/.test(css));
+    check("Política: sin errores", ctx.errors.length === 0, ctx.errors.join("; "));
 
     console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAIL`);
     process.exit(failures === 0 ? 0 : 1);

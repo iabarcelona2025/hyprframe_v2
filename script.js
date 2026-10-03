@@ -12,9 +12,11 @@
     // al volver a la landing desde legacy.html / builder.html no se repite.
     const INTRO_KEY = "hfIntroSeen";
     const introSeen = document.documentElement.classList.contains("hf-skip-intro");
+    // ?intro=1 (y el preview de desarrollo) piden la intro expresamente, así que
+    // también se salta el atajo de «reducir movimiento»: quien la pide, la ve.
+    const introForced = document.documentElement.classList.contains("hf-force-intro");
     const preloader = document.getElementById("preloader");
     const preCount = document.getElementById("preCount");
-    const preBar = document.getElementById("preBar");
 
     const heroReadyCbs = [];
     let heroReady = false;
@@ -37,90 +39,73 @@
     } else {
         try { sessionStorage.setItem(INTRO_KEY, "1"); } catch (e) { /* storage no disponible */ }
 
-        if (reduced) {
+        if (reduced && !introForced) {
             finishPreload(true);
         } else {
             let n = 0;
             const started = performance.now();
             const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
+            // La curva tarda 46 pasos: 46 × 28 ms = 1,29 s; solo avanza el contador.
+            const TICK_MS = 28;
             const tick = setInterval(() => {
                 // ease-out curve toward 100
                 n += Math.max(1, Math.round((100 - n) * 0.06));
+                // Fade out both orbit triangles ~0.3s before the counter reaches 100.
+                if (n >= 90 && preloader) preloader.classList.add("triangles-fading");
                 if (n >= 100 && performance.now() - started >= MIN_DURATION) {
                     n = 100;
                     clearInterval(tick);
                     preCount.textContent = "100";
-                    preBar.style.width = "100%";
+                    if (preloader) preloader.classList.add("is-complete");
                     setTimeout(() => finishPreload(true), 260);
                 } else {
                     preCount.textContent = n;
-                    preBar.style.width = n + "%";
                 }
-            }, 40);
+            }, TICK_MS);
         }
     }
 
-    /* ── 2. Custom cursor ─────────────────────────────────── */
-    const dot = document.getElementById("cursorDot");
-    const ring = document.getElementById("cursorRing");
+    /* ── 2. Header state + scroll progress ────────────────── */
+    // Rendimiento (30/09/2026): antes cada evento de scroll leía scrollHeight
+    // (fuerza recálculo de layout) y escribía `width: %` (layout + pintado de la
+    // línea). Ahora el alto del documento se cachea —se recalcula solo cuando
+    // cambia de verdad, con ResizeObserver— y el avance se escribe como
+    // `transform: scaleX()`, que no toca layout ni pintura. Un rAF agrupa todos
+    // los eventos de scroll de un mismo frame en una sola escritura.
+    const header = document.getElementById("siteHeader");
+    const progress = document.getElementById("scrollProgress");
+    let scrollMax = 0;
 
-    if (!isTouch && !reduced && dot && ring) {
-        /* El cursor arranca donde se quedó el ratón la última vez. Al volver con
-           atrás/adelante del navegador la página se recarga (el servidor manda
-           no-store, así que no hay bfcache) y la cruceta aparecía en el centro
-           hasta que el usuario movía el ratón. */
-        const CURSOR_KEY = "hfCursor";
-        let mx = innerWidth / 2, my = innerHeight / 2;
-        try {
-            const saved = sessionStorage.getItem(CURSOR_KEY);
-            if (saved) {
-                const parts = saved.split(",");
-                const sx = Number(parts[0]), sy = Number(parts[1]);
-                if (Number.isFinite(sx) && Number.isFinite(sy)) {
-                    // Acotado por si la ventana cambió de tamaño entre recargas.
-                    mx = Math.min(Math.max(sx, 0), innerWidth);
-                    my = Math.min(Math.max(sy, 0), innerHeight);
-                }
-            }
-        } catch (err) { /* storage bloqueado: se queda el centro */ }
-        let rx = mx, ry = my;
-        let savedX = mx, savedY = my;
+    function measureScrollMax() {
+        scrollMax = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+    }
 
-        addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
+    function paintScrollProgress() {
+        const ratio = scrollMax > 0 ? Math.min(scrollY / scrollMax, 1) : 0;
+        progress.style.transform = `scaleX(${ratio})`;
+    }
 
-        (function cursorLoop() {
-            rx += (mx - rx) * 0.16;
-            ry += (my - ry) * 0.16;
-            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
-            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
-            // Guarda la posición (como mucho una escritura por frame) para que la
-            // siguiente carga —atrás/adelante incluidos— arranque desde aquí.
-            if (mx !== savedX || my !== savedY) {
-                savedX = mx; savedY = my;
-                try { sessionStorage.setItem(CURSOR_KEY, `${mx},${my}`); } catch (err) {}
-            }
-            requestAnimationFrame(cursorLoop);
-        })();
-
-        document.querySelectorAll("a, button, .service-row, input, textarea").forEach((el) => {
-            el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
-            el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
+    let scrollTicking = false;
+    function onScroll() {
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+            scrollTicking = false;
+            header.classList.toggle("scrolled", scrollY > 40);
+            paintScrollProgress();
         });
     }
 
-    /* ── 3. Header state + scroll progress ────────────────── */
-    const header = document.getElementById("siteHeader");
-    const progress = document.getElementById("scrollProgress");
-
-    function onScroll() {
-        header.classList.toggle("scrolled", scrollY > 40);
-        const max = document.documentElement.scrollHeight - innerHeight;
-        progress.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + "%";
-    }
+    measureScrollMax();
     addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", measureScrollMax);
+    // La página cambia de alto al cargar imágenes o abrir el menú.
+    if (window.ResizeObserver) new ResizeObserver(measureScrollMax).observe(document.body);
+    addEventListener("load", measureScrollMax);
     onScroll();
+    paintScrollProgress();
 
-    /* ── 4. Hero marquee: keep both halves wider than the viewport ── */
+    /* ── 3. Hero marquee: keep both halves wider than the viewport ── */
     const heroMarquee = document.querySelector(".hero-marquee");
     const marqueeTrack = heroMarquee && heroMarquee.querySelector(".marquee-track");
     if (marqueeTrack && marqueeTrack.firstElementChild) {
@@ -151,19 +136,38 @@
         }
     }
 
-    /* ── 5. Reveal on scroll (generic) ────────────────────── */
+    /* ── 4. Reveal on scroll (generic) ────────────────────── */
     const revealIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
             if (e.isIntersecting) { e.target.classList.add("in"); revealIO.unobserve(e.target); }
         }),
         { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
     );
-    document.querySelectorAll("[data-reveal]").forEach((el) => revealIO.observe(el));
+    document.querySelectorAll("[data-reveal]:not([data-reveal-late])").forEach((el) => revealIO.observe(el));
+
+    /* About stats wait until they are farther into the viewport, so the user
+       has to continue scrolling down before the counters animate in. */
+    const lateRevealMargin = Math.round(window.innerHeight * 0.28);
+    const lateRevealIO = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+            if (e.isIntersecting) { e.target.classList.add("in"); lateRevealIO.unobserve(e.target); }
+        }),
+        { threshold: 0.18, rootMargin: `0px 0px -${lateRevealMargin}px 0px` }
+    );
+    document.querySelectorAll("[data-reveal-late]").forEach((el) => lateRevealIO.observe(el));
 
     /* line-mask reveals on section titles */
+    const aboutTitle = document.querySelector(".about-title");
+    const aboutEmblem = document.querySelector(".about-emblem-wrap");
     const lineIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
-            if (e.isIntersecting) { e.target.classList.add("in"); lineIO.unobserve(e.target); }
+            if (e.isIntersecting) {
+                e.target.classList.add("in");
+                if (e.target === aboutEmblem && aboutTitle) {
+                    aboutTitle.classList.add("in");
+                }
+                lineIO.unobserve(e.target);
+            }
         }),
         { threshold: 0.3 }
     );
@@ -171,8 +175,32 @@
         el.classList.add("reveal-lines");
         lineIO.observe(el);
     });
+    if (aboutEmblem) lineIO.observe(aboutEmblem);
 
-    /* ── 6. Hero word rotator ─────────────────────────────── */
+    /* El anagrama vuelve a ocultarse bajo la plancha al seguir bajando por
+       About; al subir de nuevo, se desliza otra vez hacia fuera. */
+    if (!reduced && aboutTitle && aboutEmblem) {
+        let previousScrollY = window.scrollY;
+        const updateEmblemForScroll = () => {
+            const currentScrollY = window.scrollY;
+            const emblemTop = Math.max(
+                aboutTitle.getBoundingClientRect().top,
+                aboutEmblem.getBoundingClientRect().top
+            );
+            const coverThreshold = 0;
+            const revealThreshold = -80;
+
+            if (currentScrollY > previousScrollY && (aboutTitle.classList.contains("in") || aboutEmblem.classList.contains("in")) && emblemTop <= coverThreshold) {
+                aboutEmblem.classList.add("is-covered");
+            } else if (currentScrollY < previousScrollY && emblemTop > revealThreshold) {
+                aboutEmblem.classList.remove("is-covered");
+            }
+            previousScrollY = currentScrollY;
+        };
+        window.addEventListener("scroll", updateEmblemForScroll, { passive: true });
+    }
+
+    /* ── 5. Hero word rotator ─────────────────────────────── */
     // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).
     // Motion: the outgoing word briefly anticipates downward, then exits through
     // the top; the incoming word rises from below and settles with an overshoot.
@@ -663,7 +691,33 @@
             function frame(now) {
                 raf = requestAnimationFrame(frame);
                 if (now - last < TICK) return;
+                // Hueco real desde el último paso. En el primer frame tras
+                // start() last = 0 (centinela), así que vale el propio TICK; en
+                // el resto el throttle de arriba ya garantiza el mínimo.
+                const gap = last ? now - last : TICK;
                 last = now;
+                // Con la rueda en marcha el terminal se calla. Rendimiento
+                // (30/09/2026): cada paso reescribe ~81 campos, y cada
+                // reescritura invalida la línea, el filtro de su span y la
+                // cadena de mezclas del panel — unos 1.620 cambios de nodo de
+                // texto por segundo compitiendo en el HILO PRINCIPAL con el
+                // propio scroll, que lo escribe smooth-scroll.js desde rAF (con
+                // el wheel anulado, el scroll ya no puede correr en el
+                // compositor). Callarlo mientras se desplaza libera ese hilo
+                // justo en el frame que lo necesita; a 6 px y ~15 % de alfa,
+                // unos cientos de ms sin escribir no se ven, y el rAF sigue
+                // vivo para reanudar al instante.
+                // El reloj se desplaza con el hueco (`t0 += gap`), así que
+                // `elapsed` no avanza: al volver se retoma donde estaba, sin
+                // soltar de golpe los caracteres acumulados ni saltarse un ciclo
+                // de contadores. Se usa `is-scrolling` porque ya es la señal
+                // única de «hay desplazamiento» del sitio (la pone y la quita
+                // smooth-scroll.js); en táctil, con «reducir movimiento» o con
+                // ?smooth=0 nunca se marca y todo queda como estaba.
+                if (document.documentElement.classList.contains("is-scrolling")) {
+                    t0 += gap;
+                    return;
+                }
                 elapsed = now - t0;
                 currentElapsed = elapsed;
 
@@ -718,31 +772,177 @@
         }
     }
 
-    /* ── 7. Statement: word-by-word light-up on scroll ────── */
-    const statement = document.getElementById("statementText");
-    if (statement) {
-        const words = [...statement.querySelectorAll("span")];
-        const section = statement.closest("section");
-        let ticking = false;
+    /* ── 6a. Statement: fondo de círculos / metaballs ───────── */
+    // Las cuatro bolas quedan estáticas temporalmente. Se conserva el cálculo
+    // inicial del borde y se comenta el gestor que las ponía en movimiento.
+    const statementBackground = document.querySelector(".statement-background");
+    if (statementBackground) {
+        let edgeClock = 0;
+        const orbs = [
+            { x: 790, y: 350, from: [-140, -130], to: [-40, 10], radius: 185, period: 22 },
+            { x: 1190, y: 640, from: [90, 65], to: [-310, -200], radius: 135, period: 19 },
+            { x: 1180, y: 280, from: [80, -70], to: [-300, 120], radius: 110, period: 24 },
+            { x: 470, y: 640, from: [-90, 65], to: [250, -210], radius: 145, period: 21 },
+        ];
+        const edgeStrengthAt = (clock) => {
+            const rect = statementBackground.getBoundingClientRect();
+            if (!(rect.width > 0 && rect.height > 0)) return 0.35;
+            const mobile = rect.width <= 600.5;
+            const scale = Math.max(rect.width * (mobile ? 1.5 : 1) / 1440, rect.height / 900);
+            const anchorX = rect.width * (mobile ? 0.3 : 0.5);
+            const anchorY = rect.height * 0.5;
+            let nearestEdgeGap = Infinity;
+            for (const orb of orbs) {
+                const t = 0.5 - 0.5 * Math.cos(clock * Math.PI * 2 / orb.period);
+                const centerX = orb.x + orb.from[0] + (orb.to[0] - orb.from[0]) * t;
+                const centerY = orb.y + orb.from[1] + (orb.to[1] - orb.from[1]) * t;
+                const screenX = rect.left + anchorX + (centerX - 720) * scale;
+                const screenY = rect.top + anchorY + (centerY - 450) * scale;
+                const radius = (orb.radius + 10) * scale;
+                nearestEdgeGap = Math.min(
+                    nearestEdgeGap,
+                    screenX - radius - rect.left,
+                    rect.right - (screenX + radius),
+                    screenY - radius - rect.top,
+                    rect.bottom - (screenY + radius)
+                );
+            }
+            const proximity = Math.max(0, Math.min(1, 1 - Math.max(0, nearestEdgeGap) / 240));
+            const eased = proximity * proximity * (3 - 2 * proximity);
+            return 0.35 + 0.65 * eased;
+        };
+        const applyEdgeTv = () => {
+            statementBackground.style.setProperty("--statement-edge-tv", edgeStrengthAt(edgeClock).toFixed(3));
+        };
+        applyEdgeTv();
+        window.addEventListener("resize", applyEdgeTv);
 
-        function lightWords() {
+        /* Animación temporalmente desactivada: para reactivarla, descomentar
+           este bloque; el cálculo estático del borde permanece encendido.
+        const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let visible = false;
+        let edgeRaf = 0, edgeLast = 0;
+        const updateEdgeTv = (now) => {
+            edgeRaf = 0;
+            if (!visible || document.hidden || motion.matches) {
+                edgeLast = 0;
+                return;
+            }
+            if (edgeLast) edgeClock += (now - edgeLast) / 1000;
+            edgeLast = now;
+            applyEdgeTv();
+            edgeRaf = requestAnimationFrame(updateEdgeTv);
+        };
+        const syncBackground = () => {
+            const active = visible && !document.hidden && !motion.matches;
+            statementBackground.classList.toggle("is-animating", active);
+            if (active && !edgeRaf) {
+                edgeLast = 0;
+                updateEdgeTv(performance.now());
+            } else if (!active) {
+                if (edgeRaf) cancelAnimationFrame(edgeRaf);
+                edgeRaf = 0;
+                edgeLast = 0;
+            }
+        };
+        const observer = new IntersectionObserver((entries) => {
+            visible = entries.some((entry) => entry.isIntersecting);
+            syncBackground();
+        }, { threshold: 0 });
+        document.addEventListener("visibilitychange", syncBackground);
+        motion.addEventListener?.("change", syncBackground);
+        window.addEventListener("resize", () => { if (!edgeRaf) applyEdgeTv(); });
+        onHeroReady(() => observer.observe(statementBackground.closest("section")));
+        */
+    }
+
+    /* ── 6. Statement: barrido de encendido, de letra en letra ── */
+    // Antes cada palabra saltaba de golpe a la clase .lit y el violeta del
+    // acento llegaba con un cambio seco. Ahora el texto se reparte en letras y
+    // cada una recibe su grado de encendido en --lit (0 → 1): el frente de luz
+    // avanza con un degradado de SPREAD letras —siempre hay unas cuantas a
+    // medio encender entre las apagadas y las encendidas— y el valor que se
+    // pinta sigue al del scroll con un amortiguado corto, normalizado por
+    // tiempo, así que ni el salto de la rueda ni un desplazamiento rápido se
+    // notan en el texto. (30/09/2026)
+    const statement = document.getElementById("statementText");
+    if (statement && !reduced) {
+        /* Reparto en letras: cada palabra pasa a ser un tramo de <span>, uno por
+           letra y con las clases de su palabra (.accent, .italic). Los nodos de
+           texto que separan las palabras se quedan donde están, de modo que los
+           saltos de línea siguen en los mismos espacios. */
+        const letters = [];
+        [...statement.querySelectorAll("span")].forEach((word) => {
+            const run = document.createDocumentFragment();
+            for (const char of word.textContent) {
+                const letter = document.createElement("span");
+                letter.className = word.className;
+                letter.textContent = char;
+                run.appendChild(letter);
+                letters.push(letter);
+            }
+            word.replaceWith(run);
+        });
+
+        const section = statement.closest("section");
+        const total = letters.length;
+        const SPREAD = Math.max(2, total / 16);  // letras que tarda cada una en encenderse
+        const painted = new Float32Array(total); // valor que ya está en el DOM
+        let head = 0;                            // frente de luz, en letras
+        let raf = 0, last = 0, first = true;
+
+        // Encendido que le toca a la letra i: continuo, y a 1 una vez que el
+        // frente la ha rebasado por completo.
+        const level = (i) => Math.min(Math.max((head - i) / SPREAD, 0), 1);
+
+        function headFromScroll() {
             const rect = section.getBoundingClientRect();
             const start = innerHeight * 0.85;
             const end = innerHeight * 0.25;
-            const total = start - end;
-            const done = Math.min(Math.max((start - rect.top) / (total + rect.height * 0.35), 0), 1);
-            words.forEach((w, i) => {
-                w.classList.toggle("lit", done * words.length > i);
-            });
-            ticking = false;
+            const travel = start - end;
+            const done = Math.min(Math.max((start - rect.top) / (travel + rect.height * 0.35), 0), 1);
+            // A done 0 el frente arranca una SPREAD por delante de la primera
+            // letra (todas apagadas); a done 1 acaba una SPREAD por detrás de la
+            // última (todas encendidas).
+            head = done * (total - 1 + SPREAD * 2) - SPREAD;
         }
-        addEventListener("scroll", () => {
-            if (!ticking) { requestAnimationFrame(lightWords); ticking = true; }
-        }, { passive: true });
-        lightWords();
+
+        function frame(now) {
+            const dt = last ? Math.min(now - last, 64) : 16;
+            last = now;
+            const snap = first;                      // primer trazo: cada letra se coloca en su sitio
+            // Decaimiento exponencial —la solución exacta del amortiguado—, que
+            // se compone igual a 60 y a 120 Hz y no depende del ritmo de refresco.
+            const k = snap ? 0 : Math.exp(-dt / 80);
+            first = false;
+            let moving = false;
+            for (let i = 0; i < total; i++) {
+                const goal = level(i);
+                let value = goal + (painted[i] - goal) * k;
+                if (Math.abs(goal - value) < 0.002) value = goal;   // lo que queda no se ve
+                else moving = true;
+                if (value !== painted[i] || snap) {
+                    painted[i] = value;
+                    letters[i].style.setProperty("--lit", value.toFixed(3));
+                }
+            }
+            // El bucle solo vive mientras hay barrido: en reposo no queda ni un
+            // rAF pendiente (la sección ocupa casi una pantalla y no hay nada
+            // que hacer con ella quieta).
+            raf = moving ? requestAnimationFrame(frame) : 0;
+        }
+
+        function sweep() {
+            headFromScroll();
+            if (!raf) { last = 0; raf = requestAnimationFrame(frame); }
+        }
+
+        addEventListener("scroll", sweep, { passive: true });
+        addEventListener("resize", sweep, { passive: true });
+        sweep();
     }
 
-    /* ── 8. Work rows: floating follower image ────────────── */
+    /* ── 7. Work rows: floating follower image ────────────── */
     const follower = document.getElementById("workFollower");
     const followerImg = document.getElementById("workFollowerImg");
     const rows = [...document.querySelectorAll(".work-row")];
@@ -750,40 +950,73 @@
     // inyecta el fotograma de cada proyecto como variable CSS de su fila
     rows.forEach((row) => row.style.setProperty("--img", `url("${row.dataset.img}")`));
 
+    // Carry the Selected Work still into the corresponding Generated film page.
+    rows.forEach((row) => row.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const rect = row.getBoundingClientRect();
+        const start = { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
+        const imagePosition = getComputedStyle(row, "::after").backgroundPosition;
+        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition })); } catch (_) {}
+        const layer = document.createElement("div");
+        layer.className = "work-transition work-transition--departure";
+        layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
+        document.body.append(layer);
+        event.preventDefault();
+        requestAnimationFrame(() => layer.classList.add("is-opening"));
+        setTimeout(() => { location.href = row.href; }, 440);
+    }));
+
     if (follower && followerImg && rows.length && !isTouch && !reduced) {
         let fx = innerWidth / 2, fy = innerHeight / 2;   // follower position (lerped)
         let tx = fx, ty = fy;                            // target (mouse)
         let followerActive = false;
+
+        // Rendimiento (30/09/2026): el bucle corría siempre, con o sin fila
+        // señalada, gastando un rAF por frame durante toda la landing. Ahora
+        // solo vive mientras hay una fila activa: mismo suavizado, sin coste
+        // cuando el cursor no está sobre el listado.
+        let followerRaf = 0;
+        function followerLoop() {
+            fx += (tx - fx) * 0.1;
+            fy += (ty - fy) * 0.1;
+            follower.style.left = fx + "px";
+            follower.style.top = fy + "px";
+            followerRaf = requestAnimationFrame(followerLoop);
+        }
+        function followerStart() {
+            if (!followerRaf) followerRaf = requestAnimationFrame(followerLoop);
+        }
+        function followerStop() {
+            cancelAnimationFrame(followerRaf);
+            followerRaf = 0;
+        }
 
         rows.forEach((row) => {
             row.addEventListener("mouseenter", () => {
                 followerImg.src = row.dataset.img;
                 follower.classList.add("visible");
                 followerActive = true;
+                followerStart();
             });
             row.addEventListener("mouseleave", () => {
                 follower.classList.remove("visible");
                 followerActive = false;
+                followerStop();
             });
         });
 
         addEventListener("mousemove", (e) => { tx = e.clientX; ty = e.clientY; });
 
-        (function followerLoop() {
-            fx += (tx - fx) * 0.1;
-            fy += (ty - fy) * 0.1;
-            if (followerActive) {
-                follower.style.left = fx + "px";
-                follower.style.top = fy + "px";
-            }
-            requestAnimationFrame(followerLoop);
-        })();
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) followerStop();
+            else if (followerActive) followerStart();
+        });
 
         // preload all hover images so swaps are instant
         rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
     }
 
-    /* ── 9. Stats count-up ────────────────────────────────── */
+    /* ── 8. Stats count-up ────────────────────────────────── */
     document.querySelectorAll("[data-count]").forEach((el) => {
         const target = parseInt(el.dataset.count, 10);
         const io = new IntersectionObserver((entries) => {
@@ -802,7 +1035,7 @@
         io.observe(el);
     });
 
-    /* ── 10. Magnetic elements ────────────────────────────── */
+    /* ── 9. Magnetic elements ────────────────────────────── */
     if (!isTouch && !reduced) {
         document.querySelectorAll(".magnetic").forEach((el) => {
             el.addEventListener("mousemove", (e) => {
@@ -819,7 +1052,7 @@
         });
     }
 
-    /* ── 11. Fullscreen menu ──────────────────────────────── */
+    /* ── 10. Fullscreen menu ──────────────────────────────── */
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
 
@@ -834,4 +1067,7 @@
     burger.addEventListener("click", () => toggleMenu());
     overlay.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => toggleMenu(false)));
     addEventListener("keydown", (e) => { if (e.key === "Escape") toggleMenu(false); });
+
+
+
 })();

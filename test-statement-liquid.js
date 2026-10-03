@@ -1,0 +1,74 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const {JSDOM} = require('jsdom');
+const source = fs.readFileSync(`${__dirname}/statement-liquid.js`, 'utf8');
+assert.ok(source.includes('const vec3 green = vec3(0.639, 0.875, 0.008);'), 'WebGL green discs use the same solid chartreuse color');
+assert.ok(source.includes('return vec2(1190,640)+mix(vec2(90,65),vec2(-310,-200),orbitAt(19.0,clock));'), 'Small violet keeps its current start and destination');
+assert.ok(source.includes('return vec2(1180,280)+mix(vec2(80,-70),vec2(-300,120),orbitAt(24.0,clock));'), 'Upper-right green keeps its current start and destination');
+assert.ok(source.includes('return vec2(470,640)+mix(vec2(-90,65),vec2(250,-210),orbitAt(21.0,clock));'), 'Lower-left green keeps its current start and destination');
+assert.ok(source.includes('return vec2(790,350)+mix(vec2(-140,-130),vec2(-40,10),orbitAt(22.0,clock));'), 'Large violet travels farther but keeps the close-cluster destination');
+assert.ok(!source.includes('sphereSurface') && !source.includes('retainedContact') && !source.includes('filaments'), 'No 3D shading, line texture or extra fusion persistence remains');
+assert.ok(source.includes('float baseD1=length(p-c1)-185.0, baseD2=length(p-c2)-135.0;') && source.includes('float baseD3=length(p-c3)-110.0, baseD4=length(p-c4)-145.0;') && source.includes('elasticCircleDistance(p,c1,185.0,baseD1') && source.includes('elasticCircleDistance(p,c2,135.0,baseD2') && source.includes('elasticCircleDistance(p,c3,110.0,baseD3') && source.includes('elasticCircleDistance(p,c4,145.0,baseD4'), 'All four exact radii flex only through an elastic motion and magnetic field');
+assert.ok(source.includes('float elasticCircleDistance(') && source.includes('float motionStretch=speed*(10.5*forward*forward+4.5*trailing*trailing-5.6*sideCompression)') && source.includes('speed*0.6*sin(angle*2.0+time*0.55+phase);') && source.includes('magnetic=magnet*pulse*(15.0*front*front-5.0*side-1.2*back*back);') && source.includes('float sameVioletMagnet=1.0-smoothstep(-12.0,56.0,max(baseD1,baseD2));') && source.includes('float sameGreenMagnet=1.0-smoothstep(-12.0,56.0,max(baseD3,baseD4));') && source.includes('float crossMagnet=1.0-smoothstep(-12.0,56.0,max(baseV,baseG));'), 'Velocity direction stretches each orb and same- or cross-color metaball attraction pulls its facing edge');
+assert.ok(source.includes('float dV=smoothUnion(violetD1,violetD2,56.0);') && source.includes('float dUnion=smoothUnion(d3,d4,56.0);'), 'The stronger 56px metaball union keeps each same-color pair connected longer');
+assert.ok(source.includes('float orbitPhase1=sin(time*6.2831853/22.0);') && source.includes('float orbitMotion=max(max(abs(orbitPhase1),abs(orbitPhase2)),') && source.includes('float edgePulse=mix(8.0,13.0,orbitMotion);') && source.includes('*mix(0.82,1.40,orbitMotion);'), 'Circle speed strengthens elastic deformation and the contact liquid response');
+assert.ok(source.includes('float dAll=smoothUnion(dV,dUnion,64.0)-edgePulse*inkWave*crossContact;'), 'Purple and green metaballs get the wider, motion-driven liquid pulse only at contact');
+assert.ok(source.includes('float crossFusion=max(bridgeShape,min(violetShape,greenShape));') && source.includes('float alpha=allShape*mix(0.36,0.90,unionWet);'), 'The fused zone renders as one shared, more opaque silhouette without retaining the individual circle edges');
+assert.ok(source.includes('float crossContact=1.0-smoothstep(-16.0,24.0,max(dV,dUnion));') && source.includes('float dAll=smoothUnion(dV,dUnion,64.0)-edgePulse*inkWave*crossContact;'), 'The stronger metaball pulse stays local to contact, beyond the gentle per-orb elastic flex');
+assert.ok(source.includes('float crossProximity=1.0-smoothstep(0.0,48.0,max(dV,dUnion));') && source.includes('float contactMix=max(crossFusion,crossProximity);'), 'The mixing field covers the green rim while it is fused inside violet');
+assert.ok(source.includes('float inkCoarse=inkNoise(inkP);') && source.includes('float inkMedium=inkNoise(inkP*2.25+vec2(8.1,5.7));') && source.includes('float inkFine=inkNoise(inkP*4.5+vec2(-13.4,19.2));') && source.includes('float inkFray=smoothstep(0.35,0.67,0.58*inkMedium+0.42*inkFine);'), 'Contact pigment breaks into multi-scale, irregular ink wisps instead of round bands');
+assert.ok(source.includes('float inkPool=smoothstep(0.38,0.62,inkCloud);') && source.includes('float frayedPool=clamp(inkPool+(inkFray-0.5)*0.32,0.0,1.0);') && source.includes('float pooling=mix(poolingRaw,frayedPool,contactMix);'), 'Medium and fine ink turbulence fray the wider pigment pools inside contact');
+assert.ok(source.includes('float greenWeight=mix(distanceWeight,pooling,contactMix);') && source.includes('vec3 color=mix(violet,greenColor,greenWeight);') && source.includes('float blendWidth=mix(42.0,190.0,crossFusion);') && source.includes('river*160.0*crossFusion'), 'The circular distance split gives way to the advected ink field inside the fused zone');
+assert.ok(source.includes('float mergedPigment=crossFusion*(0.82+0.17*pooling);') && source.includes('float alpha=allShape*mix(0.36,0.90,unionWet);'), 'Fusion uses the requested pooling pigment range and caps alpha at 0.90');
+assert.ok(source.includes('float greenContact=max(wetFront(dV,p,64.0),wetFront(max(d3,d4),p,42.0))*greenShape;') && source.includes('float wet=max(greenContact,bridgeShape);'), 'Fusion responds to present cross-color contact only');
+assert.ok(source.includes('vec3 greenColor=mix(green,dissolved,wet*0.88);'), 'Liquid color grows from the solid green discs only at contact');
+assert.ok(source.includes('uniform float edgeTv;') && source.includes('float fringeBand=(1.0-smoothstep(0.0,22.0,max(0.0,-dAll)))*step(dAll,0.0);') && source.includes('color=mix(color,fringeColor,fringeAmount);'), 'The soft TV fringe is blended only inside the metaball silhouette, never into the black background');
+assert.ok(source.includes('gl.uniform1f(uEdgeTv,Math.max(0,Math.min(1,parseFloat(host.style.getPropertyValue("--statement-edge-tv"))||0)));'), 'The WebGL fringe uses the same edge-proximity strength as the SVG fallback');
+for (const supported of [false, true]) {
+    const dom = new JSDOM('<div class="statement-background is-animating"><svg></svg></div>', {runScripts:'outside-only'});
+    const w=dom.window, host=w.document.querySelector('div');
+    const media={matches:false,addEventListener(_,fn){this.changed=fn;}};
+    let intersect, queued=0, cancelled=0, draws=0, rafCallback;
+    const timeUniforms=[];
+    w.matchMedia=()=>media;
+    Object.defineProperty(w.document,'hidden',{value:false,configurable:true});
+    w.requestAnimationFrame=(callback)=>{rafCallback=callback; return ++queued;};
+    w.cancelAnimationFrame=()=>{cancelled++; rafCallback=null;};
+    w.IntersectionObserver=class {constructor(fn){intersect=fn;} observe(){}};
+    w.ResizeObserver=class {observe(){}};
+    const gl = new Proxy({}, {get(_,key) {
+        if (key==='getShaderParameter'||key==='getProgramParameter') return ()=>true;
+        if (key==='getError') return ()=>0;
+        if (key==='NO_ERROR') return 0;
+        if (key==='drawArrays') return ()=>draws++;
+        if (key==='getUniformLocation') return (_program,name)=>name;
+        if (key==='uniform1f') return (location,value)=>{if(location==='time')timeUniforms.push(value);};
+        if (key==='createShader'||key==='createProgram'||key==='createBuffer') return ()=>({});
+        return ()=>{};
+    }});
+    w.HTMLCanvasElement.prototype.getContext=()=>supported?gl:null;
+    w.eval(source);
+    if (!supported) {
+        assert.equal(host.querySelector('canvas'),null);
+        assert.equal(host.classList.contains('has-liquid'),false);
+    } else {
+        assert.equal(draws,1,'First frame before switching away from SVG');
+        assert.ok(host.classList.contains('has-liquid'));
+        assert.equal(queued,0,'No loop outside viewport');
+        intersect([{isIntersecting:true}]);
+        assert.equal(queued,1);
+        const tick=(timestamp)=>{const callback=rafCallback;assert.equal(typeof callback,'function');rafCallback=null;callback(timestamp);};
+        tick(1000); tick(1500);
+        assert.ok(Math.abs(timeUniforms.at(-1)-0.5)<0.001,'Shader orbit clock follows real elapsed time across a slow frame');
+        media.matches=true; media.changed();
+        assert.equal(cancelled,1,'Reduced motion stops rendering');
+        media.matches=false; media.changed();
+        assert.equal(queued,4);
+        intersect([{isIntersecting:false}]);
+        assert.equal(cancelled,2,'Offscreen rendering is paused');
+        host.querySelector('canvas').dispatchEvent(new w.Event('webglcontextlost',{cancelable:true}));
+        assert.equal(host.classList.contains('has-liquid'),false,'Context loss restores SVG');
+    }
+    dom.window.close();
+}
+console.log('PASS liquid lifecycle: fallback, first frame, visibility, reduced motion, context loss (mock WebGL; not GPU compilation)');

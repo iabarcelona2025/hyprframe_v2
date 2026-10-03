@@ -2,12 +2,12 @@
 <html lang="es">
     <head>
 
-        <!-- ─── Consent Mode v2 de Google — ACTIVADO ────────────────────────
-             Google no deja cookies de analítica hasta que el visitante acepta en
-             el banner: los consent defaults de abajo arrancan en 'denied' y
-             cookies.js comunica la decisión con gtag('consent','update').
-             Para apagarlo basta con poner false en la primera línea:
-             el gtag.js de debajo NO se toca. -->
+        <!-- ─── Consent Mode v2 de Google — ACTIVADO ────────────────────────────
+             Interruptor único en las 28 páginas, colocado ANTES del gtag.js donde la
+             página lo carga: los consent defaults arrancan en 'denied' y cookies.js
+             comunica la decisión del visitante con gtag('consent','update').
+             Esta página no carga gtag.js: si algún día se añade, hay que ponerlo
+             DESPUÉS de este bloque. -->
         <script>
             window.HYPRFRAME_CONSENT_MODE = true;
             window.dataLayer = window.dataLayer || [];
@@ -56,14 +56,12 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="styles.css?v=39" />
-        <link rel="stylesheet" href="generated.css?v=25" />
+        <link rel="stylesheet" href="styles.css?v=194" />
+        <link rel="stylesheet" href="generated.css?v=59" />
     </head>
     <body>
         <a class="skip-link" href="#main">Saltar al contenido</a>
         <div class="grain" aria-hidden="true"></div>
-        <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
-        <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
         <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 
         <!-- Misma cabecera y menú fullscreen que en la portada; enlaces a secciones de index.html en español. -->
@@ -104,28 +102,26 @@
         <main id="main">
             <!-- ══════════ PROJECT OPENER ══════════ -->
             <section class="node-hero" aria-labelledby="projectTitle">
-                <div class="node-hero__top">
-                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> HYPRFRAME / GENERATED</p>
+                <div class="node-hero__meta-row">
+<div class="node-hero__top">
+                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> GENERATED</p>
                 </div>
                 <!-- Prev / next: el ciclo de la sección, justo bajo el kicker. -->
                 <nav class="node-pager" aria-label="Más proyectos Generated">
-                    <a class="node-pager__link" href="project-node.html" rel="prev" aria-label="Proyecto anterior: N.O.D.E."><span class="node-pager__arrow" aria-hidden="true">←</span> Atrás</a>
+                    <a class="node-pager__link" href="project-node.html" rel="prev" aria-label="Proyecto anterior: N.O.D.E."><span class="node-pager__arrow" aria-hidden="true"></span></a>
                     <span class="node-pager__count" aria-hidden="true">02 / 10</span>
-                    <a class="node-pager__link node-pager__link--next" href="project-polestar5.html" rel="next" aria-label="Proyecto siguiente: Polestar 5">Siguiente <span class="node-pager__arrow" aria-hidden="true">→</span></a>
+                    <a class="node-pager__link node-pager__link--next" href="project-polestar5.html" rel="next" aria-label="Proyecto siguiente: Polestar 5"><span class="node-pager__arrow" aria-hidden="true"></span></a>
                 </nav>
-                <div class="node-hero__image">
-                    <div class="node-hero__title">
-                        <h1 id="projectTitle" aria-label="Deep in the Forest [Teaser]"><span class="node-hero__word">DEEP IN THE FOREST</span> <span class="node-hero__teaser" aria-hidden="true">[Teaser]</span></h1>
-                    </div>
                 </div>
-                <div class="node-hero__bottom">
-                    <a href="#film" class="node-hero__explore">EXPLORAR <span aria-hidden="true">↓</span></a>
-                </div>
+                <div class="node-hero__image"></div>
             </section>
 
             <!-- ══════════ FILM ══════════ -->
             <section class="node-film" id="film" aria-label="Deep in the Forest film">
                 <div class="node-player" data-vimeo="1185276367" data-title="Deep in the Forest teaser">
+                    <div class="node-hero__title">
+                        <h1 id="projectTitle" aria-label="Deep in the Forest [Teaser]"><span class="node-hero__word">DEEP IN THE FOREST</span> <span class="node-hero__teaser" aria-hidden="true">[Teaser]</span></h1>
+                    </div>
                     <img src="assets/images/deep.jpg" alt="" loading="lazy" />
                     <button type="button" class="node-player__play" id="playFilm" aria-label="Reproducir Deep in the Forest teaser en Vimeo">
                         <span class="node-player__circle" aria-hidden="true"></span>
@@ -169,6 +165,10 @@
         <footer class="site-footer">
             <div class="footer-row">
                 <span>© 2026 HYPRFRAME. Todos los derechos reservados.</span>
+                <span class="footer-legal">
+                    <a href="cookie-policy.html">Política de cookies</a>
+                    <button type="button" data-cookie-settings>Configurar cookies</button>
+                </span>
             </div>
         </footer>
         <script>
@@ -183,7 +183,8 @@
             };
         })();
         </script>
-        <script src="generated.js?v=5" defer></script>
-        <script src="cookies.js?v=2" defer></script>
+        <script src="generated.js?v=16" defer></script>
+        <script src="smooth-scroll.js?v=1" defer></script>
+        <script src="cookies.js?v=5" defer></script>
     </body>
 </html>

@@ -23,17 +23,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=100" />
-    <link rel="stylesheet" href="404.css?v=100" />
+    <link rel="stylesheet" href="styles.css?v=194" />
+    <link rel="stylesheet" href="404.css?v=101" />
 </head>
 
 <body class="page-404">
     <!-- grain overlay -->
     <div class="grain" aria-hidden="true"></div>
-
-    <!-- custom cursor -->
-    <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
-    <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
     <!-- interactive canvas background -->
     <canvas id="canvas404" class="canvas-404" aria-hidden="true"></canvas>
@@ -45,19 +41,20 @@
         <div class="glow-orb glow-lime" aria-hidden="true"></div>
 
         <div class="container-404">
-            <!-- ERROR above 404 (half size of 404) & 404 Display (reduced 30%) -->
-            <div class="glitch-display" id="glitchTrigger" role="figure" aria-label="Error 404" title="Click para activar glitch">
-                <span class="glitch-error" id="glitchError" data-text="ERROR">ERROR</span>
+            <!-- "NOTHING TO SEE HERE" above 404 & 404 Display (reduced 30%) -->
+            <div class="glitch-display" id="glitchTrigger" role="figure" aria-label="Error 404 — nothing to see here" title="Click para activar glitch">
+                <span class="glitch-error" id="glitchError" data-text="NOTHING TO SEE HERE">NOTHING TO SEE HERE</span>
                 <span class="glitch-number" id="glitchNumber" data-text="404">404</span>
             </div>
 
-            <!-- Single Action Button: VOLVER A INICIO -->
+            <!-- Single Action Button: BACK TO WEB -->
             <div class="cta-actions">
                 <a href="index.html" class="btn-primary" id="ctaHome">
-                    <span class="btn-text">VOLVER A INICIO</span>
+                    <span class="btn-text">BACK TO WEB</span>
                     <span class="btn-arrow" aria-hidden="true">↗</span>
                 </a>
             </div>
+            <p class="legal-404"><a href="/cookie-policy.html">Política de cookies</a></p>
         </div>
     </main>
 
@@ -73,6 +70,7 @@
         };
     })();
     </script>
-    <script src="404.js?v=100" defer></script>
+    <script src="404.js?v=101" defer></script>
+    <script src="/smooth-scroll.js?v=1" defer></script>
 </body>
 </html>

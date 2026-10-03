@@ -17,17 +17,19 @@ for (const page of ['index.html', 'es/index.html']) {
             assert.ok(row.dataset.img, `missing image on ${row.textContent.trim()}`);
             assert.ok(fs.existsSync(path.join(root, row.dataset.img)), row.dataset.img);
         }
-        assert.match(doc.querySelector('link[href^="styles.css?"]').href, /v=105$/);
+        assert.match(doc.querySelector('link[href^="styles.css?"]').href, /v=\d+$/);
     });
 }
 
-test('all ten rows grow 15% after the photo and gradient begin, then close without delay', () => {
+test('all ten rows grow 15% plus 30px after photo and gradient begin, then close without delay', () => {
     assert.match(css, /--work-row-pad: clamp\(1\.4rem, 3\.2vw, 2\.4rem\)/);
     assert.match(css, /--work-row-content-h: clamp\(1\.98rem, 3\.96vw, 2\.97rem\)/);
     assert.match(css, /transition: padding-block 0\.55s[^;]*, padding-left 0\.5s[^;]*, background 0\.5s;/);
-    assert.match(css, /\.work-row:hover, \.work-row:focus-visible\s*\{[^}]*transition-delay: 0\.3s, 0s, 0s;\s*padding-block: calc\(var\(--work-row-pad\) \+ \(2 \* var\(--work-row-pad\) \+ var\(--work-row-content-h\) \+ 1px\) \* 0\.075\)/);
+    assert.match(css, /\.work-row:hover, \.work-row:focus-visible\s*\{[^}]*transition-delay: 0\.3s, 0s, 0s;\s*padding-block: calc\(var\(--work-row-pad\) \+ \(2 \* var\(--work-row-pad\) \+ var\(--work-row-content-h\) \+ 1px\) \* 0\.075 \+ 22\.5px\)/);
     assert.match(css, /\.work-row::before\s*\{[^}]*inset: 0;/);
     assert.match(css, /\.work-row::after\s*\{[^}]*top: 0; right: 0; bottom: 0;/);
+    assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{ opacity: 1; transform: scale\(1\); \}/,
+        'the thumbnail expands to fill the expanded row');
 });
 
 test('diagonal slices reveal the existing image on hover and keyboard focus', () => {

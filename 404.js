@@ -6,75 +6,25 @@
     "use strict";
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
-    /* ─── 1. Custom Cursor (Shared HYPRFRAME System) ─────── */
-    const dot = document.getElementById("cursorDot");
-    const ring = document.getElementById("cursorRing");
-
-    if (!isTouch && !reducedMotion && dot && ring) {
-        const CURSOR_KEY = "hfCursor";
-        let mx = window.innerWidth / 2;
-        let my = window.innerHeight / 2;
-
-        try {
-            const saved = sessionStorage.getItem(CURSOR_KEY);
-            if (saved) {
-                const parts = saved.split(",");
-                const sx = Number(parts[0]);
-                const sy = Number(parts[1]);
-                if (Number.isFinite(sx) && Number.isFinite(sy)) {
-                    mx = Math.min(Math.max(sx, 0), window.innerWidth);
-                    my = Math.min(Math.max(sy, 0), window.innerHeight);
-                }
-            }
-        } catch (e) { /* storage unavailable */ }
-
-        let rx = mx;
-        let ry = my;
-        let savedX = mx;
-        let savedY = my;
-
-        window.addEventListener("mousemove", (e) => {
-            mx = e.clientX;
-            my = e.clientY;
-        }, { passive: true });
-
-        const cursorLoop = () => {
-            rx += (mx - rx) * 0.16;
-            ry += (my - ry) * 0.16;
-            dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
-            ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
-
-            if (mx !== savedX || my !== savedY) {
-                savedX = mx;
-                savedY = my;
-                try {
-                    sessionStorage.setItem(CURSOR_KEY, `${mx},${my}`);
-                } catch (e) {}
-            }
-            requestAnimationFrame(cursorLoop);
-        };
-        requestAnimationFrame(cursorLoop);
-
-        const bindCursorLarge = () => {
-            document.querySelectorAll("a, button, .glitch-display").forEach((el) => {
-                if (el.dataset.cursorBound) return;
-                el.dataset.cursorBound = "1";
-                el.addEventListener("mouseenter", () => document.body.classList.add("cursor-large"));
-                el.addEventListener("mouseleave", () => document.body.classList.remove("cursor-large"));
-            });
-        };
-        bindCursorLarge();
-    }
-
-    /* ─── 2. Glitch Click Effect ─────────────────────────── */
+    /* ─── 1. Glitch Click Effect ─────────────────────────── */
     const glitchDisplay = document.getElementById("glitchTrigger");
     const glitchError = document.getElementById("glitchError");
     const glitchNumber = document.getElementById("glitchNumber");
 
+    /* Headline shown above the 404 (replaces the old error label). */
+    const DISPLAY_TEXT = "NOTHING TO SEE HERE";
+
     const glitchGlyphs404 = ["404", "4Ø4", "4_4", "4#4", "4?4", "!0!", "404"];
-    const glitchGlyphsErr = ["ERROR", "ERRØR", "ERR__", "ER#0R", "E??OR", "ERROR"];
+    const glitchGlyphsErr = [
+        DISPLAY_TEXT,
+        "N0THING T0 SEE HERE",
+        "N_THING TO SEE HERE",
+        "NOT#ING TO SEE HER3",
+        "N??HING TO SEE HERE",
+        "NOTHING T_ SEE H#RE",
+        DISPLAY_TEXT
+    ];
     let isGlitching = false;
 
     const runGlitchBurst = () => {
@@ -99,8 +49,8 @@
                 glitchNumber.textContent = "404";
                 glitchNumber.setAttribute("data-text", "404");
                 if (glitchError) {
-                    glitchError.textContent = "ERROR";
-                    glitchError.setAttribute("data-text", "ERROR");
+                    glitchError.textContent = DISPLAY_TEXT;
+                    glitchError.setAttribute("data-text", DISPLAY_TEXT);
                 }
                 isGlitching = false;
             }
@@ -116,7 +66,7 @@
         glitchDisplay.addEventListener("click", runGlitchBurst);
     }
 
-    /* ─── 3. Interactive Latent Constellation Canvas ──────── */
+    /* ─── 2. Interactive Latent Constellation Canvas ──────── */
     const canvas = document.getElementById("canvas404");
     if (canvas && !reducedMotion) {
         const ctx = canvas.getContext("2d");
