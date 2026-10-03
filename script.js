@@ -971,13 +971,11 @@
         // .work-row.is-departing en styles.css): la línea inferior, propia de
         // la fila, baja con la caja y el fotograma queda contenido. El rect
         // guardado arriba no cambia: la llegada al proyecto sigue igual.
-        requestAnimationFrame(() => {
-            const grow = rect.height * 0.28;
-            const padding = getComputedStyle(row);
-            row.classList.add("is-departing");
-            row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
-            layer.classList.add("is-opening");
-        });
+        const padding = getComputedStyle(row);
+        row.classList.add("is-departing");
+        row.style.paddingTop = padding.paddingTop;
+        row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
+        requestAnimationFrame(() => layer.classList.add("is-opening"));
         setTimeout(() => { location.href = row.href; }, 440);
     }));
 
@@ -991,6 +989,7 @@
         document.querySelectorAll(".work-transition--departure").forEach((el) => el.remove());
         rows.forEach((r) => {
             r.classList.remove("is-departing");
+            r.style.paddingTop = "";
             r.style.paddingBottom = "";
         });
     });
