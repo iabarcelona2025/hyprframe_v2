@@ -149,6 +149,12 @@
     const vimeoId = playerBox ? playerBox.dataset.vimeo : "";
     const mobileVideoQuery = window.matchMedia("(max-width: 560px)");
     const isMobileVideo = mobileVideoQuery.matches;
+    // Estado del fullscreen móvil, declarado aquí porque los helpers de arriba
+    // (requestIframeFullscreen, forceMobileLandscape, exitMobileFullscreen,
+    // onFullscreenError) lo necesitan en el ámbito del IIFE.
+    let mobileFs = false;
+    let lockOnNextFullscreen = false;
+    let sawDocumentFullscreen = false;
 
     /* Vimeo normally plays embeds inline on phones. playsinline=0 hands the
        play action to Vimeo's native player, and the Fullscreen API is requested
@@ -166,32 +172,38 @@
        sale, a horizontal se vuelve a entrar). iPhone/Safari no soporta lock():
        allí el reproductor nativo de Vimeo (playsinline=0) decide el giro y las
        bandas negras acompañan al teléfono. */
-    function requestMobileFullscreen(iframe) {
+    /* Pide el fullscreen del navegador sobre el iframe sin bloquear la
+       orientación. Si la petición falla (el navegador no la concede), se
+       invoca release() para desmarcar el estado y dejar que el siguiente
+       giro vuelva a intentarlo. */
+    function requestIframeFullscreen(iframe, release) {
         if (!isMobileVideo) return;
         const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen;
         if (typeof request === "function") {
             try {
                 const pending = request.call(iframe);
-                if (pending?.catch) pending.catch(() => {});
-            } catch (err) { /* playsinline=0 still opens the native player */ }
+                if (pending?.catch) pending.catch(() => { if (release) release(); });
+            } catch (err) { /* playsinline=0 still opens the native player */ if (release) release(); }
         }
-        // El apaisado no depende de que el navegador conceda el fullscreen: si
-        // no hay Fullscreen API (iPhone) igualmente se pide el bloqueo, y donde
-        // no exista lock() no pasa nada.
-        forceMobileLandscape();
     }
     /* Girar la pantalla a horizontal solo cuando hace falta (el móvil está
-       vertical). Es la petición del play, y también se reintenta cuando el
-       navegador confirma el fullscreen: lock() solo es legal dentro de él, así
-       que la primera llamada puede llegar antes de tiempo. */
+       vertical) Y hay una petición de fullscreen reciente que lo requiere
+       (lockOnNextFullscreen): en el play, si el teléfono estaba vertical, se
+       pide lock("landscape") y lockOnNextFullscreen queda a true; cuando el
+       navegador confirma el fullscreen (fullscreenchange del documento o
+       mensaje fullscreenchange de Vimeo) se reintenta por si el primer
+       intento llegó antes de que el fullscreen estuviera activo, y en cuanto
+       lock() se llama se suelta el flag. Reentrar desde orientationchange
+       NUNCA bloquea. */
     function forceMobileLandscape() {
-        if (!isMobileVideo || !isPortraitNow()) return;
+        if (!lockOnNextFullscreen || !isMobileVideo || !isPortraitNow()) return;
         const orientation = window.screen?.orientation;
         if (typeof orientation?.lock !== "function") return;
         try {
             const pending = orientation.lock("landscape");
             if (pending?.catch) pending.catch(() => {});
         } catch (err) { /* sin lock(): el giro se queda libre */ }
+        lockOnNextFullscreen = false;
     }
     function unlockMobileOrientation() {
         try {
@@ -200,6 +212,8 @@
         } catch (err) { /* no había bloqueo que soltar */ }
     }
     function exitMobileFullscreen(iframe) {
+        lockOnNextFullscreen = false;
+        mobileFs = false;
         unlockMobileOrientation();
         const exitDoc = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
         if (typeof exitDoc === "function") {
@@ -238,18 +252,23 @@
         // que el visitante haya salido a mano. El bloqueo de orientación se
         // suelta en cuanto se sale del fullscreen, así que los dos giros siguen
         // siendo posibles.
-        let mobileFs = false;
+        mobileFs = false;
+        lockOnNextFullscreen = false;
+        sawDocumentFullscreen = false;
         let seenLandscape = false;
         let portraitExitArmed = false;
         let portraitExitTimer = 0;
-        let sawDocumentFullscreen = false;
         function disarmPortraitExit() {
             clearTimeout(portraitExitTimer);
             portraitExitTimer = 0;
             portraitExitArmed = false;
+            lockOnNextFullscreen = false;
             mobileFs = false;
             seenLandscape = false;
             unlockMobileOrientation();
+        }
+        function onFullscreenError() {
+            mobileFs = false;
         }
         function armPortraitExit() {
             if (!isMobileVideo || portraitExitArmed || portraitExitTimer) return;
@@ -265,7 +284,8 @@
             return iframe;
         }
         function reenterMobileFullscreen(iframe) {
-            requestMobileFullscreen(iframe);
+            mobileFs = true;
+            requestIframeFullscreen(iframe, () => { mobileFs = false; });
             try {
                 iframe.contentWindow?.postMessage({ method: "requestFullscreen" }, "https://player.vimeo.com");
             } catch (err) { /* the player frame may already be gone */ }
@@ -293,7 +313,7 @@
                 mobileFs = true;
                 if (!isPortraitNow()) seenLandscape = true;
                 forceMobileLandscape();
-            } else if (sawDocumentFullscreen) {
+            } else {
                 mobileFs = false;
                 unlockMobileOrientation();
             }
@@ -309,6 +329,7 @@
             });
             addEventListener("fullscreenchange", onDocumentFullscreen);
             addEventListener("webkitfullscreenchange", onDocumentFullscreen);
+            addEventListener("fullscreenerror", onFullscreenError);
         }
 
         // Web only: cover the browser window without the Fullscreen API. A
@@ -496,9 +517,19 @@
                     const on = !!data.data?.fullscreen;
                     if (on) {
                         mobileFs = true;
-                        if (!isPortraitNow()) seenLandscape = true;
+                        sawDocumentFullscreen = true; // el fullscreen de Vimeo cuenta como confirmación
+                        if (!isPortraitNow()) {
+                            seenLandscape = true;
+                        } else {
+                            // El fullscreen nativo de Vimeo con el móvil
+                            // vertical: reintentar el apaisado porque Vimeo
+                            // ya tiene su propio fullscreen activo, así que
+                            // lock() está permitido.
+                            lockOnNextFullscreen = true;
+                        }
                         forceMobileLandscape();
-                    } else if (portraitExitArmed || sawDocumentFullscreen) {
+                    } else {
+                        lockOnNextFullscreen = false;
                         mobileFs = false;
                         // Fuera del fullscreen el móvil vuelve a girarse libre:
                         // si el visitante lo dejó a mano, el siguiente giro a
@@ -544,10 +575,22 @@
                 playerBox.replaceChildren(iframe);
             }
             if (!isMobileVideo) schedulePlayerWindow();
-            requestMobileFullscreen(iframe);
             if (isMobileVideo) {
+                // 05/10/2026: el bloqueo de orientación solo se pide en la
+                // entrada del play, y solo cuando el móvil está vertical. Si
+                // el teléfono ya está en horizontal no se bloquea nada: los
+                // giros siguen libres y son ellos los que mandan. forceMobile-
+                // Landscape se reintenta cuando el navegador confirma el
+                // fullscreen y entonces se suelta el flag.
                 mobileFs = true;
+                lockOnNextFullscreen = isPortraitNow();
                 if (!isPortraitNow()) seenLandscape = true;
+                requestIframeFullscreen(iframe, () => { mobileFs = false; });
+                // Si el móvil está vertical, el primer intento de lock() se
+                // hace EN LÍNEA aquí (puede llegar antes del fullscreen;
+                // fullscreenchange lo reintentará). Si ya está horizontal no
+                // hay nada que bloquear.
+                forceMobileLandscape();
             }
             iframe.focus();
         });
