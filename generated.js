@@ -154,18 +154,53 @@
        play action to Vimeo's native player, and the Fullscreen API is requested
        as well — the browser's gray "how to exit" notice may show; that is
        accepted. Desktop does not use the Fullscreen API: the player box grows
-       to the browser window (.is-windowed). Landscape is not locked, so the
-       visitor can turn the phone back to portrait. */
+       to the browser window (.is-windowed).
+
+       Móvil (04/10/2026): la reproducción manda. Al pulsar play se entra en
+       pantalla completa y el vídeo se abre en horizontal aunque el móvil esté
+       vertical: si la pantalla está en vertical se fuerza el apaisado con
+       screen.orientation.lock("landscape"), que solo existe dentro del
+       fullscreen y se suelta en cuanto se sale de él (o el vídeo termina), así
+       que no es permanente. Si el teléfono ya está en horizontal no se bloquea
+       nada: los giros siguen libres y son ellos los que mandan (a vertical se
+       sale, a horizontal se vuelve a entrar). iPhone/Safari no soporta lock():
+       allí el reproductor nativo de Vimeo (playsinline=0) decide el giro y las
+       bandas negras acompañan al teléfono. */
     function requestMobileFullscreen(iframe) {
         if (!isMobileVideo) return;
         const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen;
-        if (typeof request !== "function") return;
+        if (typeof request === "function") {
+            try {
+                const pending = request.call(iframe);
+                if (pending?.catch) pending.catch(() => {});
+            } catch (err) { /* playsinline=0 still opens the native player */ }
+        }
+        // El apaisado no depende de que el navegador conceda el fullscreen: si
+        // no hay Fullscreen API (iPhone) igualmente se pide el bloqueo, y donde
+        // no exista lock() no pasa nada.
+        forceMobileLandscape();
+    }
+    /* Girar la pantalla a horizontal solo cuando hace falta (el móvil está
+       vertical). Es la petición del play, y también se reintenta cuando el
+       navegador confirma el fullscreen: lock() solo es legal dentro de él, así
+       que la primera llamada puede llegar antes de tiempo. */
+    function forceMobileLandscape() {
+        if (!isMobileVideo || !isPortraitNow()) return;
+        const orientation = window.screen?.orientation;
+        if (typeof orientation?.lock !== "function") return;
         try {
-            const pending = request.call(iframe);
+            const pending = orientation.lock("landscape");
             if (pending?.catch) pending.catch(() => {});
-        } catch (err) { /* playsinline=0 still opens the native player */ }
+        } catch (err) { /* sin lock(): el giro se queda libre */ }
+    }
+    function unlockMobileOrientation() {
+        try {
+            const pending = window.screen?.orientation?.unlock?.();
+            if (pending?.catch) pending.catch(() => {});
+        } catch (err) { /* no había bloqueo que soltar */ }
     }
     function exitMobileFullscreen(iframe) {
+        unlockMobileOrientation();
         const exitDoc = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
         if (typeof exitDoc === "function") {
             try {
@@ -195,13 +230,16 @@
         let exitButton = null;
         let hoverShield = null;
         let dockCover = null;
-        // Mobile: after 3s of playback, turning back to portrait leaves
-        // fullscreen. Turning to landscape again during the same playback
-        // asks for fullscreen once more. The phone is not locked, so both
-        // turns stay possible.
+        // Móvil (04/10/2026): mientras dura la reproducción manda el vídeo. El
+        // play lo pone a pantalla completa (en horizontal si el móvil estaba
+        // vertical); girar a vertical sale del fullscreen — solo pasados 3s de
+        // reproducción y solo si antes se vio el móvil en horizontal — y volver
+        // a girar a horizontal lo devuelve a la pantalla, también después de
+        // que el visitante haya salido a mano. El bloqueo de orientación se
+        // suelta en cuanto se sale del fullscreen, así que los dos giros siguen
+        // siendo posibles.
         let mobileFs = false;
         let seenLandscape = false;
-        let returnedToPortrait = false;
         let portraitExitArmed = false;
         let portraitExitTimer = 0;
         let sawDocumentFullscreen = false;
@@ -211,7 +249,7 @@
             portraitExitArmed = false;
             mobileFs = false;
             seenLandscape = false;
-            returnedToPortrait = false;
+            unlockMobileOrientation();
         }
         function armPortraitExit() {
             if (!isMobileVideo || portraitExitArmed || portraitExitTimer) return;
@@ -236,17 +274,16 @@
             if (!isMobileVideo) return;
             const portrait = forced === "portrait" || (forced !== "landscape" && isPortraitNow());
             const iframe = playingIframe();
+            if (!iframe) return;
             if (!portrait) {
                 seenLandscape = true;
-                if (!returnedToPortrait || mobileFs || !iframe) return;
-                returnedToPortrait = false;
+                if (mobileFs) return; // la pantalla ya es del vídeo: el giro no cambia nada
                 mobileFs = true;
                 reenterMobileFullscreen(iframe);
                 return;
             }
-            if (!iframe || !seenLandscape || !portraitExitArmed || !mobileFs) return;
+            if (!seenLandscape || !portraitExitArmed || !mobileFs) return;
             mobileFs = false;
-            returnedToPortrait = true;
             exitMobileFullscreen(iframe);
         }
         function onDocumentFullscreen() {
@@ -255,8 +292,10 @@
                 sawDocumentFullscreen = true;
                 mobileFs = true;
                 if (!isPortraitNow()) seenLandscape = true;
+                forceMobileLandscape();
             } else if (sawDocumentFullscreen) {
                 mobileFs = false;
+                unlockMobileOrientation();
             }
         }
         if (isMobileVideo) {
@@ -458,8 +497,13 @@
                     if (on) {
                         mobileFs = true;
                         if (!isPortraitNow()) seenLandscape = true;
+                        forceMobileLandscape();
                     } else if (portraitExitArmed || sawDocumentFullscreen) {
                         mobileFs = false;
+                        // Fuera del fullscreen el móvil vuelve a girarse libre:
+                        // si el visitante lo dejó a mano, el siguiente giro a
+                        // horizontal es quien devuelve el vídeo a la pantalla.
+                        unlockMobileOrientation();
                     }
                 } else if (data?.event === "ended") {
                     disarmPortraitExit();
