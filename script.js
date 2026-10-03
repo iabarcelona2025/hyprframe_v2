@@ -984,6 +984,20 @@
         setTimeout(() => { location.href = row.href; }, 440);
     }));
 
+    // Botón atrás (03/10/2026): el bfcache revive la landing tal cual quedó
+    // al salir —con el clon de salida escalado a la vista y la fila ampliada—
+    // y los timers ya consumidos no se repiten, así que el clon quedaba
+    // bloqueado en pantalla. Al mostrarse la página retiramos cualquier clon
+    // de salida y devolvemos la fila a su estado normal, lista para otro
+    // clic. Corre también en cargas normales: es idempotente e inocuo.
+    addEventListener("pageshow", () => {
+        document.querySelectorAll(".work-transition--departure").forEach((el) => el.remove());
+        rows.forEach((r) => {
+            r.classList.remove("is-departing");
+            r.style.paddingBottom = "";
+        });
+    });
+
     if (follower && followerImg && rows.length && !isTouch && !reduced) {
         let fx = innerWidth / 2, fy = innerHeight / 2;   // follower position (lerped)
         let tx = fx, ty = fy;                            // target (mouse)
