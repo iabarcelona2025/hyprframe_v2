@@ -55,7 +55,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="styles.css?v=194" />
-        <link rel="stylesheet" href="generated.css?v=59" />
+        <link rel="stylesheet" href="generated.css?v=76" />
     </head>
     <body>
         <a class="skip-link" href="#main">Skip to content</a>
@@ -101,12 +101,7 @@
             <!-- ══════════ PROJECT OPENER ══════════ -->
             <section class="node-hero" aria-labelledby="projectTitle">
                 <div class="node-hero__meta-row">
-<div class="node-hero__top">
-                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> GENERATED</p>
-                </div>
-                <!-- Prev / next: the section's cycle, right under the kicker.
-                     The names of the pieces stay in the aria-labels, so the row
-                     reads as one small control instead of a second title. -->
+<!-- Prev / next: the section's cycle. The names of the pieces stay in the aria-labels. -->
                 <nav class="node-pager" aria-label="More Generated projects">
                     <a class="node-pager__link" href="project-node.html" rel="prev" aria-label="Previous project: N.O.D.E."><span class="node-pager__arrow" aria-hidden="true"></span></a>
                     <span class="node-pager__count" aria-hidden="true">02 / 10</span>
@@ -122,6 +117,9 @@
                     <div class="node-hero__title">
                         <h1 id="projectTitle" aria-label="Deep in the Forest [Teaser]"><span class="node-hero__word">DEEP IN THE FOREST</span> <span class="node-hero__teaser" aria-hidden="true">[Teaser]</span></h1>
                     </div>
+                    <div class="node-player__synopsis">
+                            <p>February 2013, Kiruna. An abandoned Volvo 240 sits on a snowy road with its engine running, and Elena has vanished. Footprints suggest a voluntary walk into the woods, but a disturbing non-human trail turns the search into a chilling mystery of isolation and fear in the Swedish winter.</p>
+                        </div>
                     <img src="assets/images/deep.jpg" alt="" loading="lazy" />
                     <button type="button" class="node-player__play" id="playFilm" aria-label="Play Deep in the Forest on Vimeo">
                         <span class="node-player__circle" aria-hidden="true"></span>
@@ -134,9 +132,6 @@
                 <div class="node-section-label"><span>THE STORY</span></div>
                 <div class="node-story__grid">
                     <h2 id="storyTitle">A TRACE<br />IN THE <span class="violet">SNOW</span></h2>
-                    <div class="node-story__copy">
-                        <p>February 2013, Kiruna. A Volvo 240 is found abandoned in the middle of a snowy road. The driver's door remains wide open, and from within, the murmur of the radio is the only sound breaking the silence of the ice. Elena has vanished without a trace. Supported by local testimonies, the investigation focuses on a set of footprints leading into the woods, suggesting a voluntary encounter with someone she knew. However, a non-human trail discovered in the snow turns the case into a disturbing mystery. A visual reconstruction exercise that explores isolation and fear in the heart of the Swedish winter.</p>
-                    </div>
                 </div>
                 <a class="node-story__all" href="index.html#work">VIEW ALL ↗</a>
             </section>
@@ -183,8 +178,8 @@
             };
         })();
         </script>
-        <script src="generated.js?v=16" defer></script>
-        <script src="smooth-scroll.js?v=1" defer></script>
+        <script src="generated.js?v=26" defer></script>
+        <script src="smooth-scroll.js?v=2" defer></script>
         <script src="cookies.js?v=5" defer></script>
     </body>
 </html>

@@ -226,6 +226,13 @@ const smoothEnabled = (page) => page.doc.documentElement.classList.contains("hf-
     const ev = page.wheel(600);
     check("con el menú abierto, la rueda no se secuestra", !ev.defaultPrevented);
 
+    const film = boot();
+    const cover = film.doc.createElement("div");
+    cover.className = "node-player is-windowed";
+    film.doc.body.appendChild(cover);
+    const evFilm = film.wheel(600);
+    check("con el vídeo ocupando la ventana, la rueda no mueve la página", !evFilm.defaultPrevented);
+
     const panel = boot();
     const box = panel.doc.createElement("div");
     box.style.overflowY = "scroll";

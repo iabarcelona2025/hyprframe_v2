@@ -97,7 +97,18 @@
                 layer.className = "work-transition work-transition--arrival";
                 layer.style.cssText = `left:${origin.left}px;top:${origin.top}px;width:${origin.width}px;height:${origin.height}px;background-image:url('${origin.image}');background-position:${origin.position || "center"};`;
                 document.body.append(layer);
+                // html still has scroll-behavior:smooth here (smooth-scroll.js runs
+                // after this file). A bare scrollBy would ease, and the expanding
+                // thumbnail would be measured at the old center — 40px above the
+                // film. Jump first, then aim the clone at the film's final box.
+                const root = document.documentElement;
+                const previousBehavior = root.style.scrollBehavior;
+                root.style.scrollBehavior = "auto";
                 player.scrollIntoView({ block: "center", behavior: "instant" });
+                // Web only: raise the anchor 40px so the film, and the thumbnail
+                // measured just below, land 40px lower. Mobile stays centered.
+                if (window.matchMedia("(min-width: 561px)").matches) window.scrollBy(0, -40);
+                root.style.scrollBehavior = previousBehavior;
                 const target = player.getBoundingClientRect();
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                     layer.style.left = `${target.left}px`;
@@ -121,53 +132,41 @@
     const play = document.getElementById("playFilm");
     const playerBox = play ? play.closest(".node-player") : null;
     const vimeoId = playerBox ? playerBox.dataset.vimeo : "";
-    const isMobileVideo = window.matchMedia("(max-width: 560px)").matches;
+    const mobileVideoQuery = window.matchMedia("(max-width: 560px)");
+    const isMobileVideo = mobileVideoQuery.matches;
 
     /* Vimeo normally plays embeds inline on phones. playsinline=0 hands the
-       play action to Vimeo's native fullscreen player on mobile; desktop keeps
-       the existing inline iframe. The Fullscreen API and orientation lock are
-       best-effort fallbacks for mobile browsers that expose them. */
-    function lockMobileLandscape() {
-        if (!isMobileVideo || !window.screen?.orientation?.lock) return;
-        try {
-            const pending = window.screen.orientation.lock("landscape");
-            if (pending?.catch) pending.catch(() => {});
-        } catch (err) { /* orientation lock needs fullscreen on some browsers */ }
-    }
-
+       play action to Vimeo's native player, and the Fullscreen API is requested
+       as well — the browser's gray "how to exit" notice may show; that is
+       accepted. Desktop does not use the Fullscreen API: the player box grows
+       to the browser window (.is-windowed). Landscape is not locked, so the
+       visitor can turn the phone back to portrait. */
     function requestMobileFullscreen(iframe) {
         if (!isMobileVideo) return;
         const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen;
-        if (typeof request === "function") {
-            try {
-                const pending = request.call(iframe);
-                if (pending?.then) pending.then(lockMobileLandscape).catch(() => {});
-            } catch (err) { /* Vimeo's playsinline=0 fallback still applies */ }
-        }
-        lockMobileLandscape();
-    }
-
-    // On desktop, fullscreen the whole 16:9 player box; on mobile Vimeo keeps
-    // using its existing native fullscreen flow.
-    function requestDesktopFullscreen(player) {
-        if (isMobileVideo) return;
-        const request = player.requestFullscreen || player.webkitRequestFullscreen;
         if (typeof request !== "function") return;
         try {
-            const pending = request.call(player);
+            const pending = request.call(iframe);
             if (pending?.catch) pending.catch(() => {});
-        } catch (err) { /* Fullscreen can be denied by browser policy. */ }
+        } catch (err) { /* playsinline=0 still opens the native player */ }
     }
-
-    function exitPlayerFullscreen(player) {
-        const current = document.fullscreenElement || document.webkitFullscreenElement;
-        if (current !== player) return;
-        const exit = document.exitFullscreen || document.webkitExitFullscreen;
-        if (typeof exit !== "function") return;
+    function exitMobileFullscreen(iframe) {
+        const exitDoc = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
+        if (typeof exitDoc === "function") {
+            try {
+                const pending = exitDoc.call(document);
+                if (pending?.catch) pending.catch(() => {});
+            } catch (err) { /* already left, or the native player owns the screen */ }
+        }
         try {
-            const pending = exit.call(document);
-            if (pending?.catch) pending.catch(() => {});
-        } catch (err) { /* Best-effort cleanup after the film ends. */ }
+            iframe?.contentWindow?.postMessage({ method: "exitFullscreen" }, "https://player.vimeo.com");
+        } catch (err) { /* the player frame may already be gone */ }
+    }
+    function isPortraitNow() {
+        const type = window.screen?.orientation?.type;
+        if (typeof type === "string" && type) return type.startsWith("portrait");
+        if (typeof window.orientation === "number") return Math.abs(window.orientation) !== 90;
+        return window.matchMedia("(orientation: portrait)").matches;
     }
 
     if (play && playerBox && vimeoId) {
@@ -175,6 +174,198 @@
         const poster = [...playerBox.childNodes]; // opening title, still and play button, restored when the film ends
         const titleOverlay = playerBox.querySelector(".node-hero__title");
         let pageDimmer = null;
+        let playbackSpacer = null;
+        let exitButton = null;
+        let hoverShield = null;
+        let dockCover = null;
+        // Mobile: after 3s of playback, turning back to portrait leaves
+        // fullscreen. Turning to landscape again during the same playback
+        // asks for fullscreen once more. The phone is not locked, so both
+        // turns stay possible.
+        let mobileFs = false;
+        let seenLandscape = false;
+        let returnedToPortrait = false;
+        let portraitExitArmed = false;
+        let portraitExitTimer = 0;
+        let sawDocumentFullscreen = false;
+        function disarmPortraitExit() {
+            clearTimeout(portraitExitTimer);
+            portraitExitTimer = 0;
+            portraitExitArmed = false;
+            mobileFs = false;
+            seenLandscape = false;
+            returnedToPortrait = false;
+        }
+        function armPortraitExit() {
+            if (!isMobileVideo || portraitExitArmed || portraitExitTimer) return;
+            portraitExitTimer = setTimeout(() => {
+                portraitExitTimer = 0;
+                portraitExitArmed = true;
+            }, 3000);
+        }
+        function playingIframe() {
+            const iframe = playerBox.querySelector("iframe");
+            if (!iframe || iframe.classList.contains("is-ending")) return null;
+            if (!playerBox.classList.contains("is-playing")) return null;
+            return iframe;
+        }
+        function reenterMobileFullscreen(iframe) {
+            requestMobileFullscreen(iframe);
+            try {
+                iframe.contentWindow?.postMessage({ method: "requestFullscreen" }, "https://player.vimeo.com");
+            } catch (err) { /* the player frame may already be gone */ }
+        }
+        function onMobileOrientation(forced) {
+            if (!isMobileVideo) return;
+            const portrait = forced === "portrait" || (forced !== "landscape" && isPortraitNow());
+            const iframe = playingIframe();
+            if (!portrait) {
+                seenLandscape = true;
+                if (!returnedToPortrait || mobileFs || !iframe) return;
+                returnedToPortrait = false;
+                mobileFs = true;
+                reenterMobileFullscreen(iframe);
+                return;
+            }
+            if (!iframe || !seenLandscape || !portraitExitArmed || !mobileFs) return;
+            mobileFs = false;
+            returnedToPortrait = true;
+            exitMobileFullscreen(iframe);
+        }
+        function onDocumentFullscreen() {
+            const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            if (on) {
+                sawDocumentFullscreen = true;
+                mobileFs = true;
+                if (!isPortraitNow()) seenLandscape = true;
+            } else if (sawDocumentFullscreen) {
+                mobileFs = false;
+            }
+        }
+        if (isMobileVideo) {
+            addEventListener("orientationchange", () => onMobileOrientation());
+            window.screen?.orientation?.addEventListener?.("change", () => onMobileOrientation());
+            window.matchMedia("(orientation: portrait)").addEventListener?.("change", (event) => {
+                if (event.matches) onMobileOrientation("portrait");
+            });
+            window.matchMedia("(orientation: landscape)").addEventListener?.("change", (event) => {
+                if (event.matches) onMobileOrientation("landscape");
+            });
+            addEventListener("fullscreenchange", onDocumentFullscreen);
+            addEventListener("webkitfullscreenchange", onDocumentFullscreen);
+        }
+
+        // Web only: cover the browser window without the Fullscreen API. A
+        // spacer keeps the 16:9 hole so the page does not jump. The X stops
+        // the film and puts the ficha back to the state before play.
+        let detachPlayerMessages = null;
+        function closePlayerWindow() {
+            clearTimeout(windowOpenTimer);
+            windowOpenTimer = null;
+            playerBox.style.transform = "";
+            playerBox.style.transition = "";
+            playerBox.classList.remove("is-windowed");
+            if (exitButton) {
+                exitButton.remove();
+                exitButton = null;
+            }
+            if (playbackSpacer) {
+                playbackSpacer.remove();
+                playbackSpacer = null;
+            }
+            if (hoverShield) {
+                hoverShield.remove();
+                hoverShield = null;
+            }
+            if (dockCover) {
+                dockCover.remove();
+                dockCover = null;
+            }
+        }
+        function stopAndRestore() {
+            disarmPortraitExit();
+            if (detachPlayerMessages) {
+                detachPlayerMessages();
+                detachPlayerMessages = null;
+            }
+            const iframe = playerBox.querySelector("iframe");
+            if (!playerBox.querySelector(".node-player__play")) playerBox.prepend(...poster);
+            if (iframe) iframe.remove();
+            closePlayerWindow();
+            if (pageDimmer) {
+                pageDimmer.remove();
+                pageDimmer = null;
+            }
+            playerBox.classList.remove("is-playing");
+            document.body.classList.remove("film-is-playing");
+            play.focus({ preventScroll: true });
+        }
+        let windowOpenTimer = null;
+        function openPlayerWindow() {
+            if (isMobileVideo || playerBox.classList.contains("is-windowed")) return;
+            const from = playerBox.getBoundingClientRect();
+            playbackSpacer = document.createElement("div");
+            playbackSpacer.className = "node-player-spacer";
+            playbackSpacer.setAttribute("aria-hidden", "true");
+            playbackSpacer.style.height = `${playerBox.getBoundingClientRect().height}px`;
+            playerBox.before(playbackSpacer);
+            const spanish = document.documentElement.lang === "es";
+            exitButton = document.createElement("button");
+            exitButton.type = "button";
+            exitButton.className = "node-player__exit";
+            exitButton.setAttribute("aria-label", spanish ? "Cerrar vídeo" : "Close video");
+            exitButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                stopAndRestore();
+            });
+            // The picture must not wake Vimeo's hover chrome (like / watch later /
+            // share, top right). The bottom strip stays open so its controls work.
+            hoverShield = document.createElement("div");
+            hoverShield.className = "node-player__shield";
+            hoverShield.setAttribute("aria-hidden", "true");
+            dockCover = document.createElement("div");
+            dockCover.className = "node-player__dock";
+            dockCover.setAttribute("aria-hidden", "true");
+            playerBox.append(hoverShield, dockCover, exitButton);
+            playerBox.classList.add("is-windowed");
+            // La caja ya ocupa la ventana. El primer frame la devuelve, con un
+            // scale, al rectángulo medido; al soltarlo, la transición de
+            // transform la amplía hasta el viewport. (03/10/2026)
+            if (reduced) return;
+            const to = playerBox.getBoundingClientRect();
+            if (from.width < 1 || from.height < 1 || to.width < 1 || to.height < 1) return;
+            const sx = from.width / to.width;
+            const sy = from.height / to.height;
+            playerBox.style.transformOrigin = "0 0";
+            playerBox.style.transition = "none";
+            playerBox.style.transform = `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`;
+            void playerBox.offsetWidth;
+            playerBox.style.transition = "";
+            playerBox.style.transform = "";
+        }
+        // El fundido del título y la sinopsis (0,8s) tiene que acabar antes de
+        // que la caja ocupe la ventana. En móvil no hay ampliación.
+        function schedulePlayerWindow() {
+            if (isMobileVideo || playerBox.classList.contains("is-windowed")) return;
+            clearTimeout(windowOpenTimer);
+            windowOpenTimer = setTimeout(() => {
+                windowOpenTimer = null;
+                if (!playerBox.classList.contains("is-playing")) return;
+                openPlayerWindow();
+            }, reduced ? 0 : 800);
+        }
+        addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || !playerBox.classList.contains("is-windowed")) return;
+            if (document.body.classList.contains("menu-open")) return;
+            event.preventDefault();
+            stopAndRestore();
+        });
+        // Crossing into the mobile layout drops the window cover; the dimmer
+        // is already suppressed there by CSS.
+        mobileVideoQuery.addEventListener?.("change", () => {
+            if (mobileVideoQuery.matches) closePlayerWindow();
+        });
+
         function clearPlayingLook() {
             if (pageDimmer) {
                 const dimmer = pageDimmer;
@@ -191,18 +382,27 @@
             }
         }
         play.addEventListener("click", () => {
-            document.body.classList.add("film-is-playing");
             playerBox.classList.add("is-playing");
-            pageDimmer = document.createElement("div");
-            pageDimmer.className = "film-page-dimmer";
-            pageDimmer.setAttribute("aria-hidden", "true");
-            document.body.append(pageDimmer);
-            const activeDimmer = pageDimmer;
-            requestAnimationFrame(() => activeDimmer.classList.add("is-visible"));
+            // Oscurecimiento y blur solo en la versión web. En móvil el vídeo
+            // se queda en su caja, sin velo.
+            if (!isMobileVideo) {
+                document.body.classList.add("film-is-playing");
+                pageDimmer = document.createElement("div");
+                pageDimmer.className = "film-page-dimmer";
+                pageDimmer.setAttribute("aria-hidden", "true");
+                document.body.append(pageDimmer);
+                const activeDimmer = pageDimmer;
+                requestAnimationFrame(() => activeDimmer.classList.add("is-visible"));
+            }
             const iframe = document.createElement("iframe");
             iframe.title = `${pieceTitle} — HYPRFRAME`;
             const mobileFullscreenParam = isMobileVideo ? "&playsinline=0" : "";
-            iframe.src = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&dnt=1&transparent=0${mobileFullscreenParam}`;
+            // sidedock / like / share / watch later: pide a Vimeo que no pinte
+            // los botones de la esquina superior. controls no se toca: la barra
+            // inferior sigue. Si la cuenta ignora el parámetro, el escudo y el
+            // dock de la versión web cubren el mismo hueco.
+            const hideTopActions = "&sidedock=0&like=0&share=0&watchlater=0&watch_later=0&embed=0&badge=0";
+            iframe.src = `https://player.vimeo.com/video/${vimeoId}?autoplay=1&dnt=1&transparent=0${mobileFullscreenParam}${hideTopActions}`;
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.setAttribute("allowfullscreen", "");
             // The iframe's load event may fire before Vimeo paints its player (white flash).
@@ -216,13 +416,30 @@
                 if (data?.event === "ready") {
                     iframe.classList.add("is-ready");
                     iframe.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, "https://player.vimeo.com");
+                    if (isMobileVideo) {
+                        for (const name of ["play", "playing", "timeupdate", "fullscreenchange"]) {
+                            iframe.contentWindow.postMessage({ method: "addEventListener", value: name }, "https://player.vimeo.com");
+                        }
+                    }
+                } else if (data?.event === "play" || data?.event === "playing" || data?.event === "timeupdate") {
+                    armPortraitExit();
+                } else if (data?.event === "fullscreenchange") {
+                    const on = !!data.data?.fullscreen;
+                    if (on) {
+                        mobileFs = true;
+                        if (!isPortraitNow()) seenLandscape = true;
+                    } else if (portraitExitArmed || sawDocumentFullscreen) {
+                        mobileFs = false;
+                    }
                 } else if (data?.event === "ended") {
+                    disarmPortraitExit();
                     removeEventListener("message", onPlayerMessage);
+                    detachPlayerMessages = null;
                     const hadFocus = document.activeElement === iframe;
                     // Devuelve el fotograma DETRÁS del iframe sin desmontarlo: mover
                     // el iframe lo recargaría y perderíamos la imagen a enmascarar.
                     playerBox.prepend(...poster);
-                    exitPlayerFullscreen(playerBox);
+                    closePlayerWindow();
                     clearPlayingLook();
                     if (hadFocus) play.focus({ preventScroll: true });
                     if (reduced || !iframe.classList.contains("is-ready")) {
@@ -243,6 +460,7 @@
                 }
             }
             addEventListener("message", onPlayerMessage);
+            detachPlayerMessages = () => removeEventListener("message", onPlayerMessage);
             if (titleOverlay) {
                 // Keep the title node mounted so its opacity can animate instead
                 // of disappearing instantly when replacing the poster contents.
@@ -251,8 +469,12 @@
             } else {
                 playerBox.replaceChildren(iframe);
             }
+            if (!isMobileVideo) schedulePlayerWindow();
             requestMobileFullscreen(iframe);
-            requestDesktopFullscreen(playerBox);
+            if (isMobileVideo) {
+                mobileFs = true;
+                if (!isPortraitNow()) seenLandscape = true;
+            }
             iframe.focus();
         });
     }
