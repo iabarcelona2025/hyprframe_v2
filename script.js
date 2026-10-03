@@ -962,7 +962,26 @@
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
         event.preventDefault();
-        requestAnimationFrame(() => layer.classList.add("is-opening"));
+        // En escritorio la caja crece con el fotograma (03/10/2026): el clon
+        // escala ×1.28 desde su centro, así que sobresalía un 14% del alto por
+        // cada lado de las líneas de la fila. Ampliamos la fila esa misma
+        // cantidad —en px, sobre el rect medido al hacer clic— en el mismo
+        // frame en que el clon empieza a abrirse y con idéntica curva (ver
+        // .work-row.is-departing en styles.css), de modo que la caja contenga
+        // el fotograma durante toda la salida. El rect guardado arriba no
+        // cambia: la llegada a la página del proyecto sigue igual.
+        const desktop = matchMedia("(hover: hover) and (min-width: 901px)").matches;
+        requestAnimationFrame(() => {
+            if (desktop) {
+                const grow = rect.height * 0.14;
+                const padding = getComputedStyle(row);
+                row.classList.add("is-departing");
+                row.style.marginTop = `${-grow}px`;
+                row.style.paddingTop = `${parseFloat(padding.paddingTop) + grow}px`;
+                row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
+            }
+            layer.classList.add("is-opening");
+        });
         setTimeout(() => { location.href = row.href; }, 440);
     }));
 

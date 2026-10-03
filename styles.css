@@ -981,6 +981,19 @@ section { position: relative; }
     transition-delay: 0.3s, 0s, 0s;
     padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075 + 22.5px);
 }
+/* Al hacer clic, la caja se amplía para contener el fotograma de salida
+   (03/10/2026): el clon fijo (.work-transition--departure) crece un 28%
+   desde su centro, así que asomaba un 14% del alto por encima y por debajo
+   de las líneas de la fila. En escritorio la fila gana ese mismo margen por
+   cada lado —margen superior negativo + padding simétrico, fijados por JS
+   en px sobre el rect medido al hacer clic— con la misma curva y duración
+   (0,42 s) que el clon, y se alza sobre sus vecinas para que el fotograma
+   nunca se vea fuera de la caja. */
+.work-row.is-departing {
+    transition: padding 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+        margin 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2;
+}
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
    recortando el ::before con clip-path (28/09/2026). Al salir el cursor el
@@ -2018,5 +2031,5 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 .hf-entry-black.is-fading { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
+    .work-transition, .work-transition::after, .hf-entry-black, .work-row.is-departing { transition-duration: .01ms; }
 }
