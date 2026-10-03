@@ -963,21 +963,20 @@
         document.body.append(layer);
         event.preventDefault();
         // En escritorio la caja crece con el fotograma (03/10/2026): el clon
-        // escala ×1.28 desde su centro, así que sobresalía un 14% del alto por
-        // cada lado de las líneas de la fila. Ampliamos la fila esa misma
-        // cantidad —en px, sobre el rect medido al hacer clic— en el mismo
-        // frame en que el clon empieza a abrirse y con idéntica curva (ver
-        // .work-row.is-departing en styles.css), de modo que la caja contenga
-        // el fotograma durante toda la salida. El rect guardado arriba no
-        // cambia: la llegada a la página del proyecto sigue igual.
+        // escala ×1.28 anclado a su borde superior (la línea que delimita la
+        // caja por arriba es el border-bottom de la fila anterior y no se
+        // mueve), así que todo el crecimiento —un 28% del alto medido al
+        // clic— va hacia abajo y la fila lo acompaña sumándolo a su padding
+        // inferior en el mismo frame, con idéntica curva (ver
+        // .work-row.is-departing en styles.css): la línea inferior, propia de
+        // la fila, baja con la caja y el fotograma queda contenido. El rect
+        // guardado arriba no cambia: la llegada al proyecto sigue igual.
         const desktop = matchMedia("(hover: hover) and (min-width: 901px)").matches;
         requestAnimationFrame(() => {
             if (desktop) {
-                const grow = rect.height * 0.14;
+                const grow = rect.height * 0.28;
                 const padding = getComputedStyle(row);
                 row.classList.add("is-departing");
-                row.style.marginTop = `${-grow}px`;
-                row.style.paddingTop = `${parseFloat(padding.paddingTop) + grow}px`;
                 row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
             }
             layer.classList.add("is-opening");
