@@ -981,6 +981,20 @@ section { position: relative; }
     transition-delay: 0.3s, 0s, 0s;
     padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075 + 22.5px);
 }
+/* Al hacer clic, la caja se amplía para contener el fotograma de salida
+   (03/10/2026): el clon fijo (.work-transition--departure) crece un 28% y
+   asomaba por fuera de las líneas de la fila. La línea superior de la caja
+   es el border-bottom de la fila ANTERIOR y no puede moverse, así que el
+   clon escala anclado a su borde superior (transform-origin: top) y la fila
+   crece solo hacia abajo: JS suma ese 28% del alto al padding inferior —en
+   px, sobre el rect medido al hacer clic— con la misma curva y duración
+   (0,42 s) que el clon, y la línea inferior (propia de la fila) baja con la
+   caja. La fila se alza sobre sus vecinas para que el fotograma nunca se
+   vea fuera de la caja. */
+.work-row.is-departing {
+    transition: padding 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2;
+}
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
    recortando el ::before con clip-path (28/09/2026). Al salir el cursor el
@@ -2010,6 +2024,10 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 .work-transition.is-opening { transform: scale(1); }
 .work-transition.is-opening::after { opacity: 0; }
+/* El clon de salida escala anclado arriba: su borde superior no cruza la
+   línea que delimita la caja (border-bottom de la fila anterior, estática);
+   todo el crecimiento va hacia abajo, acompañado por la fila (03/10/2026). */
+.work-transition--departure { transform-origin: top; }
 .work-transition--departure.is-opening { transform: scale(1.28); }
 .work-transition--arrival.is-dissolving { opacity: 0; }
 .hf-entry-black {
@@ -2018,5 +2036,5 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 .hf-entry-black.is-fading { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
+    .work-transition, .work-transition::after, .hf-entry-black, .work-row.is-departing { transition-duration: .01ms; }
 }

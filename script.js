@@ -962,9 +962,38 @@
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
         event.preventDefault();
-        requestAnimationFrame(() => layer.classList.add("is-opening"));
+        // La caja crece con el fotograma (03/10/2026, en móvil también desde
+        // hoy): el clon escala ×1.28 anclado a su borde superior (la línea
+        // que delimita la caja por arriba es el border-bottom de la fila
+        // anterior y no se mueve), así que todo el crecimiento —un 28% del
+        // alto medido al clic— va hacia abajo y la fila lo acompaña sumándolo
+        // a su padding inferior en el mismo frame, con idéntica curva (ver
+        // .work-row.is-departing en styles.css): la línea inferior, propia de
+        // la fila, baja con la caja y el fotograma queda contenido. El rect
+        // guardado arriba no cambia: la llegada al proyecto sigue igual.
+        requestAnimationFrame(() => {
+            const grow = rect.height * 0.28;
+            const padding = getComputedStyle(row);
+            row.classList.add("is-departing");
+            row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
+            layer.classList.add("is-opening");
+        });
         setTimeout(() => { location.href = row.href; }, 440);
     }));
+
+    // Botón atrás (03/10/2026): el bfcache revive la landing tal cual quedó
+    // al salir —con el clon de salida escalado a la vista y la fila ampliada—
+    // y los timers ya consumidos no se repiten, así que el clon quedaba
+    // bloqueado en pantalla. Al mostrarse la página retiramos cualquier clon
+    // de salida y devolvemos la fila a su estado normal, lista para otro
+    // clic. Corre también en cargas normales: es idempotente e inocuo.
+    addEventListener("pageshow", () => {
+        document.querySelectorAll(".work-transition--departure").forEach((el) => el.remove());
+        rows.forEach((r) => {
+            r.classList.remove("is-departing");
+            r.style.paddingBottom = "";
+        });
+    });
 
     if (follower && followerImg && rows.length && !isTouch && !reduced) {
         let fx = innerWidth / 2, fy = innerHeight / 2;   // follower position (lerped)

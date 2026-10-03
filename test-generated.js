@@ -66,19 +66,28 @@ assert.doesNotMatch(script, /CURSOR_KEY|hfCursor|cursorDot|cursorRing|cursor-lar
    el propio Vimeo revela el reproductor (ni el load del iframe ni un mensaje de
    otro origen), el final devuelve el fotograma y el foco al botón, y una
    segunda reproducción funciona igual. */
+/* Retiene los dos tiempos de la ventana: la apertura (800ms, tras el fundido
+   del título) y, desde el 03/10/2026, el aterrizaje del cierre (la red de
+   seguridad de 650ms de la X: en jsdom no hay transitionend). La función
+   devuelta abre la ventana; su método .land() hace aterrizar el cierre. */
 function holdWindowOpen(window) {
     const held = [];
+    const landing = [];
     const real = window.setTimeout.bind(window);
     const realClear = window.clearTimeout.bind(window);
     window.setTimeout = (fn, ms, ...args) => {
         if (ms === 800) { held.push(fn); return -800; }
+        if (ms === 650) { landing.push(fn); return -650; }
         return real(fn, ms, ...args);
     };
     window.clearTimeout = (id) => {
         if (id === -800) { held.length = 0; return; }
+        if (id === -650) { landing.length = 0; return; }
         return realClear(id);
     };
-    return () => held.splice(0).forEach((fn) => fn());
+    const openWindow = () => held.splice(0).forEach((fn) => fn());
+    openWindow.land = () => landing.splice(0).forEach((fn) => fn());
+    return openWindow;
 }
 
 function exercisePlayer(window, doc, page) {
@@ -105,7 +114,8 @@ function exercisePlayer(window, doc, page) {
     assert.ok(doc.querySelector(".node-player__shield"), `${page.file}: el rollover no arranca sobre la imagen`);
     assert.ok(doc.querySelector(".node-player__dock"), `${page.file}: la esquina superior derecha queda cubierta si Vimeo insiste`);
     assert.ok(doc.querySelector(".node-player").classList.contains("is-playing"), `${page.file}: la caja de vídeo queda en primer plano`);
-    assert.ok(doc.querySelector(".film-page-dimmer"), `${page.file}: el resto de la página se oscurece durante la reproducción`);
+    assert.equal(doc.querySelector(".film-page-dimmer"), null, `${page.file}: ya no se crea el velo — la ventana cubre la página (limpieza 03/10/2026)`);
+    assert.ok(!doc.body.classList.contains("film-is-playing"), `${page.file}: la página no entra en ningún estado de oscurecimiento`);
     assert.ok(doc.querySelector(".node-player > .node-hero__title"), `${page.file}: el título sigue como capa y puede desvanecerse`);
     const sent = [];
     iframe.contentWindow.postMessage = (message, targetOrigin) => sent.push({ message, targetOrigin });
@@ -175,8 +185,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=76");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=26");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=84");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=29");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -472,11 +482,18 @@ assert.ok(!/node-hero--long/.test(css), "generated.css conserva la talla especia
 // como familia declarada tiene que haber desaparecido.
 assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
     "generated.css sigue declarando Kanit como familia");
-// Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
-// font-family/weight separados para que N.O.D.E. respete Montserrat.
+// Desktop: Montserrat 700, con font-family/weight separados para que
+// N.O.D.E. respete Montserrat. 03/10/2026: −15px y −3px más (03/10/2026) en los términos fluido y
+// techo (26.25 → 44.25); el piso conserva sus 12.1px para que el titular no
+// desaparezca en ventanas estrechas.
 assert.match(css,
-    /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 26\.25px\), calc\(5\.44vw - 26\.25px\), calc\(5\.44rem - 26\.25px\)\)/,
-    "las diez páginas comparten la misma clamp del titular en Montserrat");
+    /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 26\.25px\), calc\(5\.44vw - 44\.25px\), calc\(5\.44rem - 44\.25px\)\)/,
+    "las diez páginas comparten la misma clamp del titular en Montserrat (−15px en escritorio)");
+// Los tres cálculos que siguen al titular (ancla de la sinopsis, tope de la
+// plancha y --plate-step del ángulo) usan ese mismo clamp reducido: si el
+// titular mengua, todo baja con él y no se abre hueco.
+assert.equal((css.match(/calc\(5\.44vw - 44\.25px\), calc\(5\.44rem - 44\.25px\)/g) || []).length, 4,
+    "titular, ancla de la sinopsis, tope de la plancha y --plate-step comparten el clamp reducido");
 const h1Rules = css.match(/\.node-hero h1, \.node-player h1 \{[^}]*\}/g);
 assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
 const desktopRule = h1Rules[0];
@@ -599,6 +616,71 @@ assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*position: static;[^}]*
     "en móvil la sinopsis queda debajo de la caja de vídeo");
 assert.ok(!/\.node-player__synopsis \{ display: none/.test(mobileBlock),
     "en móvil la sinopsis no se apaga");
+
+/* Web: una única plancha gris cubre titular y sinopsis — el h1 suelta su fondo
+   y su corte dentro del bloque de escritorio, y el ::before de la sinopsis
+   dibuja la pieza con la misma transparencia y el corte diagonal a la derecha;
+   el titular pinta por delante (z-index 4). Solo escritorio: la regla base del
+   h1 no se toca, así que el móvil conserva su plancha de siempre. (03/10/2026) */
+assert.match(generatedFlat,
+    /@media \(min-width: 561px\) \{ \.node-player > \.node-hero__title \{ z-index: 4; \} \.node-player > \.node-hero__title h1 \{ background: none; clip-path: none; \}/,
+    "web: el h1 suelta su plancha y el titular pinta sobre la nueva");
+assert.match(ruleOf(generatedFlat, ".node-player > .node-hero__title h1"),
+    /background: rgba\(128, 128, 128, \.5\);/,
+    "móvil: la regla base del h1 conserva la plancha gris");
+/* Una única plancha (03/10/2026 · 2): la banda del titular desapareció y la de
+   la sinopsis crece hasta el arranque del título — su top deshace el cálculo
+   que separa sinopsis y titular. Ceñida a la columna del texto (100% + 8px),
+   siempre a la izquierda del círculo centrado; --plate-step ya solo guarda la
+   referencia del ángulo de la diagonal. */
+assert.ok(!generatedFlat.includes(".node-player__synopsis::before"),
+    "web: la plancha del titular (::before) ya no existe");
+const bandRule = ruleOf(generatedFlat, ".node-player__synopsis::after");
+assert.match(bandRule, /background: rgba\(128, 128, 128, \.5\);/,
+    "web: la plancha conserva la transparencia de la vieja");
+assert.match(bandRule,
+    /top: calc\(-1 \* \(1\.8rem \+ 16px \+ 0\.8 \* clamp\(/,
+    "web: la plancha sube hasta el arranque del titular y lo integra");
+assert.match(bandRule, /width: calc\(100% \+ 88px\);[\s\S]*?transform-origin: bottom;/,
+    "web: la plancha se ciñe a la columna (100% + 8px con el sobrante izquierdo) y ancla su diagonal abajo");
+assert.match(bandRule, /z-index: -1;/,
+    "web: la plancha queda detrás del texto");
+/* La diagonal derecha: el ángulo que tenía la del titular, por construcción
+   (skewX de −atan2(12px, --plate-step)), anclada abajo para no cortar el
+   texto justificado ni bajar hacia el play. Solo desde 850px: por debajo el
+   ángulo es tan empinado que pisaría el círculo, y queda el borde recto. */
+assert.match(generatedFlat,
+    /@media \(min-width: 850px\) \{ \.node-player__synopsis::after \{ transform: skewX\(calc\(-1 \* atan2\(12px, var\(--plate-step\)\)\)\); \} \}/,
+    "web: la plancha lleva su diagonal con el ángulo del titular original desde 850px");
+assert.match(generatedFlat,
+    /@media \(min-width: 561px\) \{[^@]*\.node-player__synopsis \{ text-align: justify; --plate-step: calc\(1\.1rem \+ 0\.8 \* clamp\(/,
+    "web: la sinopsis va justificada y conserva la referencia del ángulo");
+/* 03/10/2026 — Solo web: la sinopsis baja 2px de tipografía (−7 → −9 sobre el
+   clamp base), 2px de interlineado (1.45em − 2px) y pierde el sombreado. La
+   regla base (que hereda el móvil) conserva −7px, 1.45 y su sombra. */
+assert.match(generatedFlat,
+    /@media \(min-width: 561px\) \{[^@]*\.node-player__synopsis \{[^}]*font-size: calc\(clamp\(1\.15rem, 1\.9vw, 1\.85rem\) - 9px\); line-height: calc\(1\.45em - 2px\); text-shadow: none;/,
+    "web: la sinopsis baja 2px de talla y de interlineado y pierde el sombreado");
+assert.match(ruleOf(generatedFlat, ".node-player__synopsis"),
+    /text-shadow: 0 1px 2px rgba\(0, 0, 0, 0\.72\)/,
+    "la regla base (la que pisa el bloque web) no se toca");
+assert.ok(!/text-align: justify/.test(squash(stripComments(mobileBlock))) &&
+    !/text-align: justify/.test(ruleOf(generatedFlat, ".node-player__synopsis")),
+    "móvil y regla base: la sinopsis no se justifica fuera del bloque web");
+
+/* Las 10 cajas de vídeo con esquinas de 10px: en web recorta la propia caja
+   (overflow hidden); la ventana completa (is-windowed) vuelve a rectas; en
+   móvil, sin recorte en la caja, el redondeo va en la imagen y el iframe. */
+assert.match(ruleOf(generatedFlat, ".node-player"), /border-radius: 10px;/,
+    "la caja de vídeo redondea sus esquinas a 10px");
+assert.match(ruleOf(generatedFlat, ".node-player.is-windowed"), /border-radius: 0;/,
+    "la caja a ventana completa vuelve a esquinas rectas");
+assert.match(mobileBlock, /\.node-player \{[^}]*border-radius: 0;/,
+    "móvil: la caja-rejilla no redondea (no recorta)");
+assert.match(mobileBlock, /\.node-player > img \{[^}]*border-radius: 10px;/,
+    "móvil: la imagen del vídeo redondea a 10px");
+assert.match(mobileBlock, /\.node-player > iframe \{[^}]*border-radius: 10px;/,
+    "móvil: el iframe del vídeo redondea a 10px");
 assert.match(css, /@media \(min-width: 561px\) \{[^}]*\.node-story \{ display: none; \}/,
     "en web no se ve la sección de la historia");
 assert.match(mobileBlock, /\.node-story > \.node-section-label,\s*\.node-story__grid \{ display: none; \}/,
@@ -654,8 +736,8 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=76/);
-    assert.match(es, /generated\.js\?v=26/);
+    assert.match(es, /generated\.css\?v=84/);
+    assert.match(es, /generated\.js\?v=29/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 
@@ -674,8 +756,14 @@ assert.match(script, /method: "requestFullscreen"/,
     "al volver a horizontal durante la reproducción se pide el fullscreen otra vez");
 assert.doesNotMatch(script, /orientation\.lock\(/,
     "no se bloquea el landscape: el usuario tiene que poder girar a vertical");
-assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,80}scrollBy\(0, -40\)[\s\S]{0,180}getBoundingClientRect\(\)/,
+assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,120}scrollBy\(0, -40\)[\s\S]{0,1200}player\.getBoundingClientRect\(\)/,
     "en web el salto de 40px es instantáneo y el thumbnail se mide después, 40px más abajo");
+/* En pantallas anchas la caja 16:9 es tan alta que centrarla dejaba el
+   paginador (flechas + contador) por encima de la cabecera fija: el recorte
+   del scroll tiene que vivir dentro de la rama web, antes de medir la caja
+   final del clon. (03/10/2026) */
+assert.match(script, /min-width: 561px[\s\S]{0,1000}node-pager[\s\S]{0,400}pagerTop < clearance[\s\S]{0,80}scrollBy\(0, pagerTop - clearance\)[\s\S]{0,300}player\.getBoundingClientRect\(\)/,
+    "web: el scroll de llegada se recorta para que el paginador quede visible bajo la cabecera, antes de medir el clon");
 assert.match(script, /layer\.style\.top = `\$\{target\.top\}px`/,
     "el thumbnail que se amplía aterriza en la caja de vídeo ya desplazada");
 assert.match(script, /is-windowed/, "el play de la web marca la caja como ventana");
@@ -695,13 +783,21 @@ assert.match(ruleOf(generatedFlat, ".node-player.is-windowed"),
     "la ampliación de la caja es una transición");
 assert.match(script, /translate\(\$\{from\.left - to\.left\}px, \$\{from\.top - to\.top\}px\) scale/,
     "la ampliación parte del rectángulo de la caja, no salta");
-assert.match(ruleOf(generatedFlat, ".film-page-dimmer"),
-    /background: rgba\(0, 0, 0, \.6\);[^}]*backdrop-filter: blur\(4px\)/,
-    "en web el velo sigue oscureciendo y desenfocando");
-assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.film-page-dimmer[\s\S]*?backdrop-filter: none;[\s\S]*?opacity: 0;/,
-    "en móvil el velo no oscurece ni desenfoca");
-assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?body\.film-is-playing \.node-pager::after \{[^}]*opacity: 0;/,
-    "en móvil el paginador tampoco se apaga");
+/* Limpieza (03/10/2026): la ventana cubre el navegador al reproducir, así que
+   el velo que oscurecía y desenfocaba la página, el estado body.film-is-playing
+   y el apagado del paginador se borraron de CSS y JS (quedan solo los
+   comentarios fechados que documentan la retirada). */
+assert.ok(!generatedFlat.includes(".film-page-dimmer"),
+    "el velo (.film-page-dimmer) ya no existe en el CSS");
+assert.ok(!generatedFlat.includes("film-is-playing"),
+    "el estado body.film-is-playing ya no existe en el CSS");
+assert.ok(!generatedFlat.includes(".node-pager::after"),
+    "el apagado del paginador (.node-pager::after) ya no existe");
+assert.ok(!/backdrop-filter: blur\(4px\)/.test(generatedFlat),
+    "el desenfoque del resto de la página ya no existe (el blur de la cabecera no cuenta)");
+const scriptFlat = stripComments(script).replace(/^\s*\/\/.*$/gm, "");
+assert.ok(!scriptFlat.includes("film-page-dimmer") && !scriptFlat.includes("film-is-playing") && !scriptFlat.includes("pageDimmer"),
+    "generated.js ya no crea el velo ni marca el estado de oscurecimiento");
 const exitRule = ruleOf(generatedFlat, ".node-player.is-windowed .node-player__exit");
 assert.match(exitRule, /border: 0; background: none;/, "la X no tiene caja");
 assert.match(exitRule, /transition: color 0\.18s ease;/, "el rollover de la X es una transición rápida");
@@ -835,9 +931,27 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
     assert.equal(exit.textContent.trim(), "", "la X no muestra la palabra Close");
     assert.equal(exit.getAttribute("aria-label"), "Close video");
     assert.ok(doc.querySelector(".node-player iframe"), "el vídeo está en marcha antes de la X");
-    exit.click();
     const box = doc.querySelector(".node-player");
-    assert.equal(box.querySelector("iframe"), null, "la X para y retira el vídeo");
+    const spacer = doc.querySelector(".node-player-spacer");
+    assert.ok(spacer, "el spacer guarda el hueco 16:9 en la página");
+    // jsdom no mide: la ventana ocupa 1280×720 y el hueco del spacer es la
+    // caja de 800×450 en (72, 300) — el regreso debe apuntar exactamente ahí.
+    box.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1280, height: 720, right: 1280, bottom: 720, x: 0, y: 0, toJSON() { return this; } });
+    spacer.getBoundingClientRect = () => ({ left: 72, top: 300, width: 800, height: 450, right: 872, bottom: 750, x: 72, y: 300, toJSON() { return this; } });
+    exit.click();
+    /* El viaje de vuelta (03/10/2026): la X no desmonta nada todavía — la
+       ventana regresa con la misma transición de transform que la amplió,
+       pero al contrario, hacia el rectángulo del spacer; el vídeo queda
+       pausado y la X, el escudo y el dock no viajan. */
+    assert.ok(box.classList.contains("is-windowed"), "durante el regreso la caja sigue siendo la ventana");
+    assert.ok(box.querySelector("iframe"), "durante el regreso el fotograma pausado sigue montado");
+    assert.equal(box.style.transform, "translate(72px, 300px) scale(0.625, 0.625)",
+        "la vuelta usa el mismo viaje de transform, invertido, hacia el rectángulo del spacer");
+    assert.equal(doc.querySelector(".node-player__exit"), null, "la X no viaja con la caja");
+    assert.equal(doc.querySelector(".node-player__shield"), null, "el escudo tampoco");
+    assert.equal(doc.querySelector(".node-player__dock"), null, "ni el dock");
+    openWindow.land();
+    assert.equal(box.querySelector("iframe"), null, "al aterrizar, la X para y retira el vídeo");
     assert.equal(box.querySelector("img").getAttribute("src"), posterSrc, "vuelve el fotograma previo al play");
     assert.equal(box.querySelector(".node-player__play"), doc.getElementById("playFilm"), "vuelve el botón de play");
     assert.ok(!box.classList.contains("is-windowed"), "la X devuelve la ficha: la caja ya no ocupa la ventana");
@@ -873,8 +987,11 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
 }
 
 /* El thumbnail que se amplía al entrar desde el landing aterriza en la caja
-   ya bajada 40px en web, y no se desplaza en móvil. */
-function arrivalThumbnailTop(web) {
+   ya bajada 40px en web, y no se desplaza en móvil. En pantallas anchas
+   (pagerStart por debajo de la cabecera tras el centrado) el scroll se recorta
+   para que el paginador quede visible y el thumbnail se mide después, así que
+   baja esos píxeles extra junto con la caja. (03/10/2026) */
+function arrivalThumbnailTop(web, pagerStart = 120) {
     return new Promise((resolve) => {
         const dom = new JSDOM(read("project-node.html"), {
             url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
@@ -883,6 +1000,8 @@ function arrivalThumbnailTop(web) {
         const doc = window.document;
         const player = doc.querySelector(".node-player");
         const image = player.querySelector("img");
+        const pager = doc.querySelector(".node-pager");
+        const header = doc.getElementById("siteHeader");
         let scrollDelta = 0;
         window.matchMedia = (query) => ({
             matches: web && query.includes("min-width: 561px"),
@@ -895,6 +1014,15 @@ function arrivalThumbnailTop(web) {
             const top = 300 - scrollDelta;
             return { left: 72, top, width: 800, height: 450, right: 872, bottom: top + 450, x: 72, y: top, toJSON() { return this; } };
         };
+        // El paginador va anclado al documento (se mueve con el scroll); la
+        // cabecera es fija, así que su rect no depende del scroll.
+        pager.getBoundingClientRect = () => {
+            const top = pagerStart - scrollDelta;
+            return { left: 500, top, width: 200, height: 25, right: 700, bottom: top + 25, x: 500, y: top, toJSON() { return this; } };
+        };
+        header.getBoundingClientRect = () => (
+            { left: 0, top: 0, width: 1920, height: 73, right: 1920, bottom: 73, x: 0, y: 0, toJSON() { return this; } }
+        );
         window.sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({
             left: 400, top: 500, width: 200, height: 80,
             image: image.getAttribute("src"), position: "center",
@@ -903,9 +1031,20 @@ function arrivalThumbnailTop(web) {
         setTimeout(() => {
             const layer = doc.querySelector(".work-transition--arrival");
             assert.ok(layer, "el click del landing deja el thumbnail de llegada");
-            assert.equal(scrollDelta, web ? -40 : 0, web ? "web: el ancla sube 40px" : "móvil: el ancla no se mueve");
-            assert.equal(layer.style.top, web ? "340px" : "300px",
-                web ? "web: el thumbnail baja 40px y coincide con el vídeo" : "móvil: el thumbnail no baja");
+            // Recorte web: si tras subir 40px el paginador queda a menos de
+            // 85px (cabecera 73px + 12 de margen), el scroll retrocede justo
+            // hasta dejarlo en esos 85px.
+            const clamp = web ? Math.min(0, (pagerStart + 40) - 85) : 0;
+            const expected = web ? -40 + clamp : 0;
+            assert.equal(scrollDelta, expected, web
+                ? (clamp ? "web ancha: el scroll retrocede hasta dejar visible el paginador" : "web: el ancla sube 40px")
+                : "móvil: el ancla no se mueve");
+            if (web) {
+                assert.ok(pagerStart - scrollDelta >= 85,
+                    "web: el paginador (flechas + contador) queda por debajo de la cabecera fija");
+            }
+            assert.equal(layer.style.top, `${300 - expected}px`,
+                web ? "web: el thumbnail baja con el scroll recortado y coincide con el vídeo" : "móvil: el thumbnail no baja");
             assert.equal(layer.style.left, "72px");
             assert.equal(layer.style.width, "800px");
             assert.equal(layer.style.height, "450px");
@@ -915,7 +1054,13 @@ function arrivalThumbnailTop(web) {
     });
 }
 
-Promise.all([arrivalThumbnailTop(true), arrivalThumbnailTop(false)]).then(() => {
+Promise.all([
+    arrivalThumbnailTop(true),
+    arrivalThumbnailTop(false),
+    /* Pantalla ancha: el centrado dejaba el paginador 20px por encima del
+       viewport; el recorte lo devuelve a 85px bajo la cabecera. */
+    arrivalThumbnailTop(true, -60),
+]).then(() => {
     console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
 }).catch((error) => {
     console.error(error);

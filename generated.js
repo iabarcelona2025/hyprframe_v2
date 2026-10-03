@@ -107,7 +107,22 @@
                 player.scrollIntoView({ block: "center", behavior: "instant" });
                 // Web only: raise the anchor 40px so the film, and the thumbnail
                 // measured just below, land 40px lower. Mobile stays centered.
-                if (window.matchMedia("(min-width: 561px)").matches) window.scrollBy(0, -40);
+                if (window.matchMedia("(min-width: 561px)").matches) {
+                    window.scrollBy(0, -40);
+                    // Solo escritorio: en pantallas anchas la caja 16:9 (85.5% del
+                    // viewport) es tan alta que centrarla deja el paginador
+                    // (flechas + contador) por encima del viewport, tras la
+                    // cabecera fija. Se recorta el scroll justo lo necesario para
+                    // que el paginador quede visible bajo la cabecera, antes de
+                    // medir la caja final del clon de la transición. (03/10/2026)
+                    const pager = document.querySelector(".node-pager");
+                    if (pager) {
+                        const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+                        const clearance = headerBottom + 12;
+                        const pagerTop = pager.getBoundingClientRect().top;
+                        if (pagerTop < clearance) window.scrollBy(0, pagerTop - clearance);
+                    }
+                }
                 root.style.scrollBehavior = previousBehavior;
                 const target = player.getBoundingClientRect();
                 requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -173,7 +188,9 @@
         const pieceTitle = playerBox.dataset.title || document.title;
         const poster = [...playerBox.childNodes]; // opening title, still and play button, restored when the film ends
         const titleOverlay = playerBox.querySelector(".node-hero__title");
-        let pageDimmer = null;
+        // 03/10/2026 — Limpieza: el velo que oscurecía y desenfocaba la página
+        // (pageDimmer / .film-page-dimmer / body.film-is-playing) se retiró:
+        // la ventana del vídeo cubre el navegador y detrás no se veía nada.
         let playbackSpacer = null;
         let exitButton = null;
         let hoverShield = null;
@@ -288,19 +305,53 @@
                 detachPlayerMessages();
                 detachPlayerMessages = null;
             }
+            if (windowCloseTimer !== null) return; // la ventana ya está volviendo a la caja
+            /* Web (03/10/2026): la X (y Escape) deshacen la ampliación con el
+               mismo efecto que la abrió, al contrario — la ventana vuelve, con
+               la transición de transform de .is-windowed (0,5s), al rectángulo
+               que guarda el spacer en la página, y el desmontaje espera a que
+               aterrice. El vídeo se pausa antes para que el regreso sea
+               silencioso, y la X, el escudo y el dock no viajan. Móvil y
+               reduced-motion conservan el cierre inmediato. */
+            if (!isMobileVideo && !reduced && playbackSpacer && playerBox.classList.contains("is-windowed")) {
+                try {
+                    playerBox.querySelector("iframe")?.contentWindow?.postMessage({ method: "pause" }, "https://player.vimeo.com");
+                } catch (err) { /* el iframe puede haberse ido ya */ }
+                if (exitButton) { exitButton.remove(); exitButton = null; }
+                if (hoverShield) { hoverShield.remove(); hoverShield = null; }
+                if (dockCover) { dockCover.remove(); dockCover = null; }
+                const from = playerBox.getBoundingClientRect();
+                const to = playbackSpacer.getBoundingClientRect();
+                if (from.width >= 1 && from.height >= 1 && to.width >= 1 && to.height >= 1) {
+                    playerBox.style.transformOrigin = "0 0";
+                    playerBox.style.transform = `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${to.width / from.width}, ${to.height / from.height})`;
+                    const finish = () => {
+                        if (windowCloseTimer === null) return;
+                        clearTimeout(windowCloseTimer);
+                        windowCloseTimer = null;
+                        playerBox.removeEventListener("transitionend", onLanded);
+                        finishStopAndRestore();
+                    };
+                    const onLanded = (event) => {
+                        if (event.target === playerBox && event.propertyName === "transform") finish();
+                    };
+                    playerBox.addEventListener("transitionend", onLanded);
+                    windowCloseTimer = setTimeout(finish, 650); // red de seguridad si transitionend no llega
+                    return;
+                }
+            }
+            finishStopAndRestore();
+        }
+        function finishStopAndRestore() {
             const iframe = playerBox.querySelector("iframe");
             if (!playerBox.querySelector(".node-player__play")) playerBox.prepend(...poster);
             if (iframe) iframe.remove();
             closePlayerWindow();
-            if (pageDimmer) {
-                pageDimmer.remove();
-                pageDimmer = null;
-            }
             playerBox.classList.remove("is-playing");
-            document.body.classList.remove("film-is-playing");
             play.focus({ preventScroll: true });
         }
         let windowOpenTimer = null;
+        let windowCloseTimer = null;
         function openPlayerWindow() {
             if (isMobileVideo || playerBox.classList.contains("is-windowed")) return;
             const from = playerBox.getBoundingClientRect();
@@ -360,40 +411,19 @@
             event.preventDefault();
             stopAndRestore();
         });
-        // Crossing into the mobile layout drops the window cover; the dimmer
-        // is already suppressed there by CSS.
+        // Crossing into the mobile layout drops the window cover.
         mobileVideoQuery.addEventListener?.("change", () => {
             if (mobileVideoQuery.matches) closePlayerWindow();
         });
 
+        // Sin velo que fundir (limpieza 03/10/2026): al acabar el vídeo basta
+        // con soltar el estado de reproducción y dejar que título y sinopsis
+        // vuelvan con su propia transición de opacidad.
         function clearPlayingLook() {
-            if (pageDimmer) {
-                const dimmer = pageDimmer;
-                pageDimmer = null;
-                dimmer.classList.add("is-clearing");
-                setTimeout(() => {
-                    dimmer.remove();
-                    playerBox.classList.remove("is-playing");
-                    document.body.classList.remove("film-is-playing");
-                }, reduced ? 20 : 1050);
-            } else {
-                playerBox.classList.remove("is-playing");
-                document.body.classList.remove("film-is-playing");
-            }
+            playerBox.classList.remove("is-playing");
         }
         play.addEventListener("click", () => {
             playerBox.classList.add("is-playing");
-            // Oscurecimiento y blur solo en la versión web. En móvil el vídeo
-            // se queda en su caja, sin velo.
-            if (!isMobileVideo) {
-                document.body.classList.add("film-is-playing");
-                pageDimmer = document.createElement("div");
-                pageDimmer.className = "film-page-dimmer";
-                pageDimmer.setAttribute("aria-hidden", "true");
-                document.body.append(pageDimmer);
-                const activeDimmer = pageDimmer;
-                requestAnimationFrame(() => activeDimmer.classList.add("is-visible"));
-            }
             const iframe = document.createElement("iframe");
             iframe.title = `${pieceTitle} — HYPRFRAME`;
             const mobileFullscreenParam = isMobileVideo ? "&playsinline=0" : "";
