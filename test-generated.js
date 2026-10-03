@@ -66,13 +66,44 @@ assert.doesNotMatch(script, /CURSOR_KEY|hfCursor|cursorDot|cursorRing|cursor-lar
    el propio Vimeo revela el reproductor (ni el load del iframe ni un mensaje de
    otro origen), el final devuelve el fotograma y el foco al botón, y una
    segunda reproducción funciona igual. */
+function holdWindowOpen(window) {
+    const held = [];
+    const real = window.setTimeout.bind(window);
+    const realClear = window.clearTimeout.bind(window);
+    window.setTimeout = (fn, ms, ...args) => {
+        if (ms === 800) { held.push(fn); return -800; }
+        return real(fn, ms, ...args);
+    };
+    window.clearTimeout = (id) => {
+        if (id === -800) { held.length = 0; return; }
+        return realClear(id);
+    };
+    return () => held.splice(0).forEach((fn) => fn());
+}
+
 function exercisePlayer(window, doc, page) {
     const fromVimeo = (data, { origin = "https://player.vimeo.com", source = window.document.querySelector(".node-player iframe")?.contentWindow } = {}) =>
         window.dispatchEvent(new window.MessageEvent("message", { origin, source, data }));
     assert.equal(doc.querySelector(".node-player iframe"), null, `${page.file}: Vimeo no se carga antes del play`);
     const posterSrc = doc.querySelector(".node-player > img").getAttribute("src");
+    const playerEl = doc.querySelector(".node-player");
+    let fullscreenCalls = 0;
+    playerEl.requestFullscreen = () => { fullscreenCalls += 1; return Promise.resolve(); };
+    playerEl.webkitRequestFullscreen = playerEl.requestFullscreen;
+    const openWindow = holdWindowOpen(window);
     doc.getElementById("playFilm").click();
+    assert.ok(playerEl.classList.contains("is-playing"), `${page.file}: el fundido del título empieza al pulsar play`);
+    assert.ok(!playerEl.classList.contains("is-windowed"), `${page.file}: el vídeo no se amplía hasta que acaba el fundido`);
+    openWindow();
     const iframe = doc.querySelector(".node-player iframe");
+    assert.equal(fullscreenCalls, 0, `${page.file}: la web no entra en el fullscreen del navegador`);
+    assert.ok(playerEl.classList.contains("is-windowed"), `${page.file}: el vídeo ocupa la ventana del navegador`);
+    assert.ok(doc.querySelector(".node-player__exit"), `${page.file}: se puede salir de la ventana sin fullscreen`);
+    assert.ok(!iframe.src.includes("playsinline=0"), `${page.file}: la web no pide el fullscreen nativo de Vimeo`);
+    assert.match(iframe.src, /sidedock=0&like=0&share=0/, `${page.file}: se pide a Vimeo que no pinte los botones de arriba a la derecha`);
+    assert.ok(!iframe.src.includes("controls=0"), `${page.file}: los mandos inferiores de Vimeo siguen`);
+    assert.ok(doc.querySelector(".node-player__shield"), `${page.file}: el rollover no arranca sobre la imagen`);
+    assert.ok(doc.querySelector(".node-player__dock"), `${page.file}: la esquina superior derecha queda cubierta si Vimeo insiste`);
     assert.ok(doc.querySelector(".node-player").classList.contains("is-playing"), `${page.file}: la caja de vídeo queda en primer plano`);
     assert.ok(doc.querySelector(".film-page-dimmer"), `${page.file}: el resto de la página se oscurece durante la reproducción`);
     assert.ok(doc.querySelector(".node-player > .node-hero__title"), `${page.file}: el título sigue como capa y puede desvanecerse`);
@@ -144,8 +175,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=59");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=16");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=74");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=26");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -183,12 +214,11 @@ for (const page of PAGES) {
         assert.equal(squash(doc.querySelector(".site-header").textContent),
             squash(indexDoc.querySelector(".site-header").textContent),
             `${page.file}: la cabecera no es la de la landing`);
-        assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "GENERATED");
-        // La fila superior del opener lleva solo el kicker: ← ALL WORK se fue
-        // (el paginador arriba y VIEW ALL ↗ bajo la sinopsis ya cubren la salida).
+        assert.equal(doc.querySelector(".node-hero__top"), null, `${page.file}: sigue el rótulo GENERATED`);
+        assert.equal(doc.querySelector(".node-hero .kicker"), null, `${page.file}: sigue el punto verde del opener`);
+        assert.ok(!doc.querySelector(".node-hero .pulse"), `${page.file}: el punto verde animado sigue en el opener`);
+        // ← ALL WORK se fue (el paginador y VIEW ALL ↗ ya cubren la salida).
         assert.ok(!doc.querySelector(".node-back"), `${page.file}: sigue el enlace ← ALL WORK`);
-        assert.equal(doc.querySelector(".node-hero__top").children.length, 1,
-            `${page.file}: la fila del kicker lleva más de un elemento`);
         assert.equal(doc.querySelector(".node-hero__explore"), null, `${page.file}: se ha eliminado la flecha de explore`);
         // VIEW ALL ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
         const all = doc.querySelector(".node-story__all");
@@ -267,7 +297,10 @@ for (const page of PAGES) {
 
         assert.deepEqual([...doc.querySelectorAll(".node-section-label span:first-child")].map((el) => el.textContent),
             ["THE STORY", "KEEP EXPLORING"]);
-        assert.ok(doc.querySelector(".node-story__copy p").textContent.trim().length > 60);
+        assert.ok(doc.querySelector(".node-player__synopsis p").textContent.trim().length > 60,
+            `${page.file}: la sinopsis de la caja es demasiado corta`);
+        assert.equal(doc.querySelector(".node-story__copy"), null,
+            `${page.file}: la sinopsis sigue fuera de la caja de vídeo`);
         assert.equal(doc.querySelectorAll(".node-story h2 .violet").length, 1);
         const cards = [...doc.querySelectorAll(".node-card")];
         assert.equal(cards.length, 2);
@@ -442,7 +475,7 @@ assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
 // Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
 // font-family/weight separados para que N.O.D.E. respete Montserrat.
 assert.match(css,
-    /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 21\.25px\), calc\(5\.44vw - 21\.25px\), calc\(5\.44rem - 21\.25px\)\)/,
+    /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 26\.25px\), calc\(5\.44vw - 26\.25px\), calc\(5\.44rem - 26\.25px\)\)/,
     "las diez páginas comparten la misma clamp del titular en Montserrat");
 const h1Rules = css.match(/\.node-hero h1, \.node-player h1 \{[^}]*\}/g);
 assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
@@ -554,6 +587,46 @@ for (const file of ALL) {
         `${file}: queda una fila inferior vacía`);
 }
 
+/* Web: la sinopsis vive en la caja, bajo el título, con la tipografía
+   de la antigua sinopsis exterior y 7px menos (5px y otros 2px). En móvil sale
+   debajo de la caja, a ancho completo. THE STORY y el h2 no se ven; VIEW ALL sí, bajo la sinopsis. */
+assert.match(ruleOf(generatedFlat, ".node-player__synopsis"),
+    /font-family: var\(--font-body\); font-weight: 300; font-size: calc\(clamp\(1\.15rem, 1\.9vw, 1\.85rem\) - 7px\); line-height: 1\.45;/,
+    "la sinopsis de la caja usa la tipografía de fuera, 7px más pequeña");
+assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*font-size: clamp\(1\.15rem, 1\.9vw, 1\.85rem\);/,
+    "en móvil la sinopsis no baja esos 2px");
+assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*position: static;[^}]*grid-row: 2;[^}]*width: 100%;/,
+    "en móvil la sinopsis queda debajo de la caja de vídeo");
+assert.ok(!/\.node-player__synopsis \{ display: none/.test(mobileBlock),
+    "en móvil la sinopsis no se apaga");
+assert.match(css, /@media \(min-width: 561px\) \{[^}]*\.node-story \{ display: none; \}/,
+    "en web no se ve la sección de la historia");
+assert.match(mobileBlock, /\.node-story > \.node-section-label,\s*\.node-story__grid \{ display: none; \}/,
+    "en móvil no se ven THE STORY ni el h2");
+assert.match(mobileBlock, /\.node-story__all \{[^}]*display: block;/,
+    "en móvil VIEW ALL vuelve debajo de la sinopsis");
+assert.ok(!/\.node-story \{ display: none/.test(mobileBlock),
+    "en móvil la sección no se apaga entera: VIEW ALL tiene que verse");
+const DEEP_EN = "February 2013, Kiruna. An abandoned Volvo 240 sits on a snowy road with its engine running, and Elena has vanished. Footprints suggest a voluntary walk into the woods, but a disturbing non-human trail turns the search into a chilling mystery of isolation and fear in the Swedish winter.";
+const DEEP_ES = "Febrero de 2013, Kiruna. Un Volvo 240 abandonado permanece en una carretera nevada con el motor en marcha, y Elena ha desaparecido. Las huellas sugieren una caminata voluntaria hacia el bosque, pero un inquietante rastro no humano convierte la búsqueda en un misterio helador de aislamiento y miedo en el invierno sueco.";
+for (const file of ALL) {
+    for (const path of [file, `es/${file}`]) {
+        const page = new JSDOM(read(path)).window.document;
+        assert.equal(page.querySelector(".node-story__copy"), null, `${path}: la sinopsis sigue fuera de la caja`);
+        const inBox = page.querySelector(".node-player > .node-player__synopsis");
+        assert.ok(inBox, `${path}: la sinopsis no está en la caja de vídeo`);
+        assert.equal(inBox.getAttribute("aria-hidden"), null, `${path}: la única sinopsis no debe ocultarse a lectores de pantalla`);
+        assert.equal(inBox.previousElementSibling?.className, "node-hero__title", `${path}: la sinopsis no queda debajo del título`);
+        assert.equal(inBox.previousElementSibling.querySelector("h1")?.id, "projectTitle");
+        assert.ok([...inBox.querySelectorAll("p")].every((p) => p.textContent.trim().length > 40),
+            `${path}: falta el texto de la sinopsis`);
+    }
+}
+assert.equal(new JSDOM(read("project-deep.html")).window.document.querySelector(".node-player__synopsis p").textContent.trim(), DEEP_EN,
+    "Deep no lleva la sinopsis nueva");
+assert.equal(new JSDOM(read("es/project-deep.html")).window.document.querySelector(".node-player__synopsis p").textContent.trim(), DEEP_ES,
+    "Deep en español no lleva la traducción de la sinopsis");
+
 /* ── Opener: el hueco entre el paginador y el titular, recortado ──
    El campo liso del opener y el relleno inferior del paginador se reducen a la
    mitad en la versión web (escritorio): el hueco entre el paginador y el
@@ -568,8 +641,10 @@ assert.match(ruleOf(generatedFlat, ".node-pager"),
     "el paginador se mantiene centrado en la fila con el kicker");
 assert.match(generatedFlat, /\.node-pager \{[^}]*padding-bottom: 0;/,
     "el paginador no añade aire bajo el contador");
-assert.match(mobileBlock, /\.node-hero__image \{ height: calc\(clamp\(110px, 18svh, 145px\) - 80px\); \}/,
-    "el campo liso del móvil no es el de escritorio");
+assert.match(mobileBlock, /\.node-hero__image \{ height: 0; \}/,
+    "en móvil el campo liso no separa el paginador de la caja");
+assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: 0\.75rem; \}/,
+    "en móvil las flechas y el contador quedan justo encima de la caja");
 assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
 
@@ -579,8 +654,200 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=59/);
-    assert.match(es, /generated\.js\?v=16/);
+    assert.match(es, /generated\.css\?v=74/);
+    assert.match(es, /generated\.js\?v=26/);
+    assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
+}
+
+/* ── Play: la web llena la ventana sin fullscreen; el móvil no oscurece ── */
+assert.doesNotMatch(script, /requestDesktopFullscreen|exitPlayerFullscreen/,
+    "generated.js ya no pide el fullscreen del navegador en escritorio");
+assert.match(script, /function requestMobileFullscreen/,
+    "el móvil vuelve a pedir el fullscreen del navegador");
+assert.match(script, /if \(!isMobileVideo\) return;[\s\S]{0,240}requestFullscreen/,
+    "el fullscreen del navegador solo se pide en móvil");
+assert.match(script, /setTimeout\(\(\) => \{[\s\S]{0,120}portraitExitArmed = true;[\s\S]{0,40}\}, 3000\)/,
+    "la salida al volver a vertical espera 3s desde que empieza el vídeo");
+assert.match(script, /method: "exitFullscreen"/,
+    "al volver a vertical se sale del fullscreen");
+assert.match(script, /method: "requestFullscreen"/,
+    "al volver a horizontal durante la reproducción se pide el fullscreen otra vez");
+assert.doesNotMatch(script, /orientation\.lock\(/,
+    "no se bloquea el landscape: el usuario tiene que poder girar a vertical");
+assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,80}scrollBy\(0, -40\)[\s\S]{0,180}getBoundingClientRect\(\)/,
+    "en web el salto de 40px es instantáneo y el thumbnail se mide después, 40px más abajo");
+assert.match(script, /layer\.style\.top = `\$\{target\.top\}px`/,
+    "el thumbnail que se amplía aterriza en la caja de vídeo ya desplazada");
+assert.match(script, /is-windowed/, "el play de la web marca la caja como ventana");
+assert.match(script, /schedulePlayerWindow[\s\S]{0,500}reduced \? 0 : 800/,
+    "en web la caja espera a que acabe el fundido de 0,8s antes de ampliarse");
+assert.match(script, /playsinline=0/, "el móvil sigue entregando el play al reproductor nativo de Vimeo");
+assert.doesNotMatch(css, /:fullscreen|:-webkit-full-screen/,
+    "el cover de la ventana no depende del pseudo :fullscreen");
+assert.match(ruleOf(generatedFlat, ".node-player.is-windowed"),
+    /position: fixed; inset: 0;/,
+    "en web la caja en reproducción ocupa el viewport");
+assert.match(ruleOf(generatedFlat, ".node-player.is-windowed"),
+    /aspect-ratio: auto;/,
+    "el 16:9 de la caja no impide que ocupe toda la ventana");
+assert.match(ruleOf(generatedFlat, ".node-player.is-windowed"),
+    /transition: transform 0\.5s var\(--ease-out\);/,
+    "la ampliación de la caja es una transición");
+assert.match(script, /translate\(\$\{from\.left - to\.left\}px, \$\{from\.top - to\.top\}px\) scale/,
+    "la ampliación parte del rectángulo de la caja, no salta");
+assert.match(ruleOf(generatedFlat, ".film-page-dimmer"),
+    /background: rgba\(0, 0, 0, \.6\);[^}]*backdrop-filter: blur\(4px\)/,
+    "en web el velo sigue oscureciendo y desenfocando");
+assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?\.film-page-dimmer[\s\S]*?backdrop-filter: none;[\s\S]*?opacity: 0;/,
+    "en móvil el velo no oscurece ni desenfoca");
+assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*?body\.film-is-playing \.node-pager::after \{[^}]*opacity: 0;/,
+    "en móvil el paginador tampoco se apaga");
+const exitRule = ruleOf(generatedFlat, ".node-player.is-windowed .node-player__exit");
+assert.match(exitRule, /border: 0; background: none;/, "la X no tiene caja");
+assert.match(exitRule, /transition: color 0\.18s ease;/, "el rollover de la X es una transición rápida");
+assert.doesNotMatch(exitRule, /border: 1px|background: rgba/, "la X no recupera fondo ni borde");
+assert.match(squash(css), /\.node-player__exit:hover, \.node-player\.is-windowed \.node-player__exit:focus-visible \{ color: var\(--violet\); \}/,
+    "el rollover de la X pasa a lila");
+assert.match(script, /function stopAndRestore/, "la X detiene el vídeo y restaura la ficha");
+assert.match(css, /\.node-player__shield \{[^}]*bottom: 5rem;/, "el escudo deja libre la barra inferior de Vimeo");
+assert.match(css, /\.node-player__dock \{[^}]*background: #000;/, "el dock tapa la esquina de los botones de Vimeo");
+assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
+
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = (query) => ({
+        matches: query.includes("max-width: 560px"),
+        media: query,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    });
+    window.eval(script);
+    const doc = window.document;
+    const box = doc.querySelector(".node-player");
+    let boxFullscreenCalls = 0;
+    box.requestFullscreen = () => { boxFullscreenCalls += 1; return Promise.resolve(); };
+    box.webkitRequestFullscreen = box.requestFullscreen;
+    let iframeFullscreenCalls = 0;
+    window.HTMLIFrameElement.prototype.requestFullscreen = function () {
+        iframeFullscreenCalls += 1;
+        return Promise.resolve();
+    };
+    window.HTMLIFrameElement.prototype.webkitRequestFullscreen = window.HTMLIFrameElement.prototype.requestFullscreen;
+    doc.getElementById("playFilm").click();
+    const iframe = box.querySelector("iframe");
+    assert.equal(doc.querySelector(".film-page-dimmer"), null, "móvil: no se crea el velo");
+    assert.ok(!doc.body.classList.contains("film-is-playing"), "móvil: la página no entra en el estado de oscurecimiento");
+    assert.ok(!box.classList.contains("is-windowed"), "móvil: el vídeo no ocupa la ventana");
+    assert.equal(doc.querySelector(".node-player__exit"), null, "móvil: no aparece el cierre de la ventana");
+    assert.equal(doc.querySelector(".node-player__shield"), null, "móvil: no se tapa el rollover de la ventana web");
+    assert.match(iframe.src, /playsinline=0/, "móvil: Vimeo puede abrir su reproductor nativo");
+    assert.equal(boxFullscreenCalls, 0, "móvil: no se pone la caja en fullscreen de escritorio");
+    assert.equal(iframeFullscreenCalls, 1, "móvil: se vuelve a pedir el fullscreen del navegador");
+    dom.window.close();
+}
+
+/* Móvil: volver a vertical sale del fullscreen, pero solo 3s después de que
+   empiece el vídeo y solo si antes se vio el móvil en horizontal. */
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = (query) => ({
+        matches: query.includes("max-width: 560px"),
+        media: query,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    });
+    const held = [];
+    const realSetTimeout = window.setTimeout.bind(window);
+    const realClearTimeout = window.clearTimeout.bind(window);
+    window.setTimeout = (fn, ms, ...args) => {
+        if (ms === 3000) { held.push(fn); return -1; }
+        return realSetTimeout(fn, ms, ...args);
+    };
+    window.clearTimeout = (id) => {
+        if (id === -1) { held.length = 0; return; }
+        return realClearTimeout(id);
+    };
+    window.orientation = 0;
+    window.eval(script);
+    const doc = window.document;
+    let exits = 0;
+    doc.exitFullscreen = () => { exits += 1; return Promise.resolve(); };
+    doc.getElementById("playFilm").click();
+    const iframe = doc.querySelector(".node-player iframe");
+    const sent = [];
+    iframe.contentWindow.postMessage = (message, origin) => sent.push({ message, origin });
+    const fromVimeo = (data) => window.dispatchEvent(new window.MessageEvent("message", {
+        origin: "https://player.vimeo.com", source: iframe.contentWindow, data,
+    }));
+    const rotate = (angle) => {
+        window.orientation = angle;
+        window.dispatchEvent(new window.Event("orientationchange"));
+    };
+    let reentered = 0;
+    iframe.requestFullscreen = () => { reentered += 1; return Promise.resolve(); };
+    iframe.webkitRequestFullscreen = iframe.requestFullscreen;
+    fromVimeo({ event: "play" });
+    assert.equal(held.length, 1, "el vídeo arranca la espera de 3s");
+    rotate(0);
+    assert.equal(exits, 0, "en vertical, antes de los 3s, no se sale");
+    held[0]();
+    rotate(0);
+    assert.equal(exits, 0, "seguir en vertical no es girar de vuelta");
+    rotate(90);
+    assert.equal(exits, 0, "girar a horizontal no sale del fullscreen");
+    assert.equal(reentered, 0, "el horizontal inicial no vuelve a pedir el fullscreen");
+    rotate(0);
+    assert.equal(exits, 1, "girar de vuelta a vertical sale del fullscreen");
+    assert.equal(sent.filter((item) => item.message?.method === "exitFullscreen").length, 1,
+        "también se pide a Vimeo que salga del fullscreen");
+    assert.ok(doc.querySelector(".node-player iframe"), "salir del fullscreen no corta el vídeo");
+    rotate(90);
+    assert.equal(reentered, 1, "volver a horizontal durante la reproducción activa el fullscreen");
+    assert.equal(sent.filter((item) => item.message?.method === "requestFullscreen").length, 1,
+        "también se pide a Vimeo que entre en fullscreen");
+    rotate(0);
+    assert.equal(exits, 2, "un nuevo vertical vuelve a salir");
+    dom.window.close();
+}
+
+/* La X de la web para el vídeo y devuelve el fotograma, sin dejar el reproductor. */
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = () => ({
+        matches: false, media: "",
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    });
+    window.eval(script);
+    const doc = window.document;
+    const posterSrc = doc.querySelector(".node-player > img").getAttribute("src");
+    const openWindow = holdWindowOpen(window);
+    doc.getElementById("playFilm").click();
+    assert.equal(doc.querySelector(".node-player__exit"), null, "la X no sale mientras el título se desvanece");
+    openWindow();
+    const exit = doc.querySelector(".node-player__exit");
+    assert.equal(exit.textContent.trim(), "", "la X no muestra la palabra Close");
+    assert.equal(exit.getAttribute("aria-label"), "Close video");
+    assert.ok(doc.querySelector(".node-player iframe"), "el vídeo está en marcha antes de la X");
+    exit.click();
+    const box = doc.querySelector(".node-player");
+    assert.equal(box.querySelector("iframe"), null, "la X para y retira el vídeo");
+    assert.equal(box.querySelector("img").getAttribute("src"), posterSrc, "vuelve el fotograma previo al play");
+    assert.equal(box.querySelector(".node-player__play"), doc.getElementById("playFilm"), "vuelve el botón de play");
+    assert.ok(!box.classList.contains("is-windowed"), "la X devuelve la ficha: la caja ya no ocupa la ventana");
+    assert.ok(!box.classList.contains("is-playing"), "la ficha sale del estado de reproducción");
+    assert.equal(doc.querySelector(".film-page-dimmer"), null, "la X retira el velo");
+    assert.ok(!doc.body.classList.contains("film-is-playing"));
+    assert.equal(doc.activeElement, doc.getElementById("playFilm"), "el foco vuelve al play");
+    doc.getElementById("playFilm").click();
+    assert.ok(doc.querySelector(".node-player iframe"), "después de la X se puede volver a reproducir");
+    dom.window.close();
 }
 
 /* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */
@@ -605,4 +872,52 @@ for (const file of ALL) {
     dom.window.close();
 }
 
-console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
+/* El thumbnail que se amplía al entrar desde el landing aterriza en la caja
+   ya bajada 40px en web, y no se desplaza en móvil. */
+function arrivalThumbnailTop(web) {
+    return new Promise((resolve) => {
+        const dom = new JSDOM(read("project-node.html"), {
+            url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+        });
+        const { window } = dom;
+        const doc = window.document;
+        const player = doc.querySelector(".node-player");
+        const image = player.querySelector("img");
+        let scrollDelta = 0;
+        window.matchMedia = (query) => ({
+            matches: web && query.includes("min-width: 561px"),
+            media: query,
+            addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+        });
+        player.scrollIntoView = () => {};
+        window.scrollBy = (x, y) => { scrollDelta += typeof x === "object" ? (x.top || 0) : (y || 0); };
+        player.getBoundingClientRect = () => {
+            const top = 300 - scrollDelta;
+            return { left: 72, top, width: 800, height: 450, right: 872, bottom: top + 450, x: 72, y: top, toJSON() { return this; } };
+        };
+        window.sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({
+            left: 400, top: 500, width: 200, height: 80,
+            image: image.getAttribute("src"), position: "center",
+        }));
+        window.eval(script);
+        setTimeout(() => {
+            const layer = doc.querySelector(".work-transition--arrival");
+            assert.ok(layer, "el click del landing deja el thumbnail de llegada");
+            assert.equal(scrollDelta, web ? -40 : 0, web ? "web: el ancla sube 40px" : "móvil: el ancla no se mueve");
+            assert.equal(layer.style.top, web ? "340px" : "300px",
+                web ? "web: el thumbnail baja 40px y coincide con el vídeo" : "móvil: el thumbnail no baja");
+            assert.equal(layer.style.left, "72px");
+            assert.equal(layer.style.width, "800px");
+            assert.equal(layer.style.height, "450px");
+            dom.window.close();
+            resolve();
+        }, 80);
+    });
+}
+
+Promise.all([arrivalThumbnailTop(true), arrivalThumbnailTop(false)]).then(() => {
+    console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
+}).catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

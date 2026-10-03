@@ -80,6 +80,8 @@
         addEventListener("wheel", (e) => {
             if (e.ctrlKey) return;                              // zoom con pinza: nativo
             if (document.body.classList.contains("menu-open")) return;
+            // El vídeo de Generated cubre la ventana: la rueda no debe mover la página debajo.
+            if (document.querySelector(".node-player.is-windowed")) return;
             if (inScrollable(e.target)) return;
             let delta = e.deltaY;
             if (e.deltaMode === 1) delta *= 16;                 // líneas
@@ -94,6 +96,7 @@
         const LINE = 0.12;
         addEventListener("keydown", (e) => {
             if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (document.querySelector(".node-player.is-windowed")) return;
             const el = e.target;
             if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
             const step = innerHeight;

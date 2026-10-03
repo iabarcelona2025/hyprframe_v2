@@ -100,9 +100,33 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero__title { margin-left: clamp(1.25rem, 4vw, 4rem); max-width: calc(100% - 2rem); }
 .node-player > .node-hero__title {
     position: absolute; z-index: 3; top: clamp(1rem, 2.2vw, 2rem); left: 0;
-    margin-left: 0; max-width: calc(100% - 2rem); padding: .55rem 1.2rem .55rem clamp(1rem, 2.5vw, 2.25rem);
-    background: rgba(128, 128, 128, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); pointer-events: none;
+    margin-left: 0; width: calc(100% - 2rem); max-width: calc(100% - 2rem); padding: 0;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem;
+    background: none; pointer-events: none;
 }
+.node-player > .node-hero__title h1 {
+    padding: .55rem 1.2rem .55rem clamp(1rem, 2.5vw, 2.25rem);
+    background: rgba(128, 128, 128, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+/* Web: la sinopsis vive en la caja, zona izquierda, debajo del título.
+   Misma tipografía que la sinopsis de THE STORY (Space Grotesk 300, 1.45),
+   7px más pequeña (5px y otros 2px). El top reproduce el hueco del título (top + alto de una
+   línea + gap 0.7rem + 16px) ahora que el texto es hermano del titular, para que
+   el móvil pueda sacarla bajo la caja sin perder este anclaje. Solo web. */
+.node-player__synopsis {
+    position: absolute; z-index: 3; left: 0; pointer-events: none;
+    top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 26.25px), calc(5.44rem - 26.25px)));
+    width: 42%; max-width: 42%; margin: 0;
+    padding-left: clamp(1rem, 2.5vw, 2.25rem);
+    font-family: var(--font-body); font-weight: 300;
+    font-size: calc(clamp(1.15rem, 1.9vw, 1.85rem) - 7px);
+    line-height: 1.45; letter-spacing: normal; white-space: normal;
+    color: var(--fg);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.72), 0 8px 22px rgba(0, 0, 0, 0.55);
+    transition: opacity .8s ease;
+}
+.node-player__synopsis p { margin: 0; }
+.node-player__synopsis p + p { margin-top: 0.45rem; }
 /* One size for the ten titles of the section, and the longest one sets it: the
    h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
    — 456px of the 478px available at 561px, the tightest point above the mobile
@@ -126,7 +150,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero h1, .node-player h1 {
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: clamp(calc(2.397rem - 21.25px), calc(5.44vw - 21.25px), calc(5.44rem - 21.25px));
+    font-size: clamp(calc(2.397rem - 26.25px), calc(5.44vw - 26.25px), calc(5.44rem - 26.25px)); /* −5px solo en escritorio; el móvil conserva su clamp */
     line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
@@ -144,7 +168,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
    su derecha ((100% - 85.5%) / 2, ver .node-player), así que su extremo
    derecho queda alineado con el borde derecho del vídeo. (29/09/2026) */
 .node-film, .node-story, .node-related { padding-inline: var(--pad); }
-.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: -90px; scroll-margin-top: 5rem; }
+/* 03/10/2026: flechas y contador más cerca de la caja de vídeo
+   (−90px → −105px, −125px, y otros 15px → −140px). El recorte es el mismo en web y en móvil. */
+.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: -140px; scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
 /* El label de THE STORY, debajo del vídeo, sin línea. Antes copiaba el ancho de
    la caja de vídeo (85,5% centrado), así que su texto arrancaba 7,25% a la
@@ -228,6 +254,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
    El rótulo y su rejilla conservan sus rellenos (el h2 sigue a 50,5px del
    rótulo). (30/09/2026) */
 .node-story { padding-top: clamp(2rem, 4vw, 3.5rem); }
+/* La sección de la historia (THE STORY / LA HISTORIA, el h2 y VIEW ALL)
+   no se muestra, ni en web ni en móvil. */
+@media (min-width: 561px) {
+    .node-story { display: none; }
+}
 /* El relleno superior de la rejilla abría el hueco entre THE STORY y el h2: se
    recorta a un tercio del original con el mismo eje —clamp(3.5rem, 8vw, 8rem) →
    clamp(1.25rem, 2.4vw, 2.25rem): 2.4vw es 8vw/3 y los topes también van a un
@@ -296,8 +327,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
        title and the film starts closer to the call to action. */
     .node-hero { padding-top: 5.5rem; }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-hero__image { height: calc(clamp(110px, 18svh, 145px) - 80px); }
-    .node-film { padding-top: 1.75rem; }
+    /* El campo liso y el recorte de −140px metían las flechas y el contador
+       dentro del vídeo. En móvil el paginador queda justo encima de la caja. */
+    .node-hero__image { height: 0; }
+    .node-hero__meta-row { padding-bottom: 0; }
+    .node-film { margin-top: 0; padding-top: 0.75rem; }
     /* Mobile: título adaptable en una sola línea — nunca se corta.
        clamp(1.125rem, 5.5vw, 2.6rem) cabe en 320px para el titular más largo
        (DEEP IN THE FOREST, 18 chars) con margen: 5.5vw@320=17.6px, floor 18px,
@@ -323,10 +357,35 @@ body.menu-open .menu-overlay a { visibility: visible; }
        el acercamiento al h2 ni el aire extra bajo el vídeo de la versión web
        bajan al móvil. (30/09/2026) */
     .node-story { padding-top: 0; }
+    /* THE STORY / el h2 siguen fuera. VIEW ALL ↗ vuelve, bajo la sinopsis. */
+    .node-story > .node-section-label,
+    .node-story__grid { display: none; }
+    .node-story__all { display: block; margin-top: 0.85rem; margin-bottom: 2rem; }
     .node-story__grid { padding-top: clamp(3.5rem, 8vw, 8rem); }
     .node-related h2 { font-size: clamp(calc(2.9rem - 25px), calc(10vw - 25px), calc(4.8rem - 25px)); }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
+    /* La caja sigue a 16/9; la sinopsis baja a una segunda fila, fuera del vídeo. */
+    .node-player { display: grid; aspect-ratio: auto; height: auto; overflow: visible; }
+    .node-player > img {
+        grid-area: 1 / 1; width: 100%; height: auto; aspect-ratio: 16 / 9; align-self: start;
+    }
+    .node-player > .node-player__play {
+        position: absolute; inset: auto; top: 0; left: 0; z-index: 2;
+        width: 100%; height: auto; aspect-ratio: 16 / 9;
+    }
+    .node-player > iframe {
+        position: absolute; inset: auto; top: 0; left: 0; z-index: 1;
+        width: 100%; height: auto; aspect-ratio: 16 / 9;
+    }
+    .node-player:hover > img, .node-player:focus-within > img { transform: none; }
+    .node-player__synopsis {
+        display: block; position: static; grid-row: 2; z-index: auto; pointer-events: auto;
+        top: auto; left: auto; width: 100%; max-width: none;
+        margin: 0; padding: 1.15rem 0 0.35rem;
+        background: var(--bg); text-shadow: none;
+        font-size: clamp(1.15rem, 1.9vw, 1.85rem);
+    }
     /* Móvil: la caja del vídeo crece hasta el ancho de la línea gris de 1px que
        abre THE STORY (.node-section-label, que va de borde a borde del contenido).
        En escritorio sigue al 85,5% centrada; aquí ocupa el 100% de la columna y
@@ -378,11 +437,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
    its card images and section do not load/show until explicitly re-enabled. */
 .node-related { display: none; }
 
-/* Starting playback fades out the title panel while dimming the page around
-   the player; the elevated video itself remains at full brightness. */
+/* Starting playback fades out the title panel. On web it also dims and blurs
+   the page around the player; the elevated video itself stays at full
+   brightness. Mobile drops that veil (see the ≤560px block at the end). */
 .node-player > .node-hero__title { transition: opacity .8s ease; }
 .node-player.is-playing { z-index: 901; }
-.node-player.is-playing > .node-hero__title { opacity: 0; }
+.node-player.is-playing > .node-hero__title,
+.node-player.is-playing > .node-player__synopsis { opacity: 0; }
 .film-page-dimmer {
     position: fixed; inset: 0; z-index: 900; pointer-events: none;
     background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity 1s ease;
@@ -401,15 +462,92 @@ body.film-is-playing .node-pager::after { opacity: 1; }
 .film-page-dimmer.is-visible { opacity: 1; }
 .film-page-dimmer.is-clearing { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-    .node-player > .node-hero__title, .film-page-dimmer { transition-duration: .01ms; }
+    .node-player > .node-hero__title,
+    .node-player__synopsis,
+    .node-player.is-windowed,
+    .film-page-dimmer { transition-duration: .01ms; }
 }
 
-/* Desktop playback expands the player box itself to the browser fullscreen. */
-.node-player:fullscreen,
-.node-player:-webkit-full-screen {
-    position: fixed; inset: 0; z-index: 2147483647;
-    width: 100vw; height: 100vh; height: 100dvh; max-width: none;
-    aspect-ratio: auto; margin: 0; background: #000; overflow: hidden;
+/* Versión web: al pulsar play la caja ocupa toda la ventana del navegador
+   (el viewport) sin el fullscreen del sistema, así que la barra de dirección
+   sigue visible. inset + width/height auto estiran sin el desborde de 100vw.
+   El móvil no entra: allí el vídeo sigue en su caja. (03/10/2026) */
+@media (min-width: 561px) {
+    html:has(.node-player.is-windowed),
+    body:has(.node-player.is-windowed) { overflow: hidden; }
+    .node-player.is-windowed {
+        position: fixed; inset: 0; z-index: 2100;
+        width: auto; height: auto; max-width: none; max-height: none;
+        aspect-ratio: auto; margin: 0; background: #000; overflow: hidden;
+        transform-origin: 0 0;
+        transition: transform 0.5s var(--ease-out);
+    }
+    .node-player.is-windowed iframe {
+        position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%;
+    }
+    /* X sin caja: dos trazos, sin fondo ni borde. El rollover pasa a lila
+       (--violet) en una transición corta. (03/10/2026) */
+    .node-player.is-windowed .node-player__exit {
+        position: absolute; z-index: 6; top: clamp(0.85rem, 2vw, 1.35rem); right: clamp(0.85rem, 2vw, 1.35rem);
+        width: 44px; height: 44px; padding: 0; border: 0; background: none;
+        color: var(--fg); transition: color 0.18s ease;
+    }
+    .node-player.is-windowed .node-player__exit::before,
+    .node-player.is-windowed .node-player__exit::after {
+        content: ""; position: absolute; left: 50%; top: 50%;
+        width: 22px; height: 2px; background: currentColor;
+        transition: background-color 0.18s ease;
+    }
+    .node-player.is-windowed .node-player__exit::before { transform: translate(-50%, -50%) rotate(45deg); }
+    .node-player.is-windowed .node-player__exit::after { transform: translate(-50%, -50%) rotate(-45deg); }
+    .node-player.is-windowed .node-player__exit:hover,
+    .node-player.is-windowed .node-player__exit:focus-visible { color: var(--violet); }
+    /* Rollover de Vimeo: Like, Watch Later y Share salen arriba a la derecha.
+       El escudo come el ratón sobre la imagen para que ese rollover no arranque.
+       La franja inferior (5rem) queda libre: ahí viven los mandos de Vimeo.
+       Si el ratón entra en esa franja, Vimeo igual revela la esquina; el dock
+       la tapa sin llegar a la barra. (03/10/2026) */
+    .node-player.is-windowed .node-player__shield {
+        position: absolute; z-index: 4; left: 0; right: 0; top: 0; bottom: 5rem;
+    }
+    .node-player.is-windowed .node-player__dock {
+        position: absolute; z-index: 5; top: 0; right: 0;
+        width: 4.25rem; height: 12rem; background: #000;
+        opacity: 0; pointer-events: none;
+    }
+    .node-player.is-windowed:hover .node-player__dock { opacity: 1; pointer-events: auto; }
+    .node-player.is-windowed:has(.node-player__shield:hover) .node-player__dock,
+    .node-player.is-windowed:has(.node-player__exit:hover) .node-player__dock {
+        opacity: 0; pointer-events: none;
+    }
 }
-.node-player:fullscreen iframe,
-.node-player:-webkit-full-screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.node-player-spacer { width: 85.5%; margin-inline: auto; pointer-events: none; }
+@media (forced-colors: active) {
+    .node-player__exit { color: ButtonText; background: none; border: 0; }
+    .node-player__exit:hover, .node-player__exit:focus-visible { color: Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .node-player__exit, .node-player__exit::before, .node-player__exit::after { transition-duration: 0.01ms; }
+}
+
+/* Móvil: sin oscurecimiento ni desenfoque al reproducir. El velo (rgba + blur)
+   y el apagado del paginador son solo de la versión web. Si el visitante
+   encoge la ventana a mitad de reproducción, el cover de la ventana también
+   se suelta y la caja vuelve a su 16:9. (03/10/2026) */
+@media (max-width: 560px) {
+    .film-page-dimmer,
+    .film-page-dimmer.is-visible,
+    .film-page-dimmer.is-clearing {
+        background: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        opacity: 0;
+    }
+    body.film-is-playing .node-pager::after { opacity: 0; background: none; }
+    .node-player__exit { display: none; }
+    .node-player.is-windowed {
+        position: relative; inset: auto; z-index: auto;
+        width: 100%; height: auto; aspect-ratio: auto; margin-inline: auto;
+    }
+    .node-player.is-playing > .node-player__synopsis { opacity: 1; }
+}
