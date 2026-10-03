@@ -115,7 +115,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
    el móvil pueda sacarla bajo la caja sin perder este anclaje. Solo web. */
 .node-player__synopsis {
     position: absolute; z-index: 3; left: 0; pointer-events: none;
-    top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 26.25px), calc(5.44rem - 26.25px)));
+    top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)));
     width: 42%; max-width: 42%; margin: 0;
     padding-left: clamp(1rem, 2.5vw, 2.25rem);
     font-family: var(--font-body); font-weight: 300;
@@ -127,6 +127,71 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-player__synopsis p { margin: 0; }
 .node-player__synopsis p + p { margin-top: 0.45rem; }
+/* 03/10/2026 — Solo web: la plancha gris deja de vivir solo bajo el titular
+   (el h1 pierde su fondo y su corte) y pasa a ser una única pieza que cubre
+   titular y sinopsis: misma transparencia (rgba(128,128,128,.5)) y el mismo
+   corte diagonal en el borde derecho, a escala de la plancha completa. Vive en
+   el ::before de la sinopsis para crecer con el texto de cada página; su top
+   deshace el cálculo que separa la sinopsis del titular, así que arranca justo
+   donde arrancaba la plancha vieja, y al reproducir se funde con la sinopsis
+   (opacity), igual que antes. El titular sube a z-index 4 para pintar por
+   delante del pseudo (la sinopsis va después en el DOM con el mismo z). El
+   móvil no entra: conserva su plancha bajo el título. */
+@media (min-width: 561px) {
+    .node-player > .node-hero__title { z-index: 4; }
+    .node-player > .node-hero__title h1 { background: none; clip-path: none; }
+    /* 03/10/2026 · 2 — La plancha del titular desaparece: queda una única
+       pieza, la de la sinopsis, ampliada hacia arriba hasta el arranque del
+       titular (su top deshace el cálculo que separa la sinopsis del título,
+       el mismo que usaba la banda vieja), de modo que el título se asienta
+       sobre ella y forma parte de la misma plancha. Conserva el ancho de la
+       columna del texto (100% de la sinopsis, 42% de la caja, + 8px de aire),
+       siempre a la izquierda del círculo de play (borde izquierdo = 50% de la
+       caja − radio): la diagonal va anclada abajo, así que la holgura con el
+       play no cambia (verificado de 561px a 3440px con la sinopsis más larga,
+       331 caracteres, es/polestar5). --plate-step ya no marca ningún escalón,
+       pero sigue siendo la referencia del ángulo de la diagonal (los 12px
+       sobre la banda del titular original). */
+    .node-player__synopsis {
+        text-align: justify;
+        --plate-step: calc(1.1rem + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 13px);
+        /* 03/10/2026 — Solo web: la tipografía de la sinopsis baja 2px más
+           (−7px → −9px sobre el clamp base), el interlineado se recorta otros
+           2px (1.45em − 2px) y desaparece el sombreado del texto, que venía de
+           cuando la sinopsis flotaba sobre la imagen sin plancha. El móvil
+           conserva su talla, su 1.45 y su text-shadow: none propios. */
+        font-size: calc(clamp(1.15rem, 1.9vw, 1.85rem) - 9px);
+        line-height: calc(1.45em - 2px);
+        text-shadow: none;
+    }
+    .node-player__synopsis::after {
+        content: ""; position: absolute; z-index: -1;
+        left: -80px;
+        top: calc(-1 * (1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px))));
+        bottom: -0.9rem;
+        width: calc(100% + 88px);
+        background: rgba(128, 128, 128, .5);
+        transform-origin: bottom;
+    }
+}
+/* 03/10/2026 — La plancha lleva su diagonal derecha con el ángulo que tenía la
+   del titular, por construcción: skewX de −atan2(12px, --plate-step), la
+   inclinación exacta de los 12px sobre la banda del titular original a cada
+   viewport. Anclada abajo (transform-origin: bottom): el borde derecho
+   inferior se queda en la columna del texto y la plancha se abre hacia
+   arriba, hacia el titular, así la diagonal jamás corta el texto justificado
+   ni baja hacia el play (verificado de 850px a 3440px con la sinopsis más
+   larga y una línea extra de margen). El sobrante izquierdo (left: −80px)
+   absorbe el desplome del skew fuera de la caja (overflow hidden). Entre 561
+   y 849px el ángulo es tan empinado (hasta 16,6°) que la diagonal pisaría el
+   círculo o cortaría el texto: ahí la plancha conserva el borde recto. Si el
+   navegador no conoce atan2 (CSS trig, 2023), la declaración se descarta y
+   queda el borde recto: nunca un estado peor. */
+@media (min-width: 850px) {
+    .node-player__synopsis::after {
+        transform: skewX(calc(-1 * atan2(12px, var(--plate-step))));
+    }
+}
 /* One size for the ten titles of the section, and the longest one sets it: the
    h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
    — 456px of the 478px available at 561px, the tightest point above the mobile
@@ -150,7 +215,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-hero h1, .node-player h1 {
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: clamp(calc(2.397rem - 26.25px), calc(5.44vw - 26.25px), calc(5.44rem - 26.25px)); /* −5px solo en escritorio; el móvil conserva su clamp */
+    font-size: clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)); /* −5px solo en escritorio; el móvil conserva su clamp. 03/10/2026: −15px y luego −3px más en escritorio (términos fluido y techo, −44.25px en total); el piso se queda en 2.397rem − 26.25px (12.1px) para que el titular no desaparezca en ventanas estrechas — desde ~1036px el recorte es exactamente de 18px. Los tres cálculos que siguen al titular (ancla de la sinopsis, tope de la plancha y --plate-step del ángulo) usan este mismo clamp. */
     line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
@@ -193,7 +258,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 /* Palabras en lila de cada h2 (THE STORY + RELATED PROJECTS) en cursiva,
    EN y ES: THE FIRE, SNOW, PROJECTS, RELACIONADOS, etc. (30/09/2026) */
 .node-story h2 .violet, .node-related h2 .violet { font-style: italic; }
-.node-player { position: relative; aspect-ratio: 16 / 9; width: 85.5%; margin-inline: auto; background: #000; overflow: hidden; } /* 90% → 85.5% (27/09/2026) · 5% más de reducción sobre el 90% */
+.node-player { position: relative; aspect-ratio: 16 / 9; width: 85.5%; margin-inline: auto; background: #000; overflow: hidden; border-radius: 10px; } /* 90% → 85.5% (27/09/2026) · 5% más de reducción sobre el 90% · esquinas a 10px (03/10/2026) */
 .node-player > img {
     width: 100%; height: 100%; object-fit: cover;
     transition: transform 0.9s var(--ease-out);
@@ -366,9 +431,12 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-story h2 { font-size: clamp(calc(2.75rem - 25px), calc(10vw - 25px), calc(5rem - 25px)); }
     .node-story__copy { margin: 0; }
     /* La caja sigue a 16/9; la sinopsis baja a una segunda fila, fuera del vídeo. */
-    .node-player { display: grid; aspect-ratio: auto; height: auto; overflow: visible; }
+    /* En móvil la caja no recorta (overflow visible), así que el redondeo de
+       10px va en la imagen y el iframe, que son el vídeo visible. (03/10/2026) */
+    .node-player { display: grid; aspect-ratio: auto; height: auto; overflow: visible; border-radius: 0; }
     .node-player > img {
         grid-area: 1 / 1; width: 100%; height: auto; aspect-ratio: 16 / 9; align-self: start;
+        border-radius: 10px;
     }
     .node-player > .node-player__play {
         position: absolute; inset: auto; top: 0; left: 0; z-index: 2;
@@ -377,6 +445,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-player > iframe {
         position: absolute; inset: auto; top: 0; left: 0; z-index: 1;
         width: 100%; height: auto; aspect-ratio: 16 / 9;
+        border-radius: 10px;
     }
     .node-player:hover > img, .node-player:focus-within > img { transform: none; }
     .node-player__synopsis {
@@ -423,6 +492,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .work-transition.is-opening { transform: scale(1); }
 .work-transition.is-opening::after { opacity: 0; }
 .work-transition--departure.is-opening { transform: scale(1.28); }
+/* El clon de llegada se disuelve sobre una caja ya redondeada: mismas esquinas
+   de 10px para que el relevo no deje picos rectos. (03/10/2026) */
+.work-transition--arrival { border-radius: 10px; }
 .work-transition--arrival.is-dissolving { opacity: 0; }
 .hf-entry-black {
     position: fixed; inset: 0; z-index: 700; background: #050505;
@@ -437,35 +509,20 @@ body.menu-open .menu-overlay a { visibility: visible; }
    its card images and section do not load/show until explicitly re-enabled. */
 .node-related { display: none; }
 
-/* Starting playback fades out the title panel. On web it also dims and blurs
-   the page around the player; the elevated video itself stays at full
-   brightness. Mobile drops that veil (see the ≤560px block at the end). */
+/* Starting playback fades out the title panel.
+   03/10/2026 — Limpieza: el velo que oscurecía y desenfocaba el resto de la
+   página (.film-page-dimmer, rgba .6 + blur 4px), el estado body.film-is-playing
+   y el apagado del paginador (.node-pager::after) se retiraron: con la caja
+   ocupando toda la ventana del navegador al pulsar play, detrás ya no se veía
+   nada. También su z-index 901 de .is-playing, que solo existía para flotar
+   sobre aquel velo (z 900). */
 .node-player > .node-hero__title { transition: opacity .8s ease; }
-.node-player.is-playing { z-index: 901; }
 .node-player.is-playing > .node-hero__title,
 .node-player.is-playing > .node-player__synopsis { opacity: 0; }
-.film-page-dimmer {
-    position: fixed; inset: 0; z-index: 900; pointer-events: none;
-    background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity 1s ease;
-    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-}
-body.film-is-playing .node-pager { z-index: 901; }
-.node-pager::after {
-    content: ""; position: absolute; inset: -0.2rem; z-index: 5;
-    background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
-    transition: opacity 1s ease;
-}
-body.film-is-playing .node-pager::after { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-    .node-pager::after { transition-duration: .01ms; }
-}
-.film-page-dimmer.is-visible { opacity: 1; }
-.film-page-dimmer.is-clearing { opacity: 0; }
-@media (prefers-reduced-motion: reduce) {
-    .node-player > .node-hero__title,
-    .node-player__synopsis,
     .node-player.is-windowed,
-    .film-page-dimmer { transition-duration: .01ms; }
+    .node-player > .node-hero__title,
+    .node-player__synopsis { transition-duration: .01ms; }
 }
 
 /* Versión web: al pulsar play la caja ocupa toda la ventana del navegador
@@ -479,6 +536,7 @@ body.film-is-playing .node-pager::after { opacity: 1; }
         position: fixed; inset: 0; z-index: 2100;
         width: auto; height: auto; max-width: none; max-height: none;
         aspect-ratio: auto; margin: 0; background: #000; overflow: hidden;
+        border-radius: 0; /* la ventana completa vuelve a esquinas rectas (03/10/2026) */
         transform-origin: 0 0;
         transition: transform 0.5s var(--ease-out);
     }
@@ -530,20 +588,11 @@ body.film-is-playing .node-pager::after { opacity: 1; }
     .node-player__exit, .node-player__exit::before, .node-player__exit::after { transition-duration: 0.01ms; }
 }
 
-/* Móvil: sin oscurecimiento ni desenfoque al reproducir. El velo (rgba + blur)
-   y el apagado del paginador son solo de la versión web. Si el visitante
-   encoge la ventana a mitad de reproducción, el cover de la ventana también
-   se suelta y la caja vuelve a su 16:9. (03/10/2026) */
+/* Móvil: si el visitante encoge la ventana a mitad de reproducción, el cover
+   de la ventana se suelta y la caja vuelve a su 16:9. (El velo y el apagado
+   del paginador que este bloque anulaba ya no existen, ver la limpieza del
+   03/10/2026 junto a .is-playing.) */
 @media (max-width: 560px) {
-    .film-page-dimmer,
-    .film-page-dimmer.is-visible,
-    .film-page-dimmer.is-clearing {
-        background: none;
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-        opacity: 0;
-    }
-    body.film-is-playing .node-pager::after { opacity: 0; background: none; }
     .node-player__exit { display: none; }
     .node-player.is-windowed {
         position: relative; inset: auto; z-index: auto;

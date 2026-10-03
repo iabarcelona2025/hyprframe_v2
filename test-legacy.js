@@ -63,6 +63,14 @@ try {
         "Real places. Real people.Stories worth keeping.");
     assert.match(legacyCss, /\.legacy-hero\s*\{[^}]*min-height: min\(410px, 47svh\)/);
     assert.match(legacyCss, /@media \(max-width: 560px\)[\s\S]*\.legacy-hero\s*\{\s*min-height: min\(320px, 42svh\)/);
+    // Solo web: la línea de 1px bajo el hero sube 20px — min-height y relleno
+    // inferior pierden 20px a la vez (contenido centrado). (03/10/2026)
+    assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.legacy-hero \{\s*min-height: calc\(min\(410px, 47svh\) - 20px\);\s*padding-bottom: calc\(clamp\(1\.5rem, 2\.5vw, 2\.5rem\) - 20px\);/,
+        "web: la línea gris bajo «Stories worth keeping.» se acerca 20px");
+    // Solo móvil: el enlace EXPLORE ↓ del hero no se muestra. (03/10/2026)
+    assert.match(legacyCss, /@media \(max-width: 560px\)[\s\S]*\.legacy-hero__scroll \{ display: none; \}/,
+        "móvil: EXPLORE ↓ desaparece del hero");
+    assert.ok(doc.querySelector(".legacy-hero__scroll"), "web: EXPLORE ↓ sigue en el marcado");
     assert.match(legacyCss, /\.legacy-work__heading\s*\{[^}]*padding:\s*clamp\(calc\(5rem - 20px\), calc\(10vw - 20px\), calc\(9rem - 20px\)\) var\(--pad\) clamp\(calc\(2\.5rem \+ 20px\), calc\(5vw \+ 20px\), calc\(4rem \+ 20px\)\)/,
         "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");

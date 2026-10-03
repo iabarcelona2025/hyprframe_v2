@@ -33,10 +33,8 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .legacy-hero__label { display: flex; align-items: center; gap: 0.8rem; }
 .legacy-hero__label .pulse { flex: 0 0 8px; }
-.legacy-eyebrow {
-    font: 400 0.68rem/1.6 var(--font-mono);
-    letter-spacing: 0.24em; color: var(--violet);
-}
+/* .legacy-eyebrow se retiró con el rótulo NOW PLAYING / EN REPRODUCCIÓN del
+   pop-up de vídeo (03/10/2026): el título abre ahora la ficha directamente. */
 .legacy-hero__bottom {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem;
 }
@@ -45,6 +43,18 @@ body.menu-open, body.modal-open { overflow: hidden; }
     font-weight: 300; color: var(--fg);
 }
 .legacy-hero__bottom em { color: var(--muted); font-style: normal; }
+/* 03/10/2026 — Solo web: la línea gris de 1px bajo «Stories worth keeping.»
+   (el border-bottom del hero) se acerca 20px al texto. Como el alto del hero
+   lo manda min-height y el contenido va centrado, recortar solo el relleno
+   inferior la subiría 10px: se recortan los 20px en ambos (min-height y
+   padding-bottom) y la línea sube exactamente 20px. El móvil (≤560px)
+   conserva sus medidas de siempre. */
+@media (min-width: 561px) {
+    .legacy-hero {
+        min-height: calc(min(410px, 47svh) - 20px);
+        padding-bottom: calc(clamp(1.5rem, 2.5vw, 2.5rem) - 20px);
+    }
+}
 .legacy-hero__scroll {
     display: inline-flex; align-items: center; justify-content: space-between;
     gap: 2.5rem; padding: 0.75rem 0;
@@ -231,6 +241,9 @@ body.menu-open, body.modal-open { overflow: hidden; }
     width: min(100%, 72rem); margin: auto;
     border: 1px solid rgba(255, 255, 255, 0.18);
     background: var(--bg-soft);
+    /* Esquinas a 10px, como las cajas de vídeo de GENERATED; overflow hidden
+       recorta el vídeo y las franjas interiores al radio. (03/10/2026) */
+    border-radius: 10px; overflow: hidden;
 }
 .film-modal__top, .film-modal__info {
     display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
@@ -250,13 +263,14 @@ body.menu-open, body.modal-open { overflow: hidden; }
 .film-modal__video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .film-modal__info { align-items: flex-end; padding-block: clamp(1.25rem, 3vw, 2rem); }
 .film-modal__info h2 {
-    margin-top: 0.5rem;
+    margin-top: 0; /* el hueco de 0.5rem era para el rótulo NOW PLAYING, retirado (03/10/2026) */
     font: 700 clamp(1.35rem, 3vw, 2.5rem)/1.1 var(--font-head);
     text-transform: uppercase;
 }
 .film-modal__info p { margin-top: 0.4rem; font-size: 0.88rem; color: var(--muted); }
-/* Cast credit (data-cast): same mono voice as the "NOW PLAYING" eyebrow, but kept
-   quieter so the synopsis stays the lead line. Hidden when a card has no cast. */
+/* Cast credit (data-cast): la misma voz mono que tenía el rótulo retirado
+   "NOW PLAYING", pero más callada para que la sinopsis siga mandando.
+   Oculto cuando la tarjeta no lleva reparto. */
 .film-modal__info .film-modal__cast {
     margin-top: 0.7rem;
     font: 400 0.7rem/1.6 var(--font-mono);
@@ -272,6 +286,9 @@ body.menu-open, body.modal-open { overflow: hidden; }
 @media (max-width: 560px) {
     .legacy-hero { min-height: min(320px, 42svh); padding: 6rem var(--pad) 1.5rem; }
     .legacy-hero__topline { font-size: 0.58rem; }
+    /* 03/10/2026 — Solo móvil: fuera el enlace EXPLORE ↓ del hero; la parrilla
+       de películas está justo debajo y el ancla sobraba. En web se queda. */
+    .legacy-hero__scroll { display: none; }
     .legacy-work__heading h2 { font-size: clamp(2.7rem, 9vw, 4.5rem); }
     .film-card__watch { bottom: 1rem; left: 1rem; }
     .film-modal__top, .film-modal__info { padding-inline: 1rem; }
