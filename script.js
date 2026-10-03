@@ -962,23 +962,20 @@
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
         event.preventDefault();
-        // En escritorio la caja crece con el fotograma (03/10/2026): el clon
-        // escala ×1.28 anclado a su borde superior (la línea que delimita la
-        // caja por arriba es el border-bottom de la fila anterior y no se
-        // mueve), así que todo el crecimiento —un 28% del alto medido al
-        // clic— va hacia abajo y la fila lo acompaña sumándolo a su padding
-        // inferior en el mismo frame, con idéntica curva (ver
+        // La caja crece con el fotograma (03/10/2026, en móvil también desde
+        // hoy): el clon escala ×1.28 anclado a su borde superior (la línea
+        // que delimita la caja por arriba es el border-bottom de la fila
+        // anterior y no se mueve), así que todo el crecimiento —un 28% del
+        // alto medido al clic— va hacia abajo y la fila lo acompaña sumándolo
+        // a su padding inferior en el mismo frame, con idéntica curva (ver
         // .work-row.is-departing en styles.css): la línea inferior, propia de
         // la fila, baja con la caja y el fotograma queda contenido. El rect
         // guardado arriba no cambia: la llegada al proyecto sigue igual.
-        const desktop = matchMedia("(hover: hover) and (min-width: 901px)").matches;
         requestAnimationFrame(() => {
-            if (desktop) {
-                const grow = rect.height * 0.28;
-                const padding = getComputedStyle(row);
-                row.classList.add("is-departing");
-                row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
-            }
+            const grow = rect.height * 0.28;
+            const padding = getComputedStyle(row);
+            row.classList.add("is-departing");
+            row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + grow}px`;
             layer.classList.add("is-opening");
         });
         setTimeout(() => { location.href = row.href; }, 440);
