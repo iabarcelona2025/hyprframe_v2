@@ -186,7 +186,7 @@ for (const page of PAGES) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
         assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=85");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=29");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=30");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -748,7 +748,7 @@ for (const file of ALL) {
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
     assert.match(es, /generated\.css\?v=85/);
-    assert.match(es, /generated\.js\?v=29/);
+    assert.match(es, /generated\.js\?v=30/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 
@@ -765,8 +765,24 @@ assert.match(script, /method: "exitFullscreen"/,
     "al volver a vertical se sale del fullscreen");
 assert.match(script, /method: "requestFullscreen"/,
     "al volver a horizontal durante la reproducción se pide el fullscreen otra vez");
-assert.doesNotMatch(script, /orientation\.lock\(/,
-    "no se bloquea el landscape: el usuario tiene que poder girar a vertical");
+/* El primer play abre el vídeo ya en horizontal (04/10/2026): si el móvil está
+   vertical, screen.orientation.lock('landscape') gira la pantalla. El bloqueo
+   solo vive dentro del fullscreen — al salir se suelta (unlock) — así que no es
+   permanente: vertical sale y horizontal vuelve a entrar. Si el teléfono ya está
+   horizontal no se bloquea nada y los giros quedan libres. Todo va con red de
+   seguridad (typeof, try/catch y catch del promise): Safari no trae lock(). */
+assert.match(script, /function forceMobileLandscape\(\) \{\s*if \(!isMobileVideo \|\| !isPortraitNow\(\)\) return;[\s\S]{0,300}orientation\.lock\("landscape"\)/,
+    "móvil: el apaisado se fuerza solo cuando la pantalla está vertical, con lock('landscape')");
+assert.match(script, /function requestMobileFullscreen[\s\S]{0,900}forceMobileLandscape\(\)/,
+    "móvil: fullscreen y apaisado se piden juntos en el play");
+assert.match(script, /function exitMobileFullscreen\(iframe\) \{\s*unlockMobileOrientation\(\);/,
+    "salir del fullscreen suelta el bloqueo de orientación");
+assert.match(script, /function disarmPortraitExit[\s\S]{0,240}unlockMobileOrientation\(\)/,
+    "al terminar o parar el vídeo se suelta el bloqueo de orientación");
+assert.match(script, /typeof orientation\?\.lock !== "function"/,
+    "el bloqueo de orientación se detecta antes de usarlo (Safari no lo trae)");
+assert.match(script, /if \(!portrait\) \{\s*seenLandscape = true;\s*if \(mobileFs\) return;/,
+    "en horizontal con el vídeo ya en pantalla el giro no dispara nada");
 assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,120}scrollBy\(0, -40\)[\s\S]{0,1200}player\.getBoundingClientRect\(\)/,
     "en web el salto de 40px es instantáneo y el thumbnail se mide después, 40px más abajo");
 /* En pantallas anchas la caja 16:9 es tan alta que centrarla dejaba el
@@ -855,8 +871,11 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
     dom.window.close();
 }
 
-/* Móvil: volver a vertical sale del fullscreen, pero solo 3s después de que
-   empiece el vídeo y solo si antes se vio el móvil en horizontal. */
+/* Móvil (04/10/2026): el play abre el vídeo en fullscreen y en apaisado — el
+   bloqueo se pide desde el primer toque, pero solo si el móvil está vertical,
+   y se suelta al salir. Volver a vertical sale del fullscreen (solo 3s después
+   de que empiece el vídeo y solo si antes se vio el móvil en horizontal);
+   volver a horizontal lo reactiva. */
 {
     const dom = new JSDOM(read("project-node.html"), {
         url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
@@ -878,6 +897,14 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
         if (id === -1) { held.length = 0; return; }
         return realClearTimeout(id);
     };
+    const locks = [];
+    let unlocks = 0;
+    const orientation = {
+        type: "portrait-primary",
+        lock(kind) { locks.push(kind); return Promise.resolve(); },
+        unlock() { unlocks += 1; return Promise.resolve(); },
+    };
+    window.screen.orientation = orientation;
     window.orientation = 0;
     window.eval(script);
     const doc = window.document;
@@ -892,11 +919,13 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
     }));
     const rotate = (angle) => {
         window.orientation = angle;
+        orientation.type = angle === 90 ? "landscape-primary" : "portrait-primary";
         window.dispatchEvent(new window.Event("orientationchange"));
     };
     let reentered = 0;
     iframe.requestFullscreen = () => { reentered += 1; return Promise.resolve(); };
     iframe.webkitRequestFullscreen = iframe.requestFullscreen;
+    assert.deepEqual(locks, ["landscape"], "el play con el móvil vertical fuerza el apaisado desde el primer toque");
     fromVimeo({ event: "play" });
     assert.equal(held.length, 1, "el vídeo arranca la espera de 3s");
     rotate(0);
@@ -907,17 +936,21 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
     rotate(90);
     assert.equal(exits, 0, "girar a horizontal no sale del fullscreen");
     assert.equal(reentered, 0, "el horizontal inicial no vuelve a pedir el fullscreen");
+    assert.equal(locks.length, 1, "ya en horizontal no se bloquea nada: el giro queda libre");
     rotate(0);
     assert.equal(exits, 1, "girar de vuelta a vertical sale del fullscreen");
+    assert.equal(unlocks, 1, "salir del fullscreen suelta el bloqueo de orientación");
     assert.equal(sent.filter((item) => item.message?.method === "exitFullscreen").length, 1,
         "también se pide a Vimeo que salga del fullscreen");
     assert.ok(doc.querySelector(".node-player iframe"), "salir del fullscreen no corta el vídeo");
     rotate(90);
     assert.equal(reentered, 1, "volver a horizontal durante la reproducción activa el fullscreen");
+    assert.equal(locks.length, 1, "la vuelta a horizontal no necesita bloqueo (la pantalla ya es horizontal)");
     assert.equal(sent.filter((item) => item.message?.method === "requestFullscreen").length, 1,
         "también se pide a Vimeo que entre en fullscreen");
     rotate(0);
     assert.equal(exits, 2, "un nuevo vertical vuelve a salir");
+    assert.equal(unlocks, 2, "y vuelve a soltar el bloqueo");
     /* Devuelta del fullscreen: el vídeo sigue en la caja (is-playing) y el
        iframe encaja en la regla que le reserva la celda 1/1 de la grid, con la
        sinopsis debajo, en su posición correcta. (03/10/2026) */
@@ -925,6 +958,72 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
         "devuelta del fullscreen: el iframe encaja en la regla de la celda 1/1 de la grid");
     assert.ok(doc.querySelector(".node-player.is-playing > .node-player__synopsis"),
         "devuelta del fullscreen: la sinopsis sigue en la fila 2, debajo del vídeo");
+    fromVimeo({ event: "ended" });
+    assert.equal(unlocks, 3, "el final del vídeo suelta el bloqueo de orientación");
+    dom.window.close();
+}
+
+/* Móvil (04/10/2026): si el visitante sale del fullscreen a mano (botón atrás,
+   gesto, la propia X de Vimeo), la pantalla vuelve a girarse libre y el
+   siguiente giro a horizontal devuelve el vídeo a pantalla completa. Antes la
+   reentrada solo se armaba con una salida por vertical, así que tras una salida
+   manual el giro ya no hacía nada. */
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = (query) => ({
+        matches: query.includes("max-width: 560px"),
+        media: query,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    });
+    const locks = [];
+    let unlocks = 0;
+    const orientation = {
+        type: "landscape-primary",
+        lock(kind) { locks.push(kind); return Promise.resolve(); },
+        unlock() { unlocks += 1; return Promise.resolve(); },
+    };
+    window.screen.orientation = orientation;
+    window.orientation = 90;
+    window.eval(script);
+    const doc = window.document;
+    let reentered = 0;
+    doc.getElementById("playFilm").click();
+    const iframe = doc.querySelector(".node-player iframe");
+    iframe.requestFullscreen = () => { reentered += 1; return Promise.resolve(); };
+    iframe.webkitRequestFullscreen = iframe.requestFullscreen;
+    assert.equal(locks.length, 0, "con el móvil ya en horizontal el play no bloquea nada: los giros quedan libres");
+    const enterOrLeave = (on) => {
+        Object.defineProperty(doc, "fullscreenElement", { get: () => (on ? iframe : null), configurable: true });
+        window.dispatchEvent(new window.Event("fullscreenchange"));
+    };
+    enterOrLeave(true);
+    assert.equal(reentered, 0, "entrar en fullscreen no repite la petición");
+    enterOrLeave(false);
+    assert.equal(unlocks, 1, "salir del fullscreen a mano suelta el bloqueo de orientación");
+    const rotate = (type) => {
+        orientation.type = type;
+        window.orientation = type === "landscape-primary" ? 90 : 0;
+        window.dispatchEvent(new window.Event("orientationchange"));
+    };
+    rotate("portrait-primary");
+    assert.equal(reentered, 0, "en vertical no se vuelve a abrir solo");
+    rotate("landscape-primary");
+    assert.equal(reentered, 1, "tras una salida manual, girar a horizontal devuelve el fullscreen");
+    /* El propio Vimeo también avisa cuando su reproductor entra o sale del
+       fullscreen: con el móvil de nuevo en vertical, entrar vuelve a girar la
+       pantalla; salir suelta el bloqueo. */
+    const fromVimeo = (data) => window.dispatchEvent(new window.MessageEvent("message", {
+        origin: "https://player.vimeo.com", source: iframe.contentWindow, data,
+    }));
+    rotate("portrait-primary");
+    fromVimeo({ event: "fullscreenchange", data: { fullscreen: true } });
+    assert.deepEqual(locks, ["landscape"], "el fullscreen de Vimeo recupera el apaisado con el móvil vertical");
+    const unlocksBefore = unlocks;
+    fromVimeo({ event: "fullscreenchange", data: { fullscreen: false } });
+    assert.equal(unlocks, unlocksBefore + 1, "el Vimeo que sale del fullscreen suelta el bloqueo");
     dom.window.close();
 }
 
