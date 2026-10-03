@@ -798,7 +798,92 @@ section { position: relative; }
 }
 
 /* ── STATEMENT ───────────────────────────────────────────── */
-.statement { padding: clamp(7rem, 18vw, 14rem) var(--pad); }
+.statement {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(7rem, 18vw, 14rem) var(--pad);
+}
+/* Metaballs propios, inspirados en el efecto de unión/separación de h2a.lu.
+   El filtro actúa solo sobre los círculos, nunca sobre el texto. La opacidad
+   se aplica DESPUÉS del umbral alfa para conservar los puentes entre formas. */
+.statement-background {
+    --statement-edge-tv: 0.35;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+}
+.statement-background::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, var(--bg) 0%, transparent 85%),
+        linear-gradient(0deg, var(--bg), transparent 22%, transparent 78%, var(--bg));
+}
+/* Old-TV chromatic fringe, alpha-clipped to the circular silhouettes. */
+.statement-tv-chroma {
+    opacity: var(--statement-edge-tv, 0);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+.statement-background.has-liquid .statement-tv-chroma { display: none; }
+.statement-metaballs {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: var(--violet);
+    filter: blur(1px);
+}
+/* Fallback: el color húmedo aparece solo en el contacto entre círculos. */
+.statement-watercolor { opacity: 0.96; mix-blend-mode: normal; }
+/* Native WebGL enhancement: fallback stays intact until the first frame.
+   Mask / blend layers belong only to the fallback and must not double-render. */
+.statement-liquid {
+    position: absolute; inset: 0; width: 100%; height: 100%; display: none;
+    filter: blur(1px);
+}
+.statement-background.has-liquid .statement-liquid { display: block; }
+.statement-background.has-liquid .statement-metaballs { display: none; }
+.statement-background.has-liquid.is-animating .statement-orb { animation-play-state: paused; }
+.statement-metaball-field { opacity: 0.32; }
+.statement-body { fill: var(--violet); }
+.statement-orb {
+    animation: statement-orbit-a 22s ease-in-out infinite;
+    animation-play-state: paused;
+}
+.statement-background.is-animating .statement-orb { animation-play-state: running; }
+.statement-orb--2 { animation-name: statement-orbit-b; animation-duration: 19s; }
+.statement-orb--3 { animation-name: statement-orbit-c; animation-duration: 24s; }
+.statement-orb--4 { animation-name: statement-orbit-d; animation-duration: 21s; }
+.statement-orb--5 { animation-name: statement-orbit-e; animation-duration: 18s; }
+@keyframes statement-orbit-a {
+    0%, 100% { transform: translate(-140px, -130px); }
+    50% { transform: translate(-40px, 10px); }
+}
+@keyframes statement-orbit-b {
+    0%, 100% { transform: translate(90px, 65px); }
+    50% { transform: translate(-310px, -200px); }
+}
+@keyframes statement-orbit-c {
+    0%, 100% { transform: translate(80px, -70px); }
+    50% { transform: translate(-300px, 120px); }
+}
+@keyframes statement-orbit-d {
+    0%, 100% { transform: translate(-90px, 65px); }
+    50% { transform: translate(250px, -210px); }
+}
+@keyframes statement-orbit-e {
+    0%, 100% { transform: translate(-140px, 65px); }
+    50% { transform: translate(180px, -160px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .statement-orb { animation: none; }
+}
 .statement-text {
     font-family: var(--font-head); font-weight: 600; /* 700 → 600 (25/09/2026) */
     font-size: clamp(1.9rem, 5.4vw, 4.6rem);
@@ -828,6 +913,9 @@ section { position: relative; }
     font-kerning: none;
     font-variant-ligatures: none;
     opacity: calc(0.14 + 0.86 * var(--lit, 0));
+    /* Sombra oscura en cada glifo: se lee como proyección cuando el color
+       animado pasa por debajo del texto, y acompaña el barrido de --lit. */
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.34), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 /* El violeta no entra de golpe al final de la palabra: se mezcla con el blanco
    a la vez que la letra se enciende, así que el color acompaña al barrido.
@@ -1872,4 +1960,10 @@ label.cookie-purpose-head { cursor: pointer; }
        «reducir movimiento», que aquí solo ahorraría el contador que se quiere
        revisar. El resto de la página sigue quieta. (30/09/2026) */
     html.hf-force-intro .preloader { display: flex; transition-duration: 0.9s !important; }
+}
+
+@media (max-width: 600px) {
+    /* Mantiene parte de los círculos a la vista en el recorte vertical. */
+    .statement-metaballs { width: 150%; margin-left: -45%; }
+    .statement-metaball-field { opacity: 0.25; }
 }
