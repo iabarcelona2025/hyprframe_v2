@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=84");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=85");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=29");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -681,6 +681,17 @@ assert.match(mobileBlock, /\.node-player > img \{[^}]*border-radius: 10px;/,
     "móvil: la imagen del vídeo redondea a 10px");
 assert.match(mobileBlock, /\.node-player > iframe \{[^}]*border-radius: 10px;/,
     "móvil: el iframe del vídeo redondea a 10px");
+/* Móvil: al volver del fullscreen el vídeo sigue en su caja y la sinopsis tiene
+   que quedar bloqueada en su posición correcta, debajo del vídeo: en
+   reproducción el iframe ocupa en flujo la misma celda 1/1 de la grid que la
+   imagen de apertura y reserva el 16:9 de la fila 1. Antes la fila colapsaba al
+   quitarse la imagen y la sinopsis se metía por detrás del vídeo. (03/10/2026) */
+assert.match(mobileBlock, /\.node-player\.is-playing > iframe \{[^}]*position: relative;[^}]*grid-area: 1 \/ 1;/,
+    "móvil: el iframe en reproducción reserva la celda 16:9 de la grid (la sinopsis queda debajo)");
+assert.match(mobileBlock, /\.node-player > iframe \{[^}]*z-index: 1;/,
+    "móvil: el iframe sigue pintando sobre el fotograma para el cierre de bandas");
+assert.equal(css.match(/\.node-player\.is-playing > iframe/g)?.length, 1,
+    "la celda en flujo del iframe solo existe en el bloque móvil");
 assert.match(css, /@media \(min-width: 561px\) \{[^}]*\.node-story \{ display: none; \}/,
     "en web no se ve la sección de la historia");
 assert.match(mobileBlock, /\.node-story > \.node-section-label,\s*\.node-story__grid \{ display: none; \}/,
@@ -736,7 +747,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=84/);
+    assert.match(es, /generated\.css\?v=85/);
     assert.match(es, /generated\.js\?v=29/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
@@ -907,6 +918,13 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
         "también se pide a Vimeo que entre en fullscreen");
     rotate(0);
     assert.equal(exits, 2, "un nuevo vertical vuelve a salir");
+    /* Devuelta del fullscreen: el vídeo sigue en la caja (is-playing) y el
+       iframe encaja en la regla que le reserva la celda 1/1 de la grid, con la
+       sinopsis debajo, en su posición correcta. (03/10/2026) */
+    assert.ok(doc.querySelector(".node-player.is-playing > iframe"),
+        "devuelta del fullscreen: el iframe encaja en la regla de la celda 1/1 de la grid");
+    assert.ok(doc.querySelector(".node-player.is-playing > .node-player__synopsis"),
+        "devuelta del fullscreen: la sinopsis sigue en la fila 2, debajo del vídeo");
     dom.window.close();
 }
 

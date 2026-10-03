@@ -447,6 +447,16 @@ body.menu-open .menu-overlay a { visibility: visible; }
         width: 100%; height: auto; aspect-ratio: 16 / 9;
         border-radius: 10px;
     }
+    /* Móvil: al reproducir el iframe no flota sobre la rejilla en absolute —
+       ocupa en flujo la misma celda (1/1) que la imagen de apertura y reserva
+       el 16:9 de la fila 1: la sinopsis (fila 2) queda bloqueada debajo del
+       vídeo, en su posición correcta, cuando volvemos del fullscreen. Antes la
+       fila colapsaba en cuanto se quitaba la imagen y la sinopsis se metía por
+       detrás del vídeo. El final no cambia: is-playing se retira antes de
+       is-ending y el iframe vuelve a absolute sobre el fotograma. (03/10/2026) */
+    .node-player.is-playing > iframe {
+        position: relative; grid-area: 1 / 1;
+    }
     .node-player:hover > img, .node-player:focus-within > img { transform: none; }
     .node-player__synopsis {
         display: block; position: static; grid-row: 2; z-index: auto; pointer-events: auto;
