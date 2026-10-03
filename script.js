@@ -773,6 +773,84 @@
         }
     }
 
+    /* ── 6a. Statement: fondo de círculos / metaballs ───────── */
+    // Las órbitas propias de cada círculo se pausan fuera de pantalla y con
+    // reduced-motion; el scroll no aplica transformaciones al conjunto.
+    const statementBackground = document.querySelector(".statement-background");
+    if (statementBackground) {
+        const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let visible = false;
+        let edgeRaf = 0, edgeClock = 0, edgeLast = 0;
+        const orbs = [
+            { x: 790, y: 350, from: [-140, -130], to: [-40, 10], radius: 185, period: 22 },
+            { x: 1190, y: 640, from: [90, 65], to: [-310, -200], radius: 135, period: 19 },
+            { x: 1180, y: 280, from: [80, -70], to: [-300, 120], radius: 110, period: 24 },
+            { x: 470, y: 640, from: [-90, 65], to: [250, -210], radius: 145, period: 21 },
+        ];
+        const edgeStrengthAt = (clock) => {
+            const rect = statementBackground.getBoundingClientRect();
+            if (!(rect.width > 0 && rect.height > 0)) return 0.35;
+            const mobile = rect.width <= 600.5;
+            const scale = Math.max(rect.width * (mobile ? 1.5 : 1) / 1440, rect.height / 900);
+            const anchorX = rect.width * (mobile ? 0.3 : 0.5);
+            const anchorY = rect.height * 0.5;
+            let nearestEdgeGap = Infinity;
+            for (const orb of orbs) {
+                const t = 0.5 - 0.5 * Math.cos(clock * Math.PI * 2 / orb.period);
+                const centerX = orb.x + orb.from[0] + (orb.to[0] - orb.from[0]) * t;
+                const centerY = orb.y + orb.from[1] + (orb.to[1] - orb.from[1]) * t;
+                const screenX = rect.left + anchorX + (centerX - 720) * scale;
+                const screenY = rect.top + anchorY + (centerY - 450) * scale;
+                const radius = (orb.radius + 10) * scale;
+                nearestEdgeGap = Math.min(
+                    nearestEdgeGap,
+                    screenX - radius - rect.left,
+                    rect.right - (screenX + radius),
+                    screenY - radius - rect.top,
+                    rect.bottom - (screenY + radius)
+                );
+            }
+            const proximity = Math.max(0, Math.min(1, 1 - Math.max(0, nearestEdgeGap) / 240));
+            const eased = proximity * proximity * (3 - 2 * proximity);
+            return 0.35 + 0.65 * eased;
+        };
+        const applyEdgeTv = () => {
+            statementBackground.style.setProperty("--statement-edge-tv", edgeStrengthAt(edgeClock).toFixed(3));
+        };
+        applyEdgeTv();
+        const updateEdgeTv = (now) => {
+            edgeRaf = 0;
+            if (!visible || document.hidden || motion.matches) {
+                edgeLast = 0;
+                return;
+            }
+            if (edgeLast) edgeClock += (now - edgeLast) / 1000;
+            edgeLast = now;
+            applyEdgeTv();
+            edgeRaf = requestAnimationFrame(updateEdgeTv);
+        };
+        const syncBackground = () => {
+            const active = visible && !document.hidden && !motion.matches;
+            statementBackground.classList.toggle("is-animating", active);
+            if (active && !edgeRaf) {
+                edgeLast = 0;
+                updateEdgeTv(performance.now());
+            } else if (!active) {
+                if (edgeRaf) cancelAnimationFrame(edgeRaf);
+                edgeRaf = 0;
+                edgeLast = 0;
+            }
+        };
+        const observer = new IntersectionObserver((entries) => {
+            visible = entries.some((entry) => entry.isIntersecting);
+            syncBackground();
+        }, { threshold: 0 });
+        document.addEventListener("visibilitychange", syncBackground);
+        motion.addEventListener?.("change", syncBackground);
+        window.addEventListener("resize", () => { if (!edgeRaf) applyEdgeTv(); });
+        onHeroReady(() => observer.observe(statementBackground.closest("section")));
+    }
+
     /* ── 6. Statement: barrido de encendido, de letra en letra ── */
     // Antes cada palabra saltaba de golpe a la clase .lit y el violeta del
     // acento llegaba con un cambio seco. Ahora el texto se reparte en letras y

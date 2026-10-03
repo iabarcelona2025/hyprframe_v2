@@ -268,6 +268,9 @@ for (const pagina of PAGES) {
     check("la opacidad de cada letra se interpola con --lit",
         declaration(ruleOf(".statement-text span"), "opacity") === "calc(0.14 + 0.86 * var(--lit, 0))",
         declaration(ruleOf(".statement-text span"), "opacity"));
+    check("cada letra proyecta una sombra oscura sobre los círculos de fondo",
+        declaration(ruleOf(".statement-text span"), "text-shadow") === "0 2px 6px rgba(0, 0, 0, 0.34), 0 4px 16px rgba(0, 0, 0, 0.2)",
+        declaration(ruleOf(".statement-text span"), "text-shadow"));
     check("el violeta del acento llega mezclado con el blanco según el encendido",
         declaration(ruleOf(".statement-text span.accent"), "color") === "color-mix(in srgb, var(--violet) calc(var(--lit, 0) * 100%), var(--fg))",
         declaration(ruleOf(".statement-text span.accent"), "color"));

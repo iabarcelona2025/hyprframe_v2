@@ -78,7 +78,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=165" />
+    <link rel="stylesheet" href="styles.css?v=191" />
 </head>
 
 <body>
@@ -178,8 +178,113 @@
             </div>
         </section>
 
-        <!-- ══════════ STATEMENT (word-by-word reveal) ══════════ -->
+        <!-- ══════════ STATEMENT (letter reveal + metaballs) ══════════ -->
         <section class="statement" id="statement">
+            <!-- Fondo decorativo: cuatro discos planos en movimiento — dos lilas y dos verdes (#a3df02).
+                 Conservan su silueta circular; al tocarse, mezclan color de forma translúcida y acuosa
+                 (turquesa, cian suave y chartreuse esmeralda), sin sombreado 3D. -->
+            <div class="statement-background" aria-hidden="true">
+                <svg class="statement-metaballs" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false">
+                    <defs>
+                        <!-- Filtro metaball compartido por las cuatro esferas; mantiene los rellenos planos. -->
+                        <filter id="statement-goo" filterUnits="userSpaceOnUse" x="0" y="0" width="1440" height="900" color-interpolation-filters="sRGB">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="26" result="blur" />
+                            <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -9" result="metaball" />
+                            <feTurbulence type="fractalNoise" baseFrequency="0.015 0.018" numOctaves="2" result="grain" />
+                            <feDisplacementMap in="metaball" in2="grain" scale="6" xChannelSelector="R" yChannelSelector="G" result="watercolorWash" />
+                        </filter>
+                        <!-- Chromatic fringe is clipped to the orb alpha, so no colored blur reaches the black field. -->
+                        <filter id="statement-tv-fringe" filterUnits="userSpaceOnUse" x="0" y="0" width="1440" height="900" color-interpolation-filters="sRGB">
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="softAlpha" />
+                            <feOffset in="softAlpha" dx="-4" dy="0" result="redShift" />
+                            <feComposite in="SourceAlpha" in2="redShift" operator="out" result="redEdge" />
+                            <feFlood flood-color="#ff245f" flood-opacity="0.9" result="redInk" />
+                            <feComposite in="redInk" in2="redEdge" operator="in" result="redFringe" />
+                            <feOffset in="softAlpha" dx="4" dy="0" result="cyanShift" />
+                            <feComposite in="SourceAlpha" in2="cyanShift" operator="out" result="cyanEdge" />
+                            <feFlood flood-color="#00d6ff" flood-opacity="0.9" result="cyanInk" />
+                            <feComposite in="cyanInk" in2="cyanEdge" operator="in" result="cyanFringe" />
+                            <feBlend in="redFringe" in2="cyanFringe" mode="screen" result="chromaticEdge" />
+                            <feGaussianBlur in="chromaticEdge" stdDeviation="1.5" />
+                        </filter>
+                        <!-- Smears only the actual cross-color overlap, hiding the two
+                             circular cut-lines while keeping a single shared silhouette. -->
+                        <filter id="statement-cross-smear" filterUnits="userSpaceOnUse" x="0" y="0" width="1440" height="900" color-interpolation-filters="sRGB">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="24" result="inkCloud" />
+                            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.026" numOctaves="3" seed="7" result="inkFlow" />
+                            <feDisplacementMap in="inkCloud" in2="inkFlow" scale="168" xChannelSelector="R" yChannelSelector="G" result="inkSpread" />
+                            <feComposite in="inkFlow" in2="inkSpread" operator="in" result="contactFlow" />
+                            <feBlend in="inkSpread" in2="contactFlow" mode="hard-light" result="mottledInk" />
+                            <feColorMatrix in="inkFlow" type="matrix" values="0 0 0 0 0.22  0 0 0 0 0.66  0 0 0 0 0.74  3.2 0 0 0 -1.10" result="tealFrays" />
+                            <feComposite in="tealFrays" in2="SourceGraphic" operator="in" result="tealInk" />
+                            <feColorMatrix in="inkFlow" type="matrix" values="0 0 0 0 0.62  0 0 0 0 0.82  0 0 0 0 0.08  0 3.2 0 0 -1.30" result="limeFrays" />
+                            <feComposite in="limeFrays" in2="SourceGraphic" operator="in" result="limeInk" />
+                            <feBlend in="mottledInk" in2="tealInk" mode="screen" result="tealPools" />
+                            <feBlend in="tealPools" in2="limeInk" mode="normal" result="frayedInk" />
+                            <feGaussianBlur in="frayedInk" stdDeviation="1.5" />
+                        </filter>
+                        <radialGradient id="statement-pigment" cx="50%" cy="50%" r="72%">
+                            <stop offset="0" stop-color="#3cc8bd" stop-opacity="0.96" />
+                            <stop offset="0.2" stop-color="#58bcd9" stop-opacity="0.92" />
+                            <stop offset="0.42" stop-color="#8d7de0" stop-opacity="0.9" />
+                            <stop offset="0.62" stop-color="#43bbbc" stop-opacity="0.88" />
+                            <stop offset="0.82" stop-color="#55c977" stop-opacity="0.92" />
+                            <stop offset="1" stop-color="#43bbbc" stop-opacity="0.9" />
+                        </radialGradient>
+                        <mask id="statement-violet-contact" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="900" style="mask-type: alpha">
+                            <g fill="white" filter="url(#statement-goo)">
+                                <circle class="statement-orb statement-orb--1" cx="790" cy="350" r="185" />
+                                <circle class="statement-orb statement-orb--2" cx="1190" cy="640" r="135" />
+                            </g>
+                        </mask>
+                        <mask id="statement-green-contact" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="900" style="mask-type: alpha">
+                            <g fill="white" filter="url(#statement-goo)">
+                                <g class="statement-orb statement-orb--3">
+                                    <circle cx="1180" cy="280" r="110" />
+                                </g>
+                                <g class="statement-orb statement-orb--4">
+                                    <circle cx="470" cy="640" r="145" />
+                                </g>
+                            </g>
+                        </mask>
+                    </defs>
+
+                    <!-- La unión metaball común mezcla también el contorno entre colores. -->
+                    <g class="statement-metaball-field" filter="url(#statement-goo)">
+                        <g class="statement-body">
+                            <circle class="statement-orb statement-orb--1" cx="790" cy="350" r="185" />
+                            <circle class="statement-orb statement-orb--2" cx="1190" cy="640" r="135" />
+                        </g>
+                        <g class="statement-mesh">
+                            <g class="statement-orb statement-orb--3">
+                                <circle cx="1180" cy="280" r="110" fill="#a3df02" />
+                            </g>
+                            <g class="statement-orb statement-orb--4">
+                                <circle cx="470" cy="640" r="145" fill="#a3df02" />
+                            </g>
+                        </g>
+                    </g>
+                    <!-- Color de acuarela limitado al contacto entre los discos verdes y lilas. -->
+                    <g class="statement-watercolor">
+                        <g filter="url(#statement-cross-smear)">
+                            <g mask="url(#statement-violet-contact)">
+                                <g mask="url(#statement-green-contact)">
+                                    <rect width="1440" height="900" fill="url(#statement-pigment)" />
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+                    <!-- Fallback fringe is clipped to a duplicate of the orb alpha; it never touches the black field. -->
+                    <g class="statement-tv-chroma" filter="url(#statement-tv-fringe)">
+                        <g filter="url(#statement-goo)" fill="white">
+                            <circle class="statement-orb statement-orb--1" cx="790" cy="350" r="185" />
+                            <circle class="statement-orb statement-orb--2" cx="1190" cy="640" r="135" />
+                            <g class="statement-orb statement-orb--3"><circle cx="1180" cy="280" r="110" /></g>
+                            <g class="statement-orb statement-orb--4"><circle cx="470" cy="640" r="145" /></g>
+                        </g>
+                    </g>
+                </svg>
+            </div>
             <p class="statement-text" id="statementText">
                 <span>Sintetizando</span> <span>la</span> <span>visión</span> <span class="accent italic">humana</span>
                 <span>y</span> <span>la</span> <span class="accent italic">inteligencia</span> <span>artificial</span>
@@ -477,7 +582,8 @@
         };
     })();
     </script>
-    <script src="script.js?v=33" defer></script>
+    <script src="script.js?v=41" defer></script>
+    <script src="../statement-liquid.js?v=42" defer></script>
     <script src="smooth-scroll.js?v=1" defer></script>
     <script src="cookies.js?v=5" defer></script>
 </body>
