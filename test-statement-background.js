@@ -52,6 +52,10 @@ for (const page of ["index.html", "es/index.html"]) {
     assert.equal(tvChroma.querySelectorAll("circle").length, 4, "Los cuatro discos tienen canales cromáticos");
     assert.equal(tvChroma.getAttribute("filter"), "url(#statement-tv-fringe)");
     assert.equal(background.querySelectorAll(".statement-edge-tv").length, 0, "No hay overlay cromático sobre el fondo negro");
+    assert.equal(doc.querySelector('script[src*="statement-liquid.js"]'), null,
+        "El renderer WebGL queda desactivado mientras las bolas están ocultas");
+    assert.match(html, /<!--[\s\S]*?<script src="(?:\.\.\/)?statement-liquid\.js\?v=42" defer><\/script>[\s\S]*?-->/,
+        "La referencia WebGL se conserva comentada para reactivarla");
     const tvFilter = background.querySelector("#statement-tv-fringe");
     assert.equal(tvFilter.querySelectorAll("feComposite[operator='out']").length, 2, "Ambos canales se recortan al alfa original de las bolas");
     assert.deepEqual([...tvFilter.querySelectorAll("feOffset")].map((offset) => offset.getAttribute("dx")), ["-4", "4"]);
@@ -149,63 +153,41 @@ for (const page of ["index.html", "es/index.html"]) {
         ["#3cc8bd", "#58bcd9", "#8d7de0", "#43bbbc", "#55c977", "#43bbbc"]);
     w.eval(js);
     assert.equal(doc.querySelector("#statementText").textContent, textBefore);
-    const observer = observers.find((o) => o.targets.includes(section));
-    assert.ok(observer, "Se observa la sección después de la intro");
-    const running = () => background.classList.contains("is-animating");
-    const edgeStrength = () => Number(background.style.getPropertyValue("--statement-edge-tv"));
-    const tickEdge = (timestamp) => {
-        const id = Math.max(...frames.keys());
-        const callback = frames.get(id);
-        assert.equal(typeof callback, "function", "Hay un frame pendiente para actualizar la proximidad al borde");
-        frames.delete(id);
-        frameTime = timestamp;
-        callback(timestamp);
-    };
-    assert.equal(running(), false, "En pausa por defecto");
-    const nearEdge = edgeStrength();
-    assert.ok(nearEdge > 0.98, "El fringe sube cuando una bola empieza cerca del borde");
-    observer.cb([{ isIntersecting: true }]);
-    assert.equal(running(), true, "En marcha al entrar en pantalla");
-    tickEdge(12000);
-    const awayFromEdge = edgeStrength();
-    assert.ok(awayFromEdge > 0.45 && awayFromEdge < nearEdge - 0.3, "El fringe baja solo cuando las bolas se alejan de los extremos");
-    tickEdge(22000);
-    const backAtEdge = edgeStrength();
-    assert.ok(backAtEdge > awayFromEdge + 0.4, "El fringe vuelve a subir al acercarse a los bordes");
-    observer.cb([{ isIntersecting: false }]);
-    assert.equal(running(), false, "En pausa fuera de pantalla");
-    assert.equal(edgeStrength(), backAtEdge, "Fuera de pantalla se conserva el último nivel, no se apaga");
-    observer.cb([{ isIntersecting: true }]);
-    hidden = true;
-    doc.dispatchEvent(new w.Event("visibilitychange"));
-    assert.equal(running(), false, "En pausa con la pestaña oculta");
-    assert.equal(edgeStrength(), backAtEdge, "La proximidad se conserva con la pestaña oculta");
-    hidden = false;
-    doc.dispatchEvent(new w.Event("visibilitychange"));
-    assert.equal(running(), true, "Se reanuda al volver");
-    media.matches = true;
-    media.onchange();
-    assert.equal(running(), false, "Respeta cambios de reducir movimiento");
-    assert.equal(edgeStrength(), backAtEdge, "Con movimiento reducido queda estático, no atenuado");
-    media.matches = false;
-    media.onchange();
-    assert.equal(running(), true);
-    assert.equal(edgeStrength(), backAtEdge);
+    assert.equal(background.classList.contains("is-animating"), false,
+        "Las cuatro bolas permanecen estáticas al entrar en la landing");
+    const edgeStrength = Number(background.style.getPropertyValue("--statement-edge-tv"));
+    assert.ok(edgeStrength >= 0.98 && edgeStrength <= 1,
+        "El borde conserva su nivel estático inicial, sin seguir el movimiento");
+    assert.equal(observers.some((observer) => observer.targets.includes(section)
+        || observer.targets.includes(background)), false,
+        "El controlador de movimiento no registra un observador para las bolas");
     dom.window.close();
-    console.log(`PASS ${page}: estructura, texto intacto, visibilidad y reducir movimiento`);
+    console.log(`PASS ${page}: estructura, bolas estáticas y texto intacto`);
 }
 assert.match(css, /\.statement-background\s*\{[^}]*--statement-edge-tv:\s*0\.35;/s, "The chromatic fringe keeps a visible baseline");
 assert.match(css, /\.statement-tv-chroma\s*\{[^}]*opacity:\s*var\(--statement-edge-tv,\s*0\)/s, "The clipped circle fringe follows edge proximity");
 assert.match(css, /\.statement-background\.has-liquid \.statement-tv-chroma\s*\{\s*display:\s*none;\s*\}/, "WebGL renders its own circle-only chromatic rim");
 assert.ok(js.includes("nearestEdgeGap") && js.includes("rect.right - (screenX + radius)")
     && js.includes("rect.bottom - (screenY + radius)") && js.includes("return 0.35 + 0.65 * eased;"),
-    "The intensity stays visible and rises as any orb approaches a page edge, not as the orbs approach one another");
+    "El gestor de movimiento se conserva para reactivarlo");
+const activationStart = js.indexOf('statementBackground.classList.toggle("is-animating", active);');
+const activationCommentStart = js.lastIndexOf("/*", activationStart);
+const activationCommentEnd = js.indexOf("*/", activationStart);
+const observerSetup = js.indexOf('onHeroReady(() => observer.observe(statementBackground.closest("section")));', activationStart);
+assert.ok(activationStart >= 0 && activationCommentStart > js.lastIndexOf("*/", activationStart)
+    && observerSetup > activationStart && activationCommentEnd > observerSetup,
+    "El gestor que activa y anima las cuatro bolas permanece comentado");
 assert.doesNotMatch(css, /\.statement-(?:metaballs|liquid)\s*\{[^}]*perspective\(/s, "No perspective tilt is applied to the circles on scroll");
 assert.ok(!js.includes("--statement-scroll-rotation"), "No scroll-linked circle rotation remains in script.js");
 assert.match(css, /\.statement-metaballs\s*\{[^}]*filter:\s*blur\(1px\)/s, "Fallback circles get a subtle blur");
 assert.match(css, /\.statement-liquid\s*\{[^}]*filter:\s*blur\(1px\)/s, "WebGL circles get the same subtle blur");
-assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\.statement-orb\s*\{\s*animation:\s*none;/,
-    "The balls remain static with reduced-motion preferences");
+const activeCss = css.replace(/\/\*[\s\S]*?\*\//g, "");
+assert.match(activeCss, /\.statement-background\s*>\s*\.statement-metaballs,\s*\.statement-background\s*>\s*\.statement-liquid\s*\{\s*display:\s*none\s*!important;/,
+    "Los renders SVG y WebGL de las bolas quedan ocultos");
+assert.match(activeCss, /\.statement-orb\s*\{[^}]*animation-play-state:\s*paused/s,
+    "La animación CSS se mantiene pausada en su posición inicial");
+assert.match(activeCss, /\.statement-background\.is-animating\s+\.statement-orb\s*\{\s*animation-play-state:\s*running;/,
+    "La regla para reactivar las bolas se conserva en CSS");
 assert.match(css, /@keyframes statement-orbit-a\s*\{\s*0%, 100%\s*\{\s*transform: translate\(-140px, -130px\);\s*\}\s*50%\s*\{\s*transform: translate\(-40px, 10px\);\s*\}\s*\}/, "La esfera lila grande recorre más distancia y conserva el destino");
 assert.match(css, /@keyframes statement-orbit-b\s*\{\s*0%, 100%\s*\{\s*transform: translate\(90px, 65px\);\s*\}\s*50%\s*\{\s*transform: translate\(-310px, -200px\);\s*\}\s*\}/, "La esfera lila pequeña conserva su inicio y destino");
 assert.match(css, /@keyframes statement-orbit-c\s*\{\s*0%, 100%\s*\{\s*transform: translate\(80px, -70px\);\s*\}\s*50%\s*\{\s*transform: translate\(-300px, 120px\);\s*\}\s*\}/, "El disco verde superior conserva su inicio y destino");
@@ -218,4 +200,4 @@ assert.match(css, /\.statement-metaball-field \{ opacity: 0\.32; \}/, "Los cuatr
 const svgBlock = (css.match(/\.statement-metaballs \{[^}]*\}/) || [""])[0];
 assert.ok(!/opacity/.test(svgBlock), "La opacidad vive en las capas, no en el SVG");
 assert.match(css, /@media \(max-width: 600px\)[^@]*\.statement-metaball-field \{ opacity: 0\.25; \}/s);
-console.log("PASS CSS: discos planos, fallback de fusión, pausa y movimiento reducido");
+console.log("PASS CSS: bolas ocultas, con el markup y la animación preservados");
