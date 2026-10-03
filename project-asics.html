@@ -55,7 +55,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="styles.css?v=194" />
-        <link rel="stylesheet" href="generated.css?v=31" />
+        <link rel="stylesheet" href="generated.css?v=59" />
     </head>
     <body>
         <a class="skip-link" href="#main">Skip to content</a>
@@ -100,29 +100,28 @@
         <main id="main">
             <!-- ══════════ PROJECT OPENER ══════════ -->
             <section class="node-hero" aria-labelledby="projectTitle">
-                <div class="node-hero__top">
-                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> HYPRFRAME / GENERATED</p>
+                <div class="node-hero__meta-row">
+<div class="node-hero__top">
+                    <p class="kicker"><span class="pulse" aria-hidden="true"></span> GENERATED</p>
                 </div>
                 <!-- Prev / next: the section's cycle, right under the kicker.
                      The names of the pieces stay in the aria-labels, so the row
                      reads as one small control instead of a second title. -->
                 <nav class="node-pager" aria-label="More Generated projects">
-                    <a class="node-pager__link" href="project-stained.html" rel="prev" aria-label="Previous project: Stained"><span class="node-pager__arrow" aria-hidden="true">←</span> Back</a>
+                    <a class="node-pager__link" href="project-stained.html" rel="prev" aria-label="Previous project: Stained"><span class="node-pager__arrow" aria-hidden="true"></span></a>
                     <span class="node-pager__count" aria-hidden="true">07 / 10</span>
-                    <a class="node-pager__link node-pager__link--next" href="project-farewell.html" rel="next" aria-label="Next project: Farewell">Next <span class="node-pager__arrow" aria-hidden="true">→</span></a>
+                    <a class="node-pager__link node-pager__link--next" href="project-farewell.html" rel="next" aria-label="Next project: Farewell"><span class="node-pager__arrow" aria-hidden="true"></span></a>
                 </nav>
-                <div class="node-hero__image"></div>
-                <div class="node-hero__bottom">
-                    <div class="node-hero__title">
-                        <h1 id="projectTitle" aria-label="Asics Vulcano"><span class="node-hero__word">ASICS VULCANO</span></h1>
-                    </div>
-                    <a href="#film" class="node-hero__explore" aria-label="Explore film"><span aria-hidden="true">↓</span></a>
                 </div>
+                <div class="node-hero__image"></div>
             </section>
 
             <!-- ══════════ FILM ══════════ -->
             <section class="node-film" id="film" aria-label="Asics Vulcano commercial">
                 <div class="node-player" data-vimeo="1131296888" data-title="Asics Vulcano">
+                    <div class="node-hero__title">
+                        <h1 id="projectTitle" aria-label="Asics Vulcano"><span class="node-hero__word">ASICS VULCANO</span></h1>
+                    </div>
                     <img src="assets/images/Asics.jpg" alt="" loading="lazy" />
                     <button type="button" class="node-player__play" id="playFilm" aria-label="Play Asics Vulcano on Vimeo">
                         <span class="node-player__circle" aria-hidden="true"></span>
@@ -184,7 +183,7 @@
             };
         })();
         </script>
-        <script src="generated.js?v=7" defer></script>
+        <script src="generated.js?v=16" defer></script>
         <script src="smooth-scroll.js?v=1" defer></script>
         <script src="cookies.js?v=5" defer></script>
     </body>

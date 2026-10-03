@@ -73,6 +73,9 @@ function exercisePlayer(window, doc, page) {
     const posterSrc = doc.querySelector(".node-player > img").getAttribute("src");
     doc.getElementById("playFilm").click();
     const iframe = doc.querySelector(".node-player iframe");
+    assert.ok(doc.querySelector(".node-player").classList.contains("is-playing"), `${page.file}: la caja de vídeo queda en primer plano`);
+    assert.ok(doc.querySelector(".film-page-dimmer"), `${page.file}: el resto de la página se oscurece durante la reproducción`);
+    assert.ok(doc.querySelector(".node-player > .node-hero__title"), `${page.file}: el título sigue como capa y puede desvanecerse`);
     const sent = [];
     iframe.contentWindow.postMessage = (message, targetOrigin) => sent.push({ message, targetOrigin });
     assert.match(iframe.src, new RegExp(`player\\.vimeo\\.com/video/${page.vimeo}\\?autoplay=1&dnt=1&transparent=0`));
@@ -107,11 +110,11 @@ function exercisePlayer(window, doc, page) {
     const replay = doc.querySelector(".node-player iframe");
     replay.contentWindow.postMessage = () => {};
     assert.match(replay.src, new RegExp(`player\\.vimeo\\.com/video/${page.vimeo}\\?autoplay=1`), `${page.file}: la pieza se puede volver a reproducir`);
-    doc.querySelector(".node-hero__explore").focus(); // el espectador ya está en otra parte de la página
+    doc.querySelector(".node-pager__link").focus(); // el espectador ya está en otra parte de la página
     fromVimeo(JSON.stringify({ event: "ready" }), { source: replay.contentWindow });
     fromVimeo(JSON.stringify({ event: "ended" }), { source: replay.contentWindow });
     assert.ok(doc.querySelector(".node-player > img"), `${page.file}: el fotograma vuelve también tras repetir`);
-    assert.equal(doc.activeElement, doc.querySelector(".node-hero__explore"), `${page.file}: no se roba el foco si el espectador está en otro sitio`);
+    assert.equal(doc.activeElement, doc.querySelector(".node-pager__link"), `${page.file}: no se roba el foco si el espectador está en otro sitio`);
     replay.dispatchEvent(exit);
     assert.equal(doc.querySelector(".node-player iframe"), null, `${page.file}: la segunda salida también se limpia`);
 }
@@ -141,8 +144,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=31");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=7");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=59");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=16");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -180,13 +183,13 @@ for (const page of PAGES) {
         assert.equal(squash(doc.querySelector(".site-header").textContent),
             squash(indexDoc.querySelector(".site-header").textContent),
             `${page.file}: la cabecera no es la de la landing`);
-        assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "HYPRFRAME / GENERATED");
+        assert.equal(doc.querySelector(".node-hero__top .kicker").textContent.trim(), "GENERATED");
         // La fila superior del opener lleva solo el kicker: ← ALL WORK se fue
         // (el paginador arriba y VIEW ALL ↗ bajo la sinopsis ya cubren la salida).
         assert.ok(!doc.querySelector(".node-back"), `${page.file}: sigue el enlace ← ALL WORK`);
         assert.equal(doc.querySelector(".node-hero__top").children.length, 1,
             `${page.file}: la fila del kicker lleva más de un elemento`);
-        assert.equal(doc.querySelector(".node-hero__explore").getAttribute("href"), "#film");
+        assert.equal(doc.querySelector(".node-hero__explore"), null, `${page.file}: se ha eliminado la flecha de explore`);
         // VIEW ALL ↗ cierra THE STORY: bajo la sinopsis, sobre la línea gris.
         const all = doc.querySelector(".node-story__all");
         assert.equal(all.getAttribute("href"), "index.html#work");
@@ -253,6 +256,10 @@ for (const page of PAGES) {
         assert.equal(doc.querySelectorAll(".node-player").length, 1);
         assert.equal(player.dataset.vimeo, page.vimeo, `${page.file}: Vimeo que no toca`);
         assert.ok(player.dataset.title.length > 2);
+        assert.equal(player.querySelector(".node-hero__title h1"), doc.getElementById("projectTitle"),
+            `${page.file}: el título original se ha movido dentro de la caja del vídeo`);
+        assert.equal(player.querySelector(".node-hero__title h1").getAttribute("aria-label"), page.aria,
+            `${page.file}: se conserva el título y su nombre accesible`);
         assert.equal(doc.getElementById("film").querySelector(".node-player"), player);
         assert.equal(doc.querySelector(".node-player__play").textContent.trim(), "",
             "el triángulo de play se dibuja en CSS");
@@ -318,12 +325,8 @@ for (const page of PAGES) {
     const openerRule = ruleOf(squash(stripComments(css)), ".node-hero__image");
     assert.match(openerRule, /background: var\(--bg\);/);
     assert.ok(!/radial-gradient|linear-gradient/.test(openerRule), "el degradado del opener ha vuelto");
-    const explore = doc.querySelector(".node-hero__bottom > .node-hero__explore");
-    assert.equal(explore.getAttribute("href"), "#film");
-    assert.ok(!doc.querySelector(".node-hero__image .node-hero__explore"),
-        "EXPLORE vive bajo el titular, no dentro del fondo del opener");
-    assert.equal(explore.textContent.trim(), "↓");
-    assert.equal(explore.getAttribute("aria-label"), "Explore film");
+    assert.equal(doc.querySelector(".node-hero__explore"), null,
+        "la flecha de EXPLORE se ha retirado del opener");
     for (const removed of ["HUMAN INTUITION × MACHINE SYNTHESIS", "THE WORLD OF N.O.D.E.", "WATCH ON VIMEO", "SELECTED WORK", "THE TEASER.", "A world on the edge of being rewritten.", "HYPRFRAME — N.O.D.E.", "SCROLL TO EXPLORE", "N.O.D.E. / TEASER", "N.O.D.E. [TEASER]", "PLAY FILM", "02:51", "EXPLORE THE FILM", "01 / THE FILM", "02 / THE STORY", "03 / KEEP EXPLORING"]) {
         assert.ok(!doc.body.textContent.includes(removed), `vuelve texto retirado de la maqueta: ${removed}`);
     }
@@ -349,10 +352,10 @@ for (const [i, file] of ALL.entries()) {
     const pager = doc.querySelector(".node-pager");
     assert.ok(pager && pager.tagName === "NAV", `${file}: falta el <nav> del paginador`);
     assert.ok(pager.getAttribute("aria-label"), `${file}: el paginador no se anuncia`);
-    // Debajo de HYPRFRAME / GENERATED, encima del titular.
-    assert.ok(doc.querySelector(".node-hero__top + .node-pager"),
+    // Debajo de GENERATED, encima del titular.
+    assert.ok(doc.querySelector(".node-hero__meta-row > .node-pager"),
         `${file}: el paginador no va justo bajo el kicker`);
-    assert.ok(doc.querySelector(".node-pager + .node-hero__image"),
+    assert.ok(doc.querySelector(".node-hero__meta-row + .node-hero__image"),
         `${file}: el paginador no va justo sobre el titular`);
     assert.ok(!doc.querySelector(".node-related + .node-pager"),
         `${file}: el paginador sigue cerrando la página`);
@@ -372,7 +375,7 @@ for (const [i, file] of ALL.entries()) {
             `${file}: la flecha es decorativa`);
         assert.ok(!link.querySelector(".node-pager__name"), `${file}: el paginador vuelve a enseñar nombres`);
         const visible = link.textContent.replace(/[\u2190\u2192]/g, "").trim();
-        assert.match(visible, /^(Back|Next)$/, `${file}: «${visible}» no es solo Back/Next`);
+        assert.equal(visible, "", `${file}: el paginador solo deja visible la flecha`);
         // El destino se anuncia por aria-label, ya que en pantalla no se ve.
         const label = link.getAttribute("aria-label") || "";
         assert.match(label, new RegExp(`^(Back|Previous|Next) project: .+`, 'i'), `${file}: aria-label ${label}`);
@@ -380,12 +383,15 @@ for (const [i, file] of ALL.entries()) {
             `${file}: «${label}» no nombra ${href}`);
     }
 }
+assert.match(css, /\.node-pager__arrow\s*\{[^}]*width:\s*21\.5px;[^}]*height:\s*24\.82px;[^}]*clip-path:\s*polygon\(0 50%, 100% 0, 100% 100%\)/,
+    "flecha anterior reemplazada por triángulo equilátero");
+assert.match(css, /\.node-pager__link--next \.node-pager__arrow\s*\{\s*clip-path:\s*polygon\(100% 50%, 0 0, 0 100%\);/,
+    "flecha siguiente reemplazada por triángulo equilátero invertido");
+assert.match(css, /\.node-related\s*\{\s*display:\s*none;\s*\}/,
+    "RELATED PROJECTS permanece desactivado desde CSS");
 
-/* ── El reproductor de la sección es el de Captured (legacy.css) ──
-   La ficha hereda el fotograma y el botón de play del diseño anterior: mismo
-   gris apagado, mismo hover y mismo círculo. Las reglas llevan comentarios con
-   la fecha del ajuste (p. ej. «-10% de diametro (27/09/2026)»), así que se leen
-   con los comentarios fuera. */
+/* ── El reproductor GENERATED mantiene el fotograma en color natural ──
+   El botón conserva su diseño; no se aplica el filtro desaturado al poster. */
 const generatedFlat = squash(stripComments(css));
 const legacyFlat = squash(stripComments(read("legacy.css")));
 // Misma inclinación y paso de bandas que SELECTED WORK, pero cierre de 32 a 0.
@@ -394,15 +400,13 @@ assert.match(css, /repeating-linear-gradient\(102deg, #000 0 var\(--film-stripe\
 assert.match(ruleOf(generatedFlat, ".node-player iframe.is-ending"), /--film-stripe: 0px; opacity: 0; pointer-events: none;/);
 const nodeStill = ruleOf(generatedFlat, ".node-player > img");
 const legacyStill = ruleOf(legacyFlat, ".film-card__poster img");
-assert.equal(declaration(nodeStill, "filter"), declaration(legacyStill, "filter"),
-    "el fotograma arranca con el gris apagado de Captured");
-assert.match(nodeStill, /transition: transform 0\.9s var\(--ease-out\), filter 0\.6s;/);
+assert.ok(!/filter:/.test(nodeStill), "el fotograma no arranca desaturado ni oscurecido");
+assert.match(nodeStill, /transition: transform 0\.9s var\(--ease-out\);/);
 const nodeRollover = ruleOf(generatedFlat, ".node-player:hover > img, .node-player:focus-within > img");
 const legacyRollover = ruleOf(legacyFlat, ".film-card:hover .film-card__poster img, .film-card:focus-visible .film-card__poster img");
-for (const property of ["transform", "filter"]) {
-    assert.equal(declaration(nodeRollover, property), declaration(legacyRollover, property),
-        `el fotograma hereda el hover de Captured (${property})`);
-}
+assert.equal(declaration(nodeRollover, "transform"), declaration(legacyRollover, "transform"),
+    "el fotograma mantiene el zoom de hover");
+assert.ok(!/filter:/.test(nodeRollover), "el hover no añade desaturación ni cambios de brillo");
 const nodeCircle = ruleOf(generatedFlat, ".node-player__circle");
 const legacyCircle = ruleOf(legacyFlat, ".film-card__play");
 for (const property of ["width", "border", "border-radius", "color", "font-size", "transition"]) {
@@ -438,16 +442,16 @@ assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
 // Desktop: Montserrat 700, misma clamp que antes (6.4vw) pero ahora con
 // font-family/weight separados para que N.O.D.E. respete Montserrat.
 assert.match(css,
-    /\.node-hero h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.82rem - 15px\), calc\(6\.4vw - 15px\), calc\(6\.4rem - 15px\)\)/,
+    /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 21\.25px\), calc\(5\.44vw - 21\.25px\), calc\(5\.44rem - 21\.25px\)\)/,
     "las diez páginas comparten la misma clamp del titular en Montserrat");
-const h1Rules = css.match(/\.node-hero h1 \{[^}]*\}/g);
+const h1Rules = css.match(/\.node-hero h1, \.node-player h1 \{[^}]*\}/g);
 assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
 const desktopRule = h1Rules[0];
 const mobileRule = h1Rules[1];
 assert.match(desktopRule, /white-space: nowrap/, "desktop: una sola línea");
 assert.match(desktopRule, /var\(--font-head\)/, "desktop: Montserrat");
 // Mobile: título adaptable en una sola línea — nunca se corta, siempre nowrap.
-assert.match(mobileRule, /font-size: clamp\(1\.125rem, 5\.5vw, 2\.6rem\)/, "móvil: clamp adaptable para que entre en una línea");
+assert.match(mobileRule, /font-size: clamp\(calc\(0\.95625rem - 8\.5px\), calc\(4\.675vw - 8\.5px\), calc\(2\.21rem - 8\.5px\)\)/, "móvil: clamp adaptable para que entre en una línea");
 assert.match(mobileRule, /white-space: nowrap/, "móvil: una sola línea, no se corta");
 assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líneas");
 // N.O.D.E. respeta Montserrat igual que las otras 9.
@@ -538,35 +542,17 @@ assert.match(ruleOf(generatedFlat, ".node-story"), /padding-top: clamp\(2rem, 4v
 assert.match(mobileBlock, /\.node-story \{ padding-top: 0; \}/,
     "en móvil la historia conserva el hueco de siempre bajo el vídeo");
 
-/* ── Opener: el titular baja a la altura de la flecha y la flecha se alinea
-   con el borde derecho de la caja de vídeo ──
-   El titular vive en la fila inferior junto a EXPLORE (misma altura,
-   align-items center); la flecha recula el margen exacto que .node-player
-   deja a su derecha, y el label del hero es su caja de referencia en móvil.
-   (29/09/2026) */
+/* El h1 original vive dentro de la caja del vídeo, arriba a la izquierda;
+   el antiguo enlace EXPLORE y la fila vacía se retiran del opener. */
 for (const file of ALL) {
     const doc = new JSDOM(read(file)).window.document;
-    assert.ok(doc.querySelector(".node-hero__bottom > .node-hero__title"),
-        `${file}: el titular no vive en la fila inferior`);
-    assert.ok(!doc.querySelector(".node-hero__image .node-hero__title"),
-        `${file}: el titular sigue dentro del campo liso del opener`);
-    assert.ok(doc.querySelector(".node-hero__bottom > .node-hero__explore"),
-        `${file}: la flecha sigue en la fila inferior`);
+    assert.ok(doc.querySelector(".node-player > .node-hero__title h1#projectTitle"),
+        `${file}: el título original no vive dentro de la caja de vídeo`);
+    assert.equal(doc.querySelector(".node-hero__explore"), null,
+        `${file}: queda la flecha EXPLORE`);
+    assert.equal(doc.querySelector(".node-hero__bottom"), null,
+        `${file}: queda una fila inferior vacía`);
 }
-assert.match(ruleOf(generatedFlat, ".node-hero__bottom"),
-    /display: flex; align-items: center; justify-content: space-between;/,
-    "titular y flecha a la misma altura, en los extremos de la fila");
-assert.match(ruleOf(generatedFlat, ".node-hero__title"),
-    /margin-left: clamp\(1\.25rem, 4vw, 4rem\);/,
-    "el titular conserva su posición horizontal de siempre");
-assert.ok(!/position: absolute/.test(ruleOf(generatedFlat, ".node-hero__title")),
-    "el titular ya no está posicionado en absoluto");
-assert.match(generatedFlat, /\.node-hero__explore \{ margin-right: calc\(\(100% - 85\.5%\) \/ 2\); \}/,
-    "la flecha recula el margen exacto que deja la caja de vídeo a su derecha");
-assert.match(mobileBlock, /\.node-hero__explore \{ margin-right: 0; font-size: 0\.56rem; \}/,
-    "en móvil la flecha no lleva el margen de escritorio");
-assert.match(ruleOf(generatedFlat, ".node-hero"), /position: relative;/,
-    "el hero ancla la fila inferior absoluta en móvil");
 
 /* ── Opener: el hueco entre el paginador y el titular, recortado ──
    El campo liso del opener y el relleno inferior del paginador se reducen a la
@@ -575,14 +561,16 @@ assert.match(ruleOf(generatedFlat, ".node-hero"), /position: relative;/,
    relleno propios, donde la fila inferior va anclada al hero y el hueco ya era
    mucho más corto. (30/09/2026) */
 assert.match(ruleOf(generatedFlat, ".node-hero__image"),
-    /height: clamp\(84px, 11svh, 120px\);/,
+    /height: calc\(clamp\(84px, 11svh, 120px\) - 80px\);/,
     "el campo liso del opener vuelve a crecer por encima de la mitad");
 assert.match(ruleOf(generatedFlat, ".node-pager"),
-    /padding-bottom: clamp\(0\.8rem, 1\.5vw, 1\.35rem\);/,
-    "el paginador recupera el relleno largo bajo el contador");
-assert.match(mobileBlock, /\.node-hero__image \{ height: clamp\(110px, 18svh, 145px\); \}/,
+    /grid-column: 2; justify-self: center;/,
+    "el paginador se mantiene centrado en la fila con el kicker");
+assert.match(generatedFlat, /\.node-pager \{[^}]*padding-bottom: 0;/,
+    "el paginador no añade aire bajo el contador");
+assert.match(mobileBlock, /\.node-hero__image \{ height: calc\(clamp\(110px, 18svh, 145px\) - 80px\); \}/,
     "el campo liso del móvil no es el de escritorio");
-assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0\.5rem; \}/,
+assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
 
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
@@ -591,8 +579,8 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=31/);
-    assert.match(es, /generated\.js\?v=7/);
+    assert.match(es, /generated\.css\?v=59/);
+    assert.match(es, /generated\.js\?v=16/);
 }
 
 /* Si el espectador pide menos movimiento, el iframe desaparece sin animación. */

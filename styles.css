@@ -150,8 +150,8 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-head);
 }
 .preloader-orbits {
-    position: absolute; top: 12.5%; left: 12.5%;
-    display: block; width: 75%; height: 75%;
+    position: absolute; top: calc(12.5% + 4.5px); left: calc(12.5% + 4.5px);
+    display: block; width: calc(75% - 9px); height: calc(75% - 9px);
     overflow: visible;
     opacity: 0.8;
 }
@@ -159,6 +159,7 @@ html.hf-skip-intro .preloader { display: none; }
     fill: none;
     stroke: #fff;
     stroke-width: 1px;
+    opacity: 1; transition: opacity 0.3s ease-out;
     vector-effect: non-scaling-stroke;
     transform-box: view-box;
     transform-origin: 50% 50%;
@@ -174,6 +175,9 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-mono); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--fg);
     letter-spacing: 0.04em;
+}
+.preloader.triangles-fading .preloader-triangle {
+    opacity: 0; transition: opacity 0.3s ease-out;
 }
 .preloader.is-complete .preloader-triangle,
 .preloader.done .preloader-triangle { animation-play-state: paused; }
@@ -975,7 +979,7 @@ section { position: relative; }
     /* Foto y degradado arrancan primero; solo la apertura espera 0,3 s.
        Al salir, la caja vuelve a su tamaño sin demora. */
     transition-delay: 0.3s, 0s, 0s;
-    padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075);
+    padding-block: calc(var(--work-row-pad) + (2 * var(--work-row-pad) + var(--work-row-content-h) + 1px) * 0.075 + 22.5px);
 }
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
@@ -1985,4 +1989,34 @@ label.cookie-purpose-head { cursor: pointer; }
     /* Mantiene parte de los círculos a la vista en el recorte vertical. */
     .statement-metaballs { width: 150%; margin-left: -45%; }
     .statement-metaball-field { opacity: 0.25; }
+}
+
+/* Cross-page GENERATED thumbnail handoff. The clone keeps the row's crop and
+   soft left edge, then expands into the matching film poster. */
+.work-transition {
+    position: fixed; z-index: 2000; pointer-events: none;
+    background-size: cover; background-repeat: no-repeat;
+    transform: scale(1); transform-origin: center;
+    -webkit-mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+            mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+    transition: left .42s cubic-bezier(.16,1,.3,1), top .42s cubic-bezier(.16,1,.3,1),
+        width .42s cubic-bezier(.16,1,.3,1), height .42s cubic-bezier(.16,1,.3,1),
+        transform .42s cubic-bezier(.16,1,.3,1), opacity .22s ease-out;
+}
+.work-transition::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    opacity: 1; transition: opacity .22s ease-out;
+}
+.work-transition.is-opening { transform: scale(1); }
+.work-transition.is-opening::after { opacity: 0; }
+.work-transition--departure.is-opening { transform: scale(1.28); }
+.work-transition--arrival.is-dissolving { opacity: 0; }
+.hf-entry-black {
+    position: fixed; inset: 0; z-index: 700; background: #050505;
+    opacity: 1; pointer-events: none; transition: opacity .6s ease;
+}
+.hf-entry-black.is-fading { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }

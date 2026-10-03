@@ -4,6 +4,15 @@
    Brand tokens, navigation, grain and footer come from styles.css.
    The .node-* names are kept from the first page of the section (N.O.D.E.). */
 
+/* En GENERATED la cabecera muestra desde el primer frame su estado final fijado. */
+.site-header {
+    padding: 0.8rem var(--pad);
+    background: rgba(5, 5, 5, 0.65);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+}
+.site-header .logo img { height: 46px; }
+
 /* Keep the close control on top of the fullscreen menu on mobile. */
 body.menu-open .site-header { z-index: 900; }
 body.menu-open { overflow: hidden; }
@@ -19,7 +28,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
     font: 400 0.65rem/1.5 var(--font-mono);
     letter-spacing: 0.21em; text-transform: uppercase; color: var(--muted);
 }
-.node-hero__top { padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+.node-hero__top { padding-bottom: 0; }
+.node-hero__meta-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center; padding-bottom: calc(clamp(3rem, 5vw, 4.5rem) - 15px);
+}
+.node-hero__top { grid-column: 1; }
+.node-pager { grid-column: 2; justify-self: center; }
 .node-hero__top .kicker { margin: 0; font-size: inherit; letter-spacing: inherit; }
 /* Prev / next, between the kicker and the title. The old template paged through
    the portfolio with a bare arrow-colon-arrow row; the section keeps that triad
@@ -28,23 +43,33 @@ body.menu-open .menu-overlay a { visibility: visible; }
    Which piece each arrow leads to lives in the link's aria-label, and the cycle
    follows SELECTED WORK on the landing. */
 .node-pager {
-    display: flex; align-items: baseline; justify-content: center;
+    position: relative; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
     gap: clamp(0.9rem, 2vw, 1.75rem);
     /* 30/09/2026: el relleno inferior se recorta (1rem/2vw/1.75rem →
        0.8rem/1.5vw/1.35rem, ~23% menos) para que el grupo quede más cerca del
        titular, junto con el campo liso de abajo. En móvil manda su propio
        bloque (≤560px: 0.5rem). */
-    padding-bottom: clamp(0.8rem, 1.5vw, 1.35rem);
+    padding-bottom: 0;
 }
 .node-pager__link {
-    display: inline-flex; align-items: baseline; gap: 0.55rem;
+    position: relative; z-index: 1; cursor: pointer; pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 0.55rem;
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
     text-transform: uppercase; color: var(--muted); white-space: nowrap;
     transition: color 0.3s;
 }
 .node-pager__arrow {
-    font-size: 1.05rem; color: var(--violet);
-    transition: transform 0.45s var(--ease-out), color 0.3s;
+    display: block; flex: none; width: 21.5px; height: 24.82px;
+    background: var(--violet);
+    clip-path: polygon(0 50%, 100% 0, 100% 100%);
+    transition: transform 0.45s var(--ease-out), background-color 0.3s;
+}
+.node-pager__link--next .node-pager__arrow {
+    clip-path: polygon(100% 50%, 0 0, 0 100%);
+}
+@media (forced-colors: active) {
+    .node-pager__arrow { background: ButtonText; }
 }
 .node-pager__count {
     font: 400 0.65rem/1.5 var(--font-mono); letter-spacing: 0.21em;
@@ -52,7 +77,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .node-pager__link:hover, .node-pager__link:focus-visible { color: var(--fg); }
 .node-pager__link:hover .node-pager__arrow,
-.node-pager__link:focus-visible .node-pager__arrow { color: var(--lime); }
+.node-pager__link:focus-visible .node-pager__arrow { background-color: var(--lime); }
 .node-pager__link:hover .node-pager__arrow { transform: translateX(-0.3rem); }
 .node-pager__link--next:hover .node-pager__arrow { transform: translateX(0.3rem); }
 /* El campo liso que separaba el paginador del titular era el que abría el hueco
@@ -63,7 +88,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
    El móvil conserva su campo (≤560px: 110px/18svh/145px), donde la fila
    inferior va anclada al hero y el hueco ya era mucho más corto. (30/09/2026) */
 .node-hero__image {
-    position: relative; height: clamp(84px, 11svh, 120px);
+    position: relative; height: calc(clamp(84px, 11svh, 120px) - 80px);
     isolation: isolate; overflow: hidden;
     background: var(--bg);
 }
@@ -73,6 +98,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
    y en su posición horizontal de siempre (el margen reproduce el left que
    llevaba como absolute). (29/09/2026) */
 .node-hero__title { margin-left: clamp(1.25rem, 4vw, 4rem); max-width: calc(100% - 2rem); }
+.node-player > .node-hero__title {
+    position: absolute; z-index: 3; top: clamp(1rem, 2.2vw, 2rem); left: 0;
+    margin-left: 0; max-width: calc(100% - 2rem); padding: .55rem 1.2rem .55rem clamp(1rem, 2.5vw, 2.25rem);
+    background: rgba(128, 128, 128, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); pointer-events: none;
+}
 /* One size for the ten titles of the section, and the longest one sets it: the
    h1 runs on a single row (nowrap), so DEEP IN THE FOREST [Teaser] is the limit
    — 456px of the 478px available at 561px, the tightest point above the mobile
@@ -93,10 +123,10 @@ body.menu-open .menu-overlay a { visibility: visible; }
    Mobile (≤560px) uses a smaller, fully fluid clamp with white-space: nowrap
    so every title — including the longest — fits in a single line without being
    cut by the opener's overflow. */
-.node-hero h1 {
+.node-hero h1, .node-player h1 {
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: clamp(calc(2.82rem - 15px), calc(6.4vw - 15px), calc(6.4rem - 15px));
+    font-size: clamp(calc(2.397rem - 21.25px), calc(5.44vw - 21.25px), calc(5.44rem - 21.25px));
     line-height: 0.8;
     letter-spacing: -0.025em; color: var(--fg); white-space: nowrap;
 }
@@ -105,6 +135,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
    son el carácter «.» de la propia fuente, con su tamaño y sus espacios
    laterales. Las cajas CSS que los dibujaban (.node-hero__dot) se quitaron
    (29/09/2026). */
+.node-player h1 { color: rgba(239, 238, 233, 0.8); }
 .node-hero__word { white-space: nowrap; font-family: var(--font-head); font-weight: 700; }
 .node-hero__teaser { font-family: var(--font-head); font-size: calc(0.4em + 10px); font-weight: 600; letter-spacing: 0.015em; } /* +10px (25/09/2026) */
 /* La fila inferior del opener: el titular a la izquierda (en su posición
@@ -112,23 +143,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
    La flecha se acerca a la caja de vídeo con el margen exacto que esta deja a
    su derecha ((100% - 85.5%) / 2, ver .node-player), así que su extremo
    derecho queda alineado con el borde derecho del vídeo. (29/09/2026) */
-.node-hero__bottom {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1.3rem 0;
-}
-.node-hero__explore {
-    display: inline-flex; align-items: center; gap: 1.75rem;
-    font: 400 0.65rem/1 var(--font-mono); letter-spacing: 0.17em;
-    transition: color 0.3s;
-}
-/* Su extremo derecho queda clavado al borde derecho de la caja de vídeo:
-   recula exactamente el margen que .node-player deja a su derecha.
-   (29/09/2026) */
-.node-hero__explore { margin-right: calc((100% - 85.5%) / 2); }
-.node-hero__explore span { font-size: 1.3rem; }
-.node-hero__explore:hover { color: var(--lime); }
 .node-film, .node-story, .node-related { padding-inline: var(--pad); }
-.node-film { padding-top: clamp(3rem, 6vw, 5rem); scroll-margin-top: 5rem; }
+.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: -90px; scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
 /* El label de THE STORY, debajo del vídeo, sin línea. Antes copiaba el ancho de
    la caja de vídeo (85,5% centrado), así que su texto arrancaba 7,25% a la
@@ -154,12 +170,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-player { position: relative; aspect-ratio: 16 / 9; width: 85.5%; margin-inline: auto; background: #000; overflow: hidden; } /* 90% → 85.5% (27/09/2026) · 5% más de reducción sobre el 90% */
 .node-player > img {
     width: 100%; height: 100%; object-fit: cover;
-    filter: grayscale(0.35) saturate(0.8) brightness(0.8);
-    transition: transform 0.9s var(--ease-out), filter 0.6s;
+    transition: transform 0.9s var(--ease-out);
 }
-.node-player:hover > img, .node-player:focus-within > img {
-    transform: scale(1.06); filter: grayscale(0) saturate(1) brightness(0.95);
-}
+.node-player:hover > img, .node-player:focus-within > img { transform: scale(1.06); }
 .node-player__play {
     position: absolute; inset: 0; width: 100%; height: 100%;
     display: grid; place-items: center;
@@ -283,7 +296,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
        title and the film starts closer to the call to action. */
     .node-hero { padding-top: 5.5rem; }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-hero__image { height: clamp(110px, 18svh, 145px); }
+    .node-hero__image { height: calc(clamp(110px, 18svh, 145px) - 80px); }
     .node-film { padding-top: 1.75rem; }
     /* Mobile: título adaptable en una sola línea — nunca se corta.
        clamp(1.125rem, 5.5vw, 2.6rem) cabe en 320px para el titular más largo
@@ -292,8 +305,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
        ~239px (fila 271px − margen izq. 20px − flecha ~12px).
        white-space: nowrap garantiza una sola línea; el teaser va debajo en
        bloque pequeño para no competir por ancho. */
-    .node-hero h1 {
-        font-size: clamp(1.125rem, 5.5vw, 2.6rem);
+    .node-hero h1, .node-player h1 {
+        font-size: clamp(calc(0.95625rem - 8.5px), calc(4.675vw - 8.5px), calc(2.21rem - 8.5px));
         white-space: nowrap;
         letter-spacing: -0.02em;
         line-height: 0.9;
@@ -305,18 +318,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
         font-size: calc(0.5em + 6px);
         white-space: nowrap;
     }
-    /* En móvil, EXPLORE y el titular comparten la fila inferior del opener
-       (ahora es la misma fila en el DOM): el nombre a la izquierda y la llamada
-       a la derecha, a la misma altura. Anclada al hero (position: relative)
-       con bottom: 1.5rem, en la banda inferior del campo liso. La flecha no
-       lleva el margen de escritorio: su fila ya termina retraída respecto al
-       borde. (29/09/2026) */
-    .node-hero__bottom {
-        position: absolute;
-        left: var(--pad); right: clamp(3rem, 9vw, 3.5rem); bottom: 1.5rem;
-        padding: 0;
-    }
-    .node-hero__explore { margin-right: 0; font-size: 0.56rem; }
     /* En móvil el rótulo de THE STORY ya iba de borde a borde desde la regla
        base (sin ancho propio) y sus huecos conservan las medidas de siempre: ni
        el acercamiento al h2 ni el aire extra bajo el vídeo de la versión web
@@ -333,11 +334,82 @@ body.menu-open .menu-overlay a { visibility: visible; }
        botón de play igual de centrado. (28/09/2026) */
     .node-player { width: 100%; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
-    .node-pager { gap: 0.35rem; padding-bottom: 0.5rem; }
+    .node-pager { gap: 0.35rem; padding-bottom: 0; }
     .node-pager__link { gap: 0.15rem; }
     .node-pager__link, .node-pager__count { font-size: 0.56rem; letter-spacing: 0.12em; }
-    .node-pager__arrow { font-size: 0.95rem; }
+    .node-hero__meta-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+    .node-hero__top .kicker { font-size: 0.42rem; letter-spacing: 0.05em; white-space: nowrap; }
+    .node-pager__arrow { width: 11.05px; height: 12.76px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .node-card__image img, .node-player > img, .node-pager__arrow { transition: none; }
 }
+
+/* Black interstitial is below the fixed site header and the top progress line. */
+.work-transition {
+    position: fixed; z-index: 2000; pointer-events: none;
+    background-size: cover; background-repeat: no-repeat; transform: scale(1);
+    transform-origin: center;
+    -webkit-mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+            mask-image: linear-gradient(to left, #000 42%, transparent 98%);
+    transition: left .42s cubic-bezier(.16,1,.3,1), top .42s cubic-bezier(.16,1,.3,1),
+        width .42s cubic-bezier(.16,1,.3,1), height .42s cubic-bezier(.16,1,.3,1),
+        transform .42s cubic-bezier(.16,1,.3,1), opacity .22s ease-out;
+}
+.work-transition::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    opacity: 1; transition: opacity .22s ease-out;
+}
+.work-transition.is-opening { transform: scale(1); }
+.work-transition.is-opening::after { opacity: 0; }
+.work-transition--departure.is-opening { transform: scale(1.28); }
+.work-transition--arrival.is-dissolving { opacity: 0; }
+.hf-entry-black {
+    position: fixed; inset: 0; z-index: 700; background: #050505;
+    opacity: 1; pointer-events: none; transition: opacity .6s ease;
+}
+.hf-entry-black.is-fading { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
+}
+
+/* Related Projects is intentionally retained in the markup, but disabled so
+   its card images and section do not load/show until explicitly re-enabled. */
+.node-related { display: none; }
+
+/* Starting playback fades out the title panel while dimming the page around
+   the player; the elevated video itself remains at full brightness. */
+.node-player > .node-hero__title { transition: opacity .8s ease; }
+.node-player.is-playing { z-index: 901; }
+.node-player.is-playing > .node-hero__title { opacity: 0; }
+.film-page-dimmer {
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
+    background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity 1s ease;
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+body.film-is-playing .node-pager { z-index: 901; }
+.node-pager::after {
+    content: ""; position: absolute; inset: -0.2rem; z-index: 5;
+    background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
+    transition: opacity 1s ease;
+}
+body.film-is-playing .node-pager::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .node-pager::after { transition-duration: .01ms; }
+}
+.film-page-dimmer.is-visible { opacity: 1; }
+.film-page-dimmer.is-clearing { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    .node-player > .node-hero__title, .film-page-dimmer { transition-duration: .01ms; }
+}
+
+/* Desktop playback expands the player box itself to the browser fullscreen. */
+.node-player:fullscreen,
+.node-player:-webkit-full-screen {
+    position: fixed; inset: 0; z-index: 2147483647;
+    width: 100vw; height: 100vh; height: 100dvh; max-width: none;
+    aspect-ratio: auto; margin: 0; background: #000; overflow: hidden;
+}
+.node-player:fullscreen iframe,
+.node-player:-webkit-full-screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }

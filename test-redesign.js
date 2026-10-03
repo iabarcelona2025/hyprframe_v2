@@ -431,8 +431,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.preloader-triangle--inner\s*\{\s*animation:\s*preloader-spin-counterclockwise\s+0\.48s\s+linear\s+infinite;\s*\}/.test(css) &&
         /preloader-spin-clockwise\s*\{\s*to\s*\{\s*transform:\s*rotate\(360deg\)/.test(css) &&
         /preloader-spin-counterclockwise\s*\{\s*to\s*\{\s*transform:\s*rotate\(-360deg\)/.test(css));
-    check("preloader triangles are 20% transparent and 25% smaller",
-        /\.preloader-orbits\s*\{[^}]*top:\s*12\.5%;[^}]*left:\s*12\.5%;[^}]*width:\s*75%;[^}]*height:\s*75%;[^}]*opacity:\s*0\.8;/s.test(css));
+    check("preloader orbit is reduced by 7px and stays centered",
+        /\.preloader-orbits\s*\{[^}]*top:\s*calc\(12\.5% \+ 4\.5px\);[^}]*left:\s*calc\(12\.5% \+ 4\.5px\);[^}]*width:\s*calc\(75% - 9px\);[^}]*height:\s*calc\(75% - 9px\);[^}]*opacity:\s*0\.8;/s.test(css));
+    check("preloader triangles fade out 0.3s before the counter reaches 100",
+        /\.preloader\.triangles-fading \.preloader-triangle\s*\{[^}]*opacity:\s*0;[^}]*transition:\s*opacity 0\.3s/.test(css) &&
+        /n >= 90 && preloader\) preloader\.classList\.add\("triangles-fading"\)/.test(js));
     check("preloader rotations stop as soon as the counter reaches 100",
         /\.preloader\.is-complete \.preloader-triangle[\s\S]*?animation-play-state:\s*paused/.test(css) &&
         /preCount\.textContent = "100";\s*if \(preloader\) preloader\.classList\.add\("is-complete"\)/.test(js));

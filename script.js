@@ -50,6 +50,8 @@
             const tick = setInterval(() => {
                 // ease-out curve toward 100
                 n += Math.max(1, Math.round((100 - n) * 0.06));
+                // Fade out both orbit triangles ~0.3s before the counter reaches 100.
+                if (n >= 90 && preloader) preloader.classList.add("triangles-fading");
                 if (n >= 100 && performance.now() - started >= MIN_DURATION) {
                     n = 100;
                     clearInterval(tick);
@@ -948,6 +950,22 @@
     // inyecta el fotograma de cada proyecto como variable CSS de su fila
     rows.forEach((row) => row.style.setProperty("--img", `url("${row.dataset.img}")`));
 
+    // Carry the Selected Work still into the corresponding Generated film page.
+    rows.forEach((row) => row.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const rect = row.getBoundingClientRect();
+        const start = { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
+        const imagePosition = getComputedStyle(row, "::after").backgroundPosition;
+        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition })); } catch (_) {}
+        const layer = document.createElement("div");
+        layer.className = "work-transition work-transition--departure";
+        layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
+        document.body.append(layer);
+        event.preventDefault();
+        requestAnimationFrame(() => layer.classList.add("is-opening"));
+        setTimeout(() => { location.href = row.href; }, 440);
+    }));
+
     if (follower && followerImg && rows.length && !isTouch && !reduced) {
         let fx = innerWidth / 2, fy = innerHeight / 2;   // follower position (lerped)
         let tx = fx, ty = fy;                            // target (mouse)
@@ -1051,5 +1069,5 @@
     addEventListener("keydown", (e) => { if (e.key === "Escape") toggleMenu(false); });
 
 
-    
+
 })();
