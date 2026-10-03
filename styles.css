@@ -143,29 +143,45 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
    el preloader se oculta desde el primer frame, sin llegar a pintarse. */
 html.hf-skip-intro .preloader { display: none; }
 .preloader-inner {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 0.65rem;
+    position: relative;
+    display: grid; place-items: center;
+    width: min(42vw, 164px); min-width: 136px;
+    aspect-ratio: 1;
     font-family: var(--font-head);
 }
+.preloader-orbits {
+    position: absolute; top: 12.5%; left: 12.5%;
+    display: block; width: 75%; height: 75%;
+    overflow: visible;
+    opacity: 0.8;
+}
+.preloader-triangle {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+.preloader-triangle--outer { animation: preloader-spin-clockwise 0.62s linear infinite; }
+.preloader-triangle--inner { animation: preloader-spin-counterclockwise 0.48s linear infinite; }
 .preloader-count {
-    font-size: 12px;
-    /* Misma tipografía que el menú fijo superior (Space Mono), en blanco.
-       Space Mono solo se carga en 400/700: 400 es el peso del menú. */
+    position: relative; z-index: 1;
+    min-width: 3ch; text-align: center;
+    font-size: 12px; line-height: 1;
+    /* Misma Space Mono del menú fijo superior, en blanco y con cifras tabulares. */
     font-family: var(--font-mono); font-weight: 400;
     font-variant-numeric: tabular-nums; color: var(--fg);
     letter-spacing: 0.04em;
 }
-.preloader-word {
-    font-size: clamp(1rem, 3vw, 1.75rem); font-weight: 700;
-    letter-spacing: 0.35em; color: var(--fg);
+.preloader.is-complete .preloader-triangle,
+.preloader.done .preloader-triangle { animation-play-state: paused; }
+@keyframes preloader-spin-clockwise {
+    to { transform: rotate(360deg); }
 }
-.preloader-bar {
-    width: 20px; height: 2px; overflow: hidden;
-    background: var(--muted);
-}
-.preloader-bar span {
-    display: block; height: 100%; width: 0%;
-    background: var(--lime);
+@keyframes preloader-spin-counterclockwise {
+    to { transform: rotate(-360deg); }
 }
 
 /* ── Scroll progress ─────────────────────────────────────── */
@@ -849,6 +865,9 @@ section { position: relative; }
 }
 .statement-background.has-liquid .statement-liquid { display: block; }
 .statement-background.has-liquid .statement-metaballs { display: none; }
+/* Bolas del statement ocultas temporalmente; se conservan sus capas SVG/WebGL. */
+.statement-background > .statement-metaballs,
+.statement-background > .statement-liquid { display: none !important; }
 .statement-background.has-liquid.is-animating .statement-orb { animation-play-state: paused; }
 .statement-metaball-field { opacity: 0.32; }
 .statement-body { fill: var(--violet); }

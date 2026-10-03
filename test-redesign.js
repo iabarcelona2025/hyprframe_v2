@@ -405,15 +405,39 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         heroLog.children.length === 1 && heroLog.firstElementChild.hasAttribute("data-log-lines"));
 
     const preloaderInner = doc.querySelector(".preloader-inner");
-    const preloaderBar = doc.querySelector(".preloader-bar");
-    check("preloader countdown is centered in the screen with a vertical stack",
+    const preloaderCount = doc.getElementById("preCount");
+    const orbitSvg = preloaderInner.querySelector(".preloader-orbits");
+    const triangles = [...preloaderInner.querySelectorAll("polygon.preloader-triangle")];
+    const polygons = triangles;
+    const triangleGeometryIsEquilateralAndCentered = polygons.length === 2 && polygons.every((polygon) => {
+        const points = polygon.getAttribute("points").trim().split(/\s+/).map((pair) => pair.split(",").map(Number));
+        if (points.length !== 3) return false;
+        const centroid = points.reduce((sum, point) => [sum[0] + point[0] / 3, sum[1] + point[1] / 3], [0, 0]);
+        const sides = points.map((point, i) => {
+            const next = points[(i + 1) % points.length];
+            return Math.hypot(next[0] - point[0], next[1] - point[1]);
+        });
+        return Math.abs(centroid[0] - 50) < 0.02 && Math.abs(centroid[1] - 50) < 0.02
+            && Math.max(...sides) - Math.min(...sides) < 0.1;
+    });
+    check("preloader counter and two equilateral outlines share the screen center",
         /\.preloader\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center/.test(css) &&
-        /\.preloader-inner\s*\{[^}]*flex-direction:\s*column;[^}]*align-items:\s*center/.test(css) &&
-        doc.getElementById("preCount").parentElement === preloaderInner &&
-        doc.getElementById("preCount").nextElementSibling === preloaderBar);
-    check("preloader progress is a 20px by 2px gray track with a lime fill",
-        /\.preloader-bar\s*\{[^}]*width:\s*20px;[^}]*height:\s*2px;[^}]*background:\s*var\(--muted\)/.test(css) &&
-        /\.preloader-bar span\s*\{[^}]*background:\s*var\(--lime\)/.test(css));
+        /\.preloader-inner\s*\{[^}]*position:\s*relative;[^}]*display:\s*grid;[^}]*place-items:\s*center/.test(css) &&
+        preloaderCount.parentElement === preloaderInner && preloaderCount.previousElementSibling === orbitSvg &&
+        orbitSvg.getAttribute("viewBox") === "0 0 100 100" && triangleGeometryIsEquilateralAndCentered);
+    check("preloader triangles are white 1px outlines rotating quickly in opposite directions",
+        /\.preloader-triangle\s*\{[^}]*stroke:\s*#fff;[^}]*stroke-width:\s*1px;[^}]*vector-effect:\s*non-scaling-stroke/s.test(css) &&
+        /\.preloader-triangle--outer\s*\{\s*animation:\s*preloader-spin-clockwise\s+0\.62s\s+linear\s+infinite;\s*\}/.test(css) &&
+        /\.preloader-triangle--inner\s*\{\s*animation:\s*preloader-spin-counterclockwise\s+0\.48s\s+linear\s+infinite;\s*\}/.test(css) &&
+        /preloader-spin-clockwise\s*\{\s*to\s*\{\s*transform:\s*rotate\(360deg\)/.test(css) &&
+        /preloader-spin-counterclockwise\s*\{\s*to\s*\{\s*transform:\s*rotate\(-360deg\)/.test(css));
+    check("preloader triangles are 20% transparent and 25% smaller",
+        /\.preloader-orbits\s*\{[^}]*top:\s*12\.5%;[^}]*left:\s*12\.5%;[^}]*width:\s*75%;[^}]*height:\s*75%;[^}]*opacity:\s*0\.8;/s.test(css));
+    check("preloader rotations stop as soon as the counter reaches 100",
+        /\.preloader\.is-complete \.preloader-triangle[\s\S]*?animation-play-state:\s*paused/.test(css) &&
+        /preCount\.textContent = "100";\s*if \(preloader\) preloader\.classList\.add\("is-complete"\)/.test(js));
+    check("green progress bar removed; only the 0–100 counter tracks loading",
+        !doc.querySelector(".preloader-bar") && !css.includes(".preloader-bar") && !js.includes("preBar"));
 
     // preloader: ~3.2s of ticking to 100 + 260ms
     await wait(1500);

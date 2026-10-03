@@ -17,7 +17,6 @@
     const introForced = document.documentElement.classList.contains("hf-force-intro");
     const preloader = document.getElementById("preloader");
     const preCount = document.getElementById("preCount");
-    const preBar = document.getElementById("preBar");
 
     const heroReadyCbs = [];
     let heroReady = false;
@@ -46,8 +45,7 @@
             let n = 0;
             const started = performance.now();
             const MIN_DURATION = 900; // ms — keeps the intro legible even on cache hits
-            // La curva tarda 46 pasos: 46 × 28 ms = 1,29 s. En cada paso se
-            // actualizan juntos el número y el ancho de la barra de progreso.
+            // La curva tarda 46 pasos: 46 × 28 ms = 1,29 s; solo avanza el contador.
             const TICK_MS = 28;
             const tick = setInterval(() => {
                 // ease-out curve toward 100
@@ -56,11 +54,10 @@
                     n = 100;
                     clearInterval(tick);
                     preCount.textContent = "100";
-                    preBar.style.width = "100%";
+                    if (preloader) preloader.classList.add("is-complete");
                     setTimeout(() => finishPreload(true), 260);
                 } else {
                     preCount.textContent = n;
-                    preBar.style.width = n + "%";
                 }
             }, TICK_MS);
         }
@@ -774,13 +771,11 @@
     }
 
     /* ── 6a. Statement: fondo de círculos / metaballs ───────── */
-    // Las órbitas propias de cada círculo se pausan fuera de pantalla y con
-    // reduced-motion; el scroll no aplica transformaciones al conjunto.
+    // Las cuatro bolas quedan estáticas temporalmente. Se conserva el cálculo
+    // inicial del borde y se comenta el gestor que las ponía en movimiento.
     const statementBackground = document.querySelector(".statement-background");
     if (statementBackground) {
-        const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-        let visible = false;
-        let edgeRaf = 0, edgeClock = 0, edgeLast = 0;
+        let edgeClock = 0;
         const orbs = [
             { x: 790, y: 350, from: [-140, -130], to: [-40, 10], radius: 185, period: 22 },
             { x: 1190, y: 640, from: [90, 65], to: [-310, -200], radius: 135, period: 19 },
@@ -818,6 +813,13 @@
             statementBackground.style.setProperty("--statement-edge-tv", edgeStrengthAt(edgeClock).toFixed(3));
         };
         applyEdgeTv();
+        window.addEventListener("resize", applyEdgeTv);
+
+        /* Animación temporalmente desactivada: para reactivarla, descomentar
+           este bloque; el cálculo estático del borde permanece encendido.
+        const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let visible = false;
+        let edgeRaf = 0, edgeLast = 0;
         const updateEdgeTv = (now) => {
             edgeRaf = 0;
             if (!visible || document.hidden || motion.matches) {
@@ -849,6 +851,7 @@
         motion.addEventListener?.("change", syncBackground);
         window.addEventListener("resize", () => { if (!edgeRaf) applyEdgeTv(); });
         onHeroReady(() => observer.observe(statementBackground.closest("section")));
+        */
     }
 
     /* ── 6. Statement: barrido de encendido, de letra en letra ── */
