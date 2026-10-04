@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=86");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=87");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -501,7 +501,7 @@ const mobileRule = h1Rules[1];
 assert.match(desktopRule, /white-space: nowrap/, "desktop: una sola línea");
 assert.match(desktopRule, /var\(--font-head\)/, "desktop: Montserrat");
 // Mobile: título adaptable en una sola línea — nunca se corta, siempre nowrap.
-assert.match(mobileRule, /font-size: clamp\(calc\(0\.95625rem - 3\.5px\), calc\(4\.675vw - 3\.5px\), calc\(2\.21rem - 3\.5px\)\)/, "móvil: clamp adaptable del título (+5px el 05/10/2026)");
+assert.match(mobileRule, /font-size: clamp\(calc\(0\.95625rem - 0\.5px\), calc\(4\.675vw - 0\.5px\), calc\(2\.21rem - 0\.5px\)\)/, "móvil: clamp adaptable del título (+8px el 05/10/2026)");
 assert.match(mobileRule, /white-space: nowrap/, "móvil: una sola línea, no se corta");
 assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líneas");
 // N.O.D.E. respeta Montserrat igual que las otras 9.
@@ -740,6 +740,10 @@ assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: calc\(0\.7
     "en móvil las flechas y el contador quedan 20px más separadas de la caja");
 assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
+assert.match(mobileBlock, /\.node-pager__link, \.node-pager__count \{ font-size: calc\(0\.56rem \+ 6px\); letter-spacing: 0\.12em; \}/,
+    "en móvil las flechas y el contador crecen 6 px (05/10/2026)");
+assert.match(mobileBlock, /\.node-pager__arrow \{ width: 17\.05px; height: 19\.69px; \}/,
+    "en móvil la flecha triángulo equilátero crece 6 px (11.05→17.05, altura (√3/2·w) ≈ 19.69)");
 
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
 for (const file of ALL) {
@@ -747,7 +751,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=86/);
+    assert.match(es, /generated\.css\?v=87/);
     assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
