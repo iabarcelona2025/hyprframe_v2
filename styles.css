@@ -521,13 +521,6 @@ body.loaded .hero-sub {
     0%, 100% { opacity: 0; }
     12%, 55% { opacity: 0.12; }
 }
-/* Compat: el test legacy busca .scroll-cue::after con blur(5px). Lo dejamos
-   invisible (sin background) para no reintroducir la estela por debajo. */
-.scroll-cue::after {
-    content: ""; position: absolute; inset: 0;
-    filter: blur(5px); opacity: 0; pointer-events: none;
-    animation: cueGlow 2.2s var(--ease-out) infinite;
-}
 
 .hero-marquee {
     position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
@@ -577,7 +570,7 @@ body.loaded .hero-sub {
      donde empieza la marquesina horizontal del fondo.
    · SIN CAJA: ni fondo, ni borde, ni tiras de Estado (cabecera con la dirección
      y pie con CYCLE/barra). Es solo texto flotando sobre el vídeo; lo integran
-     la opacity .25, el modo screen y la máscara izquierda (38%). Un lavado
+     la opacity .28, el modo screen y la máscara izquierda (38%). Un lavado
      overlay independiente tiñe el vídeo por detrás del trace.
    · z-index 1 (bajo el texto, z-index 2; sobre el velo) y pointer-events:none
      para no robar ni clics ni hover al hero.
@@ -598,7 +591,6 @@ body.loaded .hero-sub {
         radial-gradient(ellipse 50% 36% at 78% 22%,
             rgba(163, 223, 2, 0.10) 0,
             transparent 62%);
-    opacity: 0.65;
     opacity: 0.45;
     mix-blend-mode: overlay;
     filter: blur(0.5px) saturate(1.05) contrast(1.0);
@@ -625,12 +617,9 @@ body.loaded .hero-sub {
        presencia (estaba demasiado presente pegado al margen). */
     right: calc(-16em - 40px);
     width: 54em;
-    opacity: 0.25;
-    /* Test exige screen, visual real es screen + overlay suave para fusión visible pero integrada */
-    mix-blend-mode: screen;
-    mix-blend-mode: screen;
-    opacity: 0.25;
     opacity: 0.28;
+    /* El texto usa screen; .log-body aporta el overlay suave de integración. */
+    mix-blend-mode: screen;
     filter: contrast(1.18) brightness(1.06) saturate(1.05) blur(0.18px);
     isolation: isolate;
     padding: 0 0.9rem;
@@ -1633,9 +1622,12 @@ section { position: relative; }
 }
 .footer-row a:hover { color: var(--fg); }
 
-/* Enlaces legales del pie: política de cookies y vía para cambiar o retirar
-   el consentimiento (mismo cuerpo que el resto del pie, sin subrayado). */
-.footer-legal { display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; }
+/* Enlaces legales del pie: separados del copyright por una línea vertical
+   de 1 px; conservan el mismo cuerpo y acabado que el resto del pie. */
+.footer-legal {
+    display: flex; align-items: center; justify-content: center; gap: 1.25rem; flex-wrap: wrap;
+    border-left: 1px solid var(--line); padding-left: 1rem;
+}
 .footer-legal a,
 .footer-legal button {
     font: inherit; letter-spacing: inherit; text-transform: inherit;

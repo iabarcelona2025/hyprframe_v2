@@ -9,8 +9,8 @@
      premarcado y no se carga analítica antes de decidir.
    · La decisión se pide por finalidades — técnicas (siempre activas) y
      analítica (apagada por defecto) — y se puede cambiar o retirar en
-     cualquier momento desde «Configurar cookies», en el pie de todas las
-     páginas (RGPD art. 7.3).
+     cualquier momento desde «Cookie settings» / «Configurar cookies», en el
+     pie de todas las páginas (RGPD art. 7.3).
    · El registro guarda la fecha, la versión del texto y las finalidades
      aceptadas, para poder demostrar el consentimiento (RGPD art. 7.1).
 
@@ -210,9 +210,8 @@
         api.record = record;
     }
 
-    /* Reabre la barra: es la vía de retirada del consentimiento. Se engancha
-       al botón «Configurar cookies» del pie de página (data-cookie-settings),
-       que existe en las 26 páginas. */
+    /* Reabre la barra de preferencias desde el botón «Cookie settings» /
+       «Configurar cookies» del pie y desde la API pública. */
     function open() {
         let banner = document.getElementById("cookieBanner");
         if (!banner) {
@@ -299,8 +298,7 @@
         reveal(banner);
     }
 
-    // Retirada del consentimiento desde el pie: delegado en el documento para
-    // que funcione con el botón que ya está en el HTML de la página.
+    // Retirada del consentimiento desde el pie, delegado para todas las páginas.
     document.addEventListener("click", (event) => {
         if (event.target.closest("[data-cookie-settings]")) {
             event.preventDefault();

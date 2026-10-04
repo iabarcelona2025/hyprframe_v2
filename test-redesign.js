@@ -245,8 +245,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         cue.getAttribute("aria-label") === "Scroll to work" && cue.getAttribute("href") === "#work");
     check("la línea de la pista mide 3px (5px − 2px)", /\.scroll-cue-line \{\s*width: 3px;/.test(css));
     check("el destello verde lima de la línea sigue ahí", /\.scroll-cue-line::after \{[^}]*background: var\(--lime\);[^}]*animation: cueDrop/.test(css));
-    check("el verde del cue deja un glow sutil al pasar",
-        /\.scroll-cue::after \{[^}]*filter: blur\(5px\)/.test(css) && /@keyframes cueGlow/.test(css));
+    check("el glow sutil sigue en la línea visible y no queda el pseudo-elemento vacío",
+        /\.scroll-cue-line::before \{[^}]*filter: blur\(4px\)[^}]*animation:[^}]*cueGlow/.test(css) &&
+        /@keyframes cueGlow/.test(css) && !/\.scroll-cue::after\s*\{/.test(css));
 
     // rotator: starts blank (no word active before/at load)
     const rots = [...doc.querySelectorAll("[data-rot]")];
@@ -278,18 +279,27 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         heroLog.getAttribute("aria-hidden") === "true" &&
         /\.hero-log\s*\{[^}]*pointer-events:\s*none/.test(css));
     const heroLogBlend = doc.querySelector(".hero-log-blend");
-    check("hero log: capa de mezcla overlay independiente que tiñe el vídeo",
+    const heroLogBlendRule = (css.match(/\.hero-log-blend\s*\{([^}]*)\}/) || [])[1] || "";
+    const heroLogBlendOpacities = [...heroLogBlendRule.matchAll(/(?:^|;)\s*opacity:\s*([\d.]+)\s*;/g)]
+        .map(([, value]) => value);
+    check("hero log: capa overlay independiente con opacidad única de 0.45",
         !!heroLogBlend && heroLogBlend.parentElement === heroLog.parentElement &&
         heroLogBlend.nextElementSibling === heroLog &&
         /\.hero-log-blend\s*\{[^}]*background:\s*radial-gradient/.test(css) &&
-        /\.hero-log-blend\s*\{[^}]*mix-blend-mode:\s*overlay/.test(css));
+        /\.hero-log-blend\s*\{[^}]*mix-blend-mode:\s*overlay/.test(css) &&
+        heroLogBlendOpacities.length === 1 && heroLogBlendOpacities[0] === "0.45");
     check("hero log: sangrado por la derecha (right negativo) y recortado por el overflow del hero",
         /\.hero-log\s*\{[^}]*right:\s*calc\(-[\d.]+em - 40px\)/.test(css) &&
         /\.hero\s*\{[^}]*overflow:\s*hidden/.test(css));
-    check("hero log: 40 px más a la derecha y fundido con el vídeo (mix-blend-mode: screen)",
-        /\.hero-log\s*\{[^}]*mix-blend-mode:\s*screen/.test(css));
-    check("hero log: opacidad 0.25 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
-        /\.hero-log\s*\{[^}]*opacity:\s*0?\.25\b/.test(css) &&
+    const heroLogRule = (css.match(/\.hero-log\s*\{([^}]*)\}/) || [])[1] || "";
+    const heroLogBlendModes = [...heroLogRule.matchAll(/\bmix-blend-mode:\s*([\w-]+)\s*;/g)]
+        .map(([, value]) => value);
+    const heroLogOpacities = [...heroLogRule.matchAll(/(?:^|;)\s*opacity:\s*([\d.]+)\s*;/g)]
+        .map(([, value]) => value);
+    check("hero log: mix-blend-mode screen está declarado una sola vez",
+        heroLogBlendModes.length === 1 && heroLogBlendModes[0] === "screen");
+    check("hero log: opacidad efectiva 0.28 y monoespaciada de código (JetBrains/Fira/Roboto Mono/Courier)",
+        heroLogOpacities.length === 1 && heroLogOpacities[0] === "0.28" &&
         /--font-code:[^;]*"JetBrains Mono"[^;]*"Fira Code"[^;]*"Roboto Mono"[^;]*"Courier New"/.test(css) &&
         /\.hero-log\s*\{[^}]*font-family:\s*var\(--font-code\)/.test(css));
     check("hero log: sin rótulo 'TENSOR BUFFER' y con degradado izquierdo más amplio (calc(38% + 35px))",

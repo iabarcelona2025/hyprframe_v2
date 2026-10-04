@@ -325,10 +325,10 @@ const consentOf = (window) => {
     check("Con decisión guardada: no hay barra y se comunica a Google",
         !bannerOf(ctx.doc) && consentUpdates(ctx.window).length === 1);
     const settingsBtn = ctx.doc.querySelector("[data-cookie-settings]");
-    check("Pie: el botón «Configurar cookies» está en la página", !!settingsBtn);
+    check("Pie: el botón «Cookie settings» está en la página", !!settingsBtn);
     settingsBtn.click();
     await wait(60);
-    check("Pie: «Configurar cookies» reabre la barra", !!bannerOf(ctx.doc));
+    check("Pie: «Cookie settings» reabre la barra", !!bannerOf(ctx.doc));
     check("Barra reabierta: el interruptor refleja la decisión guardada",
         bannerOf(ctx.doc).querySelector("#cookieAnalytics").checked === true);
     bannerOf(ctx.doc).querySelector(".cookie-reject").click();
@@ -340,8 +340,15 @@ const consentOf = (window) => {
     /* ── 17. Enlaces legales en las 28 páginas y política en EN/ES ── */
     for (const page of allPages) {
         const src = fs.readFileSync(path.join(root, page), "utf8");
+        const footer = (src.match(/<footer\b[\s\S]*?<\/footer>/i) || [""])[0];
+        const isBuilder = page.endsWith("builder.html");
+        const settingsArea = isBuilder ? src : footer;
+        const settingsLabel = page.startsWith("es/") ? "Configurar cookies" : "Cookie settings";
         check(`${page}: enlaza la política y ofrece configurar`,
-            /href="cookie-policy\.html"/.test(src) && /data-cookie-settings/.test(src));
+            /href="cookie-policy\.html"/.test(src) &&
+            /data-cookie-settings/.test(settingsArea) &&
+            settingsArea.includes(settingsLabel) &&
+            (!isBuilder || /w-px h-3/.test(src)));
     }
     for (const page of ["404.html", "es/404.html"]) {
         const src = fs.readFileSync(path.join(root, page), "utf8");
@@ -362,9 +369,9 @@ const consentOf = (window) => {
     check("Política: caducidad del registro = la del widget (180 días = 6 meses)",
         /6 months/.test(policyEn) && /REMEMBER_MS/.test(cookiesJs) &&
         /180 \* 24 \* 60 \* 60 \* 1000/.test(cookiesJs));
-    check("Política ES: traducida y con retirada del consentimiento",
-        /Política de cookies/.test(policyEs) && /data-cookie-settings/.test(policyEs) &&
-        /AEPD/.test(policyEs));
+    check("Política ES: traducida, con interruptor y acceso a ajustes en el pie",
+        /Política de cookies/.test(policyEs) && /data-cookie-policy-toggle/.test(policyEs) &&
+        /data-cookie-settings/.test(policyEs) && /AEPD/.test(policyEs));
     check("Política: hreflang recíproco EN ↔ ES",
         /hreflang="es" href="https:\/\/hyprframe\.com\/es\/cookie-policy\.html"/.test(policyEn) &&
         /hreflang="en" href="https:\/\/hyprframe\.com\/cookie-policy\.html"/.test(policyEs));
@@ -375,6 +382,8 @@ const consentOf = (window) => {
     const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
     const barRule = (css.match(/\.cookie-banner \{[\s\S]*?\}/) || [""])[0];
     const headerRule = (css.match(/\.site-header\.scrolled \{[\s\S]*?\}/) || [""])[0];
+    check("Pie: una línea vertical de 1 px separa los enlaces legales del copyright",
+        /\.footer-legal\s*\{[^}]*border-left:\s*1px solid var\(--line\)/.test(css));
     check("Barra: ocupa el ancho completo y va pegada abajo",
         /position: fixed/.test(barRule) && /left: 0/.test(barRule) && /right: 0/.test(barRule) &&
         /bottom: 0/.test(barRule));
