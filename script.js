@@ -282,10 +282,10 @@
     });
     if (aboutEmblem) lineIO.observe(aboutEmblem);
 
-    /* Selected Work: on desktop, wait for the SECOND title line to finish
-       sliding in and for the first row to reach the viewport. Then reveal
-       ALL rows in sequence without requiring any further scrolling. Check
-       the untransformed list (not rows translated offscreen in 3D). */
+    /* WORK title: on desktop, wait for its final line to finish sliding in
+       and for the first row to reach the viewport. Then reveal ALL rows in
+       sequence without requiring any further scrolling. Check the
+       untransformed list (not rows translated offscreen in 3D). */
     if (!reduced && workSection && workTitle &&
         window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)").matches) {
         const workRows = [...workSection.querySelectorAll(".work-row")];

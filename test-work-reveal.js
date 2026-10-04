@@ -9,6 +9,13 @@ const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
 
 for (const page of ['index.html', 'es/index.html']) {
+    test(`${page}: the landing work title no longer includes SELECTED`, () => {
+        const doc = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8')).window.document;
+        const title = doc.querySelector('#work .section-title');
+        assert.equal(title.textContent.trim(), 'WORK');
+        assert.doesNotMatch(title.textContent, /SELECTED/i);
+    });
+
     test(`${page}: each selected work has a real hover image`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8')).window.document;
         const rows = [...doc.querySelectorAll('#workList .work-row')];
@@ -93,7 +100,7 @@ function setupWorkReveal(page, desktop, reduced) {
 }
 
 for (const page of ['index.html', 'es/index.html']) {
-    test(`${page}: all rows cascade automatically after the first row and SELECTED WORK`, async () => {
+    test(`${page}: all rows cascade automatically after the WORK title`, async () => {
         const { dom, window, observers, scrollListTo } = setupWorkReveal(page, true, false);
         try {
             const title = window.document.querySelector('#work .section-title');

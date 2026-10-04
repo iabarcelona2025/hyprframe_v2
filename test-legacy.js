@@ -41,7 +41,7 @@ try {
     assert.deepEqual(headerLinks.map((link) => link.textContent.trim()),
         [...indexDoc.querySelectorAll(".main-nav a")].map((link) => link.textContent.trim()));
     assert.equal(doc.querySelector(".main-nav [aria-current=page]").getAttribute("href"), "legacy.html");
-    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .legacy-hero__scroll, .legacy-next a")) {
+    for (const link of doc.querySelectorAll(".site-header a, .menu-links a, .legacy-next a")) {
         const href = link.getAttribute("href");
         if (href.startsWith("https://")) continue; // Spanish site is not part of this repo.
         const resolved = new URL(href, window.location.href);
@@ -63,6 +63,11 @@ try {
        vídeo, numerado 06 y con su género («MUSIC VIDEO» / «VIDEOCLIP»), ya
        sin «/ FILM». */
     const esLegacy = fs.readFileSync(path.join(root, "es", "legacy.html"), "utf8");
+    const esLegacyDoc = new JSDOM(esLegacy).window.document;
+    assert.equal(doc.querySelector("#filmsTitle").textContent.trim(), "WORK");
+    assert.doesNotMatch(doc.querySelector("#filmsTitle").textContent, /SELECTED/i);
+    assert.equal(esLegacyDoc.querySelector("#filmsTitle").textContent.trim(), "PROYECTOS");
+    assert.doesNotMatch(esLegacyDoc.querySelector("#filmsTitle").textContent, /SELECTED|DESTACADOS/i);
     const genus = { "legacy.html": "MUSIC VIDEO", "es/legacy.html": "VIDEOCLIP" };
     const genusType = { "legacy.html": "CAMPAIGN", "es/legacy.html": "CAMPAÑA" };
     const genusSpot = { "legacy.html": "COMMERCIAL", "es/legacy.html": "SPOT" };
@@ -157,10 +162,9 @@ try {
     // inferior pierden 20px a la vez (contenido centrado). (03/10/2026)
     assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.legacy-hero \{\s*min-height: calc\(min\(410px, 47svh\) - 20px\);\s*padding-bottom: calc\(clamp\(1\.5rem, 2\.5vw, 2\.5rem\) - 20px\);/,
         "web: la línea gris bajo «Stories worth keeping.» se acerca 20px");
-    // Solo móvil: el enlace EXPLORE ↓ del hero no se muestra. (03/10/2026)
-    assert.match(legacyCss, /@media \(max-width: 560px\)[\s\S]*\.legacy-hero__scroll \{ display: none; \}/,
-        "móvil: EXPLORE ↓ desaparece del hero");
-    assert.ok(doc.querySelector(".legacy-hero__scroll"), "web: EXPLORE ↓ sigue en el marcado");
+    assert.equal(doc.querySelector(".legacy-hero__scroll"), null, "Captured: EXPLORE ↓ removed from the hero");
+    assert.equal(esLegacyDoc.querySelector(".legacy-hero__scroll"), null, "Captured ES: EXPLORAR ↓ removed from the hero");
+    assert.doesNotMatch(legacyCss, /\.legacy-hero__scroll/, "the removed hero link has no leftover styling");
     assert.match(legacyCss, /\.legacy-work__heading\s*\{[^}]*padding:\s*clamp\(calc\(5rem - 20px\), calc\(10vw - 20px\), calc\(9rem - 20px\)\) var\(--pad\) clamp\(calc\(2\.5rem \+ 20px\), calc\(5vw \+ 20px\), calc\(4rem \+ 20px\)\)/,
         "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");
@@ -368,10 +372,12 @@ try {
     assert.match(legacyCss, /\.film-card__client \{[^}]*font-family: var\(--font-body\);[^}]*font-size: 0\.88rem; line-height: 1\.6;/,
         "el cliente usa el cuerpo de la info (Space Grotesk 0.88rem/1.6)");
     // Y el mismo cuerpo que la sinopsis de la ficha, que es la referencia.
-    assert.match(legacyCss, /\.film-card__details \{[^}]*font-size: 0\.88rem;[^}]*line-height: 1\.6;/,
-        "la sinopsis sigue en 0.88rem/1.6");
-    assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
-    assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
+    assert.match(legacyCss, /\.film-card__details \{\s*display: block;[^}]*font-size: 0\.88rem;[^}]*line-height: 1\.6;/,
+        "la sinopsis aparece en las tarjetas, también en móvil, con cuerpo 0.88rem/1.6");
+    assert.match(legacyCss, /\.film-card__synopsis, \.film-card__cast \{ display: block; \}/,
+        "sinopsis y reparto ocupan líneas propias en móvil");
+    assert.match(legacyCss, /\.film-card__client \+ \.film-card__details \{ margin-top: 0\.3rem; \}/,
+        "la leyenda de INSERT queda más cerca de Techno Club, como un bloque de texto");
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
     const panel = modal.querySelector(".film-modal__panel");
     const rect = (left, top, width, height) => ({ left, top, width, height });
