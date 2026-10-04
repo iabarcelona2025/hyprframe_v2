@@ -900,7 +900,15 @@
             const start = innerHeight * 0.85;
             const end = innerHeight * 0.25;
             const travel = start - end;
-            const done = Math.min(Math.max((start - rect.top) / (travel + rect.height * 0.35), 0), 1);
+            // El statement es ahora una sección-recorrido (varias pantallas de
+            // alto, con el escenario anclado dentro). El barrido de letras se
+            // mide sobre su PRIMERA pantalla: las letras se encienden al entrar
+            // y quedan encendidas el resto del recorrido —justo lo que pide el
+            // fondo nuevo, que necesita el titular ya encendido en la síntesis—.
+            // El alto extra se tiene en cuenta sólo hasta una pantalla, así el
+            // barrido no se diluye en secciones muy largas. (04/10/2026)
+            const extra = Math.min(Math.max(rect.height - innerHeight, 0), innerHeight);
+            const done = Math.min(Math.max((start - rect.top) / (travel + extra * 0.35), 0), 1);
             // A done 0 el frente arranca una SPREAD por delante de la primera
             // letra (todas apagadas); a done 1 acaba una SPREAD por detrás de la
             // última (todas encendidas).

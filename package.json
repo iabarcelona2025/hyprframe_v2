@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "jsdom": "^29.1.1"
+  },
+  "devDependencies": {
+    "@shaderfrog/glsl-parser": "^7.0.1"
   }
 }

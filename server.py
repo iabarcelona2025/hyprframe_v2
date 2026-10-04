@@ -10,7 +10,7 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-WATCH = ["statement-liquid.js", "index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
+WATCH = ["statement-perception.js", "statement-liquid.js", "index.html", "styles.css", "script.js", "generated.css", "generated.js", "legacy.css",
          "404.html", "404.css", "404.js",
          # Páginas legales.
          "cookie-policy.html", "es/cookie-policy.html",

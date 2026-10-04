@@ -807,11 +807,21 @@ section { position: relative; }
 }
 
 /* ── STATEMENT ───────────────────────────────────────────── */
+/* El recorrido (300vh) y el anclaje del escenario están en el bloque
+   «SYNTHETIC PERCEPTION», al final del archivo, con el resto del fondo
+   generativo: aquí sólo queda el aislamiento de la sección. */
 .statement {
+    /* El statement es un RECORRIDO, no una franja: el escenario se ancla
+       dentro y la geometría se construye mientras se cruza (el progreso lo
+       mide statement-perception.js sobre el rect de esta sección). Sin
+       overflow recortado a propósito: un ancestro con overflow:hidden crea
+       contenedor de scroll y el sticky dejaría de pegarse. Recorta el
+       escenario. Ver el bloque «SYNTHETIC PERCEPTION». (04/10/2026) */
+    --statement-runway: 300vh;
     position: relative;
     isolation: isolate;
-    overflow: hidden;
-    padding: clamp(7rem, 18vw, 14rem) var(--pad);
+    min-height: var(--statement-runway);
+    padding: 0;
 }
 /* Metaballs propios, inspirados en el efecto de unión/separación de h2a.lu.
    El filtro actúa solo sobre los círculos, nunca sobre el texto. La opacidad
@@ -2029,4 +2039,81 @@ label.cookie-purpose-head { cursor: pointer; }
 .hf-entry-black.is-fading { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
     .work-transition, .work-transition::after, .hf-entry-black, .work-row.is-departing { transition-duration: .01ms; }
+}
+
+/* ── SYNTHETIC PERCEPTION ──────────────────────────────────────────────────
+   El fondo generativo del statement (statement-perception.js). La sección deja
+   de ser una franja y pasa a ser un recorrido: el escenario se ancla arriba
+   (sticky) y la geometría se construye detrás del titular mientras el
+   visitante lo cruza. El progreso lo mide el propio módulo sobre el rect de
+   la sección —el mismo que usa el barrido de letras de script.js §6, que
+   sigue funcionando sin tocar nada: su rect se mueve de forma continua de
+   arriba abajo durante todo el recorrido. (04/10/2026) */
+.statement-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: clip;
+    padding: clamp(7rem, 18vw, 14rem) var(--pad);
+    background: var(--bg);
+}
+/* Lienzo y respaldo comparten sitio: debajo del texto (z 1) y por encima del
+   fondo de la sección, que ya no pinta nada. */
+.statement-perception,
+.statement-fallback {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    user-select: none;
+}
+/* El lienzo entra en fundido: el primer fotograma nunca llega a negro. */
+.statement-perception { opacity: 0; transition: opacity 1.1s var(--ease-out); }
+.statement-stage.has-canvas .statement-perception { opacity: 1; }
+.statement-text { position: relative; z-index: 1; }
+/* Sin WebGL (o con los shaders rechazados) queda una composición de respaldo:
+   el punto de fuga y una retícula en perspectiva, en la paleta de la casa. */
+.statement-fallback { opacity: 1; transition: opacity 0.9s var(--ease-out); }
+.statement-stage.has-canvas .statement-fallback { opacity: 0; }
+.statement-fallback::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 54%;
+    width: min(46rem, 92vw);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(115, 217, 245, 0.11), rgba(5, 6, 8, 0) 62%);
+}
+.statement-fallback::after {
+    content: "";
+    position: absolute;
+    inset: 30% -30% -40% -30%;
+    background:
+        repeating-linear-gradient(90deg, rgba(233, 237, 242, 0.055) 0 1px, transparent 1px 6.25%),
+        repeating-linear-gradient(0deg, rgba(233, 237, 242, 0.045) 0 1px, transparent 1px 13%);
+    transform: perspective(38rem) rotateX(66deg);
+    transform-origin: 50% 0;
+    -webkit-mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0) 78%);
+            mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0) 78%);
+}
+@media (max-width: 900px) {
+    .statement { --statement-runway: 262vh; }
+}
+@media (max-width: 600px) {
+    .statement { --statement-runway: 226vh; }
+}
+/* Pantallas bajas: el titular sube un poco para que el escenario respire. */
+@media (max-height: 640px) {
+    .statement-stage { padding-top: clamp(4.6rem, 13vh, 7rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+    /* Sin recorrido ni ancla: una sola composición, quieta, ya construida. */
+    .statement { --statement-runway: auto; min-height: 0; }
+    .statement-stage { height: auto; min-height: 100vh; }
+    .statement-perception { transition: none; }
 }
