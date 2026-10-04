@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=90");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=91");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -489,11 +489,11 @@ assert.ok(!/["']Kanit["']|family=Kanit|font:[^;]*Kanit/.test(css),
 assert.match(css,
     /\.node-hero h1, \.node-player h1 \{[^}]*font-family: var\(--font-head\);[^}]*font-weight: 700;[^}]*font-size: clamp\(calc\(2\.397rem - 26\.25px\), calc\(5\.44vw - 44\.25px\), calc\(5\.44rem - 44\.25px\)\)/,
     "las diez páginas comparten la misma clamp del titular en Montserrat (−15px en escritorio)");
-// Los tres cálculos que siguen al titular (ancla de la sinopsis, tope de la
-// plancha y --plate-step del ángulo) usan ese mismo clamp reducido: si el
+// Los cálculos que siguen al titular (ancla de la sinopsis —base y web—, tope
+// de la plancha y --plate-step del ángulo) usan ese mismo clamp reducido: si el
 // titular mengua, todo baja con él y no se abre hueco.
-assert.equal((css.match(/calc\(5\.44vw - 44\.25px\), calc\(5\.44rem - 44\.25px\)/g) || []).length, 4,
-    "titular, ancla de la sinopsis, tope de la plancha y --plate-step comparten el clamp reducido");
+assert.equal((css.match(/calc\(5\.44vw - 44\.25px\), calc\(5\.44rem - 44\.25px\)/g) || []).length, 5,
+    "titular, anclas de la sinopsis (base y web), tope de la plancha y --plate-step comparten el clamp reducido");
 const h1Rules = css.match(/\.node-hero h1, \.node-player h1 \{[^}]*\}/g);
 assert.ok(h1Rules && h1Rules.length === 2, "el titular tiene exactamente dos reglas: escritorio y móvil");
 const desktopRule = h1Rules[0];
@@ -659,6 +659,17 @@ assert.match(bandRule, /width: calc\(100% \+ 88px\);[\s\S]*?transform-origin: bo
     "web: la plancha se ciñe a la columna (100% + 8px con el sobrante izquierdo) y ancla su diagonal abajo");
 assert.match(bandRule, /z-index: -1;/,
     "web: la plancha queda detrás del texto");
+/* 04/10/2026 — 7px más de aire bajo el titular: en web la sinopsis baja esos
+   7px y el tope de la plancha sube otros 7px, así que la plancha crece 7px de
+   alto (su borde inferior baja con el texto) sin moverse por arriba: sigue
+   arrancando en el borde superior del titular. En móvil, donde la plancha vive
+   dentro de la caja, el mismo hueco va al arranque de la sinopsis. */
+assert.ok(generatedFlat.includes("top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 7px);"),
+    "web: la sinopsis baja 7px y mantiene el anclaje del titular");
+assert.ok(bandRule.includes("+ 7px));"),
+    "web: la plancha sube su tope 7px y crece 7px de alto");
+assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*padding: calc\(1\.15rem \+ 7px\) 0 0\.35rem;/,
+    "móvil: el mismo hueco de 7px va al arranque de la sinopsis");
 /* La diagonal derecha: el ángulo que tenía la del titular, por construcción
    (skewX de −atan2(12px, --plate-step)), anclada abajo para no cortar el
    texto justificado ni bajar hacia el play. Solo desde 850px: por debajo el
@@ -784,7 +795,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=90/);
+    assert.match(es, /generated\.css\?v=91/);
     assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
