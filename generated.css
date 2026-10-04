@@ -403,9 +403,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
        ~11.7×font para Montserrat 700 uppercase → ~210px; en la fila le quedan
        ~239px (fila 271px − margen izq. 20px − flecha ~12px).
        white-space: nowrap garantiza una sola línea; el teaser va debajo en
-       bloque pequeño para no competir por ancho. */
+       bloque pequeño para no competir por ancho.
+       05/10/2026: +5px en los tres términos del clamp móvil (−8.5px → −3.5px)
+       para que el título de la caja de vídeo se lea mejor en teléfono. */
     .node-hero h1, .node-player h1 {
-        font-size: clamp(calc(0.95625rem - 8.5px), calc(4.675vw - 8.5px), calc(2.21rem - 8.5px));
+        font-size: clamp(calc(0.95625rem - 3.5px), calc(4.675vw - 3.5px), calc(2.21rem - 3.5px));
         white-space: nowrap;
         letter-spacing: -0.02em;
         line-height: 0.9;
