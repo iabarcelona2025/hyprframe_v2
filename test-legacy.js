@@ -98,6 +98,21 @@ try {
         assert.match(season01.querySelector("img").getAttribute("data-fallback-src"),
             /^https:\/\/i\.vimeocdn\.com\/video\/2208326423-/);
         assert.equal(season01, cards[cards.length - 1], `${name}: es la última tarjeta`);
+
+        // INSERT → «Techno Club» justo debajo del género, visible en móvil y
+        // escritorio. (04/10/2026)
+        const inserts = cards.filter((card) => card.dataset.title.startsWith("INSERT /"));
+        assert.equal(inserts.length, 4, `${name}: cuatro campañas de INSERT`);
+        for (const card of inserts) {
+            const client = card.querySelector(".film-card__client");
+            assert.ok(client, `${name}: ${card.dataset.title} lleva cliente`);
+            assert.equal(client.textContent.trim(), "Techno Club");
+            assert.equal(client.previousElementSibling.className, "film-card__type",
+                `${name}: el cliente va justo debajo del género`);
+        }
+        const otros = cards.filter((card) => !card.dataset.title.startsWith("INSERT /"));
+        assert.ok(otros.every((card) => !card.querySelector(".film-card__client")),
+            `${name}: las tarjetas que no son de INSERT no llevan cliente`);
     }
     assert.equal(doc.querySelectorAll(".film-card__title")[4].textContent, "INSERT / SEASON 02");
     assert.equal(doc.querySelectorAll(".film-card")[4].dataset.title, "INSERT / SEASON 02");
@@ -309,11 +324,15 @@ try {
                 continue;
             }
             assert.ok(details, "every film includes its pop-up copy in the grid");
-            assert.equal(details.previousElementSibling.className, "film-card__type");
+            const before = details.previousElementSibling;
+            assert.ok(["film-card__type", "film-card__client"].includes(before.className),
+                `la leyenda va tras el género o tras el cliente — ${before.className}`);
             assert.equal(details.querySelector(".film-card__synopsis").textContent, card.dataset.synopsis);
             assert.equal(details.querySelector(".film-card__cast")?.textContent, card.dataset.cast);
         }
     }
+    assert.match(legacyCss, /\.film-card__client \{[^}]*display: block;[^}]*color: var\(--fg\);/,
+        "el cliente del proyecto es una línea propia, fuera del bloque de escritorio");
     assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
     assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).

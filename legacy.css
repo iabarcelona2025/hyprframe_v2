@@ -170,6 +170,15 @@ body.menu-open, body.modal-open { overflow: hidden; }
     font: 400 0.62rem/1.5 var(--font-mono);
     letter-spacing: 0.2em; color: var(--muted);
 }
+/* Cliente del proyecto: línea propia justo debajo del género. Hoy la llevan las
+   cuatro campañas de INSERT («Techno Club»). Va visible en móvil y escritorio,
+   igual que el género, a diferencia de .film-card__details (la leyenda larga),
+   que solo se muestra a partir de 561px. (04/10/2026) */
+.film-card__client {
+    display: block; margin-top: 0.22rem;
+    font: 400 0.62rem/1.5 var(--font-mono);
+    letter-spacing: 0.2em; color: var(--fg);
+}
 
 /* ── Next story & footer ──────────────────────────────────── */
 .legacy-next {
