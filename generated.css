@@ -146,7 +146,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
    delante del pseudo (la sinopsis va después en el DOM con el mismo z). El
    móvil no entra: conserva su plancha bajo el título. */
 @media (min-width: 561px) {
-    .node-player > .node-hero__title { z-index: 4; }
+    /* 04/10/2026 — Solo escritorio: el titular baja 7px y queda 7px más cerca
+       de la sinopsis. La plancha y la sinopsis no se tocan: el tope de la
+       plancha no depende del titular (deshace el cálculo de la sinopsis), así
+       que el titular se asienta 7px más abajo dentro de la misma pieza. */
+    .node-player > .node-hero__title { z-index: 4; top: calc(clamp(1rem, 2.2vw, 2rem) + 7px); }
     /* 04/10/2026 — En escritorio la plancha es la del ::after de la sinopsis,
        así que el h1 suelta también el filete y el desenfoque nuevos (si no,
        quedarían una línea y un blur sueltos bajo el titular). */

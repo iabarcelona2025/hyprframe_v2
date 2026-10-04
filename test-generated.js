@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=91");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=92");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -623,8 +623,16 @@ assert.ok(!/\.node-player__synopsis \{ display: none/.test(mobileBlock),
    filete inferior de 1px (--line). La forma (clip-path) y la talla (padding,
    top/bottom/width) no cambian. */
 assert.match(generatedFlat,
-    /@media \(min-width: 561px\) \{ \.node-player > \.node-hero__title \{ z-index: 4; \} \.node-player > \.node-hero__title h1 \{ background: none; clip-path: none; border-bottom: none; -webkit-backdrop-filter: none; backdrop-filter: none; \}/,
+    /@media \(min-width: 561px\) \{ \.node-player > \.node-hero__title \{ z-index: 4; top: calc\(clamp\(1rem, 2\.2vw, 2rem\) \+ 7px\); \} \.node-player > \.node-hero__title h1 \{ background: none; clip-path: none; border-bottom: none; -webkit-backdrop-filter: none; backdrop-filter: none; \}/,
     "web: el h1 suelta su plancha (con filete y desenfoque) y el titular pinta sobre la nueva");
+/* 04/10/2026 — Solo web: el titular baja 7px y queda 7px más cerca de la
+   sinopsis. La plancha y la sinopsis no se tocan: el tope de la plancha no
+   depende del titular, así que el titular se asienta 7px más abajo dentro de
+   la misma pieza. */
+assert.ok(generatedFlat.includes(".node-player > .node-hero__title { z-index: 4; top: calc(clamp(1rem, 2.2vw, 2rem) + 7px); }"),
+    "web: el titular baja 7px y se acerca a la sinopsis");
+assert.ok(generatedFlat.includes("top: clamp(1rem, 2.2vw, 2rem);"),
+    "móvil: el titular conserva su top de siempre");
 const mobilePlate = ruleOf(generatedFlat, ".node-player > .node-hero__title h1");
 assert.match(mobilePlate, /background: rgba\(5, 5, 5, 0\.65\);/,
     "móvil: la plancha del titular viste el negro translúcido de la barra fija");
@@ -795,7 +803,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=91/);
+    assert.match(es, /generated\.css\?v=92/);
     assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
