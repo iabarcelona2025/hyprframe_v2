@@ -900,7 +900,14 @@
             const start = innerHeight * 0.85;
             const end = innerHeight * 0.25;
             const travel = start - end;
-            const done = Math.min(Math.max((start - rect.top) / (travel + rect.height * 0.35), 0), 1);
+            // El tramo extra se mide sobre lo que de verdad se ve de la
+            // sección, no sobre todo su alto: desde que el statement tiene
+            // recorrido propio (la secuencia 3D del fondo lo ancla durante
+            // varias pantallas) su alto ya no dice nada del barrido, y sin
+            // este tope el texto se quedaría a medio encender durante toda la
+            // secuencia. En una sección corta el valor es el de siempre.
+            const reach = Math.min(rect.height, innerHeight) * 0.35;
+            const done = Math.min(Math.max((start - rect.top) / (travel + reach), 0), 1);
             // A done 0 el frente arranca una SPREAD por delante de la primera
             // letra (todas apagadas); a done 1 acaba una SPREAD por detrás de la
             // última (todas encendidas).

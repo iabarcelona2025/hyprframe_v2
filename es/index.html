@@ -288,6 +288,16 @@
                     </g>
                 </svg>
             </div>
+
+            <!-- SYNTHETIC PERCEPTION: escenario 3D generativo del statement.
+                 Canvas por detrás del titular, sin eventos de puntero y con un
+                 velo radial que protege la lectura. Lo dibuja
+                 statement-perception.js; sin WebGL la sección se queda negra,
+                 exactamente como estaba. -->
+            <div class="perception" aria-hidden="true">
+                <canvas class="perception-canvas"></canvas>
+                <div class="perception-veil"></div>
+            </div>
             <p class="statement-text" id="statementText">
                 <span>Sintetizando</span> <span>la</span> <span>visión</span> <span class="accent italic">humana</span>
                 <span>y</span> <span>la</span> <span class="accent italic">inteligencia</span> <span>artificial</span>
@@ -586,6 +596,7 @@
     })();
     </script>
     <script src="script.js?v=51" defer></script>
+    <script src="statement-perception.js?v=1" defer></script>
     <!-- Renderizador de las cuatro bolas oculto temporalmente; se conserva para reactivarlo.
     <script src="../statement-liquid.js?v=42" defer></script>
     -->

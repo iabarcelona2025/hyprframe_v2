@@ -52,13 +52,14 @@ const PAGES = ["index.html", "es/index.html"];
 
 /* Geometría de mentira: la sección del statement empieza en y = 2000 y mide 900
    de alto, así que su rect.top es 2000 - scroll. Con innerHeight = 800, el
-   barrido arranca (rect.top = 680) en y = 1320 y termina (rect.top = -115,
-   incluye el 35 % del alto de la sección) en y = 2115. */
+   barrido arranca (rect.top = 680) en y = 1320 y termina 760 px más abajo, en
+   y = 2080: los 600 px del recorrido (de 0,85 a 0,25 de pantalla) más el 35 %
+   de lo que se ve de la sección (su alto, con el tope de una pantalla). */
 const VIEWPORT = 800;
 const SECTION_TOP = 2000;
 const SECTION_H = 900;
 const SWEEP_FROM = SECTION_TOP - VIEWPORT * 0.85;
-const SWEEP_TO = SECTION_TOP + VIEWPORT * (0.85 - 0.25) + SECTION_H * 0.35;
+const SWEEP_TO = SWEEP_FROM + VIEWPORT * (0.85 - 0.25) + Math.min(SECTION_H, VIEWPORT) * 0.35;
 
 /* Arranca la landing (o su copia española) con reloj virtual, scroll de mentira
    y la sección del statement colocada a mano. */
