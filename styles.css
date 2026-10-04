@@ -728,6 +728,22 @@ em { font-style: normal; color: var(--violet); }
 .violet { color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Montserrat carga ital 800). */
 .italic { font-style: italic; }
+/* ── Caja y peso de los titulares de sección (04/10/2026) ─────────────────
+   Los titulares rectos —Selected / Intuition / Synthesis / Look Builder /
+   Let's (ES: Selected / Intuición / Síntesis / Look Builder)— se escriben en
+   el HTML en minúsculas con la inicial en mayúscula y heredan el peso 600 de
+   .section-title, .about-title y .contact-title. Las palabras en lila del
+   mismo renglón —WORK, HUMAN, MACHINE, Cinematic, MAKE IT, DIGITAL— conservan
+   el aspecto de siempre: 700 y en mayúsculas. Mantenerlas en 700 no es solo
+   jerarquía: Montserrat carga la cursiva en 700 y 800, así que con 600 el
+   navegador tendría que sintetizar la itálica.
+   Excepción: DNAi. Su renglón lleva .keep-case porque es nombre de marca y se
+   escribe tal cual —«DN» en 600 + «Ai» en lila 700—, de modo que su .violet no
+   debe pasar a mayúsculas («AI» rompería el nombre). */
+.section-title .violet, .about-title .violet, .contact-title .violet {
+    font-weight: 700; text-transform: uppercase;
+}
+.section-title .keep-case .violet { text-transform: none; }
 /* × de HUMAN INTUITION × MACHINE SYNTHESIS: giro CONTINUO hacia la derecha
    (sentido horario), en loop y sin retroceder nunca = movimiento de izquierda
    a derecha continuo, con la misma curva y el OVERSHOOT, ahora más rápido.
@@ -742,11 +758,13 @@ em { font-style: normal; color: var(--violet); }
    curva de giro, con wind-up, overshoot y pausas, pero todo sucede antes.
    font-style: normal para que el glifo conserve su simetría de 4-fold
    (reposo × y + perfectos); inline-block para el transform.
-   transform-origin: centro visual exacto de la tinta del × en Montserrat 700,
-   el peso que hereda de .about-title
-   (ink x:[90,510] y:[137,563] @1000upm; con line-height 1.02 la baseline cae
-   a 0.8685em del top de la caja → centro de la tinta en 0.3em, 0.5185em).
-   Sin esto, el giro default orbita el centro de la caja, ~0.15em más arriba. */
+   transform-origin: centro visual exacto de la tinta del ×, medido en Montserrat
+   700 (ink x:[90,510] y:[137,563] @1000upm; con line-height 1.02 la baseline
+   cae a 0.8685em del top de la caja → centro de la tinta en 0.3em, 0.5185em).
+   El renglón hereda ahora 600 de .about-title (04/10/2026), pero el × es un
+   glifo simétrico cuyo avance escala con el peso, así que el origen sigue
+   valiendo. Sin esto, el giro default orbita el centro de la caja, ~0.15em más
+   arriba. */
 .cross-turn {
     display: inline-block;
     font-style: normal;
@@ -793,9 +811,15 @@ section { position: relative; }
     padding: clamp(5rem, 12vw, 9rem) var(--pad) clamp(2rem, 5vw, 3.5rem);
 }
 .section-title {
-    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
+    /* 700 → 600 (04/10/2026): la parte recta del titular baja un escalón, igual
+       que «AI VISUAL» en el hero. Las palabras en lila siguen en 700 —ver el
+       bloque de .violet de más arriba—, así que el acento continúa destacando. */
+    font-family: var(--font-head); font-weight: 600;
     font-size: clamp(2.8rem, 8.5vw, 7.5rem);
-    line-height: 1.0; letter-spacing: 0.04em; text-transform: uppercase;
+    /* uppercase → none (04/10/2026): la caja deja de imponerse por CSS y se
+       escribe en el HTML, que es donde vive el texto («Selected», «Look
+       Builder»…). Las lila recuperan sus mayúsculas con el bloque de .violet. */
+    line-height: 1.0; letter-spacing: 0.04em; text-transform: none;
 }
 .section-side {
     font-family: var(--font-mono); font-size: 0.75rem;
@@ -1338,9 +1362,12 @@ section { position: relative; }
     margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
 }
 .about-title {
-    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
+    /* 700 → 600 y uppercase → none (04/10/2026): ver .section-title. «Intuition»
+       y «Synthesis» se escriben en el HTML; HUMAN y MACHINE (lila) siguen en 700
+       y en mayúsculas por el bloque de .violet. */
+    font-family: var(--font-head); font-weight: 600;
     font-size: clamp(2.6rem, 8vw, 7rem);
-    line-height: 1.02; letter-spacing: 0.04em; text-transform: uppercase;
+    line-height: 1.02; letter-spacing: 0.04em; text-transform: none;
     width: 100%; max-width: 100%; min-width: 0;
     margin-bottom: 0;
 }
@@ -1430,7 +1457,9 @@ section { position: relative; }
 .stat { min-width: 0; }
 .stat-num {
     display: block;
-    /* same face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title (now 700) */
+    /* same face as the "HUMAN INTUITION × MACHINE SYNTHESIS" title: the numbers
+       keep 700, which is the weight the violet words of that title still carry
+       after its plain part went down to 600 (04/10/2026). */
     font-family: var(--font-head); font-weight: 700;
     font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1.02;
     letter-spacing: 0.04em; text-transform: uppercase;
@@ -1520,9 +1549,13 @@ section { position: relative; }
 }
 .contact-head { margin-bottom: clamp(2rem, 4vw, 3.5rem); }
 .contact-title {
-    font-family: var(--font-head); font-weight: 700; /* 800 → 700 (25/09/2026) */
+    /* 700 → 600 y uppercase → none (04/10/2026): ver .section-title. «Let's» se
+       escribe en el HTML y MAKE IT (lila) conserva 700 + mayúsculas. En ES el
+       titular es una sola palabra lila —«CONECTA»—, así que el bloque de .violet
+       la deja exactamente como estaba. */
+    font-family: var(--font-head); font-weight: 600;
     font-size: clamp(3rem, 9.5vw, 8.5rem);
-    line-height: 1.0; letter-spacing: 0.04em; text-transform: uppercase;
+    line-height: 1.0; letter-spacing: 0.04em; text-transform: none;
 }
 .contact-grid {
     display: grid; grid-template-columns: 1.3fr 1fr;
