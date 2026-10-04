@@ -297,3 +297,151 @@ body.menu-open, body.modal-open { overflow: hidden; }
 @media (hover: none) {
     .film-card__poster img { filter: brightness(0.9); }
 }
+
+/* Captured mobile playback. This class is only enabled on touch/mobile devices.
+   Rotate the layout rather than locking the sensor, so portrait can exit it. */
+.film-modal.is-mobile-fullscreen {
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+}
+.film-modal.is-mobile-fullscreen .film-modal__panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    overflow: hidden;
+    background: #000;
+}
+.film-modal.is-mobile-fullscreen .film-modal__video { width: 100%; height: 100%; aspect-ratio: auto; }
+.film-modal.is-mobile-fullscreen .film-modal__info,
+.film-modal.is-mobile-fullscreen .film-modal__top > span { display: none; }
+.film-modal.is-mobile-fullscreen .film-modal__top {
+    position: absolute;
+    top: env(safe-area-inset-top, 0px);
+    right: env(safe-area-inset-right, 0px);
+    z-index: 2;
+    padding: 0.75rem 1rem;
+    border: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+@media (orientation: portrait) {
+    .film-modal.is-mobile-fullscreen .film-modal__panel {
+        inset: auto;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        width: 100dvh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+    }
+}
+
+/* Desktop: same browser-window player and expansion as Generated. No native
+   fullscreen request; the address bar remains visible. Mobile is untouched. */
+.film-modal__shield, .film-modal__dock { display: none; }
+@media (min-width: 561px) {
+    html:has(.film-modal.is-windowed),
+    body:has(.film-modal.is-windowed) { overflow: hidden; }
+    .film-modal.is-windowed { padding: 0; overflow: hidden; background: #000; }
+    .film-modal.is-windowed .film-modal__panel {
+        position: absolute; inset: 0; width: auto; height: auto;
+        max-width: none; max-height: none; margin: 0; border: 0;
+        border-radius: 0; background: #000; overflow: hidden;
+        transform-origin: 0 0;
+        transition: transform 0.5s var(--ease-out);
+    }
+    .film-modal.is-windowed .film-modal__video {
+        position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto;
+    }
+    .film-modal.is-windowed .film-modal__info,
+    .film-modal.is-windowed .film-modal__top > span { display: none; }
+    .film-modal.is-windowed .film-modal__top {
+        position: absolute; z-index: 6;
+        top: clamp(0.85rem, 2vw, 1.35rem); right: clamp(0.85rem, 2vw, 1.35rem);
+        padding: 0; border: 0;
+    }
+    .film-modal.is-windowed .film-modal__close {
+        position: relative; width: 44px; height: 44px; padding: 0;
+        border: 0; background: none; font-size: 0; color: var(--fg);
+        transition: color 0.18s ease;
+    }
+    .film-modal.is-windowed .film-modal__close span { display: none; }
+    .film-modal.is-windowed .film-modal__close::before,
+    .film-modal.is-windowed .film-modal__close::after {
+        content: ""; position: absolute; left: 50%; top: 50%;
+        width: 22px; height: 2px; background: currentColor;
+        transition: background-color 0.18s ease;
+    }
+    .film-modal.is-windowed .film-modal__close::before { transform: translate(-50%, -50%) rotate(45deg); }
+    .film-modal.is-windowed .film-modal__close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+    .film-modal.is-windowed .film-modal__close:hover,
+    .film-modal.is-windowed .film-modal__close:focus-visible { color: var(--violet); }
+    .film-modal.is-windowed .film-modal__shield {
+        display: block; position: absolute; z-index: 4; inset: 0 0 5rem;
+    }
+    .film-modal.is-windowed .film-modal__dock {
+        display: block; position: absolute; z-index: 5; top: 0; right: 0;
+        width: 4.25rem; height: 12rem; background: #000;
+        opacity: 0; pointer-events: none;
+    }
+    .film-modal.is-windowed:hover .film-modal__dock { opacity: 1; pointer-events: auto; }
+    .film-modal.is-windowed:has(.film-modal__shield:hover) .film-modal__dock,
+    .film-modal.is-windowed:has(.film-modal__close:hover) .film-modal__dock { opacity: 0; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .film-modal.is-windowed .film-modal__panel,
+    .film-modal.is-windowed .film-modal__close,
+    .film-modal.is-windowed .film-modal__close::before,
+    .film-modal.is-windowed .film-modal__close::after { transition-duration: 0.01ms; }
+}
+
+/* Keep the former pop-up copy available below each film on desktop. */
+.film-card__details { display: none; }
+@media (min-width: 561px) {
+    .film-card__details {
+        display: block;
+        margin-top: 0.85rem;
+        max-width: 58ch;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        color: var(--muted);
+    }
+    .film-card__synopsis, .film-card__cast { display: block; }
+    .film-card__cast { margin-top: 0.4rem; font-size: 0.8rem; }
+}
+
+/* Animate the actual picture from/to its card, not a black pop-up. */
+.film-modal__opening-poster { display: none; }
+@media (min-width: 561px) {
+    .film-modal.is-windowed {
+        background: #000;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    .film-modal.is-windowed .film-modal__opening-poster {
+        display: block; position: absolute; inset: 0; z-index: 1;
+        width: 100%; height: 100%; object-fit: contain; background: #000;
+        pointer-events: none;
+    }
+    .film-modal.is-windowed .film-modal__video { background: #000; }
+    .film-modal.is-windowed iframe {
+        opacity: 0; background: #000; color-scheme: dark;
+        transition: opacity 0.25s ease;
+    }
+    .film-modal.is-windowed iframe.is-ready { opacity: 1; }
+    .film-modal.is-windowed.is-closing .film-modal__top,
+    .film-modal.is-windowed.is-closing .film-modal__shield,
+    .film-modal.is-windowed.is-closing .film-modal__dock { visibility: hidden; }
+    .film-modal.is-windowed.is-closing { pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .film-modal.is-windowed iframe { transition: none; }
+}
