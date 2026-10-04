@@ -78,6 +78,12 @@ try {
         assert.equal(dacil.querySelector(".film-card__fallback").textContent, "HF / 06");
         assert.equal(dacil.querySelector(".film-card__type").textContent, genus[name]);
         assert.match(dacil.querySelector("img").getAttribute("src"), /assets\/images\/groc2\.jpg$/);
+        // Sin leyenda debajo de la tarjeta (ni sinopsis en el pop-up): la tarjeta
+        // no lleva .film-card__details ni data-synopsis. (04/10/2026)
+        assert.equal(dacil.querySelector(".film-card__details"), null,
+            `${name}: DÁCIL / GROC va sin leyenda`);
+        assert.equal(dacil.querySelector(".film-card__synopsis"), null);
+        assert.equal(dacil.dataset.synopsis, undefined);
     }
     assert.equal(doc.querySelectorAll(".film-card__title")[4].textContent, "INSERT / SEASON 02");
     assert.equal(doc.querySelectorAll(".film-card")[4].dataset.title, "INSERT / SEASON 02");
@@ -215,6 +221,18 @@ try {
     doc.querySelectorAll(".film-card")[0].click();
     assert.equal(castLine.hidden, true, "films without data-cast keep the cast line hidden");
     assert.equal(castLine.textContent, "");
+
+    // Sinopsis opcional (data-synopsis): DÁCIL / GROC no la lleva, así que su
+    // pop-up no repite la leyenda; los demás vídeos la siguen mostrando.
+    const synopsisLine = doc.getElementById("videoSynopsis");
+    assert.equal(synopsisLine.hidden, false, "los vídeos con sinopsis la muestran en el pop-up");
+    assert.equal(synopsisLine.textContent, "INSERT SEASON 5: Sounds frozen in time.");
+    doc.querySelectorAll(".film-card")[5].click();          // DÁCIL / GROC
+    assert.equal(synopsisLine.hidden, true, "DÁCIL / GROC no muestra leyenda en el pop-up");
+    assert.equal(synopsisLine.textContent, "");
+    doc.querySelectorAll(".film-card")[1].click();          // BRUBAKER / NOSE DUEL
+    assert.equal(synopsisLine.hidden, false, "al abrir otro vídeo, la línea vuelve");
+    assert.equal(synopsisLine.textContent, "BRUBAKER CO: Nose duel.");
     key("Escape");
 
     // The pop-up closes by itself when the film ends: once Vimeo reports "ready", the page
@@ -268,6 +286,10 @@ try {
     for (const page of [doc, esDoc]) {
         for (const card of page.querySelectorAll(".film-card")) {
             const details = card.querySelector(".film-card__details");
+            if (card.dataset.vimeo === "21087707") {
+                assert.equal(details, null, "DÁCIL / GROC es la única tarjeta sin leyenda");
+                continue;
+            }
             assert.ok(details, "every film includes its pop-up copy in the grid");
             assert.equal(details.previousElementSibling.className, "film-card__type");
             assert.equal(details.querySelector(".film-card__synopsis").textContent, card.dataset.synopsis);
