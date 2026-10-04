@@ -990,9 +990,9 @@ section { position: relative; }
     }
 }
 @keyframes work-row-enter {
-    /* Un ligero desenfoque al desplazarse; termina nítido antes de asentarse. */
-    from { opacity: 0; filter: blur(4px); transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg); }
-    55% { filter: blur(1px); }
+    /* Desenfoque de movimiento suave; termina nítido antes de asentarse. */
+    from { opacity: 0; filter: blur(6px); transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg); }
+    55% { filter: blur(2px); }
     to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) rotateY(0) rotateX(0); }
 }
 .work-row:hover, .work-row:focus-visible {
