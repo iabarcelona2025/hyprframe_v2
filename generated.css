@@ -477,12 +477,13 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-related__grid { grid-template-columns: 1fr; gap: 3.5rem; width: 85%; margin-inline: auto; } /* móvil: sigue al 85% centrado (27/09/2026) · el espacio entre cuadros es solo para escritorio */
     .node-pager { gap: 0.35rem; padding-bottom: 0; }
     .node-pager__link { gap: 0.15rem; }
-    /* 05/10/2026: flechas y contador 6 px más grandes en móvil para que se
-       lean mejor sobre el opener negro. */
-    .node-pager__link, .node-pager__count { font-size: calc(0.56rem + 6px); letter-spacing: 0.12em; }
+    /* 05/10/2026: flechas y contador 4 px más grandes en móvil (se bajó 2 px
+       de la tanda anterior tras revisión en dispositivo) para que se lean
+       mejor sobre el opener negro. */
+    .node-pager__link, .node-pager__count { font-size: calc(0.56rem + 4px); letter-spacing: 0.12em; }
     .node-hero__meta-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
     .node-hero__top .kicker { font-size: 0.42rem; letter-spacing: 0.05em; white-space: nowrap; }
-    .node-pager__arrow { width: 17.05px; height: 19.69px; }
+    .node-pager__arrow { width: 15.05px; height: 17.38px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .node-card__image img, .node-player > img, .node-pager__arrow { transition: none; }
