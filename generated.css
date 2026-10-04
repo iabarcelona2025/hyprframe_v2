@@ -233,9 +233,10 @@ body.menu-open .menu-overlay a { visibility: visible; }
    su derecha ((100% - 85.5%) / 2, ver .node-player), así que su extremo
    derecho queda alineado con el borde derecho del vídeo. (29/09/2026) */
 .node-film, .node-story, .node-related { padding-inline: var(--pad); }
-/* 03/10/2026: flechas y contador más cerca de la caja de vídeo
-   (−90px → −105px, −125px, y otros 15px → −140px). El recorte es el mismo en web y en móvil. */
-.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: -140px; scroll-margin-top: 5rem; }
+/* Escritorio: ajusta el solape al ancho y alto de la ventana. 115px compensa
+   los −15px/−80px de los bloques previos y deja 20px libres; max() conserva
+   el margen actual de −140px cuando ya se cumple el mínimo. */
+.node-film { padding-top: clamp(3rem, 6vw, 5rem); margin-top: max(-140px, calc(115px - clamp(3rem, 5vw, 4.5rem) - clamp(84px, 11svh, 120px) - clamp(3rem, 6vw, 5rem))); scroll-margin-top: 5rem; }
 .node-section-label { padding: 1rem 0; border-top: 1px solid var(--line); }
 /* El label de THE STORY, debajo del vídeo, sin línea. Antes copiaba el ancho de
    la caja de vídeo (85,5% centrado), así que su texto arrancaba 7,25% a la
@@ -392,8 +393,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
        title and the film starts closer to the call to action. */
     .node-hero { padding-top: calc(5.5rem + 20px); }
     .node-hero__top, .node-section-label { font-size: 0.56rem; letter-spacing: 0.12em; }
-    /* El campo liso y el recorte de −140px metían las flechas y el contador
-       dentro del vídeo. En móvil el paginador queda justo encima de la caja. */
+    /* En móvil se neutraliza el solape de escritorio; el hueco entre el
+       paginador y la caja lo fija el relleno superior de .node-film. */
     .node-hero__image { height: 0; }
     .node-hero__meta-row { padding-bottom: 0; }
     .node-film { margin-top: 0; padding-top: calc(0.75rem + 20px); }

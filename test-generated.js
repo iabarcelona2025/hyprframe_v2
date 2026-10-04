@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=88");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=89");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -738,6 +738,25 @@ assert.match(mobileBlock, /\.node-hero__image \{ height: 0; \}/,
     "en móvil el campo liso no separa el paginador de la caja");
 assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: calc\(0\.75rem \+ 20px\); \}/,
     "en móvil las flechas y el contador quedan 20px más separadas de la caja");
+const desktopFilmRule = ruleOf(generatedFlat, ".node-film");
+assert.equal(declaration(desktopFilmRule, "margin-top"),
+    "max(-140px, calc(115px - clamp(3rem, 5vw, 4.5rem) - clamp(84px, 11svh, 120px) - clamp(3rem, 6vw, 5rem)))",
+    "en escritorio el solape se ajusta para conservar 20px mínimos hasta la caja de vídeo");
+const cssClampPx = (min, preferred, max) => Math.max(min, Math.min(preferred, max));
+const desktopPagerVideoGap = (width, height) => {
+    const metaPadding = cssClampPx(48, width * 0.05, 72);
+    const openerField = cssClampPx(84, height * 0.11, 120);
+    const filmPadding = cssClampPx(48, width * 0.06, 80);
+    const filmMargin = Math.max(-140, 115 - metaPadding - openerField - filmPadding);
+    return (metaPadding - 15) + (openerField - 80) + filmMargin + filmPadding;
+};
+for (const [width, height] of [
+    [561, 320], [640, 360], [768, 600], [768, 1024], [1024, 600], [1024, 768],
+    [1280, 720], [1366, 768], [1440, 900], [1920, 1080], [2560, 1440], [3840, 2160],
+]) {
+    assert.ok(desktopPagerVideoGap(width, height) >= 20 - 1e-9,
+        `${width}×${height}: solo hay ${desktopPagerVideoGap(width, height)}px entre el paginador y el vídeo`);
+}
 assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
 assert.match(mobileBlock, /\.node-pager__link, \.node-pager__count \{ font-size: calc\(0\.56rem \+ 4px\); letter-spacing: 0\.12em; \}/,
@@ -751,7 +770,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=88/);
+    assert.match(es, /generated\.css\?v=89/);
     assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
