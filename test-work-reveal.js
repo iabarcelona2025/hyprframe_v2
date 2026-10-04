@@ -51,12 +51,12 @@ test('3D entrance is scoped to desktop and remains visible without JS or with re
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
         assert.match(html, /styles\.css\?v=203/);
-        assert.match(html, /script\.js\?v=54/);
+        assert.match(html, /script\.js\?v=55/);
     }
 });
 
 // Exercise the real reveal setup with controlled scroll and title events:
-// rows cannot animate before the heading finishes, nor before reaching view.
+// after the first row is reached and the title finishes, every row plays without more scroll.
 const revealSetup = script.slice(script.indexOf('    /* ── 4. Reveal on scroll'), script.indexOf('    /* El anagrama vuelve'));
 function setupWorkReveal(page, desktop, reduced) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8'), {
@@ -73,9 +73,6 @@ function setupWorkReveal(page, desktop, reduced) {
     const list = window.document.querySelector('#workList');
     let listTop = 1200;
     list.getBoundingClientRect = () => ({ top: listTop });
-    for (const row of list.querySelectorAll('.work-row')) {
-        Object.defineProperty(row, 'offsetHeight', { value: 100 });
-    }
     window.eval(`(() => { const reduced = ${reduced}; ${revealSetup} })()`);
     function scrollListTo(top) {
         listTop = top;
@@ -85,7 +82,7 @@ function setupWorkReveal(page, desktop, reduced) {
 }
 
 for (const page of ['index.html', 'es/index.html']) {
-    test(`${page}: work rows enter top-down in 3D only after SELECTED WORK finishes`, async () => {
+    test(`${page}: all rows cascade automatically after the first row and SELECTED WORK`, async () => {
         const { dom, window, observers, scrollListTo } = setupWorkReveal(page, true, false);
         try {
             const title = window.document.querySelector('#work .section-title');
@@ -93,7 +90,7 @@ for (const page of ['index.html', 'es/index.html']) {
             const line = title.querySelector('.line:last-child .line-inner');
             assert.ok(window.document.querySelector('#work').classList.contains('work-3d-ready'));
             assert.equal(observers.length, 3); // rows are NOT observed while transformed offscreen
-            // Two rows reach the viewport BEFORE the title finishes.
+            // Reaching the first row while the title animates must not reveal anything yet.
             observers[2].intersect(title);
             scrollListTo(600);
             await new Promise(resolve => setTimeout(resolve, 25));
@@ -106,17 +103,29 @@ for (const page of ['index.html', 'es/index.html']) {
             await new Promise(resolve => setTimeout(resolve, 130));
             assert.ok(rows[1].classList.contains('work-row-visible'));
             assert.ok(!rows[2].classList.contains('work-row-visible'));
-            // Landing deeper by scroll queues any passed rows in order.
-            scrollListTo(300);
-            await new Promise(resolve => setTimeout(resolve, 25));
-            assert.ok(rows[2].classList.contains('work-row-visible'));
-            await new Promise(resolve => setTimeout(resolve, 430));
-            assert.deepEqual(rows.slice(0, 5).map(row => row.classList.contains('work-row-visible')),
-                [true, true, true, true, true]);
-            assert.ok(!rows[5].classList.contains('work-row-visible'));
+            // No further scroll: the remaining eight rows must still appear in order.
+            await new Promise(resolve => setTimeout(resolve, 930));
+            assert.ok(rows.every(row => row.classList.contains('work-row-visible')));
         } finally { dom.window.close(); }
     });
 }
+
+test('the cascade waits for the first row even if the heading has already finished', async () => {
+    const { dom, window, observers, scrollListTo } = setupWorkReveal('index.html', true, false);
+    try {
+        const title = window.document.querySelector('#work .section-title');
+        const rows = [...window.document.querySelectorAll('#work .work-row')];
+        observers[2].intersect(title);
+        const end = new window.Event('transitionend', { bubbles: true });
+        Object.defineProperty(end, 'propertyName', { value: 'transform' });
+        title.querySelector('.line:last-child .line-inner').dispatchEvent(end);
+        assert.equal(rows.filter(row => row.classList.contains('work-row-visible')).length, 0);
+        scrollListTo(600);
+        await new Promise(resolve => setTimeout(resolve, 25));
+        assert.ok(rows[0].classList.contains('work-row-visible'));
+        assert.ok(!rows[1].classList.contains('work-row-visible'));
+    } finally { dom.window.close(); }
+});
 
 test('rows do not stay hidden if the title misses its visibility threshold', async () => {
     const { dom, window, scrollListTo } = setupWorkReveal('index.html', true, false);

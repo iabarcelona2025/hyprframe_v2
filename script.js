@@ -182,27 +182,27 @@
     if (aboutEmblem) lineIO.observe(aboutEmblem);
 
     /* Selected Work: on desktop, wait for the SECOND title line to finish
-       sliding in before revealing the rows from top to bottom. Queue rows as
-       their layout position reaches the viewport, never their transformed
-       3D bounding box (which may be completely outside the viewport). */
+       sliding in and for the first row to reach the viewport. Then reveal
+       ALL rows in sequence without requiring any further scrolling. Check
+       the untransformed list (not rows translated offscreen in 3D). */
     if (!reduced && workSection && workTitle &&
         window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)").matches) {
         const workRows = [...workSection.querySelectorAll(".work-row")];
         const lastTitleLine = workTitle.querySelector(".line:last-child .line-inner");
         if (workRows.length && lastTitleLine) {
             let titleFinished = false;
-            let furthestSeen = -1;
+            let firstRowReached = false;
             let nextRow = 0;
             let revealTimer = null;
             let titleRevealStarted = false;
 
             function revealNextRow() {
                 revealTimer = null;
-                if (!titleFinished || nextRow > furthestSeen || nextRow >= workRows.length) return;
+                if (!titleFinished || !firstRowReached || nextRow >= workRows.length) return;
                 workRows[nextRow++].classList.add("work-row-visible");
-                if (nextRow < workRows.length && nextRow <= furthestSeen) {
+                if (nextRow < workRows.length) {
                     revealTimer = setTimeout(revealNextRow, 105);
-                } else if (nextRow === workRows.length) {
+                } else {
                     removeEventListener("scroll", onWorkScroll);
                     removeEventListener("resize", onWorkScroll);
                 }
@@ -210,18 +210,13 @@
 
             const workList = workSection.querySelector(".work-list");
             function updateReachedRows() {
-                // An offscreen 3D transform changes a row's bounding rect, so
-                // observing that row can NEVER reach the IO threshold. Use the
-                // untransformed list position and each row's layout height.
-                let rowTop = workList.getBoundingClientRect().top + workList.clientTop;
-                for (let i = 0; i < workRows.length; i++) {
-                    if (rowTop <= innerHeight * 0.96) furthestSeen = Math.max(furthestSeen, i);
-                    rowTop += workRows[i].offsetHeight;
-                }
+                // The list has no entrance transform, unlike its rows. Once its
+                // top reaches the viewport, play the complete cascade.
+                if (workList.getBoundingClientRect().top <= innerHeight * 0.96) firstRowReached = true;
                 // A direct anchor jump may skip the heading entirely; and on
                 // short viewports the title may never meet its IO threshold.
                 // Either way, no row must remain invisible indefinitely.
-                if (furthestSeen >= 0 && !workTitle.classList.contains("in")) {
+                if (firstRowReached && !workTitle.classList.contains("in")) {
                     if (workTitle.getBoundingClientRect().bottom < 0) {
                         titleFinished = true;
                     } else {
