@@ -185,8 +185,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=85");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=30");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=88");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -501,7 +501,7 @@ const mobileRule = h1Rules[1];
 assert.match(desktopRule, /white-space: nowrap/, "desktop: una sola línea");
 assert.match(desktopRule, /var\(--font-head\)/, "desktop: Montserrat");
 // Mobile: título adaptable en una sola línea — nunca se corta, siempre nowrap.
-assert.match(mobileRule, /font-size: clamp\(calc\(0\.95625rem - 8\.5px\), calc\(4\.675vw - 8\.5px\), calc\(2\.21rem - 8\.5px\)\)/, "móvil: clamp adaptable para que entre en una línea");
+assert.match(mobileRule, /font-size: clamp\(calc\(0\.95625rem - 0\.5px\), calc\(4\.675vw - 0\.5px\), calc\(2\.21rem - 0\.5px\)\)/, "móvil: clamp adaptable del título (+8px el 05/10/2026)");
 assert.match(mobileRule, /white-space: nowrap/, "móvil: una sola línea, no se corta");
 assert.ok(!/white-space: normal/.test(mobileRule), "móvil: ya no parte en líneas");
 // N.O.D.E. respeta Montserrat igual que las otras 9.
@@ -740,6 +740,10 @@ assert.match(mobileBlock, /\.node-film \{ margin-top: 0; padding-top: calc\(0\.7
     "en móvil las flechas y el contador quedan 20px más separadas de la caja");
 assert.match(mobileBlock, /\.node-pager \{ gap: 0\.35rem; padding-bottom: 0; \}/,
     "en móvil manda el relleno corto del paginador");
+assert.match(mobileBlock, /\.node-pager__link, \.node-pager__count \{ font-size: calc\(0\.56rem \+ 4px\); letter-spacing: 0\.12em; \}/,
+    "en móvil las flechas y el contador crecen 4 px (bajado 2 px tras revisión, 05/10/2026)");
+assert.match(mobileBlock, /\.node-pager__arrow \{ width: 15\.05px; height: 17\.38px; \}/,
+    "en móvil la flecha triángulo equilátero crece 4 px (11.05→15.05, altura 2/√3·w ≈ 17.38)");
 
 /* ── Las fichas ES cierran LA HISTORIA con el equivalente corto ── */
 for (const file of ALL) {
@@ -747,15 +751,15 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=85/);
-    assert.match(es, /generated\.js\?v=30/);
+    assert.match(es, /generated\.css\?v=88/);
+    assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 
 /* ── Play: la web llena la ventana sin fullscreen; el móvil no oscurece ── */
 assert.doesNotMatch(script, /requestDesktopFullscreen|exitPlayerFullscreen/,
     "generated.js ya no pide el fullscreen del navegador en escritorio");
-assert.match(script, /function requestMobileFullscreen/,
+assert.match(script, /function requestIframeFullscreen/,
     "el móvil vuelve a pedir el fullscreen del navegador");
 assert.match(script, /if \(!isMobileVideo\) return;[\s\S]{0,240}requestFullscreen/,
     "el fullscreen del navegador solo se pide en móvil");
@@ -771,16 +775,31 @@ assert.match(script, /method: "requestFullscreen"/,
    permanente: vertical sale y horizontal vuelve a entrar. Si el teléfono ya está
    horizontal no se bloquea nada y los giros quedan libres. Todo va con red de
    seguridad (typeof, try/catch y catch del promise): Safari no trae lock(). */
-assert.match(script, /function forceMobileLandscape\(\) \{\s*if \(!isMobileVideo \|\| !isPortraitNow\(\)\) return;[\s\S]{0,300}orientation\.lock\("landscape"\)/,
-    "móvil: el apaisado se fuerza solo cuando la pantalla está vertical, con lock('landscape')");
-assert.match(script, /function requestMobileFullscreen[\s\S]{0,900}forceMobileLandscape\(\)/,
-    "móvil: fullscreen y apaisado se piden juntos en el play");
-assert.match(script, /function exitMobileFullscreen\(iframe\) \{\s*unlockMobileOrientation\(\);/,
-    "salir del fullscreen suelta el bloqueo de orientación");
-assert.match(script, /function disarmPortraitExit[\s\S]{0,240}unlockMobileOrientation\(\)/,
+assert.match(script, /function forceMobileLandscape\(\) \{\s*if \(!lockOnNextFullscreen \|\| !isMobileVideo \|\| !isPortraitNow\(\)\) return;[\s\S]{0,300}orientation\.lock\("landscape"\)/,
+    "móvil: el apaisado se fuerza solo cuando lockOnNextFullscreen está armado y la pantalla está vertical, con lock('landscape')");
+/* El lock se pide EN LÍNEA desde el play (lockOnNextFullscreen armado cuando
+   el móvil está vertical) y se reintenta en fullscreenchange. forceMobile-
+   Landscape desarma el flag en cuanto llama a lock() para que la reentrada
+   por orientationchange nunca vuelva a bloquear. */
+assert.match(script, /lockOnNextFullscreen = isPortraitNow\(\);[\s\S]{0,400}requestIframeFullscreen\(iframe, \(\) => \{ mobileFs = false; \}\)[\s\S]{0,400}forceMobileLandscape\(\)/,
+    "móvil: fullscreen y apaisado se piden juntos en el play con el flag armado solo cuando hace falta");
+assert.match(script, /function exitMobileFullscreen\(iframe\) \{\s*lockOnNextFullscreen = false;\s*mobileFs = false;\s*unlockMobileOrientation\(\);/,
+    "salir del fullscreen limpia los flags y suelta el bloqueo de orientación");
+assert.match(script, /function disarmPortraitExit[\s\S]{0,400}unlockMobileOrientation\(\)/,
     "al terminar o parar el vídeo se suelta el bloqueo de orientación");
 assert.match(script, /typeof orientation\?\.lock !== "function"/,
     "el bloqueo de orientación se detecta antes de usarlo (Safari no lo trae)");
+assert.match(script, /addEventListener\("fullscreenerror", onFullscreenError\)/,
+    "se escucha fullscreenerror para desmarcar mobileFs si el navegador deniega el fullscreen");
+assert.match(script, /function onFullscreenError\(\) \{\s*mobileFs = false;\s*\}/,
+    "fullscreenerror limpia el flag mobileFs");
+/* Reenter: requestIframeFullscreen NO llama a forceMobileLandscape ni arma
+   lockOnNextFullscreen — la reentrada por giro a horizontal nunca bloquea la
+   orientación: el visitante decide los giros. El catch del promise libera
+   mobileFs por si el navegador deniega el fullscreen, y el postMessage pide
+   a Vimeo que entre en fullscreen nativo. */
+assert.match(script, /function reenterMobileFullscreen\(iframe\) \{\s*mobileFs = true;\s*requestIframeFullscreen\(iframe, \(\) => \{ mobileFs = false; \}\);[\s\S]{0,200}postMessage\(\{ method: "requestFullscreen" \}/,
+    "reenterMobileFullscreen no bloquea la orientación: solo pide el fullscreen y avisa a Vimeo");
 assert.match(script, /if \(!portrait\) \{\s*seenLandscape = true;\s*if \(mobileFs\) return;/,
     "en horizontal con el vídeo ya en pantalla el giro no dispara nada");
 assert.match(script, /scrollBehavior = "auto"[\s\S]{0,220}scrollIntoView\(\{ block: "center", behavior: "instant" \}\)[\s\S]{0,220}min-width: 561px[\s\S]{0,120}scrollBy\(0, -40\)[\s\S]{0,1200}player\.getBoundingClientRect\(\)/,
@@ -1024,6 +1043,86 @@ assert.ok(!/controls=0/.test(script), "no se apagan los mandos de Vimeo");
     const unlocksBefore = unlocks;
     fromVimeo({ event: "fullscreenchange", data: { fullscreen: false } });
     assert.equal(unlocks, unlocksBefore + 1, "el Vimeo que sale del fullscreen suelta el bloqueo");
+    dom.window.close();
+}
+
+/* Móvil (05/10/2026): la reentrada tras salida manual es repetible todas las
+   veces que el visitante gire el teléfono, y NUNCA vuelve a bloquear la
+   orientación — el bloqueo solo vive en el play inicial (si el móvil estaba
+   vertical) y se suelta al salir. Si el navegador deniega el fullscreen
+   (fullscreenerror o promise rechazado) el flag mobileFs se limpia para que
+   el siguiente giro pueda volver a intentarlo. */
+{
+    const dom = new JSDOM(read("project-node.html"), {
+        url: "http://localhost:8080/project-node.html", runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    window.matchMedia = (query) => ({
+        matches: query.includes("max-width: 560px"),
+        media: query,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    });
+    const locks = [];
+    let unlocks = 0;
+    const orientation = {
+        type: "landscape-primary",
+        lock(kind) { locks.push(kind); return Promise.resolve(); },
+        unlock() { unlocks += 1; return Promise.resolve(); },
+    };
+    window.screen.orientation = orientation;
+    window.orientation = 90;
+    window.eval(script);
+    const doc = window.document;
+    let reentered = 0;
+    let errors = 0;
+    doc.getElementById("playFilm").click();
+    const iframe = doc.querySelector(".node-player iframe");
+    iframe.requestFullscreen = () => {
+        reentered += 1;
+        return Promise.resolve();
+    };
+    iframe.webkitRequestFullscreen = iframe.requestFullscreen;
+    // Tres ciclos completos: salida manual por fullscreenchange false, giro
+    // a vertical, giro a horizontal (reentrada). El lock no se vuelve a pedir.
+    const enterOrLeave = (on) => {
+        Object.defineProperty(doc, "fullscreenElement", { get: () => (on ? iframe : null), configurable: true });
+        window.dispatchEvent(new window.Event("fullscreenchange"));
+    };
+    const rotate = (type) => {
+        orientation.type = type;
+        window.orientation = type === "landscape-primary" ? 90 : 0;
+        window.dispatchEvent(new window.Event("orientationchange"));
+    };
+    enterOrLeave(true);
+    for (let i = 0; i < 3; i++) {
+        enterOrLeave(false);
+        rotate("portrait-primary");
+        rotate("landscape-primary");
+    }
+    assert.equal(reentered, 3, "reentrada repetible: tres giros a horizontal tras sendas salidas manuales vuelven a pedir el fullscreen");
+    assert.deepEqual(locks, [], "la reentrada por giro a horizontal NUNCA vuelve a bloquear la orientación");
+    assert.equal(unlocks, 3, "cada salida suelta el (inexistente) bloqueo sin errores");
+    // Ahora con el promise de requestFullscreen rechazado: el release limpia
+    // mobileFs para que el siguiente giro lo vuelva a intentar.
+    let rejected = 0;
+    iframe.requestFullscreen = () => {
+        rejected += 1;
+        return Promise.reject(new Error("denied"));
+    };
+    iframe.webkitRequestFullscreen = iframe.requestFullscreen;
+    enterOrLeave(false);
+    rotate("portrait-primary");
+    rotate("landscape-primary");
+    assert.equal(rejected, 1, "un fullscreen denegado no impide que se siga intentando");
+    // Y el evento fullscreenerror también limpia mobileFs para que el
+    // siguiente giro pueda volver a pedir el fullscreen: primero dejamos
+    // mobileFs = true (como si hubiésemos hecho una petición que falló),
+    // disparamos fullscreenerror y luego giramos dos veces.
+    rotate("portrait-primary");
+    window.dispatchEvent(new window.Event("fullscreenerror"));
+    const rejectedBeforeError = rejected;
+    rotate("landscape-primary");
+    assert.equal(rejected, rejectedBeforeError + 1, "fullscreenerror limpia mobileFs y el siguiente giro vuelve a intentar el fullscreen");
     dom.window.close();
 }
 
