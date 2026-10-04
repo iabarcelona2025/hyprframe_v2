@@ -161,6 +161,7 @@
         layer.setAttribute("aria-hidden", "true");
         panel.append(layer);
     }
+    const videoBox = modal.querySelector(".film-modal__video");
     let closeTimer = null;
     let openingPoster = null;
     let posterTimer = null;
@@ -173,7 +174,24 @@
         modal.classList.remove("is-closing");
         openingPoster?.remove();
         openingPoster = null;
-        player.classList.remove("is-ready");
+        // El fotograma que destapan las cortinillas solo vive mientras el vídeo
+        // se cierra: si la ventana se vuelve a abrir o se cierra, se retira.
+        videoBox.querySelector(".film-modal__exit-still")?.remove();
+        player.classList.remove("is-ready", "is-ending");
+    }
+    // Cortinillas de salida: el cartel de la tarjeta vuelve a montarse DETRÁS
+    // del iframe (sin recargarlo, que perdería el último fotograma) para que las
+    // bandas lo destapen al cerrarse, igual que en GENERATED.
+    function showExitStill() {
+        if (!lastFilmLink || videoBox.querySelector(".film-modal__exit-still")) return;
+        const poster = lastFilmLink.querySelector(".film-card__poster img");
+        if (!poster) return;
+        const still = poster.cloneNode();
+        still.className = "film-modal__exit-still";
+        still.alt = "";
+        still.removeAttribute("loading");
+        still.setAttribute("aria-hidden", "true");
+        videoBox.prepend(still);
     }
     function onWindowLanded(event) {
         if (event.target === panel && event.propertyName === "transform") finishCloseFilm();
@@ -355,6 +373,21 @@
         finishCloseFilm();
     }
 
+    // Al acabar la película el vídeo no se corta en seco: como en GENERATED,
+    // las bandas diagonales de 102° se cierran sobre el último fotograma
+    // (paúsado por closeFilm) mientras la ventana vuelve a su tarjeta. Con
+    // movimiento reducido, o si Vimeo todavía no ha dado su "ready", no hay
+    // imagen que tapar y la ventana se cierra como antes.
+    function closeEndedFilm() {
+        if (reducedMotion.matches || !player.classList.contains("is-ready")) {
+            closeFilm();
+            return;
+        }
+        showExitStill();
+        player.classList.add("is-ending");
+        closeFilm();
+    }
+
     function finishCloseFilm() {
         clearWindowTransition();
         modal.classList.remove("is-windowed");
@@ -396,7 +429,7 @@
             openingPoster = null;
             player.contentWindow.postMessage({ method: "addEventListener", value: "ended" }, VIMEO_ORIGIN);
         } else if (data?.event === "ended") {
-            closeFilm();
+            closeEndedFilm();
         }
     });
 

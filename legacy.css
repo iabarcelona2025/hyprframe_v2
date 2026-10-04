@@ -99,13 +99,36 @@ body.menu-open, body.modal-open { overflow: hidden; }
     content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 32%, transparent 65%, rgba(0, 0, 0, 0.48));
 }
+/* Cortinillas de salida (05/10/2026): los vídeos de CAPTURED se despiden con
+   las mismas bandas diagonales de 102° que usa GENERATED (generated.css).
+   Durante la reproducción la franja mide lo mismo que el periodo —32px—, así
+   que la máscara es opaca y el vídeo se ve completo; al acabar la película
+   --film-stripe baja a 0 y las bandas se estrechan hasta destapar lo que hay
+   debajo: el cartel de la tarjeta en móvil y el fotograma de apertura en la
+   ventana de escritorio. La opacidad sigue ahí porque garantiza la salida en
+   los navegadores que no animan propiedades registradas. */
+@property --film-stripe {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 32px;
+}
 .film-card__mobile-player {
     position: absolute; inset: 0; z-index: 3;
     width: 100%; height: 100%; border: 0; background: #000;
     opacity: 0; transition: opacity 0.45s ease;
 }
 .film-card__mobile-player.is-ready { opacity: 1; }
-.film-card__mobile-player.is-ending { opacity: 0; pointer-events: none; transition: opacity 0.7s var(--ease-out); }
+.film-card__mobile-player.is-ready,
+.film-modal__video iframe.is-ready {
+    -webkit-mask-image: repeating-linear-gradient(102deg, #000 0 var(--film-stripe), transparent var(--film-stripe) 32px);
+            mask-image: repeating-linear-gradient(102deg, #000 0 var(--film-stripe), transparent var(--film-stripe) 32px);
+}
+.film-card__mobile-player.is-ending {
+    --film-stripe: 0px;
+    opacity: 0;
+    pointer-events: none;
+    transition: --film-stripe 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
+}
 .film-card__watch {
     position: absolute; z-index: 2;
     font: 400 0.64rem/1.4 var(--font-mono);
@@ -387,6 +410,10 @@ body.menu-open, body.modal-open { overflow: hidden; }
 
 /* Animate the actual picture from/to its card, not a black pop-up. */
 .film-modal__opening-poster { display: none; }
+/* El fotograma que las cortinillas destapan al acabar el vídeo: el mismo cartel
+   de la tarjeta, colocado detrás del iframe. Fuera de la ventana de escritorio
+   no se pinta: en móvil el vídeo va en línea y ya tapa su propio cartel. */
+.film-modal__exit-still { display: none; }
 @media (min-width: 561px) {
     .film-modal.is-windowed {
         background: #000;
@@ -398,17 +425,37 @@ body.menu-open, body.modal-open { overflow: hidden; }
         width: 100%; height: 100%; object-fit: contain; background: #000;
         pointer-events: none;
     }
+    /* El cartel de la tarjeta, debajo del vídeo (z-index 0) y a la misma
+       medida que la caja: las bandas lo van destapando mientras se cierran,
+       igual que en GENERATED se destapa el fotograma de apertura. */
+    .film-modal.is-windowed .film-modal__exit-still {
+        display: block; position: absolute; inset: 0; z-index: 0;
+        width: 100%; height: 100%; object-fit: cover; background: #000;
+        pointer-events: none;
+    }
     .film-modal.is-windowed .film-modal__video { background: #000; }
     .film-modal.is-windowed iframe {
         opacity: 0; background: #000; color-scheme: dark;
         transition: opacity 0.25s ease;
     }
     .film-modal.is-windowed iframe.is-ready { opacity: 1; }
+    /* Escritorio: la misma cortinilla cierra el vídeo de la ventana de CAPTURED
+       cuando la película acaba. Va justo después de is-ready —misma
+       especificidad, así que manda el orden de aparición— para que el fundido
+       de 0,7s no se lo salte el opacity: 1 de la reproducción: bandas y opacidad
+       salen juntas, en el mismo tiempo que en GENERATED. */
+    .film-modal.is-windowed iframe.is-ending {
+        --film-stripe: 0px;
+        opacity: 0;
+        pointer-events: none;
+        transition: --film-stripe 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
+    }
     .film-modal.is-windowed.is-closing .film-modal__top,
     .film-modal.is-windowed.is-closing .film-modal__shield,
     .film-modal.is-windowed.is-closing .film-modal__dock { visibility: hidden; }
     .film-modal.is-windowed.is-closing { pointer-events: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .film-modal.is-windowed iframe { transition: none; }
+    .film-modal.is-windowed iframe,
+    .film-modal.is-windowed iframe.is-ending { transition: none; }
 }

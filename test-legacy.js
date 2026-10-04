@@ -378,8 +378,26 @@ try {
         "sinopsis y reparto ocupan líneas propias en móvil");
     assert.match(legacyCss, /\.film-card__client \+ \.film-card__details \{ margin-top: 0\.3rem; \}/,
         "la leyenda de INSERT queda más cerca de Techno Club, como un bloque de texto");
+    // Cortinillas de salida (05/10/2026): los vídeos de CAPTURED se despiden
+    // con las mismas bandas diagonales de 102° que GENERATED —en el reproductor
+    // en línea del móvil y en la ventana de escritorio—; la franja mide 32px
+    // (lo mismo que el periodo, así que la máscara es opaca) y baja a 0 al
+    // acabar la película.
+    assert.match(legacyCss, /@property --film-stripe\s*\{[^}]*syntax: "<length>";[^}]*initial-value: 32px;/);
+    assert.match(legacyCss, /repeating-linear-gradient\(102deg, #000 0 var\(--film-stripe\), transparent var\(--film-stripe\) 32px\)/);
+    assert.match(legacyCss, /\.film-card__mobile-player\.is-ready,\s*\n\.film-modal__video iframe\.is-ready \{[^}]*mask-image: repeating-linear-gradient\(102deg/,
+        "la máscara va en los dos reproductores, no solo en uno");
+    for (const selector of [".film-card__mobile-player.is-ending", ".film-modal.is-windowed iframe.is-ending"]) {
+        const escaped = selector.replace(/\./g, "\\.");
+        assert.match(legacyCss, new RegExp(`${escaped}\\s*\\{[^}]*--film-stripe: 0px;[^}]*opacity: 0;[^}]*transition: --film-stripe 0\\.7s var\\(--ease-out\\), opacity 0\\.7s var\\(--ease-out\\);`),
+            `${selector} cierra las bandas al acabar el vídeo`);
+    }
+    assert.match(legacyCss, /\.film-modal\.is-windowed \.film-modal__exit-still \{[^}]*z-index: 0;/,
+        "el cartel que destapan las bandas queda por debajo del vídeo");
+
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
     const panel = modal.querySelector(".film-modal__panel");
+    const videoBox = modal.querySelector(".film-modal__video");
     const rect = (left, top, width, height) => ({ left, top, width, height });
     firstCard.querySelector(".film-card__poster").getBoundingClientRect = () => rect(40, 200, 480, 300);
     panel.getBoundingClientRect = modal.getBoundingClientRect = () => rect(0, 0, 1200, 800);
@@ -390,6 +408,28 @@ try {
     assert.ok(!panel.querySelector(".film-modal__opening-poster"), "ready playback has no poster behind it");
     assert.match(legacyCss, /\.film-modal\.is-windowed \.film-modal__video \{ background: #000; \}/,
         "the layer directly behind Vimeo is opaque black");
+
+    // Al acabar la película, la ventana no se corta: las cortinillas se cierran
+    // sobre el vídeo y destapan el cartel de la tarjeta mientras el panel
+    // vuelve a su sitio. El cartel se monta detrás del iframe (prepend) para no
+    // recargarlo y conservar el último fotograma que enmascaran las bandas.
+    fromVimeo({ event: "ended" });
+    assert.ok(player.classList.contains("is-ending"), "el vídeo se cierra con las cortinillas de GENERATED");
+    const exitStill = videoBox.querySelector(".film-modal__exit-still");
+    assert.ok(exitStill, "el cartel de la tarjeta vuelve a montarse al acabar el vídeo");
+    assert.equal(exitStill.parentElement, videoBox);
+    assert.equal(exitStill.nextElementSibling, player, "el cartel va detrás del vídeo");
+    assert.equal(exitStill.getAttribute("src"), firstCard.querySelector(".film-card__poster img").getAttribute("src"));
+    assert.equal(exitStill.getAttribute("aria-hidden"), "true");
+    assert.ok(modal.classList.contains("is-closing"), "el panel vuelve a la tarjeta mientras se cierran las bandas");
+    const curtainLanded = new window.Event("transitionend");
+    Object.defineProperty(curtainLanded, "propertyName", { value: "transform" });
+    panel.dispatchEvent(curtainLanded);
+    assert.equal(modal.hidden, true, "la ventana se cierra cuando acaban las cortinillas");
+    assert.ok(!videoBox.querySelector(".film-modal__exit-still"), "el cartel se retira al cerrar");
+    assert.ok(!player.classList.contains("is-ending"), "la cortinilla no sobrevive al cierre");
+    firstCard.click();
+    fromVimeo({ event: "ready" });
     const pauseMessages = [];
     player.contentWindow.postMessage = message => pauseMessages.push(message);
     closeButton.click();
