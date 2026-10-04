@@ -331,10 +331,15 @@ try {
             assert.equal(details.querySelector(".film-card__cast")?.textContent, card.dataset.cast);
         }
     }
-    // Género y cliente: una sola regla para los dos, así no pueden desincronizarse
-    // de tipografía, tamaño, interletrado ni color. (04/10/2026)
-    assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*font: 400 0\.62rem\/1\.5 var\(--font-mono\);\s*\n\s*letter-spacing: 0\.2em; color: var\(--muted\);/,
-        "el cliente comparte tipografía con el género, fuera del bloque de escritorio");
+    // Género y cliente comparten tamaño, interletrado y color (una sola regla,
+    // para que no se desincronicen), pero no tipografía: el género va en la
+    // monoespaciada y el cliente en Space Grotesk, la del cuerpo. (04/10/2026)
+    assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*font-size: 0\.62rem; line-height: 1\.5;\s*\n\s*letter-spacing: 0\.2em; color: var\(--muted\);/,
+        "género y cliente comparten tamaño, interletrado y color");
+    assert.match(legacyCss, /\.film-card__type \{ margin-top: 0\.65rem; font-family: var\(--font-mono\);/,
+        "el género sigue en la monoespaciada");
+    assert.match(legacyCss, /\.film-card__client \{ margin-top: 0\.22rem; font-family: var\(--font-body\);/,
+        "el cliente va en Space Grotesk (--font-body)");
     assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
     assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
