@@ -61,8 +61,8 @@ test('3D entrance is scoped to desktop and remains visible without JS or with re
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=206/);
-        assert.match(html, /script\.js\?v=55/);
+        assert.match(html, /styles\.css\?v=207/);
+        assert.match(html, /script\.js\?v=56/);
     }
 });
 

@@ -105,6 +105,107 @@
     onScroll();
     paintScrollProgress();
 
+    /* ── 2b. Nav activo: el apartado en el que estás se ilumina ── */
+    // Solo escritorio: a ≤1024px el .main-nav se cambia por el burger, así que
+    // no hay nada que iluminar. Solo cuenta los enlaces internos de esta
+    // página —«Captured» apunta a legacy.html y allí se marca con
+    // aria-current="page"—. El estado se escribe con el mismo atributo
+    // aria-current que ya usa legacy.css, y las posiciones se cachean (se
+    // recalculan al redimensionar y cuando el documento cambia de tamaño, igual
+    // que scrollMax) para no leer el layout en cada frame de scroll.
+    const navDesktop = window.matchMedia("(min-width: 1025px)");
+    const NAV_LINE = 0.35;   // fracción de la ventana donde se considera «estás aquí»
+    const navItems = [];
+    {
+        const docKey = (ruta) => ruta.replace(/index\.html$/, "").replace(/\/$/, "");
+        document.querySelectorAll(".main-nav a[href]").forEach((link) => {
+            const href = link.getAttribute("href") || "";
+            const hashAt = href.indexOf("#");
+            if (hashAt === -1) return;
+            const url = new URL(link.href, location.href);
+            // Mismo documento que este (index.html y / son la misma página).
+            if (docKey(url.pathname) !== docKey(location.pathname) || url.search !== location.search) return;
+            const section = document.getElementById(href.slice(hashAt + 1));
+            if (section) navItems.push({ link, section, top: 0 });
+        });
+    }
+    let navActive = null;
+    let navClicked = null;     // enlace pulsado, mientras la inercia va hacia él
+    let navClickedTimer = 0;
+
+    function measureNav() {
+        navItems.forEach((item) => { item.top = item.section.getBoundingClientRect().top + scrollY; });
+        navItems.sort((a, b) => a.top - b.top);   // por si cambia el orden del HTML
+    }
+
+    function lightNav(item) {
+        if (item === navActive) return;
+        if (navActive) navActive.link.removeAttribute("aria-current");
+        navActive = item;
+        if (item) item.link.setAttribute("aria-current", "location");
+    }
+
+    function updateActiveNav() {
+        if (!navDesktop.matches) {           // móvil/tablet: el nav no se ve
+            navClicked = null;
+            clearTimeout(navClickedTimer);
+            lightNav(null);
+            return;
+        }
+        if (!navItems.length) return;
+        // El apartado se enciende cuando su inicio cruza la línea (un 35% de la
+        // ventana): entonces ya ocupa la mayor parte de la vista y su título está
+        // a la vista. Al final del documento manda el último, para que un
+        // apartado corto (Contact) también se encienda.
+        const line = scrollY + innerHeight * NAV_LINE;
+        let found = null;
+        for (const item of navItems) if (item.top <= line) found = item;
+        if (scrollMax > 0 && scrollY >= scrollMax - 1) found = navItems[navItems.length - 1];
+        // Un clic manda hasta que su destino llega a la línea: así el resaltado no
+        // parpadea por todos los apartados que se cruzan de camino.
+        if (navClicked === found) {
+            navClicked = null;
+            clearTimeout(navClickedTimer);
+        }
+        lightNav(navClicked || found);
+    }
+
+    navItems.forEach((item) => {
+        item.link.addEventListener("click", () => {
+            lightNav(item);
+            navClicked = item;
+            clearTimeout(navClickedTimer);
+            // Red de seguridad: si el destino no llega a cruzar la línea (o algo
+            // lo deja a medio camino), a los 2 s vuelve a mandar la posición.
+            navClickedTimer = setTimeout(() => { navClicked = null; updateActiveNav(); }, 2000);
+        });
+    });
+
+    // Si el usuario toma el mando (rueda, teclado, táctil), deja de mandar el clic.
+    ["wheel", "touchstart", "keydown"].forEach((type) => addEventListener(type, () => {
+        if (!navClicked) return;
+        navClicked = null;
+        clearTimeout(navClickedTimer);
+        updateActiveNav();
+    }, { passive: true }));
+
+    // Un rAF por frame, como el resto del scroll de la página.
+    let navTicking = false;
+    addEventListener("scroll", () => {
+        if (navTicking) return;
+        navTicking = true;
+        requestAnimationFrame(() => { navTicking = false; updateActiveNav(); });
+    }, { passive: true });
+    const remeasureNav = () => { measureNav(); updateActiveNav(); };
+    addEventListener("resize", remeasureNav);
+    addEventListener("load", remeasureNav);
+    if (window.ResizeObserver) new ResizeObserver(remeasureNav).observe(document.body);
+    if (navDesktop.addEventListener) navDesktop.addEventListener("change", updateActiveNav);
+    else if (navDesktop.addListener) navDesktop.addListener(updateActiveNav);
+
+    measureNav();
+    updateActiveNav();
+
     /* ── 3. Hero marquee: keep both halves wider than the viewport ── */
     const heroMarquee = document.querySelector(".hero-marquee");
     const marqueeTrack = heroMarquee && heroMarquee.querySelector(".marquee-track");

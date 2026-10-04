@@ -253,6 +253,13 @@ html.hf-skip-intro .preloader { display: none; }
 /* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
    lo único que lo distingue es el color de la línea al pasar por encima. */
 .main-nav .nav-cta::after { background: var(--lime); }
+/* Apartado activo (scroll-spy de script.js §2b, solo escritorio): el enlace de
+   la sección en la que estás se queda encendido igual que en el rollover —texto
+   en blanco y la línea inferior desplegada—, con el color de línea de cada
+   enlace (violeta; lima en Contact, .nav-cta). Es el mismo tratamiento que
+   legacy.css le da a «Captured» en legacy.html con aria-current="page". */
+.main-nav [aria-current="location"] { color: var(--fg); }
+.main-nav [aria-current="location"]::after { transform: scaleX(1); transform-origin: left; }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
 
