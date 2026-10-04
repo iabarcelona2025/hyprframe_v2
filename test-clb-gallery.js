@@ -27,6 +27,25 @@ test("desktop CLB keeps the gallery wide with capabilities and CTA in the right 
     assert.match(css, /@media \(max-width: 700px\)[\s\S]*grid-template-areas: "intro" "showcase" "side"/);
 });
 
+test("desktop carousel is anchored to the intro text block, not to its column", () => {
+    const start = css.indexOf("@media (min-width: 1181px)");
+    const end = css.indexOf("@media (max-width: 1180px)");
+    const desktop = css.slice(start, end);
+    // Un solo ancho de referencia: el del bloque de texto de la izquierda (31em
+    // sobre el tamaño de letra de la intro). El carrusel y el párrafo lo comparten.
+    assert.match(css.match(/(?:^|\n)\.clb\s*\{[^}]*\}/)[0],
+        /--clb-copy-fs:\s*clamp\(1\.15rem, 1\.7vw, 1\.5rem\);/);
+    assert.match(css.match(/(?:^|\n)\.clb-intro > p\s*\{[^}]*\}/)[0],
+        /font-size:\s*var\(--clb-copy-fs\);/);
+    assert.match(desktop, /--clb-copy-w:\s*calc\(31 \* var\(--clb-copy-fs\)\);/);
+    assert.match(desktop, /\.clb-intro > p\s*\{[^}]*width:\s*var\(--clb-copy-w\);/);
+    const showcase = desktop.match(/\.clb-showcase\s*\{[^}]*\}/)[0];
+    assert.match(showcase, /width:\s*100%;\s*max-width:\s*var\(--clb-copy-w\);/);
+    assert.match(showcase, /justify-self:\s*start;/);
+    // Nada de anchos propios que se desmadren según la resolución.
+    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /calc\(100%\s*-\s*250px\)/);
+});
+
 test("desktop-only anchor: Key Capabilities starts level with the intro text on the left", () => {
     const start = css.indexOf("@media (min-width: 1181px)");
     const end = css.indexOf("@media (max-width: 1180px)");
