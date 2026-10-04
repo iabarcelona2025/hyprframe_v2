@@ -165,22 +165,29 @@ body.menu-open, body.modal-open { overflow: hidden; }
     transition: transform 0.35s var(--ease-out), color 0.35s;
 }
 .film-card:hover .film-card__arrow { color: var(--lime); transform: translate(4px, -4px); }
-/* Género y cliente comparten tamaño, interletrado y color: son dos líneas
-   gemelas bajo el título. Cada una con su tipografía: el género en la
-   monoespaciada (Space Mono) y el cliente en la de cuerpo (Space Grotesk).
-   Hoy el cliente («Techno Club») lo llevan las cuatro campañas de INSERT. Van
-   visibles en móvil y escritorio, igual que el género, a diferencia de
-   .film-card__details (la leyenda larga), que solo se muestra a partir de
-   561px. (04/10/2026) */
+/* Dos líneas bajo el título, cada una con su papel: el género en el cuerpo
+   técnico (monoespaciada, 0.62rem, muy espaciada) y el cliente en el cuerpo de
+   la info de la ficha (Space Grotesk 0.88rem/1.6, el mismo que la sinopsis de
+   .film-card__details), sin interletrado extra. Hoy el cliente («Techno Club»)
+   lo llevan las cuatro campañas de INSERT, visible en móvil y escritorio —la
+   leyenda larga solo aparece a partir de 561px, esta línea no depende de ella—.
+   (04/10/2026) */
 .film-card__type,
 .film-card__client {
     display: block;
-    font-size: 0.62rem; line-height: 1.5;
-    letter-spacing: 0.2em; color: var(--muted);
+    color: var(--muted);
 }
-.film-card__type { margin-top: 0.65rem; font-family: var(--font-mono); font-weight: 400; }
+.film-card__type {
+    margin-top: 0.65rem;
+    font: 400 0.62rem/1.5 var(--font-mono);
+    letter-spacing: 0.2em;
+}
 /* El cliente va pegado al género: las dos líneas se leen como un bloque. */
-.film-card__client { margin-top: 0.22rem; font-family: var(--font-body); font-weight: 400; }
+.film-card__client {
+    margin-top: 0.3rem;
+    font-family: var(--font-body); font-weight: 400;
+    font-size: 0.88rem; line-height: 1.6;
+}
 
 /* ── Next story & footer ──────────────────────────────────── */
 .legacy-next {

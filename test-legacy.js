@@ -331,15 +331,18 @@ try {
             assert.equal(details.querySelector(".film-card__cast")?.textContent, card.dataset.cast);
         }
     }
-    // Género y cliente comparten tamaño, interletrado y color (una sola regla,
-    // para que no se desincronicen), pero no tipografía: el género va en la
-    // monoespaciada y el cliente en Space Grotesk, la del cuerpo. (04/10/2026)
-    assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*font-size: 0\.62rem; line-height: 1\.5;\s*\n\s*letter-spacing: 0\.2em; color: var\(--muted\);/,
-        "género y cliente comparten tamaño, interletrado y color");
-    assert.match(legacyCss, /\.film-card__type \{ margin-top: 0\.65rem; font-family: var\(--font-mono\);/,
-        "el género sigue en la monoespaciada");
-    assert.match(legacyCss, /\.film-card__client \{ margin-top: 0\.22rem; font-family: var\(--font-body\);/,
-        "el cliente va en Space Grotesk (--font-body)");
+    // Dos líneas bajo el título: el género en el cuerpo técnico (monoespaciada,
+    // 0.62rem, muy espaciada) y el cliente en el cuerpo de la info de la ficha
+    // (Space Grotesk 0.88rem/1.6, como la sinopsis). (04/10/2026)
+    assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*color: var\(--muted\);/,
+        "las dos líneas parten de la misma base (bloque y color)");
+    assert.match(legacyCss, /\.film-card__type \{[^}]*font: 400 0\.62rem\/1\.5 var\(--font-mono\);[^}]*letter-spacing: 0\.2em;/,
+        "el género sigue en el cuerpo técnico monoespaciado");
+    assert.match(legacyCss, /\.film-card__client \{[^}]*font-family: var\(--font-body\);[^}]*font-size: 0\.88rem; line-height: 1\.6;/,
+        "el cliente usa el cuerpo de la info (Space Grotesk 0.88rem/1.6)");
+    // Y el mismo cuerpo que la sinopsis de la ficha, que es la referencia.
+    assert.match(legacyCss, /\.film-card__details \{[^}]*font-size: 0\.88rem;[^}]*line-height: 1\.6;/,
+        "la sinopsis sigue en 0.88rem/1.6");
     assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
     assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
