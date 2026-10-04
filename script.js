@@ -157,12 +157,16 @@
     document.querySelectorAll("[data-reveal-late]").forEach((el) => lateRevealIO.observe(el));
 
     /* line-mask reveals on section titles */
+    const workSection = document.getElementById("work");
+    const workTitle = workSection && workSection.querySelector(".section-title");
+    let onWorkTitleReveal = () => {};
     const aboutTitle = document.querySelector(".about-title");
     const aboutEmblem = document.querySelector(".about-emblem-wrap");
     const lineIO = new IntersectionObserver(
         (entries) => entries.forEach((e) => {
             if (e.isIntersecting) {
                 e.target.classList.add("in");
+                if (e.target === workTitle) onWorkTitleReveal();
                 if (e.target === aboutEmblem && aboutTitle) {
                     aboutTitle.classList.add("in");
                 }
@@ -176,6 +180,84 @@
         lineIO.observe(el);
     });
     if (aboutEmblem) lineIO.observe(aboutEmblem);
+
+    /* Selected Work: on desktop, wait for the SECOND title line to finish
+       sliding in and for the first row to reach the viewport. Then reveal
+       ALL rows in sequence without requiring any further scrolling. Check
+       the untransformed list (not rows translated offscreen in 3D). */
+    if (!reduced && workSection && workTitle &&
+        window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)").matches) {
+        const workRows = [...workSection.querySelectorAll(".work-row")];
+        const lastTitleLine = workTitle.querySelector(".line:last-child .line-inner");
+        if (workRows.length && lastTitleLine) {
+            let titleFinished = false;
+            let firstRowReached = false;
+            let nextRow = 0;
+            let revealTimer = null;
+            let titleRevealStarted = false;
+
+            function revealNextRow() {
+                revealTimer = null;
+                if (!titleFinished || !firstRowReached || nextRow >= workRows.length) return;
+                workRows[nextRow++].classList.add("work-row-visible");
+                if (nextRow < workRows.length) {
+                    revealTimer = setTimeout(revealNextRow, 105);
+                } else {
+                    removeEventListener("scroll", onWorkScroll);
+                    removeEventListener("resize", onWorkScroll);
+                }
+            }
+
+            const workList = workSection.querySelector(".work-list");
+            function updateReachedRows() {
+                // The list has no entrance transform, unlike its rows. Once its
+                // top reaches the viewport, play the complete cascade.
+                if (workList.getBoundingClientRect().top <= innerHeight * 0.96) firstRowReached = true;
+                // A direct anchor jump may skip the heading entirely; and on
+                // short viewports the title may never meet its IO threshold.
+                // Either way, no row must remain invisible indefinitely.
+                if (firstRowReached && !workTitle.classList.contains("in")) {
+                    if (workTitle.getBoundingClientRect().bottom < 0) {
+                        titleFinished = true;
+                    } else {
+                        workTitle.classList.add("in");
+                        onWorkTitleReveal();
+                    }
+                }
+                if (!revealTimer) revealNextRow();
+            }
+            let workScrollTicking = false;
+            function onWorkScroll() {
+                if (workScrollTicking) return;
+                workScrollTicking = true;
+                requestAnimationFrame(() => {
+                    workScrollTicking = false;
+                    updateReachedRows();
+                });
+            }
+
+            onWorkTitleReveal = () => {
+                if (titleRevealStarted || titleFinished) return;
+                titleRevealStarted = true;
+                const finishTitle = () => {
+                    if (titleFinished) return;
+                    titleFinished = true;
+                    updateReachedRows();
+                };
+                lastTitleLine.addEventListener("transitionend", (event) => {
+                    if (event.target === lastTitleLine && event.propertyName === "transform") finishTitle();
+                }, { once: true });
+                // Safety net if the transition is interrupted: 1s + 0.17s
+                // delay for the second line, with a little breathing room.
+                setTimeout(finishTitle, 1250);
+            };
+            workSection.classList.add("work-3d-ready");
+            addEventListener("scroll", onWorkScroll, { passive: true });
+            addEventListener("resize", onWorkScroll);
+            updateReachedRows();
+            if (workTitle.classList.contains("in")) onWorkTitleReveal();
+        }
+    }
 
     /* El anagrama vuelve a ocultarse bajo la plancha al seguir bajando por
        About; al subir de nuevo, se desliza otra vez hacia fuera. */
