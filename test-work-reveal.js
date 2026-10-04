@@ -41,3 +41,106 @@ test('diagonal slices reveal the existing image on hover and keyboard focus', ()
     assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{ --work-stripe: 32px; \}/);
     assert.match(css, /transition: --work-stripe 0\.7s/);
 });
+
+test('3D entrance is scoped to desktop and remains visible without JS or with reduced motion', () => {
+    assert.match(script, /revealTimer = setTimeout\(revealNextRow, 105\)/); // quicker gap between rows
+    assert.match(css, /@media \(min-width: 861px\) and \(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\)/);
+    assert.match(css, /\.work\.work-3d-ready \.work-list\s*\{[^}]*perspective: 1100px/);
+    assert.match(css, /\.work\.work-3d-ready \.work-row\s*\{[^}]*opacity: 0;[^}]*translate3d\(clamp\(-420px, -30vw, -160px\), 0, -240px\) rotateY\(-62deg\)/);
+    assert.match(css, /\.work\.work-3d-ready \.work-row\.work-row-visible\s*\{[^}]*animation: work-row-enter/);
+    for (const page of ['index.html', 'es/index.html']) {
+        const html = fs.readFileSync(path.join(root, page), 'utf8');
+        assert.match(html, /styles\.css\?v=203/);
+        assert.match(html, /script\.js\?v=54/);
+    }
+});
+
+// Exercise the real reveal setup with controlled scroll and title events:
+// rows cannot animate before the heading finishes, nor before reaching view.
+const revealSetup = script.slice(script.indexOf('    /* ── 4. Reveal on scroll'), script.indexOf('    /* El anagrama vuelve'));
+function setupWorkReveal(page, desktop, reduced) {
+    const dom = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8'), {
+        url: 'https://hyprframe.com/', runScripts: 'outside-only', pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    const observers = [];
+    window.matchMedia = query => ({ matches: query.includes('prefers-reduced-motion') ? reduced : desktop });
+    window.IntersectionObserver = class {
+        constructor(callback) { this.callback = callback; observers.push(this); }
+        observe() {} unobserve() {} disconnect() {}
+        intersect(...targets) { this.callback(targets.map(target => ({ target, isIntersecting: true }))); }
+    };
+    const list = window.document.querySelector('#workList');
+    let listTop = 1200;
+    list.getBoundingClientRect = () => ({ top: listTop });
+    for (const row of list.querySelectorAll('.work-row')) {
+        Object.defineProperty(row, 'offsetHeight', { value: 100 });
+    }
+    window.eval(`(() => { const reduced = ${reduced}; ${revealSetup} })()`);
+    function scrollListTo(top) {
+        listTop = top;
+        window.dispatchEvent(new window.Event('scroll'));
+    }
+    return { dom, window, observers, scrollListTo };
+}
+
+for (const page of ['index.html', 'es/index.html']) {
+    test(`${page}: work rows enter top-down in 3D only after SELECTED WORK finishes`, async () => {
+        const { dom, window, observers, scrollListTo } = setupWorkReveal(page, true, false);
+        try {
+            const title = window.document.querySelector('#work .section-title');
+            const rows = [...window.document.querySelectorAll('#work .work-row')];
+            const line = title.querySelector('.line:last-child .line-inner');
+            assert.ok(window.document.querySelector('#work').classList.contains('work-3d-ready'));
+            assert.equal(observers.length, 3); // rows are NOT observed while transformed offscreen
+            // Two rows reach the viewport BEFORE the title finishes.
+            observers[2].intersect(title);
+            scrollListTo(600);
+            await new Promise(resolve => setTimeout(resolve, 25));
+            assert.equal(rows.filter(row => row.classList.contains('work-row-visible')).length, 0);
+            const end = new window.Event('transitionend', { bubbles: true });
+            Object.defineProperty(end, 'propertyName', { value: 'transform' });
+            line.dispatchEvent(end);
+            assert.ok(rows[0].classList.contains('work-row-visible'));
+            assert.ok(!rows[1].classList.contains('work-row-visible'));
+            await new Promise(resolve => setTimeout(resolve, 130));
+            assert.ok(rows[1].classList.contains('work-row-visible'));
+            assert.ok(!rows[2].classList.contains('work-row-visible'));
+            // Landing deeper by scroll queues any passed rows in order.
+            scrollListTo(300);
+            await new Promise(resolve => setTimeout(resolve, 25));
+            assert.ok(rows[2].classList.contains('work-row-visible'));
+            await new Promise(resolve => setTimeout(resolve, 430));
+            assert.deepEqual(rows.slice(0, 5).map(row => row.classList.contains('work-row-visible')),
+                [true, true, true, true, true]);
+            assert.ok(!rows[5].classList.contains('work-row-visible'));
+        } finally { dom.window.close(); }
+    });
+}
+
+test('rows do not stay hidden if the title misses its visibility threshold', async () => {
+    const { dom, window, scrollListTo } = setupWorkReveal('index.html', true, false);
+    try {
+        const title = window.document.querySelector('#work .section-title');
+        const row = window.document.querySelector('#work .work-row');
+        title.getBoundingClientRect = () => ({ bottom: 300 });
+        scrollListTo(600);
+        await new Promise(resolve => setTimeout(resolve, 25));
+        assert.ok(title.classList.contains('in'), 'the title starts when a row enters');
+        assert.ok(!row.classList.contains('work-row-visible'), 'the row waits for the title');
+        const end = new window.Event('transitionend', { bubbles: true });
+        Object.defineProperty(end, 'propertyName', { value: 'transform' });
+        title.querySelector('.line:last-child .line-inner').dispatchEvent(end);
+        assert.ok(row.classList.contains('work-row-visible'));
+    } finally { dom.window.close(); }
+});
+
+test('mobile and reduced-motion keep selected work rows unhidden', () => {
+    for (const [desktop, reduced] of [[false, false], [true, true]]) {
+        const { dom, window, observers } = setupWorkReveal('index.html', desktop, reduced);
+        try {
+            assert.equal(observers.length, 3); // generic, late and title only
+            assert.ok(!window.document.querySelector('#work').classList.contains('work-3d-ready'));
+        } finally { dom.window.close(); }
+    }
+});

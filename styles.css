@@ -964,6 +964,35 @@ section { position: relative; }
     overflow: hidden;
     transition: padding-block 0.55s var(--ease-out), padding-left 0.5s var(--ease-out), background 0.5s;
 }
+/* Solo escritorio: las filas conservan su espacio en la lista, pero entran
+   desde la izquierda con profundidad al terminar SELECTED WORK. La clase se
+   añade por JS únicamente cuando hay animación; sin JS todo sigue visible. */
+@media (min-width: 861px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .work.work-3d-ready .work-list {
+        perspective: 1100px;
+        perspective-origin: 15% 50%;
+    }
+    .work.work-3d-ready .work-row {
+        opacity: 0;
+        transform-origin: left center;
+        transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg);
+        backface-visibility: hidden;
+    }
+    .work.work-3d-ready .work-row.work-row-visible {
+        animation: work-row-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    /* Una fila alcanzada mediante Tab debe ser visible aunque aún no haya
+       pasado por el observador de scroll. */
+    .work.work-3d-ready .work-row:focus-visible {
+        opacity: 1;
+        transform: none;
+        animation: none;
+    }
+}
+@keyframes work-row-enter {
+    from { opacity: 0; transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) rotateY(0) rotateX(0); }
+}
 .work-row:hover, .work-row:focus-visible {
     /* Foto y degradado arrancan primero; solo la apertura espera 0,3 s.
        Al salir, la caja vuelve a su tamaño sin demora. */
