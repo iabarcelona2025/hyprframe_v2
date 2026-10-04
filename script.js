@@ -283,9 +283,10 @@
     if (aboutEmblem) lineIO.observe(aboutEmblem);
 
     /* WORK title: on desktop and mobile, wait for its final line to finish
-       sliding in and for the first row to reach the viewport. Then reveal ALL
-       rows in sequence without requiring any further scrolling. Check the
-       untransformed list (not rows translated offscreen in 3D). */
+       sliding in, then immediately cascade ALL rows in sequence — the row
+       entrance begins right when the WORK title animation ends, without
+       waiting for the list to reach the viewport. Check the untransformed
+       list (not rows translated offscreen in 3D). */
     if (!reduced && workSection && workTitle) {
         const workRows = [...workSection.querySelectorAll(".work-row")];
         const lastTitleLine = workTitle.querySelector(".line:last-child .line-inner");
@@ -342,6 +343,10 @@
                 const finishTitle = () => {
                     if (titleFinished) return;
                     titleFinished = true;
+                    // Start the row cascade immediately when the WORK title
+                    // animation ends — don't wait for the list to scroll into
+                    // view, so the rows begin entering right as WORK finishes.
+                    firstRowReached = true;
                     updateReachedRows();
                 };
                 lastTitleLine.addEventListener("transitionend", (event) => {

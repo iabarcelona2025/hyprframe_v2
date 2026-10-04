@@ -76,7 +76,7 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
 });
 
 // Exercise the real reveal setup with controlled scroll and title events:
-// after the first row is reached and the title finishes, every row plays without more scroll.
+// once the title finishes, every row plays immediately without more scroll.
 const revealSetup = script.slice(script.indexOf('    /* ── 4. Reveal on scroll'), script.indexOf('    /* El anagrama vuelve'));
 function setupWorkReveal(page, desktop, reduced) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8'), {
@@ -130,8 +130,8 @@ for (const page of ['index.html', 'es/index.html']) {
     });
 }
 
-test('the cascade waits for the first row even if the heading has already finished', async () => {
-    const { dom, window, observers, scrollListTo } = setupWorkReveal('index.html', true, false);
+test('the cascade starts immediately when the title finishes, without waiting for the list to reach the viewport', async () => {
+    const { dom, window, observers } = setupWorkReveal('index.html', true, false);
     try {
         const title = window.document.querySelector('#work .section-title');
         const rows = [...window.document.querySelectorAll('#work .work-row')];
@@ -139,11 +139,11 @@ test('the cascade waits for the first row even if the heading has already finish
         const end = new window.Event('transitionend', { bubbles: true });
         Object.defineProperty(end, 'propertyName', { value: 'transform' });
         title.querySelector('.line:last-child .line-inner').dispatchEvent(end);
-        assert.equal(rows.filter(row => row.classList.contains('work-row-visible')).length, 0);
-        scrollListTo(600);
-        await new Promise(resolve => setTimeout(resolve, 25));
+        // The first row is visible right when the title animation ends.
         assert.ok(rows[0].classList.contains('work-row-visible'));
         assert.ok(!rows[1].classList.contains('work-row-visible'));
+        await new Promise(resolve => setTimeout(resolve, 130));
+        assert.ok(rows[1].classList.contains('work-row-visible'));
     } finally { dom.window.close(); }
 });
 
