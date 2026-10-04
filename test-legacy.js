@@ -52,7 +52,7 @@ try {
             assert.ok(target.getElementById(decodeURIComponent(resolved.hash.slice(1))), `missing anchor ${href}`);
         }
     }
-    assert.equal(doc.querySelectorAll(".film-card").length, 6);
+    assert.equal(doc.querySelectorAll(".film-card").length, 7);
     assert.ok([...doc.querySelectorAll(".film-card")].every((link) =>
         link.href === `https://vimeo.com/${link.dataset.vimeo}` && link.querySelector("img[data-fallback-src]")));
 
@@ -64,10 +64,11 @@ try {
        sin «/ FILM». */
     const esLegacy = fs.readFileSync(path.join(root, "es", "legacy.html"), "utf8");
     const genus = { "legacy.html": "MUSIC VIDEO", "es/legacy.html": "VIDEOCLIP" };
+    const genusType = { "legacy.html": "CAMPAIGN", "es/legacy.html": "CAMPAÑA" };
     for (const [name, src] of [["legacy.html", html], ["es/legacy.html", esLegacy]]) {
         const cards = [...new JSDOM(src).window.document.querySelectorAll(".film-card")];
         const types = cards.map((card) => card.querySelector(".film-card__type").textContent.trim());
-        assert.equal(types.length, 6, `${name}: seis vídeos`);
+        assert.equal(types.length, 7, `${name}: siete vídeos`);
         assert.ok(types.every((type) => !/\s\/\s/.test(type)),
             `${name}: fuera «/ FILM» y «/ MOTION» — ${types.join(", ")}`);
         assert.ok(!/THE SUNDAY|EL DOMINGO/.test(src), `${name}: ya no queda «THE SUNDAY»`);
@@ -84,6 +85,19 @@ try {
             `${name}: DÁCIL / GROC va sin leyenda`);
         assert.equal(dacil.querySelector(".film-card__synopsis"), null);
         assert.equal(dacil.dataset.synopsis, undefined);
+
+        // INSERT / SEASON 01: séptima tarjeta, campaña y con la miniatura del
+        // vídeo (assets/images/insert01.jpg) y su respaldo de Vimeo. (04/10/2026)
+        const season01 = cards.find((card) => card.dataset.vimeo === "1131285645");
+        assert.ok(season01, `${name}: INSERT / SEASON 01 está en el catálogo`);
+        assert.equal(season01.dataset.title, "INSERT / SEASON 01");
+        assert.equal(season01.querySelector(".film-card__number").textContent, "07");
+        assert.equal(season01.querySelector(".film-card__fallback").textContent, "HF / 07");
+        assert.equal(season01.querySelector(".film-card__type").textContent, genusType[name]);
+        assert.equal(season01.querySelector("img").getAttribute("src"), "assets/images/insert01.jpg");
+        assert.match(season01.querySelector("img").getAttribute("data-fallback-src"),
+            /^https:\/\/i\.vimeocdn\.com\/video\/2208326423-/);
+        assert.equal(season01, cards[cards.length - 1], `${name}: es la última tarjeta`);
     }
     assert.equal(doc.querySelectorAll(".film-card__title")[4].textContent, "INSERT / SEASON 02");
     assert.equal(doc.querySelectorAll(".film-card")[4].dataset.title, "INSERT / SEASON 02");
@@ -115,7 +129,7 @@ try {
     assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(2\.6rem, 7\.2vw, 8rem\)/,
         "the YOUR STORY letters are 20% smaller");
     const plays = [...doc.querySelectorAll(".film-card__play")];
-    assert.equal(plays.length, 6);
+    assert.equal(plays.length, 7);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
     const triangle = legacyCss.match(/\.film-card__play::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
         .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
@@ -230,6 +244,8 @@ try {
     doc.querySelectorAll(".film-card")[5].click();          // DÁCIL / GROC
     assert.equal(synopsisLine.hidden, true, "DÁCIL / GROC no muestra leyenda en el pop-up");
     assert.equal(synopsisLine.textContent, "");
+    doc.querySelectorAll(".film-card")[6].click();          // INSERT / SEASON 01
+    assert.equal(synopsisLine.hidden, true, "INSERT / SEASON 01 tampoco muestra leyenda");
     doc.querySelectorAll(".film-card")[1].click();          // BRUBAKER / NOSE DUEL
     assert.equal(synopsisLine.hidden, false, "al abrir otro vídeo, la línea vuelve");
     assert.equal(synopsisLine.textContent, "BRUBAKER CO: Nose duel.");
@@ -286,8 +302,10 @@ try {
     for (const page of [doc, esDoc]) {
         for (const card of page.querySelectorAll(".film-card")) {
             const details = card.querySelector(".film-card__details");
-            if (card.dataset.vimeo === "21087707") {
-                assert.equal(details, null, "DÁCIL / GROC es la única tarjeta sin leyenda");
+            if (card.dataset.vimeo === "21087707" || card.dataset.vimeo === "1131285645") {
+                // DÁCIL / GROC va sin leyenda a propósito; INSERT / SEASON 01 aún
+                // no tiene texto de sinopsis.
+                assert.equal(details, null, "estas tarjetas van sin leyenda");
                 continue;
             }
             assert.ok(details, "every film includes its pop-up copy in the grid");
@@ -329,7 +347,7 @@ try {
     assert.ok(!modal.classList.contains("is-closing"));
     assert.equal(doc.activeElement, firstCard);
     assert.deepEqual(errors, [], "no runtime errors");
-    console.log("PASS  Captured: root navigation, six films, video modal, keyboard and image fallback");
+    console.log("PASS  Captured: root navigation, seven films, video modal, keyboard and image fallback");
 } finally {
     dom.window.close();
 }
