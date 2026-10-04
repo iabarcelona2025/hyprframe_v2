@@ -36,72 +36,125 @@
         link.addEventListener("click", () => setMenu(false));
     });
 
-    // Keep this independent of viewport width: a phone remains mobile when rotated.
-    const mobilePlayer = window.matchMedia("(hover: none) and (pointer: coarse) and (max-device-width: 1024px)");
-    const landscape = window.matchMedia("(orientation: landscape)");
-    let rotationEnabled = false;
-    let fullscreenAttempt = 0;
+    // Match Generated: phones use Vimeo inline in the card, not the Captured modal.
+    // Keep the initial layout decision stable while the device rotates.
+    const mobileVideoQuery = window.matchMedia("(max-width: 560px)");
+    const isMobileVideo = mobileVideoQuery.matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const VIMEO_ORIGIN = "https://player.vimeo.com";
     const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+    let activeMobileFilm = null;
+    let mobileFs = false;
+    let lockOnNextFullscreen = false;
+    let seenLandscape = false;
+    let portraitExitArmed = false;
+    let portraitExitTimer = 0;
 
-    function exitNativeFullscreen() {
-        if (fullscreenElement() !== modal) return;
+    function isPortraitNow() {
+        const type = window.screen?.orientation?.type;
+        if (typeof type === "string" && type) return type.startsWith("portrait");
+        if (typeof window.orientation === "number") return Math.abs(window.orientation) !== 90;
+        return window.matchMedia("(orientation: portrait)").matches;
+    }
+    function unlockMobileOrientation() {
         try {
-            const exit = document.exitFullscreen || document.webkitExitFullscreen;
-            Promise.resolve(exit?.call(document)).catch(() => {});
-        } catch { /* Some mobile browsers expose but do not support this API. */ }
+            const pending = window.screen?.orientation?.unlock?.();
+            if (pending?.catch) pending.catch(() => {});
+        } catch { /* The browser may not support orientation locking. */ }
     }
-
-    function leaveMobileFullscreen() {
-        fullscreenAttempt++;
-        modal.classList.remove("is-mobile-fullscreen");
-        exitNativeFullscreen();
-    }
-
-    function enterMobileFullscreen() {
-        if (!rotationEnabled || modal.hidden) return;
-        modal.classList.add("is-mobile-fullscreen");
-        if (fullscreenElement() === modal) return;
-        const request = modal.requestFullscreen || modal.webkitRequestFullscreen;
-        if (!request) return; // iPhone: retain the full-window landscape layout.
-        const attempt = ++fullscreenAttempt;
+    function requestIframeFullscreen(iframe, release) {
+        if (!isMobileVideo) return;
+        const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen;
+        if (typeof request !== "function") return; // playsinline=0 is the iOS fallback.
         try {
-            Promise.resolve(request.call(modal)).then(() => {
-                if (attempt !== fullscreenAttempt && !modal.classList.contains("is-mobile-fullscreen")) {
-                    exitNativeFullscreen();
-                }
-            }).catch(() => {}); // Rotation may lack the user activation required by the browser.
-        } catch { /* The CSS full-window fallback stays usable. */ }
+            const pending = request.call(iframe);
+            if (pending?.catch) pending.catch(() => { if (release) release(); });
+        } catch { if (release) release(); }
     }
-
-    function isLandscape() {
-        const type = window.screen.orientation?.type;
-        if (type) return type.startsWith("landscape");
-        if (typeof window.orientation === "number") return Math.abs(window.orientation) === 90;
-        return landscape.matches;
+    function forceMobileLandscape() {
+        if (!lockOnNextFullscreen || !isMobileVideo || !isPortraitNow()) return;
+        const orientation = window.screen?.orientation;
+        if (typeof orientation?.lock !== "function") return;
+        try {
+            const pending = orientation.lock("landscape");
+            if (pending?.catch) pending.catch(() => {});
+        } catch { /* Vimeo's native player handles rotation when lock() is unavailable. */ }
+        lockOnNextFullscreen = false;
     }
-    let previousLandscape = isLandscape();
-    function onRotation() {
-        const nextLandscape = isLandscape();
-        if (nextLandscape === previousLandscape) return;
-        previousLandscape = nextLandscape;
-        if (!rotationEnabled || modal.hidden) return;
-        if (nextLandscape) enterMobileFullscreen();
-        else leaveMobileFullscreen();
+    function exitMobileFullscreen(iframe) {
+        lockOnNextFullscreen = false;
+        mobileFs = false;
+        unlockMobileOrientation();
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
+        if (fullscreenElement() === iframe && typeof exit === "function") {
+            try {
+                const pending = exit.call(document);
+                if (pending?.catch) pending.catch(() => {});
+            } catch { /* Vimeo may own the native fullscreen surface. */ }
+        }
+        try { iframe?.contentWindow?.postMessage({ method: "exitFullscreen" }, VIMEO_ORIGIN); }
+        catch { /* The player frame may already be gone. */ }
     }
-    // Do not lock ScreenOrientation: that suppresses the portrait change needed to exit.
-    // The portrait CSS rotates the player instead, leaving physical rotation observable.
-    window.screen.orientation?.addEventListener("change", onRotation);
-    window.addEventListener("orientationchange", onRotation);
-    landscape.addEventListener("change", onRotation);
-    function onFullscreenChange() {
-        if (!fullscreenElement()) modal.classList.remove("is-mobile-fullscreen");
+    function disarmPortraitExit() {
+        window.clearTimeout(portraitExitTimer);
+        portraitExitTimer = 0;
+        portraitExitArmed = false;
+        lockOnNextFullscreen = false;
+        mobileFs = false;
+        seenLandscape = false;
+        unlockMobileOrientation();
     }
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+    function armPortraitExit() {
+        if (!isMobileVideo || portraitExitArmed || portraitExitTimer) return;
+        portraitExitTimer = window.setTimeout(() => {
+            portraitExitTimer = 0;
+            portraitExitArmed = true;
+        }, 3000);
+    }
+    function onMobileOrientation(forced) {
+        if (!isMobileVideo || !activeMobileFilm) return;
+        const portrait = forced === "portrait" || (forced !== "landscape" && isPortraitNow());
+        const iframe = activeMobileFilm.iframe;
+        if (!portrait) {
+            seenLandscape = true;
+            if (mobileFs) return;
+            mobileFs = true;
+            requestIframeFullscreen(iframe, () => { mobileFs = false; });
+            try { iframe.contentWindow?.postMessage({ method: "requestFullscreen" }, VIMEO_ORIGIN); }
+            catch { /* Vimeo may have already closed the player. */ }
+            return;
+        }
+        if (!seenLandscape || !portraitExitArmed || !mobileFs) return;
+        exitMobileFullscreen(iframe);
+    }
+    function onDocumentFullscreen() {
+        if (!isMobileVideo || !activeMobileFilm) return;
+        if (fullscreenElement()) {
+            mobileFs = true;
+            if (!isPortraitNow()) seenLandscape = true;
+            forceMobileLandscape();
+        } else {
+            mobileFs = false;
+            unlockMobileOrientation();
+        }
+    }
+    function onFullscreenError() { mobileFs = false; }
+    if (isMobileVideo) {
+        window.addEventListener("orientationchange", () => onMobileOrientation());
+        window.screen?.orientation?.addEventListener?.("change", () => onMobileOrientation());
+        window.matchMedia("(orientation: portrait)").addEventListener?.("change", (event) => {
+            if (event.matches) onMobileOrientation("portrait");
+        });
+        window.matchMedia("(orientation: landscape)").addEventListener?.("change", (event) => {
+            if (event.matches) onMobileOrientation("landscape");
+        });
+        document.addEventListener("fullscreenchange", onDocumentFullscreen);
+        document.addEventListener("webkitfullscreenchange", onDocumentFullscreen);
+        document.addEventListener("fullscreenerror", onFullscreenError);
+    }
 
     const panel = modal.querySelector(".film-modal__panel");
     const desktopPlayer = window.matchMedia("(min-width: 561px)");
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     for (const name of ["shield", "dock"]) {
         const layer = document.createElement("div");
         layer.className = `film-modal__${name}`;
@@ -126,7 +179,7 @@
         if (event.target === panel && event.propertyName === "transform") finishCloseFilm();
     }
     function openDesktopWindow(link) {
-        if (mobilePlayer.matches || !desktopPlayer.matches) return;
+        if (!desktopPlayer.matches) return;
         const from = link.querySelector(".film-card__poster").getBoundingClientRect();
         openingPoster = link.querySelector(".film-card__poster img").cloneNode();
         openingPoster.className = "film-modal__opening-poster";
@@ -154,6 +207,111 @@
         if (!desktopPlayer.matches) modal.classList.remove("is-windowed");
     });
 
+    function stopMobileFilm(film = activeMobileFilm) {
+        if (!film) return;
+        if (activeMobileFilm === film) activeMobileFilm = null;
+        window.removeEventListener("message", film.onMessage);
+        disarmPortraitExit();
+        film.link.classList.remove("is-mobile-playing");
+        try { film.iframe.contentWindow?.postMessage({ method: "pause" }, VIMEO_ORIGIN); }
+        catch { /* The iframe may already have closed. */ }
+        exitMobileFullscreen(film.iframe);
+        film.iframe.src = "";
+        film.iframe.remove();
+    }
+
+    function finishMobileFilm(film) {
+        if (activeMobileFilm !== film) return;
+        activeMobileFilm = null;
+        window.removeEventListener("message", film.onMessage);
+        disarmPortraitExit();
+        film.link.classList.remove("is-mobile-playing");
+        if (fullscreenElement() === film.iframe) {
+            const exit = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
+            try { exit?.call(document)?.catch?.(() => {}); }
+            catch { /* Vimeo may have already left fullscreen. */ }
+        }
+        try { film.iframe.contentWindow?.postMessage({ method: "exitFullscreen" }, VIMEO_ORIGIN); }
+        catch { /* The player frame may already have closed. */ }
+
+        const iframe = film.iframe;
+        const remove = () => {
+            window.clearTimeout(endTimer);
+            iframe.removeEventListener("transitionend", onFadeOut);
+            iframe.remove();
+            iframe.src = "";
+        };
+        let endTimer = 0;
+        const onFadeOut = (event) => {
+            if (event.target === iframe && event.propertyName === "opacity") remove();
+        };
+        if (reducedMotion.matches || !iframe.classList.contains("is-ready")) {
+            remove();
+            return;
+        }
+        iframe.setAttribute("aria-hidden", "true");
+        iframe.tabIndex = -1;
+        iframe.classList.add("is-ending");
+        iframe.addEventListener("transitionend", onFadeOut);
+        endTimer = window.setTimeout(remove, 750);
+    }
+
+    function playMobileFilm(link) {
+        const id = link.dataset.vimeo;
+        const poster = link.querySelector(".film-card__poster");
+        if (!/^\d+$/.test(id) || !poster) return;
+        if (activeMobileFilm?.link === link) return;
+        if (activeMobileFilm) stopMobileFilm(activeMobileFilm);
+
+        const iframe = document.createElement("iframe");
+        iframe.className = "film-card__mobile-player";
+        iframe.title = `${link.dataset.title || "Captured film"} — Vimeo video`;
+        iframe.src = `https://player.vimeo.com/video/${id}?autoplay=1&dnt=1&transparent=0&playsinline=0&sidedock=0&like=0&share=0&watchlater=0&watch_later=0&embed=0&badge=0`;
+        iframe.allow = "autoplay; fullscreen; picture-in-picture";
+        iframe.setAttribute("allowfullscreen", "");
+
+        const film = { link, iframe, onMessage: null };
+        activeMobileFilm = film;
+        link.classList.add("is-mobile-playing");
+        film.onMessage = (event) => {
+            if (activeMobileFilm !== film || event.origin !== VIMEO_ORIGIN || event.source !== iframe.contentWindow) return;
+            let data = event.data;
+            if (typeof data === "string") {
+                try { data = JSON.parse(data); } catch { return; }
+            }
+            if (data?.event === "ready") {
+                iframe.classList.add("is-ready");
+                for (const name of ["ended", "play", "playing", "timeupdate", "fullscreenchange"]) {
+                    iframe.contentWindow.postMessage({ method: "addEventListener", value: name }, VIMEO_ORIGIN);
+                }
+            } else if (data?.event === "play" || data?.event === "playing" || data?.event === "timeupdate") {
+                armPortraitExit();
+            } else if (data?.event === "fullscreenchange") {
+                if (data.data?.fullscreen) {
+                    mobileFs = true;
+                    if (!isPortraitNow()) seenLandscape = true;
+                    else lockOnNextFullscreen = true;
+                    forceMobileLandscape();
+                } else {
+                    lockOnNextFullscreen = false;
+                    mobileFs = false;
+                    unlockMobileOrientation();
+                }
+            } else if (data?.event === "ended") {
+                finishMobileFilm(film);
+            }
+        };
+        window.addEventListener("message", film.onMessage);
+        poster.append(iframe);
+
+        mobileFs = true;
+        lockOnNextFullscreen = isPortraitNow();
+        seenLandscape = !isPortraitNow();
+        requestIframeFullscreen(iframe, () => { mobileFs = false; });
+        forceMobileLandscape();
+        iframe.focus({ preventScroll: true });
+    }
+
     function openFilm(link) {
         const id = link.dataset.vimeo;
         if (!/^\d+$/.test(id)) return;
@@ -176,10 +334,7 @@
         // Parent CSS cannot style the cross-origin document inside the iframe.
         player.src = `https://player.vimeo.com/video/${id}?autoplay=1&dnt=1&transparent=0`;
         closeButton.focus({ preventScroll: true });
-        rotationEnabled = mobilePlayer.matches;
-        previousLandscape = isLandscape();
-        if (rotationEnabled) enterMobileFullscreen();
-        else openDesktopWindow(link);
+        openDesktopWindow(link);
     }
 
     function closeFilm() {
@@ -202,11 +357,9 @@
 
     function finishCloseFilm() {
         clearWindowTransition();
-        rotationEnabled = false;
         modal.classList.remove("is-windowed");
         panel.style.transition = "";
         panel.style.transform = "";
-        leaveMobileFullscreen();
         modal.hidden = true;
         player.src = ""; // stop playback, even when closing via Escape or the backdrop
         document.body.classList.remove("modal-open");
@@ -217,8 +370,10 @@
         link.addEventListener("click", (event) => {
             // Keep Ctrl/Cmd-click, Shift-click and the no-JS fallback to Vimeo working.
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (!/^\d+$/.test(link.dataset.vimeo)) return;
             event.preventDefault();
-            openFilm(link);
+            if (isMobileVideo) playMobileFilm(link);
+            else openFilm(link);
         });
     });
     closeButton.addEventListener("click", closeFilm);
@@ -228,7 +383,6 @@
 
     // Close the pop-up as soon as the film ends. This is the postMessage protocol behind
     // Vimeo's player.js: once the player reports "ready", ask it to report "ended" too.
-    const VIMEO_ORIGIN = "https://player.vimeo.com";
     window.addEventListener("message", (event) => {
         if (event.origin !== VIMEO_ORIGIN || event.source !== player.contentWindow) return;
         let data = event.data;
