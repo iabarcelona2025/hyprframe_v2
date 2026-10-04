@@ -331,8 +331,10 @@ try {
             assert.equal(details.querySelector(".film-card__cast")?.textContent, card.dataset.cast);
         }
     }
-    assert.match(legacyCss, /\.film-card__client \{[^}]*display: block;[^}]*color: var\(--fg\);/,
-        "el cliente del proyecto es una línea propia, fuera del bloque de escritorio");
+    // Género y cliente: una sola regla para los dos, así no pueden desincronizarse
+    // de tipografía, tamaño, interletrado ni color. (04/10/2026)
+    assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*font: 400 0\.62rem\/1\.5 var\(--font-mono\);\s*\n\s*letter-spacing: 0\.2em; color: var\(--muted\);/,
+        "el cliente comparte tipografía con el género, fuera del bloque de escritorio");
     assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
     assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
     // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
