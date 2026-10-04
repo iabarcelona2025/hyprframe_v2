@@ -424,6 +424,11 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
     transform: translateY(110%);
     transition: transform 1.1s var(--ease-out);
 }
+/* «AI VISUAL» (primer renglón) baja un escalón de peso respecto a la palabra
+   rotatoria del segundo: así el titular no pesa igual en las dos líneas y la
+   palabra en cursiva sigue siendo el acento. Montserrat 600 ya está cargada en
+   el <link> de Google Fonts, igual que la 700 del resto del H1. (04/10/2026) */
+.hero-title .line:nth-child(1) .line-inner { font-weight: 600; /* 700 → 600 */ }
 body.loaded .hero-title .line:nth-child(1) .line-inner { transform: translateY(0); transition-delay: 0.1s; }
 body.loaded .hero-title .line:nth-child(2) .line-inner { transform: translateY(0); transition-delay: 0.22s; }
 
