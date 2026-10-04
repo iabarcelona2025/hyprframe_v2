@@ -1328,7 +1328,12 @@ section { position: relative; }
     /* El borde inferior del carrusel coincide con el del botón TEST NOW:
        ambos se alinean al final de la fila; el reflejo queda por debajo. */
     .clb-showcase { align-self: end; }
-    .clb-side { align-self: end; }
+    /* Ancla por arriba (solo escritorio): el bloque "Key Capabilities" arranca
+       a la misma altura que el texto de la izquierda. La columna se estira toda
+       la fila para que el CTA siga pegado abajo, junto al carrusel. */
+    .clb-side { align-self: stretch; }
+    .clb-capabilities { margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+    .clb-cta { margin-top: auto; }
     /* Margen negativo = alto del reflejo (ancho/23; el % de margin se calcula sobre
        el ancho) + su margin-top, para que no cuente en la alineación. */
     .clb-gallery-reflection { margin-bottom: calc(-100% / 23 - 0.35rem); }

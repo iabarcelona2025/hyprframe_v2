@@ -27,6 +27,22 @@ test("desktop CLB keeps the gallery wide with capabilities and CTA in the right 
     assert.match(css, /@media \(max-width: 700px\)[\s\S]*grid-template-areas: "intro" "showcase" "side"/);
 });
 
+test("desktop-only anchor: Key Capabilities starts level with the intro text on the left", () => {
+    const start = css.indexOf("@media (min-width: 1181px)");
+    const end = css.indexOf("@media (max-width: 1180px)");
+    assert.ok(start > -1 && end > start, "desktop media query found");
+    const desktop = css.slice(start, end);
+    // La columna derecha se estira toda la fila: su borde superior coincide con el
+    // del texto de la izquierda, y el CTA sigue pegado abajo con el carrusel.
+    assert.match(desktop, /\.clb-side\s*\{\s*align-self:\s*stretch;\s*\}/);
+    assert.match(desktop, /\.clb-capabilities\s*\{\s*margin-bottom:\s*clamp\(1\.5rem, 3vw, 2\.5rem\);\s*\}/);
+    assert.match(desktop, /\.clb-cta\s*\{\s*margin-top:\s*auto;\s*\}/);
+    assert.match(desktop, /\.clb-showcase\s*\{\s*align-self:\s*end;\s*\}/);
+    // El anclaje es solo de escritorio: fuera de ese media query la columna no se estira.
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-side\s*\{[^}]*\}/)[0], /align-self/);
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-cta\s*\{[^}]*\}/)[0], /margin-top:\s*auto/);
+});
+
 test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
     const features = [...doc.querySelectorAll("#clb .clb-feature")];
     assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),
