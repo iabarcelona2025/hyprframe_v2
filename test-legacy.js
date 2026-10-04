@@ -15,7 +15,7 @@ const { window } = dom;
 const doc = window.document;
 /* --- minimal browser API stubs jsdom lacks --- */
 window.matchMedia = (q) => ({
-    matches: false, media: q,
+    matches: q === "(min-width: 561px)", media: q,
     addEventListener() {}, removeEventListener() {},
     addListener() {}, removeListener() {},
 });
@@ -109,6 +109,11 @@ try {
     const modalZ = Number(legacyCss.match(/\.film-modal \{[^}]*z-index: (\d+)/)[1]);
     assert.ok(modalZ > 9900, `el modal (${modalZ}) debe quedar por encima del resto`);
 
+    let nativeFullscreenRequests = 0;
+    doc.getElementById("videoModal").requestFullscreen = () => {
+        nativeFullscreenRequests++;
+        return Promise.resolve();
+    };
     window.eval(script);
     const burger = doc.getElementById("burger");
     const menu = doc.getElementById("menuOverlay");
@@ -144,8 +149,13 @@ try {
 
     firstCard.click();
     assert.equal(modal.hidden, false);
+    assert.ok(modal.classList.contains("is-windowed"), "desktop video covers the browser window");
+    assert.ok(!modal.classList.contains("is-mobile-fullscreen"));
+    assert.equal(nativeFullscreenRequests, 0, "desktop does not enter system fullscreen");
     assert.ok(doc.body.classList.contains("modal-open"));
     assert.match(player.src, /player\.vimeo\.com\/video\/1131285757\?autoplay=1&dnt=1/);
+    assert.equal(new URL(player.src).searchParams.get("transparent"), "0",
+        "Vimeo paints the same opaque black background as Generated");
     assert.equal(doc.getElementById("modalTitle").textContent, firstCard.dataset.title);
     assert.ok(!doc.getElementById("modalExternal") && !doc.body.textContent.includes("WATCH ON VIMEO"),
         "the WATCH ON VIMEO link was removed from the modal on purpose");
@@ -158,6 +168,7 @@ try {
     assert.equal(doc.activeElement, closeButton, "focus stays inside the modal");
     key("Escape");
     assert.equal(modal.hidden, true);
+    assert.ok(!modal.classList.contains("is-windowed"), "closing removes windowed playback");
     assert.equal(player.getAttribute("src"), "");
     assert.equal(doc.activeElement, firstCard);
 
@@ -221,6 +232,52 @@ try {
             `es/legacy.html pide otra versión de ${asset} que legacy.html`);
     }
 
+    endingCard.click();
+    closeButton.click();
+    assert.ok(modal.hidden && !modal.classList.contains("is-windowed"), "X stops windowed playback");
+    assert.equal(player.getAttribute("src"), "");
+    assert.equal(nativeFullscreenRequests, 0);
+    for (const page of [doc, esDoc]) {
+        for (const card of page.querySelectorAll(".film-card")) {
+            const details = card.querySelector(".film-card__details");
+            assert.ok(details, "every film includes its pop-up copy in the grid");
+            assert.equal(details.previousElementSibling.className, "film-card__type");
+            assert.equal(details.querySelector(".film-card__synopsis").textContent, card.dataset.synopsis);
+            assert.equal(details.querySelector(".film-card__cast")?.textContent, card.dataset.cast);
+        }
+    }
+    assert.match(legacyCss, /\.film-card__details \{ display: none; \}/, "extra copy is hidden on mobile by default");
+    assert.match(legacyCss, /@media \(min-width: 561px\) \{\s*\.film-card__details \{\s*display: block;/);
+    // Real dimensions exercise the animated path (jsdom otherwise reports zeros).
+    const panel = modal.querySelector(".film-modal__panel");
+    const rect = (left, top, width, height) => ({ left, top, width, height });
+    firstCard.querySelector(".film-card__poster").getBoundingClientRect = () => rect(40, 200, 480, 300);
+    panel.getBoundingClientRect = modal.getBoundingClientRect = () => rect(0, 0, 1200, 800);
+    firstCard.click();
+    assert.ok(panel.querySelector(".film-modal__opening-poster"), "poster travels while Vimeo loads");
+    fromVimeo({ event: "ready" });
+    assert.ok(player.classList.contains("is-ready"), "Vimeo is revealed only when ready");
+    assert.ok(!panel.querySelector(".film-modal__opening-poster"), "ready playback has no poster behind it");
+    assert.match(legacyCss, /\.film-modal\.is-windowed \.film-modal__video \{ background: #000; \}/,
+        "the layer directly behind Vimeo is opaque black");
+    const pauseMessages = [];
+    player.contentWindow.postMessage = message => pauseMessages.push(message);
+    closeButton.click();
+    assert.equal(modal.hidden, false, "keep the picture mounted during the return animation");
+    assert.ok(modal.classList.contains("is-closing"));
+    assert.match(panel.style.transform, /translate\(40px, 200px\) scale\(0.4, 0.375\)/);
+    assert.equal(pauseMessages[0].method, "pause");
+    closeButton.click();
+    assert.equal(pauseMessages.length, 1, "repeat close cannot restart the animation");
+    const landed = new window.Event("transitionend");
+    Object.defineProperty(landed, "propertyName", { value: "transform" });
+    panel.dispatchEvent(landed);
+    assert.equal(modal.hidden, true);
+    assert.equal(player.getAttribute("src"), "");
+    assert.equal(panel.style.transform, "");
+    assert.ok(!panel.querySelector(".film-modal__opening-poster"));
+    assert.ok(!modal.classList.contains("is-closing"));
+    assert.equal(doc.activeElement, firstCard);
     assert.deepEqual(errors, [], "no runtime errors");
     console.log("PASS  Captured: root navigation, six films, video modal, keyboard and image fallback");
 } finally {
