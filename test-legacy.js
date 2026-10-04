@@ -116,13 +116,15 @@ try {
         assert.equal(sxsw.querySelector(".film-card__client"), null, `${name}: SXSW no es de INSERT`);
 
         // INSERT / SEASON 01 lleva su info justo debajo de «Techno Club».
+        const season1Text = name === "legacy.html"
+            ? "INSERT SEASON 1: Beyond the Surface."
+            : "INSERT TEMPORADA 1: Beyond the Surface.";
         const season01Details = season01.querySelector(".film-card__details");
         assert.ok(season01Details, `${name}: INSERT / SEASON 01 ya tiene leyenda`);
-        assert.equal(season01Details.querySelector(".film-card__synopsis").textContent,
-            "INSERT SEASON 1: Beyond the Surface.");
+        assert.equal(season01Details.querySelector(".film-card__synopsis").textContent, season1Text);
         assert.equal(season01Details.previousElementSibling.className, "film-card__client",
             `${name}: la info va debajo de «Techno Club»`);
-        assert.equal(season01.dataset.synopsis, "INSERT SEASON 1: Beyond the Surface.");
+        assert.equal(season01.dataset.synopsis, season1Text);
 
         // INSERT → «Techno Club» justo debajo del género, visible en móvil y
         // escritorio. (04/10/2026)
@@ -286,7 +288,7 @@ try {
     assert.equal(synopsisLine.textContent, "");
     doc.querySelectorAll(".film-card")[6].click();          // INSERT / SEASON 01
     assert.equal(synopsisLine.hidden, false, "INSERT / SEASON 01 muestra su info en el pop-up");
-    assert.equal(synopsisLine.textContent, "INSERT SEASON 1: Beyond the Surface.");
+    assert.equal(synopsisLine.textContent, "INSERT SEASON 1: Beyond the Surface.");   // página EN
     doc.querySelectorAll(".film-card")[1].click();          // BRUBAKER / NOSE DUEL
     assert.equal(synopsisLine.hidden, false, "al abrir otro vídeo, la línea vuelve");
     assert.equal(synopsisLine.textContent, "BRUBAKER CO: Nose duel.");
