@@ -179,7 +179,9 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .film-card__type {
     margin-top: 0.65rem;
-    font: 400 0.62rem/1.5 var(--font-mono);
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: calc(0.62rem + 3px); /* +3px (04/10/2026) */
+    line-height: 1.5;
     letter-spacing: 0.2em;
 }
 /* El cliente va pegado al género: las dos líneas se leen como un bloque. */

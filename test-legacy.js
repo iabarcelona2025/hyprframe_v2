@@ -52,7 +52,7 @@ try {
             assert.ok(target.getElementById(decodeURIComponent(resolved.hash.slice(1))), `missing anchor ${href}`);
         }
     }
-    assert.equal(doc.querySelectorAll(".film-card").length, 7);
+    assert.equal(doc.querySelectorAll(".film-card").length, 8);
     assert.ok([...doc.querySelectorAll(".film-card")].every((link) =>
         link.href === `https://vimeo.com/${link.dataset.vimeo}` && link.querySelector("img[data-fallback-src]")));
 
@@ -65,10 +65,11 @@ try {
     const esLegacy = fs.readFileSync(path.join(root, "es", "legacy.html"), "utf8");
     const genus = { "legacy.html": "MUSIC VIDEO", "es/legacy.html": "VIDEOCLIP" };
     const genusType = { "legacy.html": "CAMPAIGN", "es/legacy.html": "CAMPAÑA" };
+    const genusSpot = { "legacy.html": "COMMERCIAL", "es/legacy.html": "SPOT" };
     for (const [name, src] of [["legacy.html", html], ["es/legacy.html", esLegacy]]) {
         const cards = [...new JSDOM(src).window.document.querySelectorAll(".film-card")];
         const types = cards.map((card) => card.querySelector(".film-card__type").textContent.trim());
-        assert.equal(types.length, 7, `${name}: siete vídeos`);
+        assert.equal(types.length, 8, `${name}: ocho vídeos`);
         assert.ok(types.every((type) => !/\s\/\s/.test(type)),
             `${name}: fuera «/ FILM» y «/ MOTION» — ${types.join(", ")}`);
         assert.ok(!/THE SUNDAY|EL DOMINGO/.test(src), `${name}: ya no queda «THE SUNDAY»`);
@@ -97,7 +98,22 @@ try {
         assert.equal(season01.querySelector("img").getAttribute("src"), "assets/images/insert01.jpg");
         assert.match(season01.querySelector("img").getAttribute("data-fallback-src"),
             /^https:\/\/i\.vimeocdn\.com\/video\/2208326423-/);
-        assert.equal(season01, cards[cards.length - 1], `${name}: es la última tarjeta`);
+        assert.equal(season01, cards[cards.length - 2], `${name}: la penúltima tarjeta`);
+
+        // SXSW 2012 / VAN STORIES: octava tarjeta, campaña de Chevrolet con su
+        // miniatura en assets/images/sxsw.jpg y su respaldo de Vimeo, y con la
+        // info «Chevrolet: What drives You?» debajo. (04/10/2026)
+        const sxsw = cards[cards.length - 1];
+        assert.equal(sxsw.dataset.vimeo, "1131453934");
+        assert.equal(sxsw.dataset.title, "SXSW 2012 / VAN STORIES");
+        assert.equal(sxsw.querySelector(".film-card__number").textContent, "08");
+        assert.equal(sxsw.querySelector(".film-card__fallback").textContent, "HF / 08");
+        assert.equal(sxsw.querySelector(".film-card__type").textContent, genusSpot[name]);
+        assert.equal(sxsw.querySelector("img").getAttribute("src"), "assets/images/sxsw.jpg");
+        assert.match(sxsw.querySelector("img").getAttribute("data-fallback-src"),
+            /^https:\/\/i\.vimeocdn\.com\/video\/2075388631-/);
+        assert.equal(sxsw.querySelector(".film-card__synopsis").textContent, "Chevrolet: What drives You?");
+        assert.equal(sxsw.querySelector(".film-card__client"), null, `${name}: SXSW no es de INSERT`);
 
         // INSERT → «Techno Club» justo debajo del género, visible en móvil y
         // escritorio. (04/10/2026)
@@ -144,7 +160,7 @@ try {
     assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(2\.6rem, 7\.2vw, 8rem\)/,
         "the YOUR STORY letters are 20% smaller");
     const plays = [...doc.querySelectorAll(".film-card__play")];
-    assert.equal(plays.length, 7);
+    assert.equal(plays.length, 8);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
     const triangle = legacyCss.match(/\.film-card__play::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
         .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
@@ -336,8 +352,8 @@ try {
     // (Space Grotesk 0.88rem/1.6, como la sinopsis). (04/10/2026)
     assert.match(legacyCss, /\.film-card__type,\s*\n\.film-card__client \{\s*\n\s*display: block;\s*\n\s*color: var\(--muted\);/,
         "las dos líneas parten de la misma base (bloque y color)");
-    assert.match(legacyCss, /\.film-card__type \{[^}]*font: 400 0\.62rem\/1\.5 var\(--font-mono\);[^}]*letter-spacing: 0\.2em;/,
-        "el género sigue en el cuerpo técnico monoespaciado");
+    assert.match(legacyCss, /\.film-card__type \{[^}]*font-family: var\(--font-mono\); font-weight: 400;[^}]*font-size: calc\(0\.62rem \+ 3px\);[^}]*line-height: 1\.5;[^}]*letter-spacing: 0\.2em;/,
+        "el género sigue en el cuerpo técnico monoespaciado, 3px más grande");
     assert.match(legacyCss, /\.film-card__client \{[^}]*font-family: var\(--font-body\);[^}]*font-size: 0\.88rem; line-height: 1\.6;/,
         "el cliente usa el cuerpo de la info (Space Grotesk 0.88rem/1.6)");
     // Y el mismo cuerpo que la sinopsis de la ficha, que es la referencia.
@@ -376,7 +392,7 @@ try {
     assert.ok(!modal.classList.contains("is-closing"));
     assert.equal(doc.activeElement, firstCard);
     assert.deepEqual(errors, [], "no runtime errors");
-    console.log("PASS  Captured: root navigation, seven films, video modal, keyboard and image fallback");
+    console.log("PASS  Captured: root navigation, eight films, video modal, keyboard and image fallback");
 } finally {
     dom.window.close();
 }
