@@ -142,6 +142,15 @@ async function runLandscapePlayback() {
         message(iframe, { event: 'ended' });
         assert.ok(iframe.classList.contains('is-ending'), 'the last frame fades back to the poster');
         assert.equal(modal.hidden, true);
+        // Cortinillas de salida (05/10/2026): en móvil el vídeo se despide con
+        // las mismas bandas diagonales de 102° que GENERATED —la franja baja de
+        // 32px a 0 y destapa el cartel de la tarjeta, que sigue montado debajo—,
+        // y la opacidad mantiene la salida donde no se animan las propiedades.
+        assert.ok(card.querySelector('.film-card__poster img'),
+            'the card still is what the closing bands uncover');
+        assert.match(css, /@property --film-stripe\s*\{[^}]*syntax: "<length>";[^}]*initial-value: 32px;/);
+        assert.match(css, /repeating-linear-gradient\(102deg, #000 0 var\(--film-stripe\), transparent var\(--film-stripe\) 32px\)/);
+        assert.match(css, /\.film-card__mobile-player\.is-ending\s*\{[^}]*--film-stripe: 0px;[^}]*opacity:\s*0[^}]*transition: --film-stripe 0\.7s var\(--ease-out\), opacity 0\.7s var\(--ease-out\);/);
         fireTimer(750);
         assert.equal(card.querySelector('.film-card__mobile-player'), null, 'ended video is unloaded');
         assert.ok(!card.classList.contains('is-mobile-playing'));
