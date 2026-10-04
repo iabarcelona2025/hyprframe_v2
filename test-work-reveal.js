@@ -49,9 +49,11 @@ test('diagonal slices reveal the existing image on hover and keyboard focus', ()
     assert.match(css, /transition: --work-stripe 0\.7s/);
 });
 
-test('3D entrance is scoped to desktop and remains visible without JS or with reduced motion', () => {
+test('3D entrance cascades on desktop and mobile, but respects reduced motion', () => {
     assert.match(script, /revealTimer = setTimeout\(revealNextRow, 105\)/); // quicker gap between rows
-    assert.match(css, /@media \(min-width: 861px\) and \(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\)/);
+    assert.match(script, /if \(!reduced && workSection && workTitle\) \{/,
+        'the entrance is no longer restricted to desktop pointer devices');
+    assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{/);
     assert.match(css, /\.work\.work-3d-ready \.work-list\s*\{[^}]*perspective: 1100px/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\s*\{[^}]*opacity: 0;[^}]*translate3d\(clamp\(-420px, -30vw, -160px\), 0, -240px\) rotateY\(-62deg\)/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\.work-row-visible\s*\{[^}]*animation: work-row-enter/);
@@ -68,8 +70,8 @@ test('3D entrance is scoped to desktop and remains visible without JS or with re
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=207/);
-        assert.match(html, /script\.js\?v=56/);
+        assert.match(html, /styles\.css\?v=208/);
+        assert.match(html, /script\.js\?v=57/);
     }
 });
 
@@ -162,12 +164,30 @@ test('rows do not stay hidden if the title misses its visibility threshold', asy
     } finally { dom.window.close(); }
 });
 
-test('mobile and reduced-motion keep selected work rows unhidden', () => {
-    for (const [desktop, reduced] of [[false, false], [true, true]]) {
-        const { dom, window, observers } = setupWorkReveal('index.html', desktop, reduced);
+test('mobile cascades the work rows, while reduced motion leaves them static', async () => {
+    const { dom, window, observers, scrollListTo } = setupWorkReveal('index.html', false, false);
+    try {
+        const title = window.document.querySelector('#work .section-title');
+        const rows = [...window.document.querySelectorAll('#work .work-row')];
+        const line = title.querySelector('.line:last-child .line-inner');
+        assert.equal(observers.length, 3); // generic, late and title only
+        assert.ok(window.document.querySelector('#work').classList.contains('work-3d-ready'));
+        observers[2].intersect(title);
+        scrollListTo(600);
+        await new Promise(resolve => setTimeout(resolve, 25));
+        assert.ok(!rows[0].classList.contains('work-row-visible'), 'the row waits for the title');
+        const end = new window.Event('transitionend', { bubbles: true });
+        Object.defineProperty(end, 'propertyName', { value: 'transform' });
+        line.dispatchEvent(end);
+        assert.ok(rows[0].classList.contains('work-row-visible'));
+        assert.ok(!rows[1].classList.contains('work-row-visible'));
+    } finally { dom.window.close(); }
+
+    for (const desktop of [false, true]) {
+        const reduced = setupWorkReveal('index.html', desktop, true);
         try {
-            assert.equal(observers.length, 3); // generic, late and title only
-            assert.ok(!window.document.querySelector('#work').classList.contains('work-3d-ready'));
-        } finally { dom.window.close(); }
+            assert.equal(reduced.observers.length, 3);
+            assert.ok(!reduced.window.document.querySelector('#work').classList.contains('work-3d-ready'));
+        } finally { reduced.dom.window.close(); }
     }
 });

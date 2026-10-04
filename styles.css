@@ -971,10 +971,10 @@ section { position: relative; }
     overflow: hidden;
     transition: padding-block 0.55s var(--ease-out), padding-left 0.5s var(--ease-out), background 0.5s;
 }
-/* Solo escritorio: las filas conservan su espacio en la lista, pero entran
+/* Escritorio y móvil: las filas conservan su espacio en la lista, pero entran
    desde la izquierda con profundidad al terminar el título WORK. La clase se
    añade por JS únicamente cuando hay animación; sin JS todo sigue visible. */
-@media (min-width: 861px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
     .work.work-3d-ready .work-list {
         perspective: 1100px;
         perspective-origin: 15% 50%;

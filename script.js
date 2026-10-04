@@ -282,12 +282,11 @@
     });
     if (aboutEmblem) lineIO.observe(aboutEmblem);
 
-    /* WORK title: on desktop, wait for its final line to finish sliding in
-       and for the first row to reach the viewport. Then reveal ALL rows in
-       sequence without requiring any further scrolling. Check the
+    /* WORK title: on desktop and mobile, wait for its final line to finish
+       sliding in and for the first row to reach the viewport. Then reveal ALL
+       rows in sequence without requiring any further scrolling. Check the
        untransformed list (not rows translated offscreen in 3D). */
-    if (!reduced && workSection && workTitle &&
-        window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)").matches) {
+    if (!reduced && workSection && workTitle) {
         const workRows = [...workSection.querySelectorAll(".work-row")];
         const lastTitleLine = workTitle.querySelector(".line:last-child .line-inner");
         if (workRows.length && lastTitleLine) {
