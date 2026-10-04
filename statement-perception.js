@@ -27,6 +27,10 @@
      04  0.55–0.80  síntesis: plegado, torsión y nodos de encuentro
      05  0.80–1.00  nuevas realidades visuales: los pétalos se abren
 
+   El recorrido se adelanta: la fase 01 se juega mientras la sección asoma
+   por el pie de la ventana (una pantalla de scroll) y las cuatro restantes
+   sobre el recorrido anclado. El final no se mueve y se sostiene.
+
    (04/10/2026) */
 (() => {
     "use strict";
@@ -1408,11 +1412,31 @@
     let slowFrames = 0;
     let adapted = 0;
 
+    /* El recorrido arranca cuando el statement ASOMA por el pie de la ventana,
+       no cuando su borde superior llega arriba: así la fase del origen —casi
+       toda oscuridad, un punto de luz fría y las primeras líneas extendiéndose—
+       se ve mientras la sección sube, y el anclaje llega justo cuando el
+       corredor humano empieza a abrirse (a 0.15 el origen está completo y la
+       segunda voz apenas aparece). Antes de esto la sección entraba ya con su
+       geometría en el arranque absoluto, es decir, prácticamente negra hasta
+       que quedaba anclada. (04/10/2026)
+       El progreso se reparte en dos tramos lineales para que la entrada —una
+       pantalla de scroll— consuma exactamente la fase 01: lo que cambia es
+       DÓNDE empieza, no el ritmo; los 0.85 restantes siguen repartidos sobre
+       el recorrido anclado, igual que antes. */
+    const ENTRY_LEAD = 1;         /* pantallas de adelanto: 1 = desde que asoma */
+    const ENTRY_SHARE = 0.15;     /* parte del progreso que consume la entrada */
+
     function progressFromScroll() {
+        if (reduced) return 0.86;         /* una sola composición, ya construida */
         const rect = section.getBoundingClientRect();
-        const travel = rect.height - window.innerHeight;
-        if (!(travel > 1)) return reduced ? 0.86 : 0;
-        return Math.min(Math.max(-rect.top / travel, 0), 1);
+        const pinned = rect.height - window.innerHeight;    /* recorrido anclado */
+        if (!(pinned > 1)) return 0;      /* sección de una pantalla: no hay recorrido */
+        const lead = window.innerHeight * ENTRY_LEAD;
+        const entered = lead - rect.top;    /* 0 al asomar · lead al anclarse */
+        if (entered <= 0) return 0;
+        if (entered < lead) return (entered / lead) * ENTRY_SHARE;
+        return Math.min(ENTRY_SHARE + ((entered - lead) / pinned) * (1 - ENTRY_SHARE), 1);
     }
 
     function frame(now) {
@@ -1535,6 +1559,9 @@
     if (DEV) {
         window.__hfPerception = {
             progress: () => progress,
+            /* La función pura del scroll, sin el amortiguado: es la que fija
+               dónde empieza y dónde acaba el recorrido. */
+            rawProgress: () => progressFromScroll(),
             state: (p) => stateAt(typeof p === "number" ? p : progress, 0),
             camera: (p) => ({
                 pos: spline(CAM, "pos", typeof p === "number" ? p : progress),

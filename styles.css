@@ -2048,7 +2048,13 @@ label.cookie-purpose-head { cursor: pointer; }
    visitante lo cruza. El progreso lo mide el propio módulo sobre el rect de
    la sección —el mismo que usa el barrido de letras de script.js §6, que
    sigue funcionando sin tocar nada: su rect se mueve de forma continua de
-   arriba abajo durante todo el recorrido. (04/10/2026) */
+   arriba abajo durante todo el recorrido.
+   El recorrido ARRANCA cuando la sección asoma por el pie de la ventana, no
+   cuando su borde llega arriba: durante la subida de una pantalla se juega la
+   fase 01 (el punto de luz y las primeras líneas) y el anclaje coincide con
+   la apertura del corredor humano. El reparto está en statement-perception.js
+   (ENTRY_LEAD / ENTRY_SHARE): una pantalla de entrada y el resto sobre el
+   recorrido anclado. (04/10/2026) */
 .statement-stage {
     position: sticky;
     top: 0;

@@ -353,6 +353,76 @@ function geometryOf(page) {
         camps[10].pos[2] < camps[0].pos[2], `z ${camps[0].pos[2].toFixed(1)} → ${camps[10].pos[2].toFixed(1)}`);
 }
 
+/* ══ 6b. El recorrido se adelanta: la fase 01 se juega mientras asoma ══════
+   El progreso ya no espera a que la sección quede anclada arriba: arranca
+   cuando su borde superior asoma por el pie de la ventana, consume la fase
+   del origen (0.15) a lo largo de esa pantalla de entrada y reparte el resto
+   sobre el recorrido anclado. El final no se mueve. */
+{
+    const page = boot();
+    const VH = 900;                       /* ventana del banco de pruebas */
+    const H = VH * 3;                     /* la sección mide 300vh */
+    const TOP = 2000;                     /* rect.top = TOP - scrollY */
+    const SHOW = TOP - VH;                /* y en la que la sección asoma */
+    const PIN = TOP;                      /* y en la que queda anclada */
+    const END = PIN + (H - VH);           /* y en la que termina el recorrido */
+    const raw = () => page.window.__hfPerception.rawProgress();
+
+    page.scrollTo(SHOW - 260, 8);
+    check("por debajo del pie de la ventana no se adelanta nada (sigue a 0)",
+        raw() === 0, `${raw().toFixed(4)}`);
+    page.scrollTo(SHOW, 8);
+    check("el recorrido arranca justo cuando el statement asoma", raw() === 0, `${raw().toFixed(4)}`);
+
+    page.scrollTo(SHOW + VH * 0.5, 8);
+    const half = raw();
+    check("a media entrada el origen ya está en marcha", half > 0.05 && half < 0.12, `${half.toFixed(4)}`);
+    check("y se lee: el punto de luz y sus líneas ya existen en pantalla",
+        page.window.__hfPerception.state(half).rev[0] > 0.5,
+        `origen ${page.window.__hfPerception.state(half).rev[0].toFixed(2)}`);
+
+    page.scrollTo(PIN, 8);
+    check("al anclarse la sección el progreso vale exactamente 0.15",
+        Math.abs(raw() - 0.15) < 1e-9, `${raw().toFixed(4)}`);
+    const pinnedState = page.window.__hfPerception.state(raw());
+    check("es decir: el origen está completo y la visión humana empieza a abrirse",
+        pinnedState.rev[0] > 0.95 && pinnedState.rev[1] > 0.05 && pinnedState.rev[2] === 0,
+        `origen ${pinnedState.rev[0].toFixed(2)} · humano ${pinnedState.rev[1].toFixed(2)}`);
+
+    page.scrollTo(END, 8);
+    check("el final sigue donde estaba: la escultura cerrada", raw() === 1, `${raw().toFixed(4)}`);
+    page.scrollTo(END + VH, 8);
+    check("y se sostiene: más scroll no reinicia ni pasa de 1", raw() === 1, `${raw().toFixed(4)}`);
+
+    /* Monotonía en todo el recorrido, entrada incluida. */
+    let prev = -1, monotone = true, subidas = 0;
+    for (let y = SHOW - 300; y <= END + 600; y += 40) {
+        page.scrollTo(y, 4);
+        const value = raw();
+        if (value < prev - 1e-9) monotone = false;
+        if (value > prev + 1e-9) subidas++;
+        prev = value;
+    }
+    check("el progreso nunca retrocede a lo largo de todo el recorrido", monotone);
+    check("y avanza tanto en la entrada como en el recorrido anclado", subidas > 40, `${subidas} tramos`);
+
+    /* La proporción de la entrada no depende del alto del recorrido: en móvil
+       (recorrido más corto) el anclaje sigue cerrando la fase 01. */
+    const mobilePage = boot({ mobile: true, height: 760 });
+    mobilePage.scrollTo(2000, 8);
+    const mobileRaw = mobilePage.window.__hfPerception.rawProgress();
+    check("en el reparto móvil el anclaje también cae en 0.15 (entrada y recorrido proporcionales)",
+        Math.abs(mobileRaw - 0.15) < 1e-9, `${mobileRaw.toFixed(4)}`);
+
+    /* Lo que se dibuja va con el scroll ya durante la entrada (el valor
+       amortiguado sigue al de la función pura, sin quedarse atrás). */
+    page.intersect([{ isIntersecting: true }]);
+    page.scrollTo(SHOW + VH * 0.5, 60);
+    const drawn = page.window.__hfPerception.progress();
+    check("el fotograma que se pinta ya dibuja la entrada, no el negro del arranque",
+        Math.abs(drawn - raw()) < 0.01 && drawn > 0.05, `pintado ${drawn.toFixed(4)}`);
+}
+
 /* ══ 7. Fuera de pantalla no se dibuja; al volver, se retoma ═══════════════ */
 {
     const page = boot();
