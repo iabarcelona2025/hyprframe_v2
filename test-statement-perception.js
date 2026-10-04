@@ -353,38 +353,43 @@ function geometryOf(page) {
         camps[10].pos[2] < camps[0].pos[2], `z ${camps[0].pos[2].toFixed(1)} → ${camps[10].pos[2].toFixed(1)}`);
 }
 
-/* ══ 6b. El recorrido se adelanta: la fase 01 se juega mientras asoma ══════
-   El progreso ya no espera a que la sección quede anclada arriba: arranca
-   cuando su borde superior asoma por el pie de la ventana, consume la fase
-   del origen (0.15) a lo largo de esa pantalla de entrada y reparte el resto
-   sobre el recorrido anclado. El final no se mueve. */
+/* ══ 6b. El recorrido arranca con el barrido de letras del titular ═════════
+   El fondo y el barrido comparten inicio: las dos cosas empiezan cuando el
+   borde superior de la sección está al 85 % de la ventana. De ahí al anclaje
+   se juega la fase del origen (0.15) y el resto se reparte sobre el recorrido
+   anclado. El final no se mueve. */
 {
     const page = boot();
     const VH = 900;                       /* ventana del banco de pruebas */
     const H = VH * 3;                     /* la sección mide 300vh */
     const TOP = 2000;                     /* rect.top = TOP - scrollY */
-    const SHOW = TOP - VH;                /* y en la que la sección asoma */
     const PIN = TOP;                      /* y en la que queda anclada */
+    const SWEEP = TOP - VH * 0.85;        /* y en la que arranca el barrido */
     const END = PIN + (H - VH);           /* y en la que termina el recorrido */
     const raw = () => page.window.__hfPerception.rawProgress();
+    const at = (p) => page.window.__hfPerception.state(p);
 
-    page.scrollTo(SHOW - 260, 8);
-    check("por debajo del pie de la ventana no se adelanta nada (sigue a 0)",
+    page.scrollTo(SWEEP - 400, 8);
+    check("antes del barrido de letras no hay nada que dibujar (sigue a 0)",
         raw() === 0, `${raw().toFixed(4)}`);
-    page.scrollTo(SHOW, 8);
-    check("el recorrido arranca justo cuando el statement asoma", raw() === 0, `${raw().toFixed(4)}`);
+    page.scrollTo(TOP - VH, 8);
+    check("con la sección asomando por el pie, la escena sigue en negro", raw() === 0, `${raw().toFixed(4)}`);
+    page.scrollTo(SWEEP, 8);
+    check("el recorrido arranca exactamente donde el titular enciende su primera letra",
+        raw() === 0, `${raw().toFixed(4)}`);
+    page.scrollTo(SWEEP + 1, 8);
+    check("y ya se ha puesto en marcha un píxel después", raw() > 0, `${raw().toFixed(6)}`);
 
-    page.scrollTo(SHOW + VH * 0.5, 8);
+    page.scrollTo(SWEEP + (PIN - SWEEP) * 0.5, 8);
     const half = raw();
     check("a media entrada el origen ya está en marcha", half > 0.05 && half < 0.12, `${half.toFixed(4)}`);
     check("y se lee: el punto de luz y sus líneas ya existen en pantalla",
-        page.window.__hfPerception.state(half).rev[0] > 0.5,
-        `origen ${page.window.__hfPerception.state(half).rev[0].toFixed(2)}`);
+        at(half).rev[0] > 0.5, `origen ${at(half).rev[0].toFixed(2)}`);
 
     page.scrollTo(PIN, 8);
     check("al anclarse la sección el progreso vale exactamente 0.15",
         Math.abs(raw() - 0.15) < 1e-9, `${raw().toFixed(4)}`);
-    const pinnedState = page.window.__hfPerception.state(raw());
+    const pinnedState = at(raw());
     check("es decir: el origen está completo y la visión humana empieza a abrirse",
         pinnedState.rev[0] > 0.95 && pinnedState.rev[1] > 0.05 && pinnedState.rev[2] === 0,
         `origen ${pinnedState.rev[0].toFixed(2)} · humano ${pinnedState.rev[1].toFixed(2)}`);
@@ -396,7 +401,7 @@ function geometryOf(page) {
 
     /* Monotonía en todo el recorrido, entrada incluida. */
     let prev = -1, monotone = true, subidas = 0;
-    for (let y = SHOW - 300; y <= END + 600; y += 40) {
+    for (let y = SWEEP - 400; y <= END + 600; y += 40) {
         page.scrollTo(y, 4);
         const value = raw();
         if (value < prev - 1e-9) monotone = false;
@@ -405,6 +410,14 @@ function geometryOf(page) {
     }
     check("el progreso nunca retrocede a lo largo de todo el recorrido", monotone);
     check("y avanza tanto en la entrada como en el recorrido anclado", subidas > 40, `${subidas} tramos`);
+
+    /* Reversibilidad del mapeo nuevo, subiendo y bajando por la entrada. */
+    const down = [], up = [];
+    for (let y = TOP - VH; y <= PIN; y += 90) { page.scrollTo(y, 8); down.push(raw()); }
+    for (let y = PIN; y >= TOP - VH; y -= 90) { page.scrollTo(y, 8); up.unshift(raw()); }
+    let gap = 0;
+    down.forEach((value, i) => { gap = Math.max(gap, Math.abs(value - up[i])); });
+    check("la entrada se reconstruye igual de ida que de vuelta", gap < 1e-9, `Δ ${gap.toExponential(1)}`);
 
     /* La proporción de la entrada no depende del alto del recorrido: en móvil
        (recorrido más corto) el anclaje sigue cerrando la fase 01. */
@@ -417,10 +430,29 @@ function geometryOf(page) {
     /* Lo que se dibuja va con el scroll ya durante la entrada (el valor
        amortiguado sigue al de la función pura, sin quedarse atrás). */
     page.intersect([{ isIntersecting: true }]);
-    page.scrollTo(SHOW + VH * 0.5, 60);
+    page.scrollTo(SWEEP + (PIN - SWEEP) * 0.5, 60);
     const drawn = page.window.__hfPerception.progress();
     check("el fotograma que se pinta ya dibuja la entrada, no el negro del arranque",
         Math.abs(drawn - raw()) < 0.01 && drawn > 0.05, `pintado ${drawn.toFixed(4)}`);
+}
+
+/* ══ 6c. El fondo y el titular empiezan a la vez (los dos módulos) ═════════
+   El barrido de letras vive en script.js §6 y el fondo en
+   statement-perception.js: son independientes a propósito, así que el mismo
+   0.85 está en los dos sitios. Aquí se compara, para que no se separen. */
+{
+    const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
+    const barrido = script.match(/const start = innerHeight \* ([\d.]+);/);
+    const modulo = source.match(/const ENTRY_TOP = ([\d.]+);/);
+    check("el barrido del titular fija su arranque con un número explícito", !!barrido,
+        barrido ? barrido[0] : "no encontrado");
+    check("el fondo fija su arranque con un número explícito", !!modulo,
+        modulo ? modulo[0] : "no encontrado");
+    check("y son el mismo: el punto de luz nace con la primera letra",
+        !!barrido && !!modulo && barrido[1] === modulo[1],
+        `barrido ${barrido && barrido[1]} · fondo ${modulo && modulo[1]}`);
+    check("la entrada consume justo la fase del origen (sin solaparse con la visión humana)",
+        source.match(/const ENTRY_SHARE = ([\d.]+);/)[1] === "0.15");
 }
 
 /* ══ 7. Fuera de pantalla no se dibuja; al volver, se retoma ═══════════════ */

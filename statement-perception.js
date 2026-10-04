@@ -27,9 +27,9 @@
      04  0.55–0.80  síntesis: plegado, torsión y nodos de encuentro
      05  0.80–1.00  nuevas realidades visuales: los pétalos se abren
 
-   El recorrido se adelanta: la fase 01 se juega mientras la sección asoma
-   por el pie de la ventana (una pantalla de scroll) y las cuatro restantes
-   sobre el recorrido anclado. El final no se mueve y se sostiene.
+   El recorrido arranca a la vez que el barrido de letras del titular: la
+   fase 01 se juega mientras la sección sube hasta anclarse y las cuatro
+   restantes sobre el recorrido anclado. El final no se mueve y se sostiene.
 
    (04/10/2026) */
 (() => {
@@ -1412,19 +1412,21 @@
     let slowFrames = 0;
     let adapted = 0;
 
-    /* El recorrido arranca cuando el statement ASOMA por el pie de la ventana,
-       no cuando su borde superior llega arriba: así la fase del origen —casi
-       toda oscuridad, un punto de luz fría y las primeras líneas extendiéndose—
-       se ve mientras la sección sube, y el anclaje llega justo cuando el
-       corredor humano empieza a abrirse (a 0.15 el origen está completo y la
-       segunda voz apenas aparece). Antes de esto la sección entraba ya con su
-       geometría en el arranque absoluto, es decir, prácticamente negra hasta
-       que quedaba anclada. (04/10/2026)
-       El progreso se reparte en dos tramos lineales para que la entrada —una
-       pantalla de scroll— consuma exactamente la fase 01: lo que cambia es
-       DÓNDE empieza, no el ritmo; los 0.85 restantes siguen repartidos sobre
-       el recorrido anclado, igual que antes. */
-    const ENTRY_LEAD = 1;         /* pantallas de adelanto: 1 = desde que asoma */
+    /* El recorrido arranca CON EL BARRIDO DE LETRAS DEL TITULAR. Ese barrido
+       (script.js §6) enciende la primera letra cuando el borde superior de la
+       sección está al 85 % de la ventana —el mismo 0.85 que el script mide—, y
+       ahí es donde nace el punto de luz fría del origen: la frase y su
+       percepción empiezan a la vez, sin que el visitante vea dos tiempos.
+       La entrada dura hasta el anclaje (rect.top = 0), así que el origen se
+       completa exactamente cuando la sección queda fija (0.15) y al titular le
+       queda apenas la última letra —el corredor humano se abre con la frase ya
+       encendida—. Antes de eso la escena es negra a propósito y coincide con
+       las letras aún apagadas.
+       El progreso se reparte en dos tramos lineales para que la entrada
+       consuma exactamente la fase 01: lo que cambia es DÓNDE empieza, no el
+       ritmo; los 0.85 restantes siguen repartidos sobre el recorrido anclado,
+       igual que antes. (04/10/2026) */
+    const ENTRY_TOP = 0.85;       /* fracción de ventana donde arranca el barrido */
     const ENTRY_SHARE = 0.15;     /* parte del progreso que consume la entrada */
 
     function progressFromScroll() {
@@ -1432,8 +1434,8 @@
         const rect = section.getBoundingClientRect();
         const pinned = rect.height - window.innerHeight;    /* recorrido anclado */
         if (!(pinned > 1)) return 0;      /* sección de una pantalla: no hay recorrido */
-        const lead = window.innerHeight * ENTRY_LEAD;
-        const entered = lead - rect.top;    /* 0 al asomar · lead al anclarse */
+        const lead = window.innerHeight * ENTRY_TOP;
+        const entered = lead - rect.top;    /* 0 con la primera letra · lead al anclarse */
         if (entered <= 0) return 0;
         if (entered < lead) return (entered / lead) * ENTRY_SHARE;
         return Math.min(ENTRY_SHARE + ((entered - lead) / pinned) * (1 - ENTRY_SHARE), 1);
