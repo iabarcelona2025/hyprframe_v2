@@ -48,11 +48,20 @@ test('3D entrance is scoped to desktop and remains visible without JS or with re
     assert.match(css, /\.work\.work-3d-ready \.work-list\s*\{[^}]*perspective: 1100px/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\s*\{[^}]*opacity: 0;[^}]*translate3d\(clamp\(-420px, -30vw, -160px\), 0, -240px\) rotateY\(-62deg\)/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\.work-row-visible\s*\{[^}]*animation: work-row-enter/);
-    assert.match(css, /@keyframes work-row-enter\s*\{[\s\S]*?from\s*\{[^}]*filter: blur\(6px\)/);
-    assert.match(css, /@keyframes work-row-enter\s*\{[\s\S]*?55%\s*\{ filter: blur\(2px\); \}[\s\S]*?to\s*\{[^}]*filter: blur\(0\)/);
+    assert.match(css, /@keyframes work-row-enter\s*\{[\s\S]*?from\s*\{[^}]*filter: url\(#work-blur-x6\)/);
+    assert.match(css, /20%\s*\{ filter: url\(#work-blur-x4\); \}/);
+    assert.match(css, /40%\s*\{ filter: url\(#work-blur-x2\); \}/);
+    assert.match(css, /60%\s*\{ filter: none; \}[\s\S]*?to\s*\{[^}]*filter: none;/);
+    assert.doesNotMatch(css.match(/@keyframes work-row-enter\s*\{[\s\S]*?\.work-row:hover/)[0], /filter: blur\(/,
+        'the entrance must not use an omnidirectional CSS blur');
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=205/);
+        const doc = new JSDOM(html).window.document;
+        for (const [id, x] of [['work-blur-x6', 6], ['work-blur-x4', 4], ['work-blur-x2', 2]]) {
+            const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
+            assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
+        }
+        assert.match(html, /styles\.css\?v=206/);
         assert.match(html, /script\.js\?v=55/);
     }
 });

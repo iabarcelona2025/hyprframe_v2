@@ -990,10 +990,13 @@ section { position: relative; }
     }
 }
 @keyframes work-row-enter {
-    /* Desenfoque de movimiento suave; termina nítido antes de asentarse. */
-    from { opacity: 0; filter: blur(6px); transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg); }
-    55% { filter: blur(2px); }
-    to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) rotateY(0) rotateX(0); }
+    /* Los filtros SVG desenfocan solo en X (stdDeviation Y = 0), como el
+       desplazamiento de entrada; se va disipando hasta acabar nítido. */
+    from { opacity: 0; filter: url(#work-blur-x6); transform: translate3d(clamp(-420px, -30vw, -160px), 0, -240px) rotateY(-62deg) rotateX(7deg); }
+    20% { filter: url(#work-blur-x4); }
+    40% { filter: url(#work-blur-x2); }
+    60% { filter: none; }
+    to { opacity: 1; filter: none; transform: translate3d(0, 0, 0) rotateY(0) rotateX(0); }
 }
 .work-row:hover, .work-row:focus-visible {
     /* Foto y degradado arrancan primero; solo la apertura espera 0,3 s.
