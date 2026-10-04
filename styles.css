@@ -253,6 +253,13 @@ html.hf-skip-intro .preloader { display: none; }
 /* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
    lo único que lo distingue es el color de la línea al pasar por encima. */
 .main-nav .nav-cta::after { background: var(--lime); }
+/* Apartado activo (scroll-spy de script.js §2b, solo escritorio): el enlace de
+   la sección en la que estás se queda encendido igual que en el rollover —texto
+   en blanco y la línea inferior desplegada—, con el color de línea de cada
+   enlace (violeta; lima en Contact, .nav-cta). Es el mismo tratamiento que
+   legacy.css le da a «Captured» en legacy.html con aria-current="page". */
+.main-nav [aria-current="location"] { color: var(--fg); }
+.main-nav [aria-current="location"]::after { transform: scaleX(1); transform-origin: left; }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
 
@@ -1192,6 +1199,9 @@ section { position: relative; }
     padding-bottom: clamp(5rem, 12vw, 9rem);
     border-top: 1px solid var(--line);
     background: var(--bg);
+    /* Cuerpo del texto de intro (el carrusel de escritorio comparte su ancho:
+       ver --clb-copy-w en el media query de escritorio). */
+    --clb-copy-fs: clamp(1.15rem, 1.7vw, 1.5rem);
 }
 .clb-grid {
     display: grid;
@@ -1207,7 +1217,7 @@ section { position: relative; }
 .clb-cta { align-self: flex-start; margin-top: clamp(1.5rem, 3vw, 2.5rem); }
 .clb-intro > p {
     color: rgba(239, 238, 233, 0.78); font-weight: 300;
-    font-size: clamp(1.15rem, 1.7vw, 1.5rem); line-height: 1.55;
+    font-size: var(--clb-copy-fs); line-height: 1.55;
     margin-bottom: clamp(2rem, 4vw, 3rem);
 }
 .clb-cta {
@@ -1313,31 +1323,49 @@ section { position: relative; }
 .clb-feature strong { color: var(--fg); font-weight: 600; }
 /* Escritorio: galería ancha a la izquierda; capacidades y CTA juntos a la derecha. */
 @media (min-width: 1181px) {
-    .clb { padding-bottom: clamp(3rem, 6vw, 6rem); }
+    .clb {
+        padding-bottom: clamp(3rem, 6vw, 6rem);
+        /* Ancho del bloque de texto de la izquierda (31em ≈ 3 líneas del
+           párrafo). Es la referencia del carrusel: ambos forman una pieza. */
+        --clb-copy-w: calc(31 * var(--clb-copy-fs));
+    }
     .clb-grid {
         column-gap: clamp(2.5rem, 6vw, 6.5rem);
         row-gap: clamp(1rem, 2vw, 1.75rem);
     }
     .clb-intro > p { margin-bottom: 0; }
-    /* Solo web/escritorio: carrusel 250px más estrecho que su columna.
-       El alto sigue el aspect-ratio 1.85 del marco. */
-    .clb-showcase { width: calc(100% - 250px); }
+    /* Solo web/escritorio: el carrusel se ancla al bloque de texto, no a su
+       columna. Comparte su ancho (--clb-copy-w) y, con él, su alto (marco
+       1.85): queda justo debajo del párrafo, con su mismo borde derecho, y su
+       tamaño se mantiene equilibrado con la columna de capacidades a cualquier
+       resolución. Con `100% - 250px` medía 373x202 px a 1181 px y 1728x934 px
+       a 3440 px. */
+    .clb-showcase {
+        width: 100%; max-width: var(--clb-copy-w);
+        justify-self: start;
+    }
     /* El reflejo (sombra) también escala en proporción: su alto es un % fijo del
        ancho, en vez de un alto fijo, así mantiene la relación con el marco. */
     .clb-gallery-reflection { height: auto; aspect-ratio: 23 / 1; }
     /* El borde inferior del carrusel coincide con el del botón TEST NOW:
        ambos se alinean al final de la fila; el reflejo queda por debajo. */
     .clb-showcase { align-self: end; }
-    .clb-side { align-self: end; }
+    /* Ancla por arriba (solo escritorio): el bloque "Key Capabilities" arranca
+       a la misma altura que el texto de la izquierda. La columna se estira toda
+       la fila para que el CTA siga pegado abajo, junto al carrusel. */
+    .clb-side { align-self: stretch; }
+    .clb-capabilities { margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+    .clb-cta { margin-top: auto; }
     /* Margen negativo = alto del reflejo (ancho/23; el % de margin se calcula sobre
        el ancho) + su margin-top, para que no cuente en la alineación. */
     .clb-gallery-reflection { margin-bottom: calc(-100% / 23 - 0.35rem); }
     /* Texto de intro justificado, siempre en 3 líneas con su tamaño original.
-       Es más ancho que el carrusel: el texto mide ~85em en una sola línea
-       (Space Grotesk 300) y necesita ≥30em por línea para caber en 3; con 31em hay
-       margen. Al estar en `em`, el ancho acompaña al tamaño de letra. */
+       El texto mide ~85em en una sola línea (Space Grotesk 300) y necesita
+       ≥30em por línea para caber en 3; con 31em hay margen. El ancho
+       (--clb-copy-w) se calcula sobre el tamaño de letra, así que acompaña a
+       este y lo comparte el carrusel, que queda justo debajo. */
     .clb-intro { max-width: none; }
-    .clb-intro > p { width: 31em; max-width: 100%; text-align: justify; }
+    .clb-intro > p { width: var(--clb-copy-w); max-width: 100%; text-align: justify; }
 }
 @media (max-width: 1180px) {
     .clb-grid {

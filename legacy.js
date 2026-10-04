@@ -162,7 +162,10 @@
         panel.style.transition = "";
         lastFilmLink = link;
         title.textContent = link.dataset.title;
-        synopsis.textContent = link.dataset.synopsis;
+        // Sinopsis opcional (data-synopsis): como el reparto, la línea del pop-up
+        // solo existe en las tarjetas que la llevan (DÁCIL / GROC va sin leyenda).
+        synopsis.textContent = link.dataset.synopsis || "";
+        synopsis.hidden = !synopsis.textContent;
         // Reparto opcional (data-cast): la línea solo existe en las tarjetas que lo llevan.
         cast.textContent = link.dataset.cast || "";
         cast.hidden = !cast.textContent;

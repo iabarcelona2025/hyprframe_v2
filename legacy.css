@@ -165,10 +165,30 @@ body.menu-open, body.modal-open { overflow: hidden; }
     transition: transform 0.35s var(--ease-out), color 0.35s;
 }
 .film-card:hover .film-card__arrow { color: var(--lime); transform: translate(4px, -4px); }
+/* Dos líneas bajo el título, cada una con su papel: el género en el cuerpo
+   técnico (monoespaciada, 0.62rem, muy espaciada) y el cliente en el cuerpo de
+   la info de la ficha (Space Grotesk 0.88rem/1.6, el mismo que la sinopsis de
+   .film-card__details), sin interletrado extra. Hoy el cliente («Techno Club»)
+   lo llevan las cuatro campañas de INSERT, visible en móvil y escritorio —la
+   leyenda larga solo aparece a partir de 561px, esta línea no depende de ella—.
+   (04/10/2026) */
+.film-card__type,
+.film-card__client {
+    display: block;
+    color: var(--muted);
+}
 .film-card__type {
-    display: block; margin-top: 0.65rem;
-    font: 400 0.62rem/1.5 var(--font-mono);
-    letter-spacing: 0.2em; color: var(--muted);
+    margin-top: 0.65rem;
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: calc(0.62rem + 3px); /* +3px (04/10/2026) */
+    line-height: 1.5;
+    letter-spacing: 0.2em;
+}
+/* El cliente va pegado al género: las dos líneas se leen como un bloque. */
+.film-card__client {
+    margin-top: 0.3rem;
+    font-family: var(--font-body); font-weight: 400;
+    font-size: 0.88rem; line-height: 1.6;
 }
 
 /* ── Next story & footer ──────────────────────────────────── */
@@ -182,7 +202,12 @@ body.menu-open, body.modal-open { overflow: hidden; }
     flex-wrap: wrap; gap: 2.5rem;
 }
 .legacy-next h2 {
-    font: 700 clamp(2.6rem, 7.2vw, 8rem)/0.97 var(--font-head); /* −20% letras (27/09/2026) · clamp(3.25rem, 9vw, 10rem) → clamp(2.6rem, 7.2vw, 8rem); antes 800 → 700 (25/09/2026) */
+    /* −20% de letras (27/09/2026) · clamp(3.25rem, 9vw, 10rem) → clamp(2.6rem, 7.2vw, 8rem);
+       antes 800 → 700 (25/09/2026) · −10px (04/10/2026): los tres tramos del clamp
+       bajan 10px, así la reducción es exacta a cualquier ancho (mismo patrón que
+       el menú móvil). Vale para las dos versiones: «YOUR STORY / GOES NEXT.» y
+       «TU HISTORIA / ES LA SIGUIENTE.». */
+    font: 700 clamp(calc(2.6rem - 10px), calc(7.2vw - 10px), calc(8rem - 10px))/0.97 var(--font-head);
     letter-spacing: 0.015em; text-transform: uppercase;
 }
 .legacy-next h2 span { color: var(--violet); }

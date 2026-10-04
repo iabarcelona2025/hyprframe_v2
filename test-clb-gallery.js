@@ -27,6 +27,41 @@ test("desktop CLB keeps the gallery wide with capabilities and CTA in the right 
     assert.match(css, /@media \(max-width: 700px\)[\s\S]*grid-template-areas: "intro" "showcase" "side"/);
 });
 
+test("desktop carousel is anchored to the intro text block, not to its column", () => {
+    const start = css.indexOf("@media (min-width: 1181px)");
+    const end = css.indexOf("@media (max-width: 1180px)");
+    const desktop = css.slice(start, end);
+    // Un solo ancho de referencia: el del bloque de texto de la izquierda (31em
+    // sobre el tamaño de letra de la intro). El carrusel y el párrafo lo comparten.
+    assert.match(css.match(/(?:^|\n)\.clb\s*\{[^}]*\}/)[0],
+        /--clb-copy-fs:\s*clamp\(1\.15rem, 1\.7vw, 1\.5rem\);/);
+    assert.match(css.match(/(?:^|\n)\.clb-intro > p\s*\{[^}]*\}/)[0],
+        /font-size:\s*var\(--clb-copy-fs\);/);
+    assert.match(desktop, /--clb-copy-w:\s*calc\(31 \* var\(--clb-copy-fs\)\);/);
+    assert.match(desktop, /\.clb-intro > p\s*\{[^}]*width:\s*var\(--clb-copy-w\);/);
+    const showcase = desktop.match(/\.clb-showcase\s*\{[^}]*\}/)[0];
+    assert.match(showcase, /width:\s*100%;\s*max-width:\s*var\(--clb-copy-w\);/);
+    assert.match(showcase, /justify-self:\s*start;/);
+    // Nada de anchos propios que se desmadren según la resolución.
+    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /calc\(100%\s*-\s*250px\)/);
+});
+
+test("desktop-only anchor: Key Capabilities starts level with the intro text on the left", () => {
+    const start = css.indexOf("@media (min-width: 1181px)");
+    const end = css.indexOf("@media (max-width: 1180px)");
+    assert.ok(start > -1 && end > start, "desktop media query found");
+    const desktop = css.slice(start, end);
+    // La columna derecha se estira toda la fila: su borde superior coincide con el
+    // del texto de la izquierda, y el CTA sigue pegado abajo con el carrusel.
+    assert.match(desktop, /\.clb-side\s*\{\s*align-self:\s*stretch;\s*\}/);
+    assert.match(desktop, /\.clb-capabilities\s*\{\s*margin-bottom:\s*clamp\(1\.5rem, 3vw, 2\.5rem\);\s*\}/);
+    assert.match(desktop, /\.clb-cta\s*\{\s*margin-top:\s*auto;\s*\}/);
+    assert.match(desktop, /\.clb-showcase\s*\{\s*align-self:\s*end;\s*\}/);
+    // El anclaje es solo de escritorio: fuera de ese media query la columna no se estira.
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-side\s*\{[^}]*\}/)[0], /align-self/);
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-cta\s*\{[^}]*\}/)[0], /margin-top:\s*auto/);
+});
+
 test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
     const features = [...doc.querySelectorAll("#clb .clb-feature")];
     assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),

@@ -19,6 +19,18 @@ WATCH = ["statement-liquid.js", "index.html", "styles.css", "script.js", "genera
          "project-exit.html", "project-stained.html", "project-asics.html", "project-farewell.html",
          "project-iad.html", "project-ryuu.html"]
 
+# Y, además, cualquier otra página del sitio (portada, Captured, fichas de
+# proyecto, legales en EN y ES…). Antes había que ir apuntando los .html a mano y
+# los que faltaban —legacy.html y es/legacy.html entre ellos— se quedaban sin
+# recarga automática: se editaban y la preview seguía mostrando la versión
+# anterior hasta refrescar a mano.
+for _dir in (ROOT, os.path.join(ROOT, "es")):
+    for _name in sorted(os.listdir(_dir)):
+        if _name.endswith(".html"):
+            _rel = os.path.relpath(os.path.join(_dir, _name), ROOT)
+            if _rel not in WATCH:
+                WATCH.append(_rel)
+
 _version = 0
 _last = 0.0
 _clients = []  # list of per-client queues
