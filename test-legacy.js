@@ -115,6 +115,15 @@ try {
         assert.equal(sxsw.querySelector(".film-card__synopsis").textContent, "Chevrolet: What drives You?");
         assert.equal(sxsw.querySelector(".film-card__client"), null, `${name}: SXSW no es de INSERT`);
 
+        // INSERT / SEASON 01 lleva su info justo debajo de «Techno Club».
+        const season01Details = season01.querySelector(".film-card__details");
+        assert.ok(season01Details, `${name}: INSERT / SEASON 01 ya tiene leyenda`);
+        assert.equal(season01Details.querySelector(".film-card__synopsis").textContent,
+            "INSERT SEASON 1: Beyond the Surface.");
+        assert.equal(season01Details.previousElementSibling.className, "film-card__client",
+            `${name}: la info va debajo de «Techno Club»`);
+        assert.equal(season01.dataset.synopsis, "INSERT SEASON 1: Beyond the Surface.");
+
         // INSERT → «Techno Club» justo debajo del género, visible en móvil y
         // escritorio. (04/10/2026)
         const inserts = cards.filter((card) => card.dataset.title.startsWith("INSERT /"));
@@ -154,11 +163,11 @@ try {
         "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");
     assert.match(legacyCss, /\.legacy-work__heading h2 span\s*\{[^}]*font-style:\s*italic;/);
-    // YOUR STORY / GOES NEXT: caja y letras al 80% (27/09/2026)
+    // YOUR STORY / GOES NEXT: caja y letras al 80% (27/09/2026) y −10px (04/10/2026)
     assert.match(legacyCss, /\.legacy-next \{[^}]*padding:\s*clamp\(4rem, 8vw, 7\.2rem\) var\(--pad\)/,
         "the YOUR STORY box is 20% tighter");
-    assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(2\.6rem, 7\.2vw, 8rem\)/,
-        "the YOUR STORY letters are 20% smaller");
+    assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(calc\(2\.6rem - 10px\), calc\(7\.2vw - 10px\), calc\(8rem - 10px\)\)\/0\.97/,
+        "las letras de YOUR STORY bajan 10px en los tres tramos del clamp (EN y ES)");
     const plays = [...doc.querySelectorAll(".film-card__play")];
     assert.equal(plays.length, 8);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
@@ -276,7 +285,8 @@ try {
     assert.equal(synopsisLine.hidden, true, "DÁCIL / GROC no muestra leyenda en el pop-up");
     assert.equal(synopsisLine.textContent, "");
     doc.querySelectorAll(".film-card")[6].click();          // INSERT / SEASON 01
-    assert.equal(synopsisLine.hidden, true, "INSERT / SEASON 01 tampoco muestra leyenda");
+    assert.equal(synopsisLine.hidden, false, "INSERT / SEASON 01 muestra su info en el pop-up");
+    assert.equal(synopsisLine.textContent, "INSERT SEASON 1: Beyond the Surface.");
     doc.querySelectorAll(".film-card")[1].click();          // BRUBAKER / NOSE DUEL
     assert.equal(synopsisLine.hidden, false, "al abrir otro vídeo, la línea vuelve");
     assert.equal(synopsisLine.textContent, "BRUBAKER CO: Nose duel.");
@@ -333,10 +343,9 @@ try {
     for (const page of [doc, esDoc]) {
         for (const card of page.querySelectorAll(".film-card")) {
             const details = card.querySelector(".film-card__details");
-            if (card.dataset.vimeo === "21087707" || card.dataset.vimeo === "1131285645") {
-                // DÁCIL / GROC va sin leyenda a propósito; INSERT / SEASON 01 aún
-                // no tiene texto de sinopsis.
-                assert.equal(details, null, "estas tarjetas van sin leyenda");
+            if (card.dataset.vimeo === "21087707") {
+                // DÁCIL / GROC es la única tarjeta sin leyenda.
+                assert.equal(details, null, "DÁCIL / GROC va sin leyenda");
                 continue;
             }
             assert.ok(details, "every film includes its pop-up copy in the grid");

@@ -202,7 +202,12 @@ body.menu-open, body.modal-open { overflow: hidden; }
     flex-wrap: wrap; gap: 2.5rem;
 }
 .legacy-next h2 {
-    font: 700 clamp(2.6rem, 7.2vw, 8rem)/0.97 var(--font-head); /* −20% letras (27/09/2026) · clamp(3.25rem, 9vw, 10rem) → clamp(2.6rem, 7.2vw, 8rem); antes 800 → 700 (25/09/2026) */
+    /* −20% de letras (27/09/2026) · clamp(3.25rem, 9vw, 10rem) → clamp(2.6rem, 7.2vw, 8rem);
+       antes 800 → 700 (25/09/2026) · −10px (04/10/2026): los tres tramos del clamp
+       bajan 10px, así la reducción es exacta a cualquier ancho (mismo patrón que
+       el menú móvil). Vale para las dos versiones: «YOUR STORY / GOES NEXT.» y
+       «TU HISTORIA / ES LA SIGUIENTE.». */
+    font: 700 clamp(calc(2.6rem - 10px), calc(7.2vw - 10px), calc(8rem - 10px))/0.97 var(--font-head);
     letter-spacing: 0.015em; text-transform: uppercase;
 }
 .legacy-next h2 span { color: var(--violet); }
