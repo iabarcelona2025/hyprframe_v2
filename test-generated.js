@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=89");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=90");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=31");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -617,17 +617,27 @@ assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*position: static;[^}]*
 assert.ok(!/\.node-player__synopsis \{ display: none/.test(mobileBlock),
     "en móvil la sinopsis no se apaga");
 
-/* Web: una única plancha gris cubre titular y sinopsis — el h1 suelta su fondo
-   y su corte dentro del bloque de escritorio, y el ::before de la sinopsis
-   dibuja la pieza con la misma transparencia y el corte diagonal a la derecha;
-   el titular pinta por delante (z-index 4). Solo escritorio: la regla base del
-   h1 no se toca, así que el móvil conserva su plancha de siempre. (03/10/2026) */
+/* 04/10/2026 — Las dos planchas de GENERATED (la del titular en móvil y la
+   única que cubre titular y sinopsis en escritorio) visten como la barra fija
+   del menú: negro translúcido rgba(5,5,5,.65), desenfoque de 14px por detrás y
+   filete inferior de 1px (--line). La forma (clip-path) y la talla (padding,
+   top/bottom/width) no cambian. */
 assert.match(generatedFlat,
-    /@media \(min-width: 561px\) \{ \.node-player > \.node-hero__title \{ z-index: 4; \} \.node-player > \.node-hero__title h1 \{ background: none; clip-path: none; \}/,
-    "web: el h1 suelta su plancha y el titular pinta sobre la nueva");
-assert.match(ruleOf(generatedFlat, ".node-player > .node-hero__title h1"),
-    /background: rgba\(128, 128, 128, \.5\);/,
-    "móvil: la regla base del h1 conserva la plancha gris");
+    /@media \(min-width: 561px\) \{ \.node-player > \.node-hero__title \{ z-index: 4; \} \.node-player > \.node-hero__title h1 \{ background: none; clip-path: none; border-bottom: none; -webkit-backdrop-filter: none; backdrop-filter: none; \}/,
+    "web: el h1 suelta su plancha (con filete y desenfoque) y el titular pinta sobre la nueva");
+const mobilePlate = ruleOf(generatedFlat, ".node-player > .node-hero__title h1");
+assert.match(mobilePlate, /background: rgba\(5, 5, 5, 0\.65\);/,
+    "móvil: la plancha del titular viste el negro translúcido de la barra fija");
+assert.match(mobilePlate, /-webkit-backdrop-filter: blur\(14px\); backdrop-filter: blur\(14px\);/,
+    "móvil: la plancha hereda el desenfoque de 14px de la barra fija");
+assert.match(mobilePlate, /border-bottom: 1px solid var\(--line\);/,
+    "móvil: la plancha lleva el filete inferior de la barra fija");
+assert.ok(!/rgba\(128, 128, 128/.test(generatedFlat),
+    "ninguna plancha conserva el gris viejo");
+assert.match(mobilePlate, /padding: \.55rem 1\.2rem \.55rem clamp\(1rem, 2\.5vw, 2\.25rem\);/,
+    "móvil: la talla de la plancha no se toca");
+assert.match(mobilePlate, /clip-path: polygon\(0 0, 100% 0, calc\(100% - 12px\) 100%, 0 100%\);/,
+    "móvil: la forma de la plancha no se toca");
 /* Una única plancha (03/10/2026 · 2): la banda del titular desapareció y la de
    la sinopsis crece hasta el arranque del título — su top deshace el cálculo
    que separa sinopsis y titular. Ceñida a la columna del texto (100% + 8px),
@@ -636,8 +646,12 @@ assert.match(ruleOf(generatedFlat, ".node-player > .node-hero__title h1"),
 assert.ok(!generatedFlat.includes(".node-player__synopsis::before"),
     "web: la plancha del titular (::before) ya no existe");
 const bandRule = ruleOf(generatedFlat, ".node-player__synopsis::after");
-assert.match(bandRule, /background: rgba\(128, 128, 128, \.5\);/,
-    "web: la plancha conserva la transparencia de la vieja");
+assert.match(bandRule, /background: rgba\(5, 5, 5, 0\.65\);/,
+    "web: la plancha única viste el negro translúcido de la barra fija");
+assert.match(bandRule, /-webkit-backdrop-filter: blur\(14px\); backdrop-filter: blur\(14px\);/,
+    "web: la plancha única hereda el desenfoque de 14px de la barra fija");
+assert.match(bandRule, /border-bottom: 1px solid var\(--line\);/,
+    "web: la plancha única lleva el filete inferior de la barra fija");
 assert.match(bandRule,
     /top: calc\(-1 \* \(1\.8rem \+ 16px \+ 0\.8 \* clamp\(/,
     "web: la plancha sube hasta el arranque del titular y lo integra");
@@ -770,7 +784,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=89/);
+    assert.match(es, /generated\.css\?v=90/);
     assert.match(es, /generated\.js\?v=31/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }

@@ -104,9 +104,17 @@ body.menu-open .menu-overlay a { visibility: visible; }
     display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem;
     background: none; pointer-events: none;
 }
+/* 04/10/2026 — La plancha viste como la barra fija del menú (.site-header
+   scrolled): el mismo negro translúcido rgba(5,5,5,.65), el mismo desenfoque
+   de 14px por detrás y el mismo filete inferior de 1px (--line). Ni la forma
+   ni la talla se tocan: el padding, el clip-path de la esquina de 12px y el
+   cuerpo del titular siguen exactamente igual. */
 .node-player > .node-hero__title h1 {
     padding: .55rem 1.2rem .55rem clamp(1rem, 2.5vw, 2.25rem);
-    background: rgba(128, 128, 128, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    background: rgba(5, 5, 5, 0.65);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 /* Web: la sinopsis vive en la caja, zona izquierda, debajo del título.
    Misma tipografía que la sinopsis de THE STORY (Space Grotesk 300, 1.45),
@@ -139,7 +147,10 @@ body.menu-open .menu-overlay a { visibility: visible; }
    móvil no entra: conserva su plancha bajo el título. */
 @media (min-width: 561px) {
     .node-player > .node-hero__title { z-index: 4; }
-    .node-player > .node-hero__title h1 { background: none; clip-path: none; }
+    /* 04/10/2026 — En escritorio la plancha es la del ::after de la sinopsis,
+       así que el h1 suelta también el filete y el desenfoque nuevos (si no,
+       quedarían una línea y un blur sueltos bajo el titular). */
+    .node-player > .node-hero__title h1 { background: none; clip-path: none; border-bottom: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
     /* 03/10/2026 · 2 — La plancha del titular desaparece: queda una única
        pieza, la de la sinopsis, ampliada hacia arriba hasta el arranque del
        titular (su top deshace el cálculo que separa la sinopsis del título,
@@ -170,7 +181,9 @@ body.menu-open .menu-overlay a { visibility: visible; }
         top: calc(-1 * (1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px))));
         bottom: -0.9rem;
         width: calc(100% + 88px);
-        background: rgba(128, 128, 128, .5);
+        background: rgba(5, 5, 5, 0.65);
+        -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--line);
         transform-origin: bottom;
     }
 }
