@@ -52,27 +52,37 @@ try {
             assert.ok(target.getElementById(decodeURIComponent(resolved.hash.slice(1))), `missing anchor ${href}`);
         }
     }
-    assert.equal(doc.querySelectorAll(".film-card").length, 5);
+    assert.equal(doc.querySelectorAll(".film-card").length, 6);
     assert.ok([...doc.querySelectorAll(".film-card")].every((link) =>
         link.href === `https://vimeo.com/${link.dataset.vimeo}` && link.querySelector("img[data-fallback-src]")));
 
     /* ── Capturado: catálogo sin «/ FILM» ni «/ MOTION» (04/10/2026) ──
-       Las etiquetas se quedan con el género solo; además, la tarjeta de
-       DÁCIL / GROC sale del catálogo y «THE SUNDAY» pasa a ser
-       INSERT / SEASON 02, como sus hermanas de temporada. */
+       Las etiquetas se quedan con el género solo y «THE SUNDAY» pasa a ser
+       INSERT / SEASON 02, como sus hermanas de temporada. DÁCIL / GROC se
+       retiró por error y se ha recuperado (04/10/2026): vuelve como sexto
+       vídeo, numerado 06 y con su género («MUSIC VIDEO» / «VIDEOCLIP»), ya
+       sin «/ FILM». */
     const esLegacy = fs.readFileSync(path.join(root, "es", "legacy.html"), "utf8");
+    const genus = { "legacy.html": "MUSIC VIDEO", "es/legacy.html": "VIDEOCLIP" };
     for (const [name, src] of [["legacy.html", html], ["es/legacy.html", esLegacy]]) {
-        const types = [...new JSDOM(src).window.document.querySelectorAll(".film-card__type")]
-            .map((el) => el.textContent.trim());
-        assert.equal(types.length, 5, `${name}: cinco vídeos`);
+        const cards = [...new JSDOM(src).window.document.querySelectorAll(".film-card")];
+        const types = cards.map((card) => card.querySelector(".film-card__type").textContent.trim());
+        assert.equal(types.length, 6, `${name}: seis vídeos`);
         assert.ok(types.every((type) => !/\s\/\s/.test(type)),
             `${name}: fuera «/ FILM» y «/ MOTION» — ${types.join(", ")}`);
-        assert.ok(!/21087707|DÁCIL|GROC/.test(src), `${name}: la tarjeta DÁCIL / GROC ya no está`);
         assert.ok(!/THE SUNDAY|EL DOMINGO/.test(src), `${name}: ya no queda «THE SUNDAY»`);
+        const dacil = cards.find((card) => card.dataset.vimeo === "21087707");
+        assert.ok(dacil, `${name}: DÁCIL / GROC vuelve al catálogo`);
+        assert.equal(dacil.dataset.title, "DÁCIL / GROC");
+        assert.equal(dacil.querySelector(".film-card__number").textContent, "06");
+        assert.equal(dacil.querySelector(".film-card__fallback").textContent, "HF / 06");
+        assert.equal(dacil.querySelector(".film-card__type").textContent, genus[name]);
+        assert.match(dacil.querySelector("img").getAttribute("src"), /assets\/images\/groc2\.jpg$/);
     }
     assert.equal(doc.querySelectorAll(".film-card__title")[4].textContent, "INSERT / SEASON 02");
     assert.equal(doc.querySelectorAll(".film-card")[4].dataset.title, "INSERT / SEASON 02");
     assert.equal(doc.querySelectorAll(".film-card")[4].dataset.synopsis, "INSERT 2.0: The Sunday.");
+    assert.equal(doc.querySelectorAll(".film-card__title")[5].textContent, "DÁCIL / GROC");
 
     // Play triangles are drawn in CSS (no "▶" glyph) and centred on their circle, which
     // keeps its centre on hover (`translate`, not `transform`, so `scale` can't drift it).
@@ -99,7 +109,7 @@ try {
     assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(2\.6rem, 7\.2vw, 8rem\)/,
         "the YOUR STORY letters are 20% smaller");
     const plays = [...doc.querySelectorAll(".film-card__play")];
-    assert.equal(plays.length, 5);
+    assert.equal(plays.length, 6);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
     const triangle = legacyCss.match(/\.film-card__play::before \{[^}]*clip-path: polygon\(([^;]+)\);/)[1].split(",")
         .map((point) => point.match(/calc\(50% [+-] [\d.]+em\)|50%/g).map((v) => (v === "50%" ? 0 : parseFloat(v.slice(9).replace(" ", "")))));
@@ -297,7 +307,7 @@ try {
     assert.ok(!modal.classList.contains("is-closing"));
     assert.equal(doc.activeElement, firstCard);
     assert.deepEqual(errors, [], "no runtime errors");
-    console.log("PASS  Captured: root navigation, five films, video modal, keyboard and image fallback");
+    console.log("PASS  Captured: root navigation, six films, video modal, keyboard and image fallback");
 } finally {
     dom.window.close();
 }
