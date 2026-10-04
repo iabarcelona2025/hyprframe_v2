@@ -48,9 +48,11 @@ test('3D entrance is scoped to desktop and remains visible without JS or with re
     assert.match(css, /\.work\.work-3d-ready \.work-list\s*\{[^}]*perspective: 1100px/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\s*\{[^}]*opacity: 0;[^}]*translate3d\(clamp\(-420px, -30vw, -160px\), 0, -240px\) rotateY\(-62deg\)/);
     assert.match(css, /\.work\.work-3d-ready \.work-row\.work-row-visible\s*\{[^}]*animation: work-row-enter/);
+    assert.match(css, /@keyframes work-row-enter\s*\{[\s\S]*?from\s*\{[^}]*filter: blur\(4px\)/);
+    assert.match(css, /@keyframes work-row-enter\s*\{[\s\S]*?55%\s*\{ filter: blur\(1px\); \}[\s\S]*?to\s*\{[^}]*filter: blur\(0\)/);
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=203/);
+        assert.match(html, /styles\.css\?v=204/);
         assert.match(html, /script\.js\?v=55/);
     }
 });
