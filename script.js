@@ -897,10 +897,10 @@
                 // El reloj se desplaza con el hueco (`t0 += gap`), así que
                 // `elapsed` no avanza: al volver se retoma donde estaba, sin
                 // soltar de golpe los caracteres acumulados ni saltarse un ciclo
-                // de contadores. Se usa `is-scrolling` porque ya es la señal
-                // única de «hay desplazamiento» del sitio (la pone y la quita
-                // smooth-scroll.js); en táctil, con «reducir movimiento» o con
-                // ?smooth=0 nunca se marca y todo queda como estaba.
+                // de contadores. Se usa `is-scrolling` como señal única de
+                // «hay desplazamiento»: smooth-scroll.js la marca tanto durante
+                // la inercia de escritorio como ante el scroll nativo táctil.
+                // Así el móvil conserva su scroll nativo y solo pausa el terminal.
                 if (document.documentElement.classList.contains("is-scrolling")) {
                     t0 += gap;
                     return;

@@ -13,9 +13,11 @@
    - Teclado y anclas del documento usan la misma inercia.
    - Cuando está activo, el CSS deja de animar los saltos de ancla y el vídeo del
      hero pausa su «respiración» mientras se desplaza.
+   - En táctil se conserva el scroll nativo, pero se marca su actividad para que
+     el terminal del hero pueda pausar temporalmente sus escrituras.
    - Todas las páginas públicas (landing, 20 fichas, legacy y 404) lo cargan, y
-     todas piden la misma versión de styles.css.
-   (30/09/2026) */
+     todas piden la misma versión de styles.css y smooth-scroll.js.
+   (05/10/2026) */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -306,6 +308,14 @@ const smoothEnabled = (page) => page.doc.documentElement.classList.contains("hf-
     check("styles.css se pide con una única versión en todo el sitio",
         versiones.size === 1, [...versiones].join(", "));
 
+    const versionesSmooth = new Set();
+    for (const f of publicas) {
+        const m = fs.readFileSync(path.join(root, f), "utf8").match(/src="\/?smooth-scroll\.js\?v=(\d+)"/);
+        if (m) versionesSmooth.add(m[1]);
+    }
+    check("smooth-scroll.js se pide con una única versión en todo el sitio",
+        versionesSmooth.size === 1, [...versionesSmooth].join(", "));
+
     // El árbol español comparte los assets con el inglés por enlaces simbólicos
     // (es/styles.css -> ../styles.css); sólo los .html son copias, porque son los
     // que se traducen. Un archivo copiado en vez de enlazado se queda atrás en
@@ -330,16 +340,25 @@ const smoothEnabled = (page) => page.doc.documentElement.classList.contains("hf-
         !/smoothRequested/.test(fs.readFileSync(path.join(root, "script.js"), "utf8")));
 }
 
-/* ── 10. Al asentarse, el vídeo del hero puede volver a respirar ─────────── */
+/* ── 10. El indicador de actividad acompaña tanto el scroll suave como el nativo ─ */
 (async () => {
     const page = boot();
     page.wheel(1200);
     page.frames(140);                    // la inercia ya terminó (reloj virtual)
-    check("mientras dura la inercia sigue marcado html.is-scrolling",
+    check("escritorio: mientras dura la inercia sigue marcado html.is-scrolling",
         page.doc.documentElement.classList.contains("is-scrolling"));
     await new Promise((r) => setTimeout(r, 300));   // el reposo usa un temporizador real
-    check("al asentarse retira html.is-scrolling (el vídeo vuelve a respirar)",
+    check("escritorio: al asentarse retira html.is-scrolling",
         !page.doc.documentElement.classList.contains("is-scrolling"));
+
+    const mobile = boot({ touch: true });
+    check("móvil: conserva el scroll nativo", !smoothEnabled(mobile));
+    mobile.setExternalScroll(500);
+    check("móvil: el scroll nativo activa html.is-scrolling",
+        mobile.doc.documentElement.classList.contains("is-scrolling"));
+    await new Promise((r) => setTimeout(r, 300));
+    check("móvil: tras 180 ms sin scroll se retira html.is-scrolling",
+        !mobile.doc.documentElement.classList.contains("is-scrolling"));
 
     console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAILURE(S)`);
     process.exit(failures === 0 ? 0 : 1);
