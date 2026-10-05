@@ -2,7 +2,6 @@
    The brand system, header and fullscreen menu come from styles.css. */
 
 .main-nav [aria-current="page"] { color: var(--fg); }
-.main-nav [aria-current="page"]::after { transform: scaleX(1); transform-origin: left; }
 .menu-links [aria-current="page"] { color: var(--violet); }
 
 /* The hero title is deleted on screen; keep it for assistive tech and SEO. */

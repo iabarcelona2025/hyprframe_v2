@@ -227,24 +227,10 @@ html.hf-skip-intro .preloader { display: none; }
     color: var(--muted); position: relative; padding: 0.25rem 0;
     transition: color 0.3s;
 }
-.main-nav a::after {
-    content: ""; position: absolute; left: 0; bottom: 0;
-    width: 100%; height: 1px; background: var(--violet);
-    transform: scaleX(0); transform-origin: right;
-    transition: transform 0.45s var(--ease-out);
-}
+/* En escritorio, el hover solo cambia el color del texto; no dibuja subrayado. */
 .main-nav a:hover { color: var(--fg); }
-.main-nav a:hover::after { transform: scaleX(1); transform-origin: left; }
-/* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
-   lo único que lo distingue es el color de la línea al pasar por encima. */
-.main-nav .nav-cta::after { background: var(--lime); }
-/* Apartado activo (scroll-spy de script.js §2b, solo escritorio): el enlace de
-   la sección en la que estás se queda encendido igual que en el rollover —texto
-   en blanco y la línea inferior desplegada—, con el color de línea de cada
-   enlace (violeta; lima en Contact, .nav-cta). Es el mismo tratamiento que
-   legacy.css le da a «Captured» en legacy.html con aria-current="page". */
+/* El scroll-spy mantiene el apartado actual en blanco, sin una línea inferior. */
 .main-nav [aria-current="location"] { color: var(--fg); }
-.main-nav [aria-current="location"]::after { transform: scaleX(1); transform-origin: left; }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
 

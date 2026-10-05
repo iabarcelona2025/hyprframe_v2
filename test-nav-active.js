@@ -114,13 +114,13 @@ function boot({ pagina = "index.html", desktop = true } = {}) {
 
 const GEN = "#work", ABOUT = "#about", SERVICES = "#services", CLB = "#clb", CONTACT = "#contact";
 
-/* ── 1. CSS: el encendido reutiliza el gesto del rollover ─────────────────── */
+/* ── 1. CSS: el apartado activo se distingue solo por el color del texto ─── */
 {
-    check("CSS: el apartado activo pasa a blanco y despliega su línea",
+    check("CSS: el apartado activo pasa a blanco, sin subrayado",
         /\.main-nav \[aria-current="location"\] \{ color: var\(--fg\); \}/.test(css) &&
-        /\.main-nav \[aria-current="location"\]::after \{ transform: scaleX\(1\); transform-origin: left; \}/.test(css));
-    check("CSS: la línea de Contact sigue siendo lima",
-        /\.main-nav \.nav-cta::after \{ background: var\(--lime\); \}/.test(css));
+        !/\.main-nav[^{}]*::after/.test(css));
+    check("CSS: los rollovers del menú superior no dibujan líneas de color",
+        !/\.main-nav a::after|\.main-nav a:hover::after|\.main-nav \.nav-cta::after/.test(css));
     check("la franja de avance ya no existe en las landings, estilos ni script",
         !HTML.includes("scroll-progress") && !HTML_ES.includes("scroll-progress") &&
         !css.includes("scroll-progress") && !js.includes("scrollProgress"));
