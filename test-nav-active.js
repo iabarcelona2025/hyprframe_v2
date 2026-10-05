@@ -114,19 +114,27 @@ function boot({ pagina = "index.html", desktop = true } = {}) {
 
 const GEN = "#work", ABOUT = "#about", SERVICES = "#services", CLB = "#clb", CONTACT = "#contact";
 
-/* ── 1. CSS: el encendido reutiliza el gesto del rollover ─────────────────── */
+/* ── 1. CSS: el apartado activo se distingue solo por el color del texto ─── */
 {
-    check("CSS: el apartado activo pasa a blanco y despliega su línea",
+    check("CSS: el apartado activo pasa a blanco, sin subrayado",
         /\.main-nav \[aria-current="location"\] \{ color: var\(--fg\); \}/.test(css) &&
-        /\.main-nav \[aria-current="location"\]::after \{ transform: scaleX\(1\); transform-origin: left; \}/.test(css));
-    check("CSS: la línea de Contact sigue siendo lima",
-        /\.main-nav \.nav-cta::after \{ background: var\(--lime\); \}/.test(css));
+        !/\.main-nav[^{}]*::after/.test(css));
+    check("CSS: los rollovers del menú superior no dibujan líneas de color",
+        !/\.main-nav a::after|\.main-nav a:hover::after|\.main-nav \.nav-cta::after/.test(css));
+    check("CSS: el rollover amplía la palabra aproximadamente 1 px sin desplazar los enlaces vecinos",
+        /\.main-nav a\s*\{[^}]*transform-origin:\s*center;[^}]*transition:[^;]*transform/.test(css) &&
+        /\.main-nav a:hover\s*\{ color: var\(--fg\); transform: scale\(1\.08\); \}/.test(css));
+    check("la franja de avance ya no existe en las landings, estilos ni script",
+        !HTML.includes("scroll-progress") && !HTML_ES.includes("scroll-progress") &&
+        !css.includes("scroll-progress") && !js.includes("scrollProgress"));
+    check("el selector de idioma no muestra el icono de globo en escritorio ni móvil",
+        !/\.header-meta > \.lang-switch::before/.test(css) &&
+        !/\.menu-lang \.lang-switch::before/.test(css));
 }
 
 /* ── 2. El enlace se enciende cuando su sección cruza la línea ────────────── */
 (async () => {
     const page = boot();
-
     check("al principio (hero) no hay nada encendido", page.activeHref() === null);
 
     // Generado empieza en 2000: la línea (scroll + 280) lo alcanza en 1720.

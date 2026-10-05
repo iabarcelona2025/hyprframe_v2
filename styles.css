@@ -187,20 +187,6 @@ html.hf-skip-intro .preloader { display: none; }
     to { transform: rotate(-360deg); }
 }
 
-/* ── Scroll progress ─────────────────────────────────────── */
-/* Rendimiento (30/09/2026): la barra se movía con `width: %`, que en cada frame
-   de scroll dispara recálculo de estilo + layout + repintado de la línea (y
-   obligaba a leer el alto del documento en el mismo frame). Ahora el ancho es
-   fijo y el avance es un `scaleX()`: transformación compuesta, sin layout y sin
-   pintado. script.js escribe la misma transformación. */
-.scroll-progress {
-    position: fixed; top: 0; left: 0; height: 3px; width: 100%;
-    background: linear-gradient(90deg, var(--violet), var(--lime));
-    transform: scaleX(0); transform-origin: 0 50%;
-    will-change: transform;
-    z-index: 980;
-}
-
 /* ── Header ──────────────────────────────────────────────── */
 /* Rendimiento (30/09/2026): la cabecera es fija y lleva backdrop-filter, así que
    el navegador remuestrea el fondo que tiene detrás. Dos ajustes:
@@ -239,26 +225,14 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-mono); font-size: calc(0.72rem + 1px); /* 1px más grande */
     letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--muted); position: relative; padding: 0.25rem 0;
-    transition: color 0.3s;
+    transform-origin: center;
+    transition: color 0.3s, transform 0.3s var(--ease-out);
 }
-.main-nav a::after {
-    content: ""; position: absolute; left: 0; bottom: 0;
-    width: 100%; height: 1px; background: var(--violet);
-    transform: scaleX(0); transform-origin: right;
-    transition: transform 0.45s var(--ease-out);
-}
-.main-nav a:hover { color: var(--fg); }
-.main-nav a:hover::after { transform: scaleX(1); transform-origin: left; }
-/* "Contact" comparte color y rollover con el resto del nav (gris → blanco);
-   lo único que lo distingue es el color de la línea al pasar por encima. */
-.main-nav .nav-cta::after { background: var(--lime); }
-/* Apartado activo (scroll-spy de script.js §2b, solo escritorio): el enlace de
-   la sección en la que estás se queda encendido igual que en el rollover —texto
-   en blanco y la línea inferior desplegada—, con el color de línea de cada
-   enlace (violeta; lima en Contact, .nav-cta). Es el mismo tratamiento que
-   legacy.css le da a «Captured» en legacy.html con aria-current="page". */
+/* En escritorio, el hover blanquea y amplía visualmente la palabra aproximadamente 1 px
+   (1.08× sobre el tamaño base), sin desplazar los enlaces vecinos ni subrayar. */
+.main-nav a:hover { color: var(--fg); transform: scale(1.08); }
+/* El scroll-spy mantiene el apartado actual en blanco, sin una línea inferior. */
 .main-nav [aria-current="location"] { color: var(--fg); }
-.main-nav [aria-current="location"]::after { transform: scaleX(1); transform-origin: left; }
 
 .header-meta { display: flex; align-items: center; gap: 1.5rem; }
 
@@ -272,19 +246,11 @@ html.hf-skip-intro .preloader { display: none; }
 .lang-switch a:hover { color: var(--fg); }
 .lang-switch .active { color: var(--fg); }
 
-/* Selector de idioma de la cabecera: separado del menú con un filete vertical
-   y un pequeño icono de globo (sin banderas), en tono atenuado. */
+/* Selector de idioma separado del menú con un filete vertical. */
 .header-meta > .lang-switch {
     padding-left: 1.5rem;
     border-left: 1px solid var(--line);
     font-size: calc(0.72rem - 3px); /* 2px más pequeño que el tamaño actual */
-}
-.header-meta > .lang-switch::before,
-.menu-lang .lang-switch::before {
-    content: ""; width: calc(0.95rem - 1px); height: calc(0.95rem - 1px); margin-right: 0.2rem;
-    background: currentColor; opacity: 0.7;
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z'/%3E%3C/svg%3E") center / contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .burger {
@@ -365,11 +331,9 @@ body.menu-open .menu-links a:nth-child(6) { transition-delay: 0.5s; }
     opacity: 0; transform: translateY(40px);
     transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
-.menu-lang .lang-switch { font-size: 0.95rem; gap: 0.6rem; }
-/* Mismo tratamiento que en la cabecera (globo + filete separador), adaptado
-   al menú vertical: el filete va arriba, separando el idioma de los enlaces. */
+.menu-lang .lang-switch { font-size: 0.95rem; }
+/* En menú vertical, el filete superior separa el selector de idioma de los enlaces. */
 .menu-lang { padding-top: 1.5rem; border-top: 1px solid var(--line); max-width: 16rem; }
-.menu-lang .lang-switch::before { width: 1.1rem; height: 1.1rem; margin-right: 0.15rem; }
 body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-delay: 0.57s; }
 
 /* ── HERO ────────────────────────────────────────────────── */
