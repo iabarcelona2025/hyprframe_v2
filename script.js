@@ -1145,9 +1145,15 @@
         // guardado arriba no cambia: la llegada al proyecto sigue igual.
         const padding = getComputedStyle(row);
         row.classList.add("is-departing");
-        row.style.paddingTop = padding.paddingTop;
-        row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
-        requestAnimationFrame(() => layer.classList.add("is-opening"));
+        // En el recorrido horizontal de escritorio (7b) el panel mide el alto de
+        // la ventana y no tiene padding vertical que crecer: la fila no puede
+        // acompañar al clon, así que la salida se queda en el fotograma que
+        // aparece —sin escalar— y nada desborda por debajo del panel.
+        if (!(workSection && workSection.classList.contains("hf-work-h"))) {
+            row.style.paddingTop = padding.paddingTop;
+            row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
+            requestAnimationFrame(() => layer.classList.add("is-opening"));
+        }
         setTimeout(() => { location.href = row.href; }, 440);
     }));
 
@@ -1214,6 +1220,151 @@
 
         // preload all hover images so swaps are instant
         rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
+    }
+
+    /* ── 7b. Work: recorrido horizontal del listado en escritorio ─────────────
+       En pantallas de 1025px o más la sección de proyectos se recorre en
+       horizontal: la sección se queda fija (sticky) mientras el scroll vertical
+       avanza por los 10 proyectos hacia la derecha y, al llegar al último, se
+       libera para que el scroll siga normal hacia About.
+
+       El desplazamiento del carril es 1:1 con el scroll del documento (no hay
+       motor de scroll propio), así que la inercia de smooth-scroll.js, el scroll
+       nativo, las anclas y el teclado siguen funcionando igual; este módulo solo
+       traduce posición de scroll a translateX y enciende el raíl.
+
+       La clase .hf-work-h (la que activa el diseño del carril en styles.css) se
+       pone solo cuando el recorrido se puede sostener: escritorio, sin «reducir
+       movimiento» y con maqueta medida. En móvil/tablet, sin JavaScript o con
+       esa preferencia, el listado se queda como estaba, en vertical. El alto de
+       la sección es «una pantalla + el recorrido» (--work-run), así que el punto
+       en el que la sección se suelta coincide exactamente con el proyecto 10 a
+       la vista. (05/10/2026) */
+    const workView = workSection && workSection.querySelector(".work-view");
+    const workList = workSection && workSection.querySelector(".work-list");
+    const workTrack = document.getElementById("workTrack");
+    const workRailTicks = document.getElementById("workRailTicks");
+    const workRailNow = document.getElementById("workRailNow");
+
+    if (workView && workList && workTrack && workRailTicks && workRailNow && rows.length > 1) {
+        const desktop = window.matchMedia("(min-width: 1025px)");
+        // Una muesca por proyecto, en el mismo orden que el listado.
+        const ticks = rows.map(() => {
+            const tick = document.createElement("i");
+            tick.className = "work-rail-tick";
+            workRailTicks.appendChild(tick);
+            return tick;
+        });
+        let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
+        let step = 0;         // recorrido por proyecto (px)
+        let windowW = 0;      // ancho de la ventana del carril (px)
+        let range = 0;        // px de scroll vertical que dura la sección fija
+        let start = 0;        // posición de la sección dentro del documento
+        let lit = -1;         // último proyecto encendido en el raíl
+        let paintedX = null;  // último translate escrito (para no repetirlo)
+        let hooked = false;   // la sección está en modo carril y medida
+        let queued = 0;       // rAF pendiente
+
+        function paint() {
+            queued = 0;
+            if (!hooked) return;
+            let progress = range > 0 ? (scrollY - start) / range : 0;
+            progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+            const travelled = progress * run;
+            const x = -travelled;
+            // Fuera del recorrido el valor no cambia: no se reescribe el estilo
+            // en cada frame de scroll del resto de la página.
+            if (x !== paintedX) {
+                paintedX = x;
+                workTrack.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
+            }
+            // Proyecto «en curso»: el que tiene el centro más cerca del centro de
+            // la ventana. Con el último proyecto ya no hay recorrido para dejarlo
+            // alineado a la izquierda (la lista se suelta justo entonces), y esta
+            // cuenta lo enciende igual: el raíl llega a 10 al final del recorrido.
+            const now = Math.min(rows.length - 1, Math.max(0,
+                Math.round((travelled + windowW / 2) / step - 0.5)));
+            if (now !== lit) {
+                if (ticks[lit]) ticks[lit].classList.remove("is-on");
+                ticks[now].classList.add("is-on");
+                workRailNow.textContent = String(now + 1).padStart(2, "0");
+                lit = now;
+            }
+        }
+
+        function requestPaint() {
+            if (!hooked || queued) return;
+            queued = requestAnimationFrame(paint);
+        }
+
+        // Sin carril: se retira todo lo que puso este módulo y el listado vuelve
+        // a ser la lista vertical (es idempotente y se puede llamar siempre).
+        function unhook() {
+            hooked = false;
+            if (queued) { cancelAnimationFrame(queued); queued = 0; }
+            workSection.classList.remove("hf-work-h");
+            workSection.style.removeProperty("--work-run");
+            workTrack.style.transform = "";
+            paintedX = null;
+            if (ticks[lit]) ticks[lit].classList.remove("is-on");
+            lit = -1;
+            workRailNow.textContent = "01";
+        }
+
+        function measure() {
+            if (!desktop.matches || reduced) { unhook(); return; }
+            // Se mide con el diseño del carril ya puesto: anchos y alturas son
+            // los de la maqueta horizontal, no los de la lista vertical.
+            workSection.classList.add("hf-work-h");
+            const listWidth = workList.clientWidth;
+            const last = rows[rows.length - 1];
+            run = Math.max(0, Math.round(last.offsetLeft + last.offsetWidth - listWidth));
+            step = Math.max(0, rows[1].offsetLeft - rows[0].offsetLeft);
+            // Sin maqueta (jsdom, pestaña oculta) o si el carril ya cabe entero
+            // en la ventana no hay recorrido que hacer: se deja en vertical.
+            if (listWidth <= 0 || run < 1 || step < 1) { unhook(); return; }
+            windowW = listWidth;
+            workSection.style.setProperty("--work-run", run + "px");
+            start = workSection.getBoundingClientRect().top + scrollY;
+            // El recorrido vertical que dura la sección pegado es exactamente el
+            // trozo de sección que sobresale de la pantalla pegada (una pantalla
+            // + recorrido − una pantalla = recorrido), así que el carril y el
+            // scroll van 1:1 y la sección se suelta con el proyecto 10 a la vista
+            // aunque el alto de ventana real no coincida con el de la maqueta
+            // (barras del navegador, zoom…).
+            range = Math.max(1, workSection.offsetHeight - workView.offsetHeight);
+            // La cascada de entrada de las filas (sección 4) es de la lista
+            // vertical, donde se apilan: aquí los paneles viajan en horizontal y
+            // aparecerían a media animación al llegar con scroll rápido. Se dan
+            // por visibles de una vez —quedan colocados cuando el carril llega a
+            // la pantalla— y ya no se retira la clase: quitarla con la cascada ya
+            // consumida dejaría las filas ocultas para siempre.
+            rows.forEach((row) => row.classList.add("work-row-visible"));
+            hooked = true;
+            requestPaint();
+        }
+
+        addEventListener("scroll", requestPaint, { passive: true });
+        addEventListener("resize", measure);
+        addEventListener("load", measure);
+        if (window.ResizeObserver) new ResizeObserver(measure).observe(document.body);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure, measure);
+
+        // Al recorrer el listado con el teclado, el proyecto que recibe el foco
+        // tiene que quedar a la vista: se lleva el scroll al tramo que lo enseña.
+        // Solo con el teclado: al hacer clic en una fila el foco no debe mover la
+        // página (y además la fila ya se lleva a la ficha del proyecto).
+        let keyboardNav = false;
+        addEventListener("keydown", () => { keyboardNav = true; }, { passive: true, capture: true });
+        addEventListener("pointerdown", () => { keyboardNav = false; }, { passive: true, capture: true });
+        rows.forEach((row, index) => {
+            row.addEventListener("focus", () => {
+                if (!hooked || !keyboardNav) return;
+                scrollTo(0, Math.round(start + Math.min(range, (index * step * range) / run)));
+            });
+        });
+
+        measure();
     }
 
     /* ── 8. Stats count-up ────────────────────────────────── */

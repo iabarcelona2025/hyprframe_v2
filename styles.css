@@ -942,6 +942,15 @@ section { position: relative; }
         perspective: 1100px;
         perspective-origin: 15% 50%;
     }
+    /* El carril envuelve las filas (hacen falta un padre que se pueda desplazar
+       en horizontal sin pelearse con la entrada 3D de cada fila), así que la
+       perspectiva tiene que estar también aquí: si no, las filas dejan de ser
+       hijas directas del listado y la entrada se vería plana (aplanada por el
+       padre). Mismo punto de fuga que el listado. */
+    .work.work-3d-ready .work-track {
+        perspective: 1100px;
+        perspective-origin: 15% 50%;
+    }
     .work.work-3d-ready .work-row {
         opacity: 0;
         transform-origin: left center;
@@ -1094,6 +1103,144 @@ section { position: relative; }
 @media (hover: none), (max-width: 900px) {
     .work-follower { display: none; }
     .work-row { grid-template-columns: 3.5rem 1fr auto; }
+}
+
+/* ── WORK · RECORRIDO HORIZONTAL EN ESCRITORIO ───────────────
+   En pantallas de 1025px o más el listado de los 10 proyectos deja de ser una
+   lista vertical: la sección se queda fija en pantalla (sticky) mientras el
+   scroll vertical avanza por los proyectos hacia la derecha, uno tras otro, y
+   al llegar al último se libera y el scroll sigue normal hacia About.
+
+   Cómo se sostiene:
+   · La sección mide una pantalla más el recorrido del carril (--work-run, en
+     px, lo mide script.js). Como el recorrido y el alto extra son el mismo
+     número, el borde por el que la sección se suelta cae justo cuando el
+     proyecto 10 queda a la vista: no sobra hueco ni falta recorrido.
+   · .work-view es lo que se queda pegado (top: 0) y .work-list, con el carril
+     dentro, es la ventana que lo recorta. El desplazamiento horizontal es un
+     translate del carril, 1:1 con el scroll del documento: no hay motor de
+     scroll propio, así que la inercia de smooth-scroll.js, el scroll nativo y
+     las anclas siguen funcionando igual.
+   · Cada proyecto es un panel de casi dos tercios de ventana con el siguiente
+     asomando por la derecha: se ve que hay más y hacia dónde sigue.
+   · El raíl inferior (10 muescas + contador) dice en qué punto del recorrido
+     se está; script.js enciende la muesca del proyecto en curso.
+
+   Dónde NO se aplica (nada de esto existe entonces y todo queda como estaba):
+   por debajo de 1025px, con «reducir movimiento» activo, sin JavaScript —la
+   clase .hf-work-h la pone script.js— o en un navegador sin overflow: clip
+   (@supports de abajo: sin él, el overflow-x de html/body/main sería un
+   contenedor de scroll y el sticky no pegaría).
+
+   El hover de las filas se conserva tal cual: el degradado lila, el fotograma
+   con sus bandas inclinadas (::after) y el desplazamiento de la fila. Solo se
+   neutraliza el crecimiento vertical del padding, que en la lista servía para
+   abrir la caja y aquí desbordaría el panel. (05/10/2026) */
+.work-view { display: block; }
+.work-track { display: block; }
+.work-rail { display: none; }
+
+@media (min-width: 1025px) {
+    @supports (overflow-x: clip) {
+        .work.hf-work-h {
+            padding-bottom: 0;
+            height: calc(100svh + var(--work-run, 0px));
+        }
+        .work.hf-work-h .work-view {
+            position: sticky; top: 0;
+            height: 100svh;
+            display: flex; flex-direction: column;
+            padding-top: var(--header-h);
+        }
+        /* El título de sección sigue presidiendo la pantalla mientras pasan los
+           proyectos: solo se recorta su aire vertical para dejar sitio al carril. */
+        .work.hf-work-h .section-head {
+            flex: 0 0 auto;
+            padding: 0 var(--pad) clamp(0.9rem, 1.8vw, 1.5rem);
+        }
+        .work.hf-work-h .work-list {
+            position: relative;
+            flex: 1 1 auto; min-height: 0;
+            overflow: hidden;
+            overflow: clip;   /* sin contenedor de scroll: el teclado no puede desplazarlo */
+        }
+        .work.hf-work-h .work-track {
+            display: flex;
+            height: 100%;
+            width: max-content;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
+        .work.hf-work-h .work-row {
+            /* Panel de proyecto: número arriba a la izquierda, titular abajo a la
+               izquierda y flecha abajo a la derecha. El borde izquierdo separa
+               un panel del siguiente. */
+            --work-panel-top: clamp(1.25rem, 2.2vw, 2.2rem);
+            --work-panel-bottom: clamp(2.8rem, 4.4vw, 4rem);
+            flex: 0 0 auto;
+            width: clamp(480px, 56vw, 1120px);
+            height: 100%;
+            grid-template-columns: auto 1fr auto;
+            grid-template-rows: auto 1fr auto;
+            align-items: end;
+            padding: var(--work-panel-top) var(--pad) var(--work-panel-bottom);
+            border-bottom: 0;
+            border-left: 1px solid var(--line);
+        }
+        .work.hf-work-h .work-num {
+            grid-area: 1 / 1 / 2 / 2;
+            align-self: start; justify-self: start;
+            font-size: clamp(2.4rem, 5.2vw, 4.6rem);
+            line-height: 0.9; letter-spacing: 0.04em;
+            color: rgba(239, 238, 233, 0.15);
+        }
+        .work.hf-work-h .work-row:hover .work-num,
+        .work.hf-work-h .work-row:focus-visible .work-num { color: var(--violet); }
+        .work.hf-work-h .work-title {
+            grid-area: 3 / 1 / 4 / 3;
+            align-self: end;
+            max-width: 22ch;
+            font-size: clamp(1.6rem, 3.4vw, 3.2rem);
+            line-height: 1.02;
+        }
+        .work.hf-work-h .work-go {
+            grid-area: 3 / 3 / 4 / 4;
+            align-self: end; justify-self: end;
+            font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+        }
+        /* El panel no crece en vertical al pasar el cursor (la lista sí lo hacía
+           para abrir la caja): el desplazamiento lateral se mantiene y la foto,
+           el degradado y las bandas del hover siguen intactos. */
+        .work.hf-work-h .work-row:hover,
+        .work.hf-work-h .work-row:focus-visible {
+            padding-block: var(--work-panel-top) var(--work-panel-bottom);
+            padding-left: calc(var(--pad) + 1.4rem);
+            transition-delay: 0s, 0s, 0s;
+        }
+        .work.hf-work-h .work-rail {
+            position: absolute;
+            left: var(--pad); right: var(--pad);
+            bottom: clamp(0.8rem, 1.4vw, 1.3rem);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1.5rem;
+            font-family: var(--font-mono); font-size: 0.68rem;
+            letter-spacing: 0.18em; text-transform: uppercase;
+            color: var(--muted);
+            pointer-events: none; z-index: 2;
+        }
+        .work.hf-work-h .work-rail-ticks { display: flex; gap: clamp(4px, 0.4vw, 7px); }
+        .work.hf-work-h .work-rail-tick {
+            display: block;
+            width: clamp(12px, 1.4vw, 22px); height: 2px;
+            background: rgba(255, 255, 255, 0.16);
+            transition: background 0.35s, transform 0.35s var(--ease-out);
+        }
+        .work.hf-work-h .work-rail-tick.is-on {
+            background: var(--violet);
+            transform: scaleY(2);
+        }
+        .work.hf-work-h .work-rail-count b { color: var(--fg); font-weight: 400; }
+    }
 }
 
 /* ── STRIP MARQUEE ───────────────────────────────────────── */
