@@ -1247,8 +1247,12 @@
        movimiento» y con maqueta medida. En móvil/tablet, sin JavaScript o con
        esa preferencia, el listado se queda como estaba, en vertical. El alto de
        la sección es «una pantalla + el recorrido» (--work-run), así que el punto
-       en el que la sección se suelta coincide exactamente con el proyecto 10 a
-       la vista. (05/10/2026) */
+       en el que la sección se suelta coincide con el final del recorrido.
+
+       Dos tiempos pedidos por el cliente (05/10/2026): N.O.D.E. se queda quieto
+       y a la vista el primer tramo de scroll (HOLD, ver abajo) antes de que el
+       carril empiece a correr, y el recorrido termina con RYUU CENTRADA en la
+       ventana, que es el último estado antes de soltarse y seguir bajando. */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1265,10 +1269,14 @@
             workRailTicks.appendChild(tick);
             return tick;
         });
+        // Tramo inicial, en fracción del recorrido de la sección, en el que el
+        // carril no se mueve: N.O.D.E. se queda a la vista antes de arrancar.
+        const HOLD = 0.16;
         let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
         let step = 0;         // recorrido por proyecto (px)
         let windowW = 0;      // ancho de la ventana del carril (px)
         let range = 0;        // px de scroll vertical que dura la sección fija
+        let hold = 0;         // px de scroll de esa espera inicial
         let start = 0;        // posición de la sección dentro del documento
         let lit = -1;         // último proyecto encendido en el raíl
         let paintedX = null;  // último translate escrito (para no repetirlo)
@@ -1278,7 +1286,10 @@
         function paint() {
             queued = 0;
             if (!hooked) return;
-            let progress = range > 0 ? (scrollY - start) / range : 0;
+            // Los primeros `hold` px de la sección fija no mueven nada: N.O.D.E.
+            // sigue a la vista. El recorrido completo se reparte entre el resto.
+            const travel = Math.max(1, range - hold);
+            let progress = (scrollY - start - hold) / travel;
             progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
             const travelled = progress * run;
             const x = -travelled;
@@ -1329,7 +1340,11 @@
             const listWidth = workList.clientWidth;
             const listHeight = workList.clientHeight;
             const last = rows[rows.length - 1];
-            run = Math.max(0, Math.round(last.offsetLeft + last.offsetWidth - listWidth));
+            // El recorrido llega hasta dejar el ÚLTIMO proyecto CENTRADO en la
+            // ventana (no pegado al borde derecho): es la imagen con la que la
+            // sección se suelta y el scroll sigue bajando (05/10/2026).
+            run = Math.max(0, Math.round(
+                last.offsetLeft + last.offsetWidth / 2 - listWidth / 2));
             step = Math.max(0, rows[1].offsetLeft - rows[0].offsetLeft);
             // Sin maqueta (jsdom, pestaña oculta) o si el carril ya cabe entero
             // en la ventana no hay recorrido que hacer: se deja en vertical.
@@ -1349,6 +1364,7 @@
             // aunque el alto de ventana real no coincida con el de la maqueta
             // (barras del navegador, zoom…).
             range = Math.max(1, workSection.offsetHeight - workView.offsetHeight);
+            hold = Math.round(range * HOLD);   // espera inicial de N.O.D.E.
             // La cascada de entrada de las filas (sección 4) es de la lista
             // vertical, donde se apilan: aquí los paneles viajan en horizontal y
             // aparecerían a media animación al llegar con scroll rápido. Se dan
@@ -1376,7 +1392,9 @@
         rows.forEach((row, index) => {
             row.addEventListener("focus", () => {
                 if (!hooked || !keyboardNav) return;
-                scrollTo(0, Math.round(start + Math.min(range, (index * step * range) / run)));
+                // Misma cuenta que paint(): el tramo de espera y, después, la
+                // parte del recorrido que deja ese proyecto alineado a la izquierda.
+                scrollTo(0, Math.round(start + hold + Math.min(range - hold, (index * step * (range - hold)) / run)));
             });
         });
 

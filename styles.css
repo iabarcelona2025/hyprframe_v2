@@ -1169,6 +1169,10 @@ section { position: relative; }
             flex: 1 1 auto; min-height: 0;
             overflow: hidden;
             overflow: clip;   /* sin contenedor de scroll: el teclado no puede desplazarlo */
+            /* Las cajas se cierran también por abajo: la misma línea gris que las
+               recorre por arriba (el border-top del listado), a lo ancho del
+               carril (05/10/2026). */
+            border-bottom: 1px solid var(--line);
         }
         .work.hf-work-h .work-track {
             display: flex;

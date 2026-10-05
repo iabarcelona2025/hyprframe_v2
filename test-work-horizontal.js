@@ -9,8 +9,10 @@
    Lo que se fija aquí:
    - Solo se activa en escritorio (≥1025px) y sin «reducir movimiento»; en
      móvil/tablet, sin JavaScript o con esa preferencia queda la lista vertical.
-   - El carril se desplaza 1:1 con el scroll: 0 al empezar la sección fija,
-     todo el recorrido (-run) justo cuando la sección se suelta, sin pasarse.
+   - El carril no arranca con el primer píxel: el primer tramo (HOLD, 16%) la
+     sección está fija y N.O.D.E. quieto a la vista; después el recorrido se
+     reparte 1:1 dentro de lo que queda. Al soltarse, el carril está al final
+     (-run) sin pasarse, con RYUU centrada en la ventana.
    - El raíl enciende el proyecto en curso y termina en 10.
    - Los paneles quedan colocados de una vez (la cascada de entrada de la lista
      vertical no se cruza con el recorrido horizontal).
@@ -43,7 +45,11 @@ const TOP = 4000;         // dónde empieza la sección dentro del documento
 const PANEL_H = 640;      // alto útil de la ventana del carril
 const ROW_LEFT = 100;    // dónde empieza la caja medida (x del rect de la fila)
 const N = 10;
-const RUN = PANEL_W * N - LIST_W;   // 6620 px de recorrido horizontal
+// El carril se detiene con el ÚLTIMO proyecto centrado en la ventana.
+const RUN = (N - 1) * PANEL_W + PANEL_W / 2 - LIST_W / 2;   // 6937 px
+// Fracción del recorrido vertical en la que el carril aún no se mueve (N.O.D.E.
+// se queda a la vista). Se lee del propio script para no duplicar el número.
+const HOLD = Number(/const HOLD = ([\d.]+);/.exec(script)[1]);
 
 function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H } = {}) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), "utf8"), {
@@ -152,6 +158,15 @@ test("el degradado lila de las cajas es suave y el mismo en la caja y en sus dos
     assert.ok(Number(caja[2]) >= 65, `y el desvanecido, largo (${caja[2]}%)`);
 });
 
+test("las cajas se cierran por abajo con la misma línea gris que las recorre por arriba", () => {
+    assert.match(css, /\.work-list \{ border-top: 1px solid var\(--line\); \}/,
+        "la línea de arriba es el borde superior del listado");
+    const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-list \{[\s\S]*?border-bottom: 1px solid var\(--line\);\s*\}/,
+        "y el carril le añade la de abajo");
+});
+
 test("los números y los titulares del carril conservan el tamaño de la lista vertical", () => {
     const regla = (sel) => {
         const m = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}").exec(css);
@@ -255,19 +270,29 @@ test("escritorio: la clase y el recorrido se miden, sin mover nada al arrancar",
     } finally { dom.window.close(); }
 });
 
-test("escritorio: el carril avanza 1:1 con el scroll y se libera con el proyecto 10 a la vista", async () => {
+test("escritorio: N.O.D.E. espera, el carril reparte el recorrido y RYUU queda centrada al soltarse", async () => {
     const { dom, doc, section, track, state, frame, scrollTo } = boot();
     try {
         await frame();
-        const range = RUN;   // una pantalla fija: alto de sección (800 + 6620) − ventana (800)
-        scrollTo(TOP + range / 2);
+        const range = RUN;               // una pantalla fija: alto de sección − ventana
+        const hold = Math.round(range * HOLD);
+        scrollTo(TOP + Math.round(hold / 2));   // primer tramo: solo espera
+        await frame();
+        assert.equal(transformX(track), 0,
+            "N.O.D.E. sigue quieto a la vista durante la espera inicial");
+        assert.equal(doc.getElementById("workRailNow").textContent, "01");
+        scrollTo(TOP + hold + (range - hold) / 2);   // mitad del recorrido real
         await frame();
         assert.ok(Math.abs(transformX(track) + RUN / 2) < 1,
-            `a mitad de recorrido el carril va por la mitad (${transformX(track)})`);
-        scrollTo(TOP + range);   // borde de liberación: el último proyecto a la vista
+            `a mitad del recorrido el carril va por la mitad (${transformX(track)})`);
+        scrollTo(TOP + range);   // borde de liberación: último estado del carril
         await frame();
         assert.ok(Math.abs(transformX(track) + RUN) < 1,
-            "al final del recorrido el carril está entero y el proyecto 10 a la vista");
+            "al final del recorrido el carril está entero, sin pasarse");
+        // RYUU centrada: su centro cae en el centro de la ventana del carril.
+        const centroRyuu = -RUN + 9 * PANEL_W + PANEL_W / 2;
+        assert.ok(Math.abs(centroRyuu - LIST_W / 2) < 1,
+            `el 10.º proyecto queda centrado (centro en ${centroRyuu}px de ${LIST_W}px)`);
         const counter = doc.getElementById("workRailNow").textContent;
         assert.equal(counter, "10", "el raíl termina en el proyecto 10");
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
@@ -282,6 +307,9 @@ test("escritorio: el carril avanza 1:1 con el scroll y se libera con el proyecto
         await frame();
         assert.equal(transformX(track), 0, "por encima de la sección el carril vuelve a cero");
         assert.ok(state.y < TOP, "el scroll de antes de la sección es vertical, sin secuestro");
+        scrollTo(TOP + hold - 40);
+        await frame();
+        assert.equal(transformX(track), 0, "y justo antes de que acabe la espera, también");
     } finally { dom.window.close(); }
 });
 
@@ -291,10 +319,12 @@ test("escritorio: el raíl enciende el proyecto en curso mientras se recorre", a
         await frame();
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
         const counter = doc.getElementById("workRailNow");
+        const range = RUN, hold = Math.round(range * HOLD);
         const seen = [];
         for (let i = 0; i < rows.length - 1; i++) {
-            // punto de scroll en el que el proyecto i queda alineado a la izquierda
-            scrollTo(TOP + i * PANEL_W);
+            // punto de scroll (con la espera inicial incluida) en el que el
+            // proyecto i queda alineado a la izquierda
+            scrollTo(Math.round(TOP + hold + (i * PANEL_W * (range - hold)) / RUN));
             await frame();
             seen.push(counter.textContent);
             assert.equal(ticks.filter((tick) => tick.classList.contains("is-on")).length, 1,
@@ -353,7 +383,9 @@ test("teclado: el proyecto que recibe el foco entra en pantalla", async () => {
         window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Tab" }));
         rows[3].focus();
         await frame();
-        assert.equal(Math.round(state.y), TOP + (3 * PANEL_W * RUN) / RUN,
+        const range = RUN, hold = Math.round(range * HOLD);
+        assert.equal(Math.round(state.y),
+            Math.round(TOP + hold + (3 * PANEL_W * (range - hold)) / RUN),
             "el scroll se coloca en el tramo del proyecto enfocado");
     } finally { dom.window.close(); }
 });
