@@ -29,6 +29,12 @@
      el scroll (al bajar se dibujan, al subir se recogen) y se quedan de fondo:
      mismas ramas en cada carga (semilla fija), trazo gris de 1px que no escala y
      profundidades en escalera, con la última de la derecha hasta SYNTHESIS.
+   - Las ramas son rectilíneas (rejilla de 45°: vertical, horizontal o diagonal
+     exacta) y ninguna sale por debajo de RYUU: la maraña vive a la derecha del
+     codo de la caja ya centrada.
+   - El dibujo va por distancia al arranque de cada árbol —un tramo empieza justo
+     cuando el que lo engendra acaba—, así que con el scroll la maraña crece y se
+     recoge como un frente: ni piezas sueltas ni ramas que aparezcan por su cuenta.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
      mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
@@ -59,7 +65,7 @@ const RUN = (N - 1) * PANEL_W + PANEL_W / 2 - LIST_W / 2;   // 6937 px
 // se queda a la vista). Se lee del propio script para no duplicar el número.
 const HOLD = Number(/const HOLD = ([\d.]+);/.exec(script)[1]);
 
-function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H } = {}) {
+function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H, branchH = BRANCH_H } = {}) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), "utf8"), {
         url: "https://hyprframe.com/",
         pretendToBeVisual: true,
@@ -68,7 +74,7 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     });
     const { window } = dom;
     const doc = window.document;
-    const state = { y: TOP, desktop, reduced, listHeight, branchH: BRANCH_H };
+    const state = { y: TOP, desktop, reduced, listHeight, branchH };
 
     window.matchMedia = (query) => ({
         get matches() {
@@ -130,6 +136,38 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     const scrollTo = (y) => { state.y = y; window.dispatchEvent(new window.Event("scroll")); };
     return { dom, window, doc, section, view, list, track, branches, rows, state, frame, scrollTo };
 }
+
+/* Hasta dónde baja el árbol de cada raíz: se recorren los tramos desde los que
+   nacen en la línea de cierre (y = 0) siguiendo los nudos compartidos. Devuelve
+   los topes de derecha a izquierda, que es como se lee la escalera. */
+const topesPorRaiz = (branches) => {
+    const tramos = [...branches.querySelectorAll("path")].map((p) => {
+        const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
+        return { x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]) };
+    });
+    const salen = new Map();   // nudo → tramos que salen de ahí
+    for (const t of tramos) {
+        const k = `${t.x0},${t.y0}`;
+        if (!salen.has(k)) salen.set(k, []);
+        salen.get(k).push(t);
+    }
+    const extremos = new Map();   // x de la raíz → y más profunda de su árbol
+    for (const raiz of tramos.filter((t) => t.y0 === 0)) {
+        let profundo = 0;
+        const pila = [raiz];
+        const vistos = new Set();
+        while (pila.length) {
+            const t = pila.pop();
+            profundo = Math.max(profundo, t.y1);
+            const k = `${t.x1},${t.y1}`;
+            if (vistos.has(k)) continue;
+            vistos.add(k);
+            pila.push(...(salen.get(k) || []));
+        }
+        extremos.set(raiz.x0, Math.max(extremos.get(raiz.x0) || 0, profundo));
+    }
+    return [...extremos.entries()].sort((a, b) => b[0] - a[0]).map(([, y]) => y);
+};
 
 const transformX = (track) => {
     const m = /translate3d\((-?[\d.]+)px/.exec(track.style.transform);
@@ -367,6 +405,22 @@ test("escritorio: las ramas se trazan al medir el carril, con raíces en la lín
             assert.ok(ys.every((y, i) => i === 0 || y >= ys[i - 1]), "cada rama baja, nunca sube");
             assert.ok(ys[ys.length - 1] <= BRANCH_H, "y no se sale por abajo del lienzo");
         }
+        // Geometría rectilínea: cada tramo es vertical, horizontal o una diagonal
+        // EXACTA de 45° — nada de medias inclinaciones.
+        for (const path of paths) {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(path.getAttribute("d"));
+            const [dx, dy] = [Number(m[3]) - Number(m[1]), Number(m[4]) - Number(m[2])];
+            assert.ok(dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy),
+                `la rejilla de 45° se respeta (${path.getAttribute("d")})`);
+        }
+        // Ninguna rama sale por debajo de RYUU: la maraña vive a la derecha de su
+        // codo (el borde derecho de la caja centrada), no debajo de la caja.
+        const corner = 9 * PANEL_W + PANEL_W - RUN;   // el codo de RYUU al soltarse
+        for (const path of paths) {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(path.getAttribute("d"));
+            assert.ok(Math.min(Number(m[1]), Number(m[3])) >= corner,
+                `ningún tramo cruza el codo de RYUU (x ≥ ${corner}): ${path.getAttribute("d")}`);
+        }
         assert.ok(!branches.classList.contains("is-playing"), "al empezar el carril todavía no se dibuja");
     } finally { dom.window.close(); }
 });
@@ -430,42 +484,67 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
     } finally { dom.window.close(); }
 });
 
+test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos", async () => {
+    const { dom, branches, frame, scrollTo } = boot();
+    try {
+        await frame();
+        const paths = [...branches.querySelectorAll("path")];
+        const len = (p) => Number(p.style.getPropertyValue("--len"));
+        const dash = (p) => Number(p.style.strokeDashoffset);
+        const enCurso = (p) => dash(p) < len(p);      // empezada (en curso o hecha)
+        const hecha = (p) => dash(p) === 0;           // terminada
+        const punto = (d, i) => {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(d);
+            return i ? `${m[3]},${m[4]}` : `${m[1]},${m[2]}`;
+        };
+        // Quién llega a cada nudo: el padre de un tramo es el que acaba donde él
+        // empieza. Los arranques (en la línea de cierre) no tienen padre.
+        const llegan = new Map();
+        for (const p of paths) {
+            const k = punto(p.getAttribute("d"), 1);
+            if (!llegan.has(k)) llegan.set(k, []);
+            llegan.get(k).push(p);
+        }
+        const padres = (p) => llegan.get(punto(p.getAttribute("d"), 0)) || [];
+        // Con el scroll, el frente avanza por distancia al arranque: un tramo solo
+        // empieza cuando el que lo engendra ya está entero. Ni una pieza suelta.
+        for (const frac of [0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95]) {
+            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+            await frame();
+            for (const p of paths) {
+                const arriba = padres(p);
+                if (!arriba.length) continue;                  // es un arranque
+                if (enCurso(p)) {
+                    assert.ok(arriba.some(enCurso),
+                        `a ${frac} del dibujo, ningún tramo empieza sin su padre: ${p.getAttribute("d")}`);
+                }
+                if (hecha(p)) {
+                    assert.ok(arriba.some(hecha),
+                        `a ${frac} del dibujo, ningún tramo acaba antes que su padre: ${p.getAttribute("d")}`);
+                }
+            }
+        }
+        // Y al subir, el mismo orden: el frente se recoge por las puntas.
+        for (const frac of [0.8, 0.5, 0.2]) {
+            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+            await frame();
+            const terminadas = paths.filter(hecha).length;
+            const empezadas = paths.filter(enCurso).length;
+            assert.ok(empezadas <= 0.9 * paths.length,
+                `al recogerse quedan tramos por recoger (${empezadas}/${paths.length})`);
+            assert.ok(terminadas < paths.length,
+                `y no salta a dibujado del todo (${terminadas}/${paths.length})`);
+        }
+    } finally { dom.window.close(); }
+});
+
 test("escritorio: los troncos bajan en escalera y el de la derecha llega a SYNTHESIS", async () => {
     const { dom, doc, branches, frame } = boot();
     try {
         await frame();
-        // Cada tronco es una cadena de tramos: se recorren desde cada raíz (los
-        // tramos que nacen en y = 0) siguiendo los nudos compartidos, para saber
-        // hasta dónde baja el árbol entero de esa raíz.
-        const tramos = [...branches.querySelectorAll("path")].map((p) => {
-            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
-            return { x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]) };
-        });
-        const salen = new Map();   // nudo → tramos que salen de ahí
-        for (const t of tramos) {
-            const k = `${t.x0},${t.y0}`;
-            if (!salen.has(k)) salen.set(k, []);
-            salen.get(k).push(t);
-        }
-        const extremos = new Map();   // x de la raíz → y más profunda de su árbol
-        for (const raiz of tramos.filter((t) => t.y0 === 0)) {
-            let profundo = 0;
-            const pila = [raiz];
-            const vistos = new Set();
-            while (pila.length) {
-                const t = pila.pop();
-                profundo = Math.max(profundo, t.y1);
-                const k = `${t.x1},${t.y1}`;
-                if (vistos.has(k)) continue;
-                vistos.add(k);
-                pila.push(...(salen.get(k) || []));
-            }
-            extremos.set(raiz.x0, Math.max(extremos.get(raiz.x0) || 0, profundo));
-        }
-        assert.ok(extremos.size >= 4, `hay varias raíces (${extremos.size})`);
-        // De derecha a izquierda, cada tronco llega menos abajo que el de su derecha.
-        const raices = [...extremos.entries()].sort((a, b) => b[0] - a[0]);
-        const topes = raices.map(([, y]) => y);
+        const topes = topesPorRaiz(branches);
+        assert.ok(topes.length >= 4, `hay varias raíces (${topes.length})`);
+        // De derecha a izquierda, cada árbol llega menos abajo que el de su derecha.
         assert.equal(topes[0], BRANCH_H, "la última de la derecha llega al fondo del lienzo (SYNTHESIS)");
         for (let i = 1; i < topes.length; i++) {
             assert.ok(topes[i] < topes[i - 1],
@@ -479,6 +558,21 @@ test("escritorio: los troncos bajan en escalera y el de la derecha llega a SYNTH
             /const linea3 = document\.querySelector\("\.about-title \.line:nth-child\(3\)"\)/,
             "el alto del lienzo se mide hasta esa línea");
     } finally { dom.window.close(); }
+});
+
+test("escritorio: la escalera cae exacta sobre sus topes a cualquier alto de lienzo", async () => {
+    // El árbol se traza, se mide y se repite escalado hasta caer justo sobre su
+    // tope: ni un píxel corto. Se comprueba en varios altos de lienzo, porque es
+    // donde el redondeo podía dejarlo corto.
+    for (const alto of [496, 700, 760]) {
+        const { dom, branches, frame } = boot("index.html", { branchH: alto });
+        try {
+            await frame();
+            const topes = topesPorRaiz(branches);
+            assert.deepEqual(topes, [1, 0.78, 0.6, 0.45].map((f) => Math.round(alto * f)),
+                `con el lienzo de ${alto}px, cada árbol llega justo a su tope`);
+        } finally { dom.window.close(); }
+    }
 });
 
 test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", async () => {
