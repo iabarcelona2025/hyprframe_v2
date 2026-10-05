@@ -1244,15 +1244,19 @@ section { position: relative; }
     width: calc(100% - 20px);
     /* Totalmente frontal: sin perspectiva ni giro en ningún eje. */
     transform: none;
+    /* Contexto de tamaño: 1cqw = 1% del ancho del carrusel. La flecha del arco
+       (--clb-bow) se mide aquí y no en % del alto de cada caja, así la curva del
+       marco y la de su reflejo son la misma curva. */
+    container-type: inline-size;
 }
 .clb-gallery-frame, .clb-gallery-reflection {
-    /* A single shared curve keeps the reflection locked to the gallery edges. */
-    --clb-curve: polygon(
-        0 0, 10% 1.08%, 20% 1.92%, 30% 2.52%, 40% 2.88%, 50% 3%,
-        60% 2.88%, 70% 2.52%, 80% 1.92%, 90% 1.08%, 100% 0,
-        100% 100%, 90% 98.92%, 80% 98.08%, 70% 97.48%, 60% 97.12%, 50% 97%,
-        40% 97.12%, 30% 97.48%, 20% 98.08%, 10% 98.92%, 0 100%
-    );
+    /* Una sola medida para las dos curvas: la flecha del arco del marco, el 3% de
+       su alto (alto = ancho / 1.85) = 3cqw / 1.85. Se mide en cqw —una fracción
+       del ancho del carrusel, la misma para las dos cajas— y no en % del alto de
+       cada una: midiéndola en %, la tira del reflejo, ~12 veces más baja que el
+       marco, dibujaba un arco ~12 veces más plano y parecía recta. Cada caja
+       dibuja luego su propia curva (--clb-curve) con esa flecha. */
+    --clb-bow: calc(3cqw / 1.85);
     clip-path: var(--clb-curve);
 }
 .clb-gallery-frame {
@@ -1260,13 +1264,22 @@ section { position: relative; }
     width: 100%; aspect-ratio: 1.85;
     border: 1px solid #111114;
     background: #09090b;
-    /* Bow only the horizontal edges inward (~3% at their midpoint).
-       Both sides stay straight and full width; close points keep the arc soft. */
-    clip-path: polygon(
-        0 0, 10% 1.08%, 20% 1.92%, 30% 2.52%, 40% 2.88%, 50% 3%,
-        60% 2.88%, 70% 2.52%, 80% 1.92%, 90% 1.08%, 100% 0,
-        100% 100%, 90% 98.92%, 80% 98.08%, 70% 97.48%, 60% 97.12%, 50% 97%,
-        40% 97.12%, 30% 97.48%, 20% 98.08%, 10% 98.92%, 0 100%
+    /* Los dos bordes horizontales combados hacia dentro con la flecha --clb-bow:
+       0.36, 0.64, 0.84, 0.96 y 1 son la parábola 4x(1-x) en cada 10% del ancho.
+       Los lados siguen rectos y a todo el ancho; los puntos cerrados mantienen el
+       arco suave. */
+    --clb-curve: polygon(
+        0 0, 10% calc(var(--clb-bow) * 0.36), 20% calc(var(--clb-bow) * 0.64),
+        30% calc(var(--clb-bow) * 0.84), 40% calc(var(--clb-bow) * 0.96),
+        50% var(--clb-bow),
+        60% calc(var(--clb-bow) * 0.96), 70% calc(var(--clb-bow) * 0.84),
+        80% calc(var(--clb-bow) * 0.64), 90% calc(var(--clb-bow) * 0.36), 100% 0,
+        100% 100%, 90% calc(100% - var(--clb-bow) * 0.36),
+        80% calc(100% - var(--clb-bow) * 0.64), 70% calc(100% - var(--clb-bow) * 0.84),
+        60% calc(100% - var(--clb-bow) * 0.96), 50% calc(100% - var(--clb-bow)),
+        40% calc(100% - var(--clb-bow) * 0.96), 30% calc(100% - var(--clb-bow) * 0.84),
+        20% calc(100% - var(--clb-bow) * 0.64), 10% calc(100% - var(--clb-bow) * 0.36),
+        0 100%
     );
 }
 .clb-gallery-track {
@@ -1278,15 +1291,58 @@ section { position: relative; }
     flex: 0 0 20%; width: 20%; height: 100%;
     max-width: none; object-fit: cover;
 }
-/* A short, faint strip of each frame fades quickly into the background. */
+/* A short, faint strip of each frame fades quickly into the background. Cuelga de
+   la curva del marco: su borde superior copia el borde inferior de la caja, a la
+   misma distancia en todo el ancho (no es su imagen especular, que abría un hueco
+   en forma de lente bajo el centro). */
 .clb-gallery-reflection {
     position: relative; overflow: hidden;
-    width: 100%; height: clamp(1.1rem, 2.8vw, 2rem);
-    margin-top: 0.35rem;
+    width: 100%;
+    /* Alto: el grosor de la tira (23:1 sobre el ancho, con topes de 1.1rem a
+       2rem, el rango que tenía antes) más la flecha del arco, que es lo que la
+       caja tiene que subir para que su borde superior alcance el vértice de la
+       curva del marco, en el centro. */
+    height: calc(clamp(1.1rem, 100cqw / 23, 2rem) + var(--clb-bow));
+    /* Sube esa misma flecha: así el hueco entre la curva del marco y el borde
+       superior de la tira es el margin-top de siempre (0.35rem) en todo el ancho.
+       La caja sí solapa el marco, pero el recorte de abajo se come esa parte. */
+    margin-top: calc(0.35rem - var(--clb-bow));
     transform: scaleY(-1); opacity: 0.16;
-    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
-            mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+    /* Opaco hasta la flecha del arco —justo lo que el recorte se come en las
+       esquinas— para que la tira brille igual en toda la curva, y a partir de ahí
+       el mismo fundido de antes. */
+    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0, rgba(0, 0, 0, 0.85) var(--clb-bow), transparent 85%);
+            mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0, rgba(0, 0, 0, 0.85) var(--clb-bow), transparent 85%);
     pointer-events: none;
+    /* Ojo: la caja está volteada (scaleY(-1)), así que el polígono se lee al
+       revés. Su borde inferior —el que va de 0 a 100% en x con la y al fondo— es
+       el SUPERIOR visible de la tira, y copia la misma parábola que el marco
+       invertida (1 - 4x(1-x): 0.64, 0.36, 0.16, 0.04 y 0): toca el techo de la
+       caja en el centro y baja hasta la flecha en las esquinas, igual que el
+       borde inferior del marco sube hasta su vértice. El borde superior (y = 0) es
+       el inferior de la tira, recto, y cae donde el degradado ya es transparente. */
+    --clb-curve: polygon(
+        0 calc(100% - var(--clb-bow)), 10% calc(100% - var(--clb-bow) * 0.64),
+        20% calc(100% - var(--clb-bow) * 0.36), 30% calc(100% - var(--clb-bow) * 0.16),
+        40% calc(100% - var(--clb-bow) * 0.04), 50% 100%,
+        60% calc(100% - var(--clb-bow) * 0.04), 70% calc(100% - var(--clb-bow) * 0.16),
+        80% calc(100% - var(--clb-bow) * 0.36), 90% calc(100% - var(--clb-bow) * 0.64),
+        100% calc(100% - var(--clb-bow)),
+        100% 0, 0 0
+    );
+}
+/* Respaldo sin consultas de contenedor (navegadores anteriores a 2023): no hay
+   cqw, así que la tira vuelve a su alto fijo y el arco se mide en % del alto de
+   cada caja —el dibujo anterior, con la tira recta— en vez de quedarse sin alto
+   ni recorte. */
+@supports not (container-type: inline-size) {
+    .clb-gallery-frame, .clb-gallery-reflection { --clb-bow: 3%; }
+    .clb-gallery-reflection {
+        height: clamp(1.1rem, 2.8vw, 2rem);
+        margin-top: 0.35rem;
+        -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+                mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
+    }
 }
 .clb-reflection-track {
     position: absolute; bottom: 0; left: 0;
@@ -1343,9 +1399,12 @@ section { position: relative; }
         width: 100%; max-width: var(--clb-copy-w);
         justify-self: start;
     }
-    /* El reflejo (sombra) también escala en proporción: su alto es un % fijo del
-       ancho, en vez de un alto fijo, así mantiene la relación con el marco. */
-    .clb-gallery-reflection { height: auto; aspect-ratio: 23 / 1; }
+    /* El reflejo (sombra) también escala en proporción: su alto es el 23:1 del
+       ancho más la flecha del arco (lo que sube por el margin-top), sin los topes
+       de grosor de móvil/tablet, para que el margen negativo de abajo —que lo
+       compensa entero— siga siendo exacto: (0.35rem - flecha) + (ancho/23 +
+       flecha) - (ancho/23 + 0.35rem) = 0. */
+    .clb-gallery-reflection { height: calc(100cqw / 23 + var(--clb-bow)); }
     /* El borde inferior del carrusel coincide con el del botón TEST NOW:
        ambos se alinean al final de la fila; el reflejo queda por debajo. */
     .clb-showcase { align-self: end; }

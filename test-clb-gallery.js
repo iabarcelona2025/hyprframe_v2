@@ -108,21 +108,55 @@ test("gallery faces the viewer head-on and the reflection is short and faint", (
     assert.match(css, /\.clb-gallery-frame\s*\{[^}]*border:\s*1px solid #111114;/);
     assert.match(css, /\.clb-showcase\s*\{[^}]*transform:\s*none;/);
     assert.doesNotMatch(css, /\.clb-showcase\s*\{[^}]*(perspective|rotate[XYZ]?)\(/);
-    assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*height:\s*clamp\(1\.1rem, 2\.8vw, 2rem\);/);
-    assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*opacity:\s*0\.16;/);
+    // El alto de la tira es su grosor (23:1 sobre el ancho, con topes de 1.1 a 2
+    // rem, el rango de siempre) más la flecha del arco, que es lo que la caja sube
+    // para colgar de la curva del marco.
+    const reflectionBox = css.match(/(?:^|\n)\.clb-gallery-reflection\s*\{[^}]*\}/)[0];
+    assert.match(reflectionBox,
+        /height:\s*calc\(clamp\(1\.1rem, 100cqw \/ 23, 2rem\) \+ var\(--clb-bow\)\);/);
+    assert.match(reflectionBox, /margin-top:\s*calc\(0\.35rem - var\(--clb-bow\)\);/);
+    assert.match(reflectionBox, /opacity:\s*0\.16;/);
     assert.ok(doc.querySelector("#clb .clb-showcase > .clb-gallery-reflection"));
 });
 
-test("the screen and its reflection share the same inward bow", () => {
-    const frameRule = css.match(/\.clb-gallery-frame\s*\{[^}]*\}/)?.[0] || "";
-    const reflectionRule = css.match(/\.clb-gallery-reflection\s*\{[^}]*\}/)?.[0] || "";
-    assert.match(frameRule, /clip-path:\s*polygon\(\s*0 0,/);
-    assert.match(frameRule, /50% 3%/); // top center curves inward
-    assert.match(frameRule, /100% 0,\s*100% 100%/); // right side stays straight
-    assert.match(frameRule, /50% 97%/); // bottom center curves inward
-    assert.match(frameRule, /0 100%\s*\)/); // left side stays straight
-    assert.match(css, /\.clb-gallery-frame,\s*\.clb-gallery-reflection\s*\{[\s\S]*--clb-curve:\s*polygon/);
-    assert.match(reflectionRule, /clip-path:\s*var\(--clb-curve\)/);
+test("the reflection hangs from the same curve as the screen, at a constant gap", () => {
+    const shared = css.match(/\.clb-gallery-frame,\s*\.clb-gallery-reflection\s*\{([\s\S]*?)\}/)[1];
+    const frameBox = css.match(/(?:^|\n)\.clb-gallery-frame\s*\{[^}]*\}/)[0];
+    const reflBox = css.match(/(?:^|\n)\.clb-gallery-reflection\s*\{[^}]*\}/)[0];
+    // Una sola medida para las dos curvas: la flecha del arco del marco, el 3% de
+    // su alto (alto = ancho / 1.85) = 3cqw / 1.85. Se mide en cqw —una fracción
+    // del ancho del carrusel, igual para las dos cajas— y no en % del alto de cada
+    // una: midiéndola en %, la tira (unas 12 veces más baja que el marco) dibujaba
+    // un arco 12 veces más plano y parecía recta bajo un marco curvado.
+    assert.match(shared, /--clb-bow:\s*calc\(3cqw \/ 1\.85\)/);
+    assert.match(shared, /clip-path:\s*var\(--clb-curve\)/);
+    // El carrusel es el contexto de tamaño que da sentido a los cqw (1cqw = 1% de
+    // su ancho), de modo que marco y reflejo comparten la misma medida.
+    assert.match(css, /\.clb-showcase\s*\{[^}]*container-type:\s*inline-size;/);
+    // El marco comba sus dos bordes horizontales hacia dentro con esa flecha.
+    assert.match(frameBox, /--clb-curve:\s*polygon\(\s*0 0,/);
+    assert.match(frameBox, /50% var\(--clb-bow\)/); // arco superior
+    assert.match(frameBox, /100% 0,\s*100% 100%/); // right side stays straight
+    assert.match(frameBox, /50% calc\(100% - var\(--clb-bow\)\)/); // arco inferior
+    assert.match(frameBox, /0 100%\s*\)/); // left side stays straight
+    // La tira cuelga de esa misma curva. Su caja está volteada (scaleY(-1)), así
+    // que el borde inferior del polígono es el SUPERIOR visible y copia la
+    // parábola del marco invertida (1 - 4x(1-x): 0.64, 0.36, 0.16, 0.04 y 0):
+    // toca el techo de la caja en el centro y baja una flecha en las esquinas,
+    // igual que el borde inferior del marco sube hasta su vértice en el centro.
+    assert.match(reflBox, /--clb-curve:\s*polygon\(\s*0 calc\(100% - var\(--clb-bow\)\),\s*10% calc\(100% - var\(--clb-bow\) \* 0\.64\),/);
+    assert.match(reflBox, /50% 100%,/); // el centro, pegado al marco
+    assert.match(reflBox, /100% calc\(100% - var\(--clb-bow\)\),\s*100% 0,\s*0 0\s*\)/);
+    // Sube la caja esa misma flecha para que el hueco con la curva del marco sea
+    // siempre el margin-top de 0.35rem, en el centro igual que en las esquinas.
+    assert.match(reflBox, /margin-top:\s*calc\(0\.35rem - var\(--clb-bow\)\);/);
+    // Y el degradado se mantiene opaco hasta esa flecha —lo que el recorte se come
+    // en las esquinas— para que la tira brille igual a lo largo de toda la curva.
+    assert.match(reflBox,
+        /mask-image:\s*linear-gradient\(to top, rgba\(0, 0, 0, 0\.85\) 0, rgba\(0, 0, 0, 0\.85\) var\(--clb-bow\), transparent 85%\);/);
+    // Respaldo sin consultas de contenedor: no hay cqw, y la tira vuelve a su alto
+    // fijo con el arco en % de su propio alto en vez de quedarse sin alto.
+    assert.match(css, /@supports not \(container-type: inline-size\) \{[\s\S]*?\.clb-gallery-reflection \{\s*height:\s*clamp\(1\.1rem, 2\.8vw, 2rem\);\s*margin-top:\s*0\.35rem;/);
 });
 
 test("gallery stacks between intro and features on mobile and stays still with reduced motion", () => {
