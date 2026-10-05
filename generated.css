@@ -531,7 +531,7 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .work-transition::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    background: linear-gradient(90deg, rgba(160,100,255,.08), transparent 70%);
     opacity: 1; transition: opacity .22s ease-out;
 }
 .work-transition.is-opening { transform: scale(1); }

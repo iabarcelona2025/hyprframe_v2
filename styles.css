@@ -1000,10 +1000,14 @@ section { position: relative; }
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
    recortando el ::before con clip-path (28/09/2026). Al salir el cursor el
-   barrido se recoge de vuelta hacia la derecha. */
+   barrido se recoge de vuelta hacia la derecha.
+   Suavizado (05/10/2026, a petición del cliente): menos intensidad (0,14 → 0,08)
+   y desvanecido más largo (55% → 70%), para que la caja se tiña de lila con
+   calma en vez de notarse el lavado al pasar el cursor. La opacidad baja NO se
+   toca (el barrido sigue siendo el mismo): lo que cambia es el degradado. */
 .work-row::before {
     content: ""; position: absolute; inset: 0; z-index: 0;
-    background: linear-gradient(90deg, rgba(160, 100, 255, 0.14), transparent 55%);
+    background: linear-gradient(90deg, rgba(160, 100, 255, 0.08), transparent 70%);
     -webkit-clip-path: inset(0 0 0 100%);
             clip-path: inset(0 0 0 100%);
     transition: -webkit-clip-path 0.6s var(--ease-out), clip-path 0.6s var(--ease-out);
@@ -1014,12 +1018,14 @@ section { position: relative; }
 }
 
 /* Fotograma del proyecto dentro de la fila: mitad derecha,
-   fundido con el degradado lila→negro del hover */
+   fundido con el degradado lila→negro del hover.
+   El brillo lila del fundido baja con el degradado de la caja (05/10/2026):
+   0,22 → 0,16, para que la foto entre por negro y no por violeta. */
 .work-row::after {
     content: ""; position: absolute; top: 0; right: 0; bottom: 0;
     width: 50%;
     background-image:
-        linear-gradient(to right, var(--bg) 0%, rgba(160, 100, 255, 0.22) 30%, rgba(5, 5, 5, 0) 70%),
+        linear-gradient(to right, var(--bg) 0%, rgba(160, 100, 255, 0.16) 30%, rgba(5, 5, 5, 0) 70%),
         var(--img, none);
     background-size: cover;
     background-position: center;
@@ -2242,7 +2248,10 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 
 /* Cross-page GENERATED thumbnail handoff. The clone keeps the row's crop and
-   soft left edge, then expands into the matching film poster. */
+   soft left edge, then expands into the matching film poster.
+   El degradado lila del clon es el mismo de la caja, con el mismo suavizado
+   (05/10/2026): si se cambia uno, hay que cambiar los tres (aquí, la ficha y
+   el clon de llegada de generated.css) o el relevo del clic cambia de tono. */
 .work-transition {
     position: fixed; z-index: 2000; pointer-events: none;
     background-size: cover; background-repeat: no-repeat;
@@ -2255,7 +2264,7 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 .work-transition::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    background: linear-gradient(90deg, rgba(160,100,255,.08), transparent 70%);
     opacity: 1; transition: opacity .22s ease-out;
 }
 .work-transition.is-opening { transform: scale(1); }

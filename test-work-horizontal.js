@@ -20,6 +20,10 @@
    - El bloque de CSS solo vive dentro de @supports (overflow-x: clip): sin
      clip, el overflow-x de html/body/main sería un contenedor de scroll y el
      sticky no pegaría.
+   - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
+     clones (el de salida de la landing y el de llegada de la ficha): es el
+     mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
+     clic.
    (05/10/2026) */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -29,6 +33,7 @@ const { JSDOM, VirtualConsole } = require("jsdom");
 
 const root = __dirname;
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+const generado = fs.readFileSync(path.join(root, "generated.css"), "utf8");
 const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
 
 const INNER_H = 800;      // alto de ventana
@@ -124,6 +129,21 @@ test("CSS: el carril solo existe en escritorio y solo si el sticky puede pegar",
         "el carril hereda el punto de fuga de la entrada 3D de las filas");
     // El hover de siempre sigue en pie dentro del carril (foto + bandas).
     assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after \{ opacity: 1; transform: scale\(1\); \}/);
+});
+
+test("el degradado lila de las cajas es suave y el mismo en la caja y en sus dos clones", () => {
+    const caja = /\.work-row::before\s*\{[^}]*linear-gradient\(90deg, rgba\(160, 100, 255, ([0-9.]+)\), transparent (\d+)%\)/.exec(css);
+    const salida = /\.work-transition::after\s*\{[^}]*linear-gradient\(90deg, rgba\(160,100,255,\.([0-9]+)\), transparent (\d+)%\)/.exec(css);
+    const llegada = /\.work-transition::after\s*\{[^}]*linear-gradient\(90deg, rgba\(160,100,255,\.([0-9]+)\), transparent (\d+)%\)/.exec(generado);
+    assert.ok(caja && salida && llegada, "el degradado está en la caja y en los dos clones");
+    // La caja escribe «0.08» y los clones «.08»: mismo valor, dos formas.
+    const lila = (m) => Number(m[1].includes(".") ? m[1] : "0." + m[1]);
+    assert.equal(lila(caja), lila(salida), "el clon de salida lleva el mismo lila que la caja");
+    assert.equal(lila(salida), lila(llegada), "el clon de llegada de la ficha también");
+    assert.equal(caja[2], salida[2], "y el mismo punto de desvanecido");
+    assert.equal(salida[2], llegada[2]);
+    assert.ok(lila(caja) <= 0.1, `el lila de la caja es suave (${lila(caja)})`);
+    assert.ok(Number(caja[2]) >= 65, `y el desvanecido, largo (${caja[2]}%)`);
 });
 
 for (const page of ["index.html", "es/index.html"]) {
