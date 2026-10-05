@@ -1257,9 +1257,8 @@
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
     const workRailTicks = document.getElementById("workRailTicks");
-    const workRailNow = document.getElementById("workRailNow");
 
-    if (workView && workList && workTrack && workRailTicks && workRailNow && rows.length > 1) {
+    if (workView && workList && workTrack && workRailTicks && rows.length > 1) {
         const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
         const desktop = window.matchMedia("(min-width: 1025px)");
         // Una muesca por proyecto, en el mismo orden que el listado.
@@ -1302,13 +1301,12 @@
             // Proyecto «en curso»: el que tiene el centro más cerca del centro de
             // la ventana. Con el último proyecto ya no hay recorrido para dejarlo
             // alineado a la izquierda (la lista se suelta justo entonces), y esta
-            // cuenta lo enciende igual: el raíl llega a 10 al final del recorrido.
+            // cuenta lo enciende igual: la última muesca se enciende al final.
             const now = Math.min(rows.length - 1, Math.max(0,
                 Math.round((travelled + windowW / 2) / step - 0.5)));
             if (now !== lit) {
                 if (ticks[lit]) ticks[lit].classList.remove("is-on");
                 ticks[now].classList.add("is-on");
-                workRailNow.textContent = String(now + 1).padStart(2, "0");
                 lit = now;
             }
         }
@@ -1329,7 +1327,6 @@
             paintedX = null;
             if (ticks[lit]) ticks[lit].classList.remove("is-on");
             lit = -1;
-            workRailNow.textContent = "01";
         }
 
         function measure() {

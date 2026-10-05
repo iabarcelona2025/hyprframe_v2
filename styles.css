@@ -1129,8 +1129,9 @@ section { position: relative; }
      las anclas siguen funcionando igual.
    · Cada proyecto es un panel de casi dos tercios de ventana con el siguiente
      asomando por la derecha: se ve que hay más y hacia dónde sigue.
-   · El raíl inferior (10 muescas + contador) dice en qué punto del recorrido
-     se está; script.js enciende la muesca del proyecto en curso.
+   · El raíl inferior (10 muescas) dice en qué punto del recorrido se está;
+     script.js enciende la muesca del proyecto en curso (el contador numérico se
+     retiró el 05/10/2026 a petición del cliente).
 
    Dónde NO se aplica (nada de esto existe entonces y todo queda como estaba):
    por debajo de 1025px, con «reducir movimiento» activo, sin JavaScript —la
@@ -1271,11 +1272,7 @@ section { position: relative; }
             position: absolute;
             left: var(--pad); right: var(--pad);
             bottom: clamp(0.8rem, 1.4vw, 1.3rem);
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 1.5rem;
-            font-family: var(--font-mono); font-size: 0.68rem;
-            letter-spacing: 0.18em; text-transform: uppercase;
-            color: var(--muted);
+            display: flex; align-items: center;
             pointer-events: none; z-index: 2;
         }
         .work.hf-work-h .work-rail-ticks { display: flex; gap: clamp(4px, 0.4vw, 7px); }
@@ -1289,7 +1286,6 @@ section { position: relative; }
             background: var(--violet);
             transform: scaleY(2);
         }
-        .work.hf-work-h .work-rail-count b { color: var(--fg); font-weight: 400; }
     }
 }
 

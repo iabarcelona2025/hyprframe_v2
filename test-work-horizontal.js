@@ -265,8 +265,12 @@ for (const page of ["index.html", "es/index.html"]) {
         const rail = doc.querySelector(".work-view > .work-rail");
         assert.ok(rail && rail.getAttribute("aria-hidden") === "true",
             "el raíl es decorativo y lo rellena el script");
-        assert.ok(doc.querySelector("#workRailTicks") && doc.querySelector("#workRailNow"));
-        assert.equal(doc.getElementById("workRailNow").textContent, "01");
+        assert.ok(doc.querySelector("#workRailTicks"));
+        // El contador numérico («01 / 10») y su caja se retiraron a petición del
+        // cliente (05/10/2026): el raíl es solo la fila de muescas.
+        assert.equal(doc.querySelectorAll(".work-rail-count, #workRailNow").length, 0,
+            "sin contador ni caja de contador, ni en el HTML ni creados por el script");
+        assert.doesNotMatch(rail.textContent, /\/\s*10/);
         assert.equal(doc.querySelectorAll("#work .work-rail-tick").length, 0,
             "las 10 muescas las crea el script, no el HTML");
     });
@@ -282,7 +286,8 @@ test("escritorio: la clase y el recorrido se miden, sin mover nada al arrancar",
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
         assert.equal(ticks.length, rows.length);
         assert.ok(ticks[0].classList.contains("is-on"));
-        assert.equal(doc.getElementById("workRailNow").textContent, "01");
+        assert.equal(doc.querySelectorAll(".work-rail-count, #workRailNow").length, 0,
+            "el script no recrea el contador");
         assert.ok(rows.every((row) => row.classList.contains("work-row-visible")),
             "los paneles quedan colocados de una vez: la cascada de la lista vertical "
             + "no debe cruzarse con el recorrido horizontal");
@@ -299,7 +304,9 @@ test("escritorio: N.O.D.E. espera, el carril reparte el recorrido y RYUU queda c
         await frame();
         assert.equal(transformX(track), 0,
             "N.O.D.E. sigue quieto a la vista durante la espera inicial");
-        assert.equal(doc.getElementById("workRailNow").textContent, "01");
+        let muescas = [...doc.querySelectorAll("#work .work-rail-tick")];
+        assert.ok(muescas[0].classList.contains("is-on") && !muescas[1].classList.contains("is-on"),
+            "y el raíl marca el proyecto 1");
         scrollTo(TOP + hold + (range - hold) / 2);   // mitad del recorrido real
         await frame();
         assert.ok(Math.abs(transformX(track) + RUN / 2) < 1,
@@ -312,10 +319,9 @@ test("escritorio: N.O.D.E. espera, el carril reparte el recorrido y RYUU queda c
         const centroRyuu = -RUN + 9 * PANEL_W + PANEL_W / 2;
         assert.ok(Math.abs(centroRyuu - LIST_W / 2) < 1,
             `el 10.º proyecto queda centrado (centro en ${centroRyuu}px de ${LIST_W}px)`);
-        const counter = doc.getElementById("workRailNow").textContent;
-        assert.equal(counter, "10", "el raíl termina en el proyecto 10");
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
-        assert.ok(ticks[9].classList.contains("is-on") && !ticks[8].classList.contains("is-on"));
+        assert.ok(ticks[9].classList.contains("is-on") && !ticks[8].classList.contains("is-on"),
+            "al final la muesca encendida es la del proyecto 10");
         // Pasado el borde de liberación la sección ya no está fija: el carril no
         // sigue avanzando (no se pasa) y el scroll vertical continúa normal.
         scrollTo(TOP + range + 600);
@@ -337,22 +343,22 @@ test("escritorio: el raíl enciende el proyecto en curso mientras se recorre", a
     try {
         await frame();
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
-        const counter = doc.getElementById("workRailNow");
         const range = RUN, hold = Math.round(range * HOLD);
+        const encendida = () => ticks.findIndex((tick) => tick.classList.contains("is-on"));
         const seen = [];
         for (let i = 0; i < rows.length - 1; i++) {
             // punto de scroll (con la espera inicial incluida) en el que el
             // proyecto i queda alineado a la izquierda
             scrollTo(Math.round(TOP + hold + (i * PANEL_W * (range - hold)) / RUN));
             await frame();
-            seen.push(counter.textContent);
+            seen.push(encendida());
             assert.equal(ticks.filter((tick) => tick.classList.contains("is-on")).length, 1,
                 "solo una muesca encendida a la vez");
         }
-        assert.deepEqual(seen, ["01", "02", "03", "04", "05", "06", "07", "08", "09"]);
+        assert.deepEqual(seen, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
         scrollTo(TOP + RUN);   // el último no llega a alinearse a la izquierda: se enciende al soltarse
         await frame();
-        assert.equal(counter.textContent, "10", "el último proyecto se enciende al final del recorrido");
+        assert.equal(encendida(), 9, "el último proyecto se enciende al final del recorrido");
         assert.ok(Math.abs(Number(transformX(track)) + RUN) < 1);
     } finally { dom.window.close(); }
 });
