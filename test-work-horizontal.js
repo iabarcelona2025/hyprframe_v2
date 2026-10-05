@@ -35,10 +35,11 @@ const INNER_H = 800;      // alto de ventana
 const LIST_W = 1440;      // ancho de la ventana del carril
 const PANEL_W = 806;      // 56vw de 1440 (el ancho de panel del CSS)
 const TOP = 4000;         // dónde empieza la sección dentro del documento
+const PANEL_H = 640;      // alto útil de la ventana del carril
 const N = 10;
 const RUN = PANEL_W * N - LIST_W;   // 6620 px de recorrido horizontal
 
-function boot(page = "index.html", { desktop = true, reduced = false } = {}) {
+function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H } = {}) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), "utf8"), {
         url: "https://hyprframe.com/",
         pretendToBeVisual: true,
@@ -47,7 +48,7 @@ function boot(page = "index.html", { desktop = true, reduced = false } = {}) {
     });
     const { window } = dom;
     const doc = window.document;
-    const state = { y: TOP, desktop, reduced };
+    const state = { y: TOP, desktop, reduced, listHeight };
 
     window.matchMedia = (query) => ({
         get matches() {
@@ -82,6 +83,7 @@ function boot(page = "index.html", { desktop = true, reduced = false } = {}) {
     const track = doc.getElementById("workTrack");
     const rows = [...track.querySelectorAll(".work-row")];
     Object.defineProperty(list, "clientWidth", { get: () => LIST_W });
+    Object.defineProperty(list, "clientHeight", { get: () => state.listHeight });   // alto del panel
     Object.defineProperty(view, "offsetHeight", { get: () => INNER_H });   // la pantalla pegada
     rows.forEach((row, index) => {
         Object.defineProperty(row, "offsetLeft", { get: () => index * PANEL_W });
@@ -227,6 +229,16 @@ test("móvil y «reducir movimiento»: la lista sigue siendo vertical", async ()
                 "las muescas existen pero el raíl no se muestra");
         } finally { dom.window.close(); }
     }
+});
+
+test("escritorio: en una ventana muy baja manda la lista vertical", async () => {
+    const { dom, section, track, frame } = boot("index.html", { listHeight: 200 });
+    try {
+        await frame();
+        assert.ok(!section.classList.contains("hf-work-h"),
+            "sin alto para los paneles el carril no se activa");
+        assert.equal(track.style.transform, "");
+    } finally { dom.window.close(); }
 });
 
 test("escritorio: al bajar de 1025px la sección se libera y vuelve a la lista", async () => {

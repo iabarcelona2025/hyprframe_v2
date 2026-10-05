@@ -1247,6 +1247,7 @@
     const workRailNow = document.getElementById("workRailNow");
 
     if (workView && workList && workTrack && workRailTicks && workRailNow && rows.length > 1) {
+        const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
         const desktop = window.matchMedia("(min-width: 1025px)");
         // Una muesca por proyecto, en el mismo orden que el listado.
         const ticks = rows.map(() => {
@@ -1317,12 +1318,18 @@
             // los de la maqueta horizontal, no los de la lista vertical.
             workSection.classList.add("hf-work-h");
             const listWidth = workList.clientWidth;
+            const listHeight = workList.clientHeight;
             const last = rows[rows.length - 1];
             run = Math.max(0, Math.round(last.offsetLeft + last.offsetWidth - listWidth));
             step = Math.max(0, rows[1].offsetLeft - rows[0].offsetLeft);
             // Sin maqueta (jsdom, pestaña oculta) o si el carril ya cabe entero
             // en la ventana no hay recorrido que hacer: se deja en vertical.
             if (listWidth <= 0 || run < 1 || step < 1) { unhook(); return; }
+            // Una ventana muy baja (un portátil apaisado, media pantalla) deja los
+            // paneles sin alto para el número y el titular: ahí la lista vertical
+            // se adapta mejor y se prefiere. El umbral es el mínimo con el que el
+            // panel cabe holgado (número + titular + raíl) en el caso más estrecho.
+            if (listHeight < MIN_PANEL_H) { unhook(); return; }
             windowW = listWidth;
             workSection.style.setProperty("--work-run", run + "px");
             start = workSection.getBoundingClientRect().top + scrollY;
