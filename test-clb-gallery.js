@@ -62,6 +62,34 @@ test("desktop-only anchor: Key Capabilities starts level with the intro text on 
     assert.doesNotMatch(css.match(/(?:^|\n)\.clb-cta\s*\{[^}]*\}/)[0], /margin-top:\s*auto/);
 });
 
+test("desktop-only: the top-menu CLB link anchors the whole section 18px higher", () => {
+    // El menú superior (.main-nav) existe a partir de 1025px; por debajo lo
+    // sustituye el burger y el ancla no cambia.
+    const rule = css.match(/@media \(min-width: 1025px\)\s*\{\s*\.clb\s*\{([^}]*)\}\s*\}/)?.[1];
+    assert.ok(rule, "desktop rule that moves the #clb anchor");
+    // El destino del ancla baja 18px por la página: la sección completa (título,
+    // párrafo, carrusel, capacidades y CTA) se ve 18px más arriba al pulsar CLB.
+    assert.match(rule, /scroll-margin-top:\s*-18px;/);
+    // Con el ancla abierta la sección sigue llenando la ventana: Contact no asoma.
+    assert.match(rule, /min-height:\s*calc\(100svh \+ 18px\);/);
+    // Solo escritorio: la regla base de .clb no lleva margen de scroll, así que
+    // por debajo de 1025px (burger, tablet y móvil) el ancla sigue donde siempre.
+    const base = css.match(/(?:^|\n)\.clb\s*\{[^}]*\}/)[0];
+    assert.doesNotMatch(base, /scroll-margin/);
+    assert.match(base, /min-height:\s*100svh;/);
+    assert.equal(css.match(/scroll-margin-top:\s*-18px/g).length, 1);
+    // El ancla es la sección entera (#clb), en la landing en inglés y en español.
+    for (const page of ["index.html", path.join("es", "index.html")]) {
+        const pageDoc = new JSDOM(fs.readFileSync(path.join(root, page), "utf8")).window.document;
+        assert.ok(pageDoc.querySelector('.main-nav a[href="#clb"]'), `${page}: enlace CLB del menú superior`);
+        assert.ok(pageDoc.querySelector("section.clb#clb"), `${page}: la sección es el destino del ancla`);
+    }
+    // El scroll con inercia lee ese margen (scroll-margin-top) al ir al ancla; el
+    // salto nativo lo respeta por su cuenta.
+    const smooth = fs.readFileSync(path.join(root, "smooth-scroll.js"), "utf8");
+    assert.match(smooth, /scrollMarginTop[\s\S]{0,120}glideTo\(.*\bscrollY\s*-\s*margin\)/);
+});
+
 test("capability headings start at the left edge without numbering, while descriptions are indented", () => {
     const features = [...doc.querySelectorAll("#clb .clb-feature")];
     assert.deepEqual(features.map(feature => feature.querySelector("h3").textContent),

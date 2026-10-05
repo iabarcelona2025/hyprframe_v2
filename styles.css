@@ -1444,6 +1444,19 @@ section { position: relative; }
     .clb-showcase { width: 100%; max-width: 580px; }
     .clb-cta { margin-top: 2rem; }
 }
+/* Ancla del menú superior (solo escritorio, ≥ 1025px: el rango en el que existe
+   .main-nav; por debajo lo sustituye el burger y no cambia nada). Al pulsar CLB
+   —o abrir la URL con #clb— la sección completa queda anclada 18px más arriba:
+   su borde superior se detiene 18px por encima de la ventana y todo el contenido
+   (título, párrafo, carrusel, capacidades y TEST NOW) se ve 18px más alto. Un
+   scroll-margin-top negativo adelanta el destino del ancla esos 18px: lo lee
+   smooth-scroll.js (getComputedStyle(el).scrollMarginTop) y el salto nativo, sin
+   inercia, lo respeta igual. El contenido no se mueve: solo cambia dónde se
+   detiene el ancla. El min-height crece los mismos 18px para que, con el ancla
+   abierta, la sección siga llenando la ventana y Contact no asome por abajo. */
+@media (min-width: 1025px) {
+    .clb { scroll-margin-top: -18px; min-height: calc(100svh + 18px); }
+}
 
 /* ── ABOUT ───────────────────────────────────────────────── */
 .about { padding: clamp(6rem, 15vw, 11rem) var(--pad); overflow: hidden; }
