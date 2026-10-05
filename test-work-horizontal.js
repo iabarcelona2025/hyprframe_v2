@@ -146,6 +146,44 @@ test("el degradado lila de las cajas es suave y el mismo en la caja y en sus dos
     assert.ok(Number(caja[2]) >= 65, `y el desvanecido, largo (${caja[2]}%)`);
 });
 
+test("los números y los titulares del carril conservan el tamaño de la lista vertical", () => {
+    const regla = (sel) => {
+        const m = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}").exec(css);
+        assert.ok(m, `falta la regla ${sel}`);
+        return m[1];
+    };
+    assert.doesNotMatch(regla(".work.hf-work-h .work-num"), /font-size/,
+        "el número del carril no cambia de tamaño: hereda el de la versión vertical");
+    assert.doesNotMatch(regla(".work.hf-work-h .work-title"), /font-size|line-height/,
+        "el titular tampoco: mismo cuerpo que en la lista vertical");
+    assert.doesNotMatch(regla(".work.hf-work-h .work-go"), /font-size/,
+        "la flecha también se queda en el tamaño de siempre");
+    // Y ese tamaño común es el de la lista vertical.
+    assert.match(css, /\.work-num \{\s*font-family: var\(--font-mono\); font-size: 0\.75rem;/);
+    assert.match(css, /\.work-title \{[\s\S]*?font-size: clamp\(1\.3rem, 3\.2vw, 2\.5rem\);/);
+});
+
+test("las cajas del carril son más pequeñas que al principio", () => {
+    const m = /\.work\.hf-work-h \.work-row \{[\s\S]*?width: clamp\((\d+)px, (\d+)vw, (\d+)px\);/.exec(css);
+    assert.ok(m, "el panel del carril tiene ancho declarado");
+    assert.ok(Number(m[2]) >= 32 && Number(m[2]) <= 44,
+        `el panel baja del 56vw original (${m[2]}vw)`);
+    assert.ok(Number(m[3]) <= 800, `y su tope también baja (${m[3]}px)`);
+});
+
+test("el degradado y el fotograma se funden más suave en el carril", () => {
+    const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-row::after \{[\s\S]*?mask-image: linear-gradient\(to left, #000 32%, transparent 100%\)/,
+        "el fundido del fotograma arranca antes y cierra en el borde del panel");
+    assert.match(carril,
+        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?linear-gradient\(to left, #000 32%, transparent 100%\),\s*repeating-linear-gradient\(102deg/,
+        "con máscaras compuestas se conserva el descubierto en bandas del hover");
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-row::after \{[\s\S]*?linear-gradient\(to right,\s*var\(--bg\) 0%,\s*rgba\(160, 100, 255, 0\.10\) 22%,\s*rgba\(160, 100, 255, 0\.05\) 48%,\s*rgba\(5, 5, 5, 0\) 80%\)/,
+        "el lila se reparte en más paradas para que la fusión no tenga corte");
+});
+
 for (const page of ["index.html", "es/index.html"]) {
     test(`${page}: los 10 proyectos viven en el carril y el raíl está listo`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), "utf8")).window.document;

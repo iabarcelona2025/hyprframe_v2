@@ -1180,11 +1180,13 @@ section { position: relative; }
         .work.hf-work-h .work-row {
             /* Panel de proyecto: número arriba a la izquierda, titular abajo a la
                izquierda y flecha abajo a la derecha. El borde izquierdo separa
-               un panel del siguiente. */
+               un panel del siguiente.
+               Cajas más pequeñas (05/10/2026, a petición del cliente): 56vw →
+               40vw, así los proyectos respiran y se ve más del siguiente. */
             --work-panel-top: clamp(1.25rem, 2.2vw, 2.2rem);
             --work-panel-bottom: clamp(2.8rem, 4.4vw, 4rem);
             flex: 0 0 auto;
-            width: clamp(480px, 56vw, 1120px);
+            width: clamp(340px, 40vw, 780px);
             height: 100%;
             grid-template-columns: auto 1fr auto;
             grid-template-rows: auto 1fr auto;
@@ -1193,26 +1195,54 @@ section { position: relative; }
             border-bottom: 0;
             border-left: 1px solid var(--line);
         }
+        /* Número y titular, al tamaño de la lista vertical: son los mismos
+           elementos, así que aquí solo se coloca el número (arriba a la
+           izquierda) y el titular (abajo), sin tocarles el cuerpo de letra.
+           Antes el número era un numeral gigante y el titular iba un paso más
+           grande; el cliente pidió devolverlos al tamaño de la versión vertical
+           (05/10/2026). */
         .work.hf-work-h .work-num {
             grid-area: 1 / 1 / 2 / 2;
             align-self: start; justify-self: start;
-            font-size: clamp(2.4rem, 5.2vw, 4.6rem);
-            line-height: 0.9; letter-spacing: 0.04em;
-            color: rgba(239, 238, 233, 0.15);
         }
-        .work.hf-work-h .work-row:hover .work-num,
-        .work.hf-work-h .work-row:focus-visible .work-num { color: var(--violet); }
         .work.hf-work-h .work-title {
             grid-area: 3 / 1 / 4 / 3;
             align-self: end;
             max-width: 22ch;
-            font-size: clamp(1.6rem, 3.4vw, 3.2rem);
-            line-height: 1.02;
         }
         .work.hf-work-h .work-go {
             grid-area: 3 / 3 / 4 / 4;
             align-self: end; justify-self: end;
-            font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+        }
+        /* Fusión más suave entre el degradado lila y el fotograma (05/10/2026):
+           el negro entra antes y el lila se reparte en más paradas, y la máscara
+           del fotograma arranca su fundido antes y lo cierra justo en el borde
+           izquierdo del panel; la foto se disuelve en el negro en vez de
+           aparecer recortada. */
+        .work.hf-work-h .work-row::after {
+            background-image:
+                linear-gradient(to right,
+                    var(--bg) 0%,
+                    rgba(160, 100, 255, 0.10) 22%,
+                    rgba(160, 100, 255, 0.05) 48%,
+                    rgba(5, 5, 5, 0) 80%),
+                var(--img, none);
+            -webkit-mask-image: linear-gradient(to left, #000 32%, transparent 100%);
+                    mask-image: linear-gradient(to left, #000 32%, transparent 100%);
+        }
+        /* Con máscaras compuestas (navegadores modernos) se conserva el
+           descubierto en bandas del hover y se suaviza igual el fundido lateral. */
+        @supports (mask-composite: intersect) {
+            .work.hf-work-h .work-row::after {
+                -webkit-mask-image:
+                    linear-gradient(to left, #000 32%, transparent 100%),
+                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+                mask-image:
+                    linear-gradient(to left, #000 32%, transparent 100%),
+                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+                -webkit-mask-composite: source-in;
+                mask-composite: intersect;
+            }
         }
         /* El panel no crece en vertical al pasar el cursor (la lista sí lo hacía
            para abrir la caja): el desplazamiento lateral se mantiene y la foto,
