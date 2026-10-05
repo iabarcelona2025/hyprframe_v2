@@ -70,8 +70,8 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=213/);
-        assert.match(html, /script\.js\?v=59/);
+        assert.match(html, /styles\.css\?v=214/);
+        assert.match(html, /script\.js\?v=60/);
     }
 });
 
