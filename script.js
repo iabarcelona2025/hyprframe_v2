@@ -65,24 +65,12 @@
         }
     }
 
-    /* ── 2. Header state + scroll progress ────────────────── */
-    // Rendimiento (30/09/2026): antes cada evento de scroll leía scrollHeight
-    // (fuerza recálculo de layout) y escribía `width: %` (layout + pintado de la
-    // línea). Ahora el alto del documento se cachea —se recalcula solo cuando
-    // cambia de verdad, con ResizeObserver— y el avance se escribe como
-    // `transform: scaleX()`, que no toca layout ni pintura. Un rAF agrupa todos
-    // los eventos de scroll de un mismo frame en una sola escritura.
+    /* ── 2. Header state + scroll position ───────────────── */
     const header = document.getElementById("siteHeader");
-    const progress = document.getElementById("scrollProgress");
     let scrollMax = 0;
 
     function measureScrollMax() {
         scrollMax = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-    }
-
-    function paintScrollProgress() {
-        const ratio = scrollMax > 0 ? Math.min(scrollY / scrollMax, 1) : 0;
-        progress.style.transform = `scaleX(${ratio})`;
     }
 
     let scrollTicking = false;
@@ -92,18 +80,15 @@
         requestAnimationFrame(() => {
             scrollTicking = false;
             header.classList.toggle("scrolled", scrollY > 40);
-            paintScrollProgress();
         });
     }
 
     measureScrollMax();
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", measureScrollMax);
-    // La página cambia de alto al cargar imágenes o abrir el menú.
     if (window.ResizeObserver) new ResizeObserver(measureScrollMax).observe(document.body);
     addEventListener("load", measureScrollMax);
     onScroll();
-    paintScrollProgress();
 
     /* ── 2b. Nav activo: el apartado en el que estás se ilumina ── */
     // Solo escritorio: a ≤1024px el .main-nav se cambia por el burger, así que

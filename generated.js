@@ -32,17 +32,9 @@
     } catch (_) { /* Storage disabled: standard link navigation still works. */ }
 
     const header = document.getElementById("siteHeader");
-    const progress = document.getElementById("scrollProgress");
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
-
-    function onScroll() {
-        header.classList.add("scrolled");
-        const max = document.documentElement.scrollHeight - innerHeight;
-        progress.style.width = (max > 0 ? scrollY / max * 100 : 0) + "%";
-    }
-    addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    header.classList.add("scrolled");
 
     function toggleMenu(open) {
         document.body.classList.toggle("menu-open", open);

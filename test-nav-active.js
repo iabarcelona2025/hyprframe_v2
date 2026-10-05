@@ -121,12 +121,17 @@ const GEN = "#work", ABOUT = "#about", SERVICES = "#services", CLB = "#clb", CON
         /\.main-nav \[aria-current="location"\]::after \{ transform: scaleX\(1\); transform-origin: left; \}/.test(css));
     check("CSS: la línea de Contact sigue siendo lima",
         /\.main-nav \.nav-cta::after \{ background: var\(--lime\); \}/.test(css));
+    check("la franja de avance ya no existe en las landings, estilos ni script",
+        !HTML.includes("scroll-progress") && !HTML_ES.includes("scroll-progress") &&
+        !css.includes("scroll-progress") && !js.includes("scrollProgress"));
+    check("el selector de idioma no muestra el icono de globo en escritorio ni móvil",
+        !/\.header-meta > \.lang-switch::before/.test(css) &&
+        !/\.menu-lang \.lang-switch::before/.test(css));
 }
 
 /* ── 2. El enlace se enciende cuando su sección cruza la línea ────────────── */
 (async () => {
     const page = boot();
-
     check("al principio (hero) no hay nada encendido", page.activeHref() === null);
 
     // Generado empieza en 2000: la línea (scroll + 280) lo alcanza en 1720.

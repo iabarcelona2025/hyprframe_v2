@@ -3,7 +3,6 @@
     "use strict";
 
     const header = document.getElementById("siteHeader");
-    const progress = document.getElementById("scrollProgress");
     const burger = document.getElementById("burger");
     const menu = document.getElementById("menuOverlay");
     const modal = document.getElementById("videoModal");
@@ -13,15 +12,8 @@
     const synopsis = document.getElementById("videoSynopsis");
     const cast = document.getElementById("videoCast");
     let lastFilmLink = null;
-
-    function updateScroll() {
-        // En Captured la cabecera usa siempre su versión compacta y desenfocada.
-        header.classList.add("scrolled");
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        progress.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
-    }
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    updateScroll();
+    // En Captured la cabecera usa siempre su versión compacta y desenfocada.
+    header.classList.add("scrolled");
 
     function setMenu(open, restoreFocus = false) {
         document.body.classList.toggle("menu-open", open);

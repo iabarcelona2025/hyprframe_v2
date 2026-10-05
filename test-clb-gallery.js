@@ -103,7 +103,7 @@ test("four distinct frames plus a hidden copy of the first for a seamless loop",
     const images = [...doc.querySelectorAll("#clb .clb-gallery-track img")];
     assert.equal(images.length, 5);
     images.slice(0, 4).forEach((img, i) => {
-        assert.equal(img.getAttribute("src"), `assets/images/clb0${i + 1}.png`);
+        assert.equal(img.getAttribute("src"), `assets/images/clb0${i + 1}.jpg`);
         assert.ok(img.alt);
         assert.ok(fs.existsSync(path.join(root, img.getAttribute("src"))));
     });
