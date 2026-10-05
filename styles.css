@@ -1199,6 +1199,13 @@ section { position: relative; }
             border-bottom: 0;
             border-left: 1px solid var(--line);
         }
+        /* La última caja se cierra también por la derecha (05/10/2026): al final
+           del recorrido RYUU queda centrada y, sin esta línea, la franja vacía de
+           su derecha —encajada entre las líneas de arriba y abajo del carril— se
+           leía como parte de su caja, así que parecía más ancha que las demás.
+           Todas las cajas comparten el mismo ancho (la regla de arriba): lo que
+           cambia es que ahora las diez quedan entre dos líneas verticales. */
+        .work.hf-work-h .work-row:last-child { border-right: 1px solid var(--line); }
         /* Número y titular, al tamaño de la lista vertical: son los mismos
            elementos, así que aquí solo se coloca el número (arriba a la
            izquierda) y el titular (abajo), sin tocarles el cuerpo de letra.

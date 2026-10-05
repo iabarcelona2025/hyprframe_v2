@@ -184,12 +184,31 @@ test("los números y los titulares del carril conservan el tamaño de la lista v
     assert.match(css, /\.work-title \{[\s\S]*?font-size: clamp\(1\.3rem, 3\.2vw, 2\.5rem\);/);
 });
 
-test("las cajas del carril son más pequeñas que al principio", () => {
+test("las cajas del carril son más pequeñas que al principio y todas del mismo ancho", () => {
     const m = /\.work\.hf-work-h \.work-row \{[\s\S]*?width: clamp\((\d+)px, (\d+)vw, (\d+)px\);/.exec(css);
     assert.ok(m, "el panel del carril tiene ancho declarado");
     assert.ok(Number(m[2]) >= 32 && Number(m[2]) <= 44,
         `el panel baja del 56vw original (${m[2]}vw)`);
     assert.ok(Number(m[3]) <= 800, `y su tope también baja (${m[3]}px)`);
+    // Un único ancho para las diez cajas: ninguna se ajusta por su posición
+    // (la última se cierra por la derecha, pero no cambia de tamaño).
+    const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    // Todas las reglas del carril que apuntan a una caja (sin contar la ::after
+    // de la foto, que lleva width: 100% y no es una caja).
+    const conAncho = [...carril.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter(([, sel]) => /\.work\.hf-work-h [^{}]*\.work-row/.test(sel) && !/::/.test(sel))
+        .map(([, , cuerpo]) => /width:\s*([^;]+);/.exec(cuerpo))
+        .filter(Boolean);
+    assert.equal(conAncho.length, 1,
+        `solo una declaración de ancho para las cajas (${conAncho.length})`);
+    assert.match(conAncho[0][1], /^clamp\(340px, 40vw, 780px\)$/,
+        "y es la misma para las diez");
+    assert.doesNotMatch(carril, /\.work\.hf-work-h \.work-row:(first|last)-child \{[^}]*width:/,
+        "ni la primera ni la última cambian de ancho");
+    assert.match(carril, /\.work\.hf-work-h \.work-row:last-child \{ border-right: 1px solid var\(--line\); \}/,
+        "la última caja se cierra por la derecha con la misma línea gris");
+    assert.doesNotMatch(carril, /\.work\.hf-work-h \.work-row \{[^}]*border-right/,
+        "las demás no llevan línea derecha: la pone la caja siguiente");
 });
 
 test("el fotograma cubre toda la caja con su capa de fusión", () => {
