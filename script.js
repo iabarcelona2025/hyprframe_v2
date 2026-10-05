@@ -1126,25 +1126,48 @@
     rows.forEach((row) => row.addEventListener("click", (event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const rect = row.getBoundingClientRect();
-        const start = { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
-        const imagePosition = getComputedStyle(row, "::after").backgroundPosition;
-        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition })); } catch (_) {}
+        // En el carril de escritorio (7b) el fotograma cubre toda la caja: el
+        // rect que viaja a la ficha es el de la caja entera. En la lista vertical
+        // es la mitad derecha, que es donde vive la foto.
+        const full = !!(workSection && workSection.classList.contains("hf-work-h"));
+        const start = full
+            ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+            : { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
+        // El ::after del carril lleva tres capas (velo, lavado y foto): el
+        // encuadre del proyecto es el de la capa de la foto, y las tres comparten
+        // el mismo valor, así que basta con la primera.
+        const imagePosition = (getComputedStyle(row, "::after").backgroundPosition || "center").split(",")[0].trim();
+        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition, full })); } catch (_) {}
+        event.preventDefault();
+        row.classList.add("is-departing");
+
+        // Carril de escritorio (05/10/2026): aquí NO se construye clon. El clon
+        // de salida es una caja nueva con la misma foto, pero sin el número, el
+        // titular ni el lavado lila de la caja real, así que al aparecer —encima,
+        // tapándola— el relevo se notaba: el texto se apagaba de golpe. En el
+        // carril la caja ya está donde tiene que estar (la sección está fija) y
+        // el navegador la sigue pintando hasta que carga la ficha, así que se
+        // deja tal cual y la salida la cuenta la propia caja: el fotograma se
+        // empuja un 5% hacia dentro (ver .is-departing en styles.css) y la ficha
+        // recoge el relevo con su clon de llegada desde el mismo rect.
+        if (full) {
+            setTimeout(() => { location.href = row.href; }, 440);
+            return;
+        }
+
         const layer = document.createElement("div");
         layer.className = "work-transition work-transition--departure";
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
-        event.preventDefault();
-        // La caja crece con el fotograma (03/10/2026, en móvil también desde
-        // hoy): el clon escala ×1.28 anclado a su borde superior (la línea
-        // que delimita la caja por arriba es el border-bottom de la fila
-        // anterior y no se mueve), así que todo el crecimiento —un 28% del
-        // alto medido al clic— va hacia abajo y la fila lo acompaña sumándolo
-        // a su padding inferior en el mismo frame, con idéntica curva (ver
-        // .work-row.is-departing en styles.css): la línea inferior, propia de
-        // la fila, baja con la caja y el fotograma queda contenido. El rect
-        // guardado arriba no cambia: la llegada al proyecto sigue igual.
+        // La caja crece con el fotograma (03/10/2026): el clon escala ×1.28
+        // anclado a su borde superior (la línea que delimita la caja por arriba
+        // es el border-bottom de la fila anterior y no se mueve), así que todo el
+        // crecimiento —un 28% del alto medido al clic— va hacia abajo y la fila
+        // lo acompaña sumándolo a su padding inferior en el mismo frame, con
+        // idéntica curva (ver .work-row.is-departing en styles.css): la línea
+        // inferior, propia de la fila, baja con la caja y el fotograma queda
+        // contenido. El rect guardado arriba no cambia: la llegada sigue igual.
         const padding = getComputedStyle(row);
-        row.classList.add("is-departing");
         row.style.paddingTop = padding.paddingTop;
         row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
         requestAnimationFrame(() => layer.classList.add("is-opening"));
@@ -1214,6 +1237,422 @@
 
         // preload all hover images so swaps are instant
         rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
+    }
+
+    /* ── 7b. Work: recorrido horizontal del listado en escritorio ─────────────
+       En pantallas de 1025px o más la sección de proyectos se recorre en
+       horizontal: la sección se queda fija (sticky) mientras el scroll vertical
+       avanza por los 10 proyectos hacia la derecha y, al llegar al último, se
+       libera para que el scroll siga normal hacia About.
+
+       El desplazamiento del carril es 1:1 con el scroll del documento (no hay
+       motor de scroll propio), así que la inercia de smooth-scroll.js, el scroll
+       nativo, las anclas y el teclado siguen funcionando igual; este módulo solo
+       traduce posición de scroll a translateX y enciende el raíl.
+
+       La clase .hf-work-h (la que activa el diseño del carril en styles.css) se
+       pone solo cuando el recorrido se puede sostener: escritorio, sin «reducir
+       movimiento» y con maqueta medida. En móvil/tablet, sin JavaScript o con
+       esa preferencia, el listado se queda como estaba, en vertical. El alto de
+       la sección es «una pantalla + el recorrido» (--work-run), así que el punto
+       en el que la sección se suelta coincide con el final del recorrido.
+
+       Dos tiempos pedidos por el cliente (05/10/2026): N.O.D.E. se queda quieto
+       y a la vista el primer tramo de scroll (HOLD, ver abajo) antes de que el
+       carril empiece a correr, y el recorrido termina con RYUU CENTRADA en la
+       ventana, que es el último estado antes de soltarse y seguir bajando.
+
+       Al soltarse nacen unas ramas geométricas y rectilíneas —a la derecha del
+       codo de RYUU, nunca por debajo de la caja— que se van formando con el
+       scroll: el dibujo baja de la línea de cierre hacia abajo, de forma
+       progresiva y a la vista, y al subir se recoge por el mismo sitio (ver más
+       abajo). Hoy viajan DESACTIVADAS: BRANCHES_ON las apaga y la landing lo
+       declara en su HTML (window.HYPRFRAME_WORK_BRANCHES); el carril no cambia. */
+    const workView = workSection && workSection.querySelector(".work-view");
+    const workList = workSection && workSection.querySelector(".work-list");
+    const workTrack = document.getElementById("workTrack");
+    const workRailTicks = document.getElementById("workRailTicks");
+    const workBranches = document.getElementById("workBranches");
+
+    if (workView && workList && workTrack && workRailTicks && rows.length > 1) {
+        const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
+        const desktop = window.matchMedia("(min-width: 1025px)");
+        /* Ramas de WORK → About: DESACTIVADAS (05/10/2026). El dibujo está entero
+           en el módulo, pero mientras este interruptor no se encienda no se traza
+           nada: las ramas viajan en el código sin dibujarse. La landing lo declara
+           antes de cargar este script (window.HYPRFRAME_WORK_BRANCHES) y, para
+           verlas, basta ponerlo en true: el frente, la escalera y la rama de la
+           derecha hasta SYNTHESIS vuelven tal cual. */
+        const BRANCHES_ON = window.HYPRFRAME_WORK_BRANCHES === true;
+        // Una muesca por proyecto, en el mismo orden que el listado.
+        const ticks = rows.map(() => {
+            const tick = document.createElement("i");
+            tick.className = "work-rail-tick";
+            workRailTicks.appendChild(tick);
+            return tick;
+        });
+        // Tramo inicial, en fracción del recorrido de la sección, en el que el
+        // carril no se mueve: N.O.D.E. se queda a la vista antes de arrancar.
+        const HOLD = 0.16;
+        // Cuánto dura el dibujo de las ramas, en múltiplos del alto del lienzo.
+        // Con el frente 1:1 la tinta dibujada coincidiría con la parte del lienzo
+        // que ya está a la vista (todo parecería terminado, sin animación que
+        // ver), así que el frente va por detrás: arranca despacio junto a la línea
+        // de cierre y se le ve bajar. Ver paintBranches.
+        const GROWTH = 1.4;
+        let branchPaths = [];   // tren de dibujo de las ramas: { el, len, t0, t1, last }
+        let branchStart = 0;    // scrollY en el que el carril se suelta y arrancan
+        let branchSpan = 0;     // px de scroll que dura el dibujo (el alto del lienzo)
+        let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
+        let step = 0;         // recorrido por proyecto (px)
+        let windowW = 0;      // ancho de la ventana del carril (px)
+        let range = 0;        // px de scroll vertical que dura la sección fija
+        let hold = 0;         // px de scroll de esa espera inicial
+        let start = 0;        // posición de la sección dentro del documento
+        let lit = -1;         // último proyecto encendido en el raíl
+        let paintedX = null;  // último translate escrito (para no repetirlo)
+        let hooked = false;   // la sección está en modo carril y medida
+        let queued = 0;       // rAF pendiente
+
+        function paint() {
+            queued = 0;
+            if (!hooked) return;
+            // Los primeros `hold` px de la sección fija no mueven nada: N.O.D.E.
+            // sigue a la vista. El recorrido completo se reparte entre el resto.
+            const travel = Math.max(1, range - hold);
+            const raw = (scrollY - start - hold) / travel;
+            let progress = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+            // Al soltarse la sección (final del carril) empiezan a formarse las
+            // ramas, y lo hacen con el scroll: bajan al bajar, se recogen al subir.
+            paintBranches();
+            const travelled = progress * run;
+            const x = -travelled;
+            // Fuera del recorrido el valor no cambia: no se reescribe el estilo
+            // en cada frame de scroll del resto de la página.
+            if (x !== paintedX) {
+                paintedX = x;
+                workTrack.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
+            }
+            // Proyecto «en curso»: el que tiene el centro más cerca del centro de
+            // la ventana. Con el último proyecto ya no hay recorrido para dejarlo
+            // alineado a la izquierda (la lista se suelta justo entonces), y esta
+            // cuenta lo enciende igual: la última muesca se enciende al final.
+            const now = Math.min(rows.length - 1, Math.max(0,
+                Math.round((travelled + windowW / 2) / step - 0.5)));
+            if (now !== lit) {
+                if (ticks[lit]) ticks[lit].classList.remove("is-on");
+                ticks[now].classList.add("is-on");
+                lit = now;
+            }
+        }
+
+        function requestPaint() {
+            if (!hooked || queued) return;
+            queued = requestAnimationFrame(paint);
+        }
+
+        // Sin carril: se retira todo lo que puso este módulo y el listado vuelve
+        // a ser la lista vertical (es idempotente y se puede llamar siempre).
+        function unhook() {
+            hooked = false;
+            if (queued) { cancelAnimationFrame(queued); queued = 0; }
+            workSection.classList.remove("hf-work-h");
+            workSection.style.removeProperty("--work-run");
+            workTrack.style.transform = "";
+            paintedX = null;
+            if (ticks[lit]) ticks[lit].classList.remove("is-on");
+            lit = -1;
+            // Las ramas son del carril: sin carril no queda nada (y se vuelven a
+            // trazar, al ritmo del scroll, si el carril regresa al redimensionar).
+            if (workBranches) {
+                workBranches.textContent = "";
+                workBranches.style.removeProperty("height");
+            }
+            branchPaths = [];
+        }
+
+        /* Dibujo de las ramas ligado al scroll (05/10/2026): el frente baja desde
+           la línea de cierre y cada tramo se dibuja cuando el frente pasa por su
+           altura: por debajo del frente no hay nada dibujado y por encima está
+           todo, así que la maraña crece hacia abajo de forma progresiva y al subir
+           se recoge por el mismo sitio, en orden inverso. Parado, se queda como
+           esté.
+
+           El recorrido dura GROWTH veces el alto del lienzo y el frente va por
+           detrás (t = recorrido²): despacio al principio, junto a la línea, y
+           llegando a SYNTHESIS al final. Así el lienzo que aún no está dibujado se
+           ve a la vista (la maraña crece delante del que mira) en vez de coincidir
+           con lo que ya se ve, que es lo que dejaba el dibujo sin animación.
+           Solo se escribe el estilo cuando el número cambia. */
+        function paintBranches() {
+            if (!branchPaths.length) return;
+            const span = Math.max(1, branchSpan);
+            let t = (scrollY - branchStart) / span;
+            t = t < 0 ? 0 : t > 1 ? 1 : t;
+            t = t * t;
+            for (const tramo of branchPaths) {
+                const dur = tramo.t1 - tramo.t0;
+                let local = dur > 0 ? (t - tramo.t0) / dur : (t >= tramo.t0 ? 1 : 0);
+                local = local < 0 ? 0 : local > 1 ? 1 : local;
+                const dash = Math.round(tramo.len * (1 - local));
+                if (dash !== tramo.last) {
+                    tramo.last = dash;
+                    tramo.el.style.strokeDashoffset = String(dash);
+                }
+            }
+        }
+
+        /* Traza las ramas dentro del contenedor (w × h) y devuelve los tramos, ya
+           con su ventana de dibujo (t0 → t1, en fracción de su árbol).
+
+           Nacen en y = 0, que es la línea de cierre del carril (el borde inferior
+           del listado), y SIEMPRE a la derecha del codo de RYUU: la caja, que al
+           soltarse queda centrada, no tiene nada por debajo (05/10/2026).
+
+           Geometría rectilínea, la de antes (05/10/2026): un tallo recto y, de él,
+           un abanico de ramas que se vuelven a partir, cada nivel más corto. Todo
+           sobre la rejilla de 45° con coordenadas enteras —vertical, horizontal o
+           diagonal exacta—, sin subir nunca y sin medias inclinaciones. Con semilla
+           fija: las mismas ramas en cada carga.
+
+           Cada árbol se ajusta a SU tope (la escalera: el de la derecha llega a
+           SYNTHESIS y los de su izquierda, cada vez menos) escalándolo: se traza
+           para medirlo y se repite a la escala de su tope hasta caer justo encima.
+
+           La ventana de dibujo de cada tramo sale de su altura (t0 → t1, en
+           fracción del lienzo), no de su distancia: el dibujo baja con el frente
+           desde la línea de cierre —nada queda ya dibujado por delante— y un tramo
+           empieza justo cuando el que lo engendra acaba, porque las hijas nacen
+           donde muere su padre. No hay piezas sueltas ni saltos. */
+        function traceBranches(w, h) {
+            const MAX_DEPTH = 5;
+            const tramos = [];
+
+            const last = rows[rows.length - 1];
+            const corner = Math.round(last.offsetLeft + last.offsetWidth - run);
+            // Banda de dibujo: del codo de la última caja al borde de la ventana.
+            const xMin = Math.round(Math.min(Math.max(corner, 4), w - 16));
+            const xMax = Math.round(w - 4);
+
+            // Rejilla de 45°: las cinco direcciones que bajan (E, SE, S, SW, W).
+            // Con coordenadas enteras cada tramo es una recta exacta: vertical,
+            // horizontal o diagonal de 45°, y la maraña se lee rectilínea.
+            const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+            const espejo = (i) => 4 - i;   // E↔W, SE↔SW, S→S: endereza hacia dentro
+
+            /* Un árbol: del tallo recto salen ramas en diagonal que se vuelven a
+               partir (cada nivel más corto, ninguna sube, ninguna sale de la banda)
+               y el conjunto se escala para caer justo sobre SU tope. */
+            const arbol = (x, cap, root) => {
+                const marca = tramos.length;
+                let esc = 1;
+                // En la primera pasada se traza a tamaño natural (con el lienzo como
+                // tope, solo para medirlo); después se repite ya escalado, ajustando
+                // la escala hasta que el árbol queda justo encima de su tope.
+                for (let pasada = 0; pasada < 4; pasada++) {
+                    const tope = pasada === 0 ? h + 40 : cap;
+                    let seed = (0x51ED270B + root * 0x9E3779B1) | 0;
+                    const rnd = () => {
+                        seed = (seed + 0x6D2B79F5) | 0;
+                        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                    };
+                    let profundo = 0;  // lo más abajo que llega (para escalarlo)
+                    /* La ventana de dibujo de cada tramo sale de SU ALTURA: el
+                       frente baja de la línea de cierre al ritmo del scroll, así
+                       que un tramo se dibuja al paso del frente por su arranque y
+                       acaba cuando el frente lo pasa. Por debajo del frente no
+                       queda nada dibujado: el dibujo crece hacia abajo, no a
+                       saltos. Los llanos, que no bajan, se dibujan con un barrido
+                       corto en cuanto el frente llega a su altura. */
+                    const push = (x0, y0, x1, y1, depth) => {
+                        const xa = Math.round(x0), ya = Math.round(y0);
+                        const xb = Math.round(x1), yb = Math.round(y1);
+                        profundo = Math.max(profundo, yb);
+                        tramos.push({
+                            d: `M${xa} ${ya}L${xb} ${yb}`, depth, root,
+                            t0: ya / h,
+                            t1: yb > ya ? yb / h : Math.min(1, (ya + 30) / h),
+                        });
+                    };
+                    /* Una rama: recta de la rejilla, que se vuelve a partir. `r`
+                       es su largo natural —el del árbol sin escalar, así que la
+                       estructura no cambia de escala— y el corte en el tope solo
+                       acorta el paso: sigue siendo una diagonal exacta. */
+                    const rama = (x, y, i, r, depth) => {
+                        let k = i;
+                        let paso = Math.max(1, Math.round(r * esc));
+                        if (x + DIRS[k][0] * paso < xMin || x + DIRS[k][0] * paso > xMax) k = espejo(k);
+                        const [ux, uy] = DIRS[k];
+                        // El tope corta la rama: el trozo que queda se dibuja igual
+                        // (aunque sea de un par de píxeles) porque es el que deja al
+                        // árbol justo encima de su tope, y la rama ya no sigue.
+                        const cortada = uy && y + uy * paso > tope;
+                        if (cortada) paso = tope - y;
+                        if (r < 8 || (paso < 8 && !cortada)) return;
+                        const nx = x + ux * paso, ny = y + uy * paso;
+                        push(x, y, nx, ny, depth);
+                        if (cortada || depth >= MAX_DEPTH || r < 22) return;
+                        // Derivación llana corta: el aire de trazado de siempre.
+                        if (rnd() < 0.28) {
+                            const lado = nx + 40 > xMax ? -1 : nx - 40 < xMin ? 1 : (rnd() < 0.5 ? -1 : 1);
+                            const hueco = lado > 0 ? xMax - nx : nx - xMin;
+                            const cruce = Math.min(Math.max(1, Math.round((16 + rnd() * 48) * esc)), hueco);
+                            if (cruce >= 1) push(nx, ny, nx + lado * cruce, ny, depth + 1);
+                        }
+                        const hijos = rnd() < 0.62 ? 2 : 1;
+                        for (let c = 0; c < hijos; c++) {
+                            const giro = (c === 0 ? -1 : 1) * (rnd() < 0.5 ? 1 : 2);
+                            // El giro se queda en el abanico que baja (SE, S, SW):
+                            // los llanos son la derivación de arriba, no un destino.
+                            const j = Math.min(3, Math.max(1, k + giro));
+                            rama(nx, ny, j, r * (0.68 + rnd() * 0.2), depth + 1);
+                        }
+                    };
+                    // Tallo: primer tramo recto (el de antes: un quinto largo del
+                    // árbol) y de ahí el abanico.
+                    rama(Math.round(x), 0, 2, h * (0.2 + rnd() * 0.12), 0);
+                    if (pasada > 0 && profundo === cap) break;   // ya toca su tope
+                    if (!profundo) break;                        // nada que trazar
+                    // Un pelo de más que recorta el corte en el tope: así el árbol
+                    // cae justo encima de él, ni un píxel menos.
+                    esc = Math.min(2.5, Math.max(0.4, esc * (cap + Math.max(4, cap * 0.02)) / profundo));
+                    tramos.length = marca;
+                }
+            };
+
+            // Arranques, todos a la derecha del codo de RYUU: el codo mismo (el
+            // borde derecho de la última caja) y tres puntos repartidos hasta el
+            // borde de la ventana. El tope de cada árbol baja en escalera, de forma
+            // que el de la derecha es el que llega a SYNTHESIS.
+            const hueco = Math.max(0, xMax - xMin);
+            const raices = [[0.04, 0.45], [0.32, 0.6], [0.6, 0.78], [0.88, 1]];
+            raices.forEach(([f, tope], root) => {
+                // Normalizada por árbol, cada maraña crece a su ritmo y todas
+                // acaban a la vez: cuando el lienzo entra entero en pantalla.
+                arbol(xMin + hueco * f, Math.round(h * tope), root);
+            });
+            return tramos;
+        }
+
+        function buildBranches() {
+            // Interruptor apagado: no se traza nada (las ramas son lo único que
+            // este módulo dibuja fuera del carril; el carril sigue igual).
+            if (!workBranches || !BRANCHES_ON) return;
+            // Alto del lienzo: hasta la altura de SYNTHESIS (el centro de la
+            // tercera línea del titular de About), medido en el documento. Si no
+            // se puede medir —About no está, la fuente aún no ha cargado— vale el
+            // clamp del CSS. Es el listón que alcanza la rama de la derecha y, a
+            // la vez, los px de scroll que dura el dibujo.
+            const linea3 = document.querySelector(".about-title .line:nth-child(3)");
+            if (linea3) {
+                const abajo = workSection.getBoundingClientRect().bottom + scrollY;
+                const rect = linea3.getBoundingClientRect();
+                const alto = Math.round(rect.top + scrollY + rect.height / 2 - abajo);
+                if (alto >= 200) workBranches.style.height = alto + "px";
+                else workBranches.style.removeProperty("height");
+            } else {
+                workBranches.style.removeProperty("height");
+            }
+            const w = Math.round(workBranches.clientWidth);
+            const h = Math.round(workBranches.clientHeight);
+            if (!w || !h) return;                    // sin maqueta (jsdom, pestaña oculta)
+            workBranches.textContent = "";           // se rehace con la medida nueva
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+            svg.setAttribute("aria-hidden", "true");
+            svg.setAttribute("focusable", "false");
+            const tramos = traceBranches(w, h);
+            // Cada tramo ya trae su ventana (t0 → t1, en fracción de su árbol).
+            branchPaths = tramos.map(({ d, t0, t1 }) => {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", d);
+                // --len: longitud real del trazo; sin getTotalLength (jsdom) queda
+                // la reserva del CSS, que es la que usa también el dibujo.
+                const medida = typeof path.getTotalLength === "function" ? path.getTotalLength() : 0;
+                const len = Math.max(1, Math.ceil(medida) || 2000);
+                path.style.setProperty("--len", len);
+                path.style.strokeDashoffset = String(len);   // sin scroll: sin dibujar
+                svg.appendChild(path);
+                return { el: path, len, t0, t1, last: len };
+            });
+            workBranches.appendChild(svg);
+            // El dibujo va con el scroll: arranca donde se suelta la sección y dura
+            // GROWTH veces el alto del lienzo, para que se vea crecer (ver arriba).
+            branchStart = start + range;
+            branchSpan = Math.round(h * GROWTH);
+            paintBranches();
+        }
+
+        function measure() {
+            if (!desktop.matches || reduced) { unhook(); return; }
+            // Se mide con el diseño del carril ya puesto: anchos y alturas son
+            // los de la maqueta horizontal, no los de la lista vertical.
+            workSection.classList.add("hf-work-h");
+            const listWidth = workList.clientWidth;
+            const listHeight = workList.clientHeight;
+            const last = rows[rows.length - 1];
+            // El recorrido llega hasta dejar el ÚLTIMO proyecto CENTRADO en la
+            // ventana (no pegado al borde derecho): es la imagen con la que la
+            // sección se suelta y el scroll sigue bajando (05/10/2026).
+            run = Math.max(0, Math.round(
+                last.offsetLeft + last.offsetWidth / 2 - listWidth / 2));
+            step = Math.max(0, rows[1].offsetLeft - rows[0].offsetLeft);
+            // Sin maqueta (jsdom, pestaña oculta) o si el carril ya cabe entero
+            // en la ventana no hay recorrido que hacer: se deja en vertical.
+            if (listWidth <= 0 || run < 1 || step < 1) { unhook(); return; }
+            // Una ventana muy baja (un portátil apaisado, media pantalla) deja los
+            // paneles sin alto para el número y el titular: ahí la lista vertical
+            // se adapta mejor y se prefiere. El umbral es el mínimo con el que el
+            // panel cabe holgado (número + titular + raíl) en el caso más estrecho.
+            if (listHeight < MIN_PANEL_H) { unhook(); return; }
+            windowW = listWidth;
+            workSection.style.setProperty("--work-run", run + "px");
+            start = workSection.getBoundingClientRect().top + scrollY;
+            // El recorrido vertical que dura la sección pegado es exactamente el
+            // trozo de sección que sobresale de la pantalla pegada (una pantalla
+            // + recorrido − una pantalla = recorrido), así que el carril y el
+            // scroll van 1:1 y la sección se suelta con el proyecto 10 a la vista
+            // aunque el alto de ventana real no coincida con el de la maqueta
+            // (barras del navegador, zoom…).
+            range = Math.max(1, workSection.offsetHeight - workView.offsetHeight);
+            hold = Math.round(range * HOLD);   // espera inicial de N.O.D.E.
+            // La cascada de entrada de las filas (sección 4) es de la lista
+            // vertical, donde se apilan: aquí los paneles viajan en horizontal y
+            // aparecerían a media animación al llegar con scroll rápido. Se dan
+            // por visibles de una vez —quedan colocados cuando el carril llega a
+            // la pantalla— y ya no se retira la clase: quitarla con la cascada ya
+            // consumida dejaría las filas ocultas para siempre.
+            rows.forEach((row) => row.classList.add("work-row-visible"));
+            buildBranches();
+            hooked = true;
+            requestPaint();
+        }
+
+        addEventListener("scroll", requestPaint, { passive: true });
+        addEventListener("resize", measure);
+        addEventListener("load", measure);
+        if (window.ResizeObserver) new ResizeObserver(measure).observe(document.body);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure, measure);
+
+        // Al recorrer el listado con el teclado, el proyecto que recibe el foco
+        // tiene que quedar a la vista: se lleva el scroll al tramo que lo enseña.
+        // Solo con el teclado: al hacer clic en una fila el foco no debe mover la
+        // página (y además la fila ya se lleva a la ficha del proyecto).
+        let keyboardNav = false;
+        addEventListener("keydown", () => { keyboardNav = true; }, { passive: true, capture: true });
+        addEventListener("pointerdown", () => { keyboardNav = false; }, { passive: true, capture: true });
+        rows.forEach((row, index) => {
+            row.addEventListener("focus", () => {
+                if (!hooked || !keyboardNav) return;
+                // Misma cuenta que paint(): el tramo de espera y, después, la
+                // parte del recorrido que deja ese proyecto alineado a la izquierda.
+                scrollTo(0, Math.round(start + hold + Math.min(range - hold, (index * step * (range - hold)) / run)));
+            });
+        });
+
+        measure();
     }
 
     /* ── 8. Stats count-up ────────────────────────────────── */

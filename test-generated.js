@@ -185,8 +185,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=92");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=33");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=93");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=34");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -803,8 +803,8 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=92/);
-    assert.match(es, /generated\.js\?v=33/);
+    assert.match(es, /generated\.css\?v=93/);
+    assert.match(es, /generated\.js\?v=34/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 

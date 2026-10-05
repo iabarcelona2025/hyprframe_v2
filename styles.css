@@ -942,6 +942,15 @@ section { position: relative; }
         perspective: 1100px;
         perspective-origin: 15% 50%;
     }
+    /* El carril envuelve las filas (hacen falta un padre que se pueda desplazar
+       en horizontal sin pelearse con la entrada 3D de cada fila), así que la
+       perspectiva tiene que estar también aquí: si no, las filas dejan de ser
+       hijas directas del listado y la entrada se vería plana (aplanada por el
+       padre). Mismo punto de fuga que el listado. */
+    .work.work-3d-ready .work-track {
+        perspective: 1100px;
+        perspective-origin: 15% 50%;
+    }
     .work.work-3d-ready .work-row {
         opacity: 0;
         transform-origin: left center;
@@ -991,10 +1000,14 @@ section { position: relative; }
 /* El degradado lila ya no funde por opacidad: entra en barrido de derecha a
    izquierda — la caja se descubre desde su borde derecho hacia el izquierdo
    recortando el ::before con clip-path (28/09/2026). Al salir el cursor el
-   barrido se recoge de vuelta hacia la derecha. */
+   barrido se recoge de vuelta hacia la derecha.
+   Suavizado (05/10/2026, a petición del cliente): menos intensidad (0,14 → 0,08)
+   y desvanecido más largo (55% → 70%), para que la caja se tiña de lila con
+   calma en vez de notarse el lavado al pasar el cursor. La opacidad baja NO se
+   toca (el barrido sigue siendo el mismo): lo que cambia es el degradado. */
 .work-row::before {
     content: ""; position: absolute; inset: 0; z-index: 0;
-    background: linear-gradient(90deg, rgba(160, 100, 255, 0.14), transparent 55%);
+    background: linear-gradient(90deg, rgba(160, 100, 255, 0.08), transparent 70%);
     -webkit-clip-path: inset(0 0 0 100%);
             clip-path: inset(0 0 0 100%);
     transition: -webkit-clip-path 0.6s var(--ease-out), clip-path 0.6s var(--ease-out);
@@ -1005,12 +1018,14 @@ section { position: relative; }
 }
 
 /* Fotograma del proyecto dentro de la fila: mitad derecha,
-   fundido con el degradado lila→negro del hover */
+   fundido con el degradado lila→negro del hover.
+   El brillo lila del fundido baja con el degradado de la caja (05/10/2026):
+   0,22 → 0,16, para que la foto entre por negro y no por violeta. */
 .work-row::after {
     content: ""; position: absolute; top: 0; right: 0; bottom: 0;
     width: 50%;
     background-image:
-        linear-gradient(to right, var(--bg) 0%, rgba(160, 100, 255, 0.22) 30%, rgba(5, 5, 5, 0) 70%),
+        linear-gradient(to right, var(--bg) 0%, rgba(160, 100, 255, 0.16) 30%, rgba(5, 5, 5, 0) 70%),
         var(--img, none);
     background-size: cover;
     background-position: center;
@@ -1094,6 +1109,229 @@ section { position: relative; }
 @media (hover: none), (max-width: 900px) {
     .work-follower { display: none; }
     .work-row { grid-template-columns: 3.5rem 1fr auto; }
+}
+
+/* ── WORK · RECORRIDO HORIZONTAL EN ESCRITORIO ───────────────
+   En pantallas de 1025px o más el listado de los 10 proyectos deja de ser una
+   lista vertical: la sección se queda fija en pantalla (sticky) mientras el
+   scroll vertical avanza por los proyectos hacia la derecha, uno tras otro, y
+   al llegar al último se libera y el scroll sigue normal hacia About.
+
+   Cómo se sostiene:
+   · La sección mide una pantalla más el recorrido del carril (--work-run, en
+     px, lo mide script.js). Como el recorrido y el alto extra son el mismo
+     número, el borde por el que la sección se suelta cae justo cuando el
+     proyecto 10 queda a la vista: no sobra hueco ni falta recorrido.
+   · .work-view es lo que se queda pegado (top: 0) y .work-list, con el carril
+     dentro, es la ventana que lo recorta. El desplazamiento horizontal es un
+     translate del carril, 1:1 con el scroll del documento: no hay motor de
+     scroll propio, así que la inercia de smooth-scroll.js, el scroll nativo y
+     las anclas siguen funcionando igual.
+   · Cada proyecto es un panel de casi dos tercios de ventana con el siguiente
+     asomando por la derecha: se ve que hay más y hacia dónde sigue.
+   · El raíl inferior (10 muescas) dice en qué punto del recorrido se está;
+     script.js enciende la muesca del proyecto en curso (el contador numérico se
+     retiró el 05/10/2026 a petición del cliente).
+
+   Dónde NO se aplica (nada de esto existe entonces y todo queda como estaba):
+   por debajo de 1025px, con «reducir movimiento» activo, sin JavaScript —la
+   clase .hf-work-h la pone script.js— o en un navegador sin overflow: clip
+   (@supports de abajo: sin él, el overflow-x de html/body/main sería un
+   contenedor de scroll y el sticky no pegaría).
+
+   El hover de las filas se conserva tal cual: el degradado lila, el fotograma
+   con sus bandas inclinadas (::after) y el desplazamiento de la fila. Solo se
+   neutraliza el crecimiento vertical del padding, que en la lista servía para
+   abrir la caja y aquí desbordaría el panel. (05/10/2026) */
+.work-view { display: block; }
+.work-track { display: block; }
+.work-rail { display: none; }
+.work-branches { display: none; }
+
+@media (min-width: 1025px) {
+    @supports (overflow-x: clip) {
+        .work.hf-work-h {
+            padding-bottom: 0;
+            height: calc(100svh + var(--work-run, 0px));
+        }
+        .work.hf-work-h .work-view {
+            position: sticky; top: 0;
+            height: 100svh;
+            display: flex; flex-direction: column;
+            padding-top: var(--header-h);
+        }
+        /* El título de sección sigue presidiendo la pantalla mientras pasan los
+           proyectos: solo se recorta su aire vertical para dejar sitio al carril. */
+        .work.hf-work-h .section-head {
+            flex: 0 0 auto;
+            padding: 0 var(--pad) clamp(0.9rem, 1.8vw, 1.5rem);
+        }
+        .work.hf-work-h .work-list {
+            position: relative;
+            flex: 1 1 auto; min-height: 0;
+            overflow: hidden;
+            overflow: clip;   /* sin contenedor de scroll: el teclado no puede desplazarlo */
+            /* Las cajas se cierran también por abajo: la misma línea gris que las
+               recorre por arriba (el border-top del listado), a lo ancho del
+               carril (05/10/2026). */
+            border-bottom: 1px solid var(--line);
+        }
+        .work.hf-work-h .work-track {
+            display: flex;
+            height: 100%;
+            width: max-content;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
+        .work.hf-work-h .work-row {
+            /* Panel de proyecto: número arriba a la izquierda, titular abajo a la
+               izquierda y flecha abajo a la derecha. El borde izquierdo separa
+               un panel del siguiente.
+               Cajas más pequeñas (05/10/2026, a petición del cliente): 56vw →
+               40vw, así los proyectos respiran y se ve más del siguiente. */
+            --work-panel-top: clamp(1.25rem, 2.2vw, 2.2rem);
+            --work-panel-bottom: clamp(2.8rem, 4.4vw, 4rem);
+            flex: 0 0 auto;
+            width: clamp(340px, 40vw, 780px);
+            height: 100%;
+            grid-template-columns: auto 1fr auto;
+            grid-template-rows: auto 1fr auto;
+            align-items: end;
+            padding: var(--work-panel-top) var(--pad) var(--work-panel-bottom);
+            border-bottom: 0;
+            border-left: 1px solid var(--line);
+        }
+        /* La última caja se cierra también por la derecha (05/10/2026): al final
+           del recorrido RYUU queda centrada y, sin esta línea, la franja vacía de
+           su derecha —encajada entre las líneas de arriba y abajo del carril— se
+           leía como parte de su caja, así que parecía más ancha que las demás.
+           Todas las cajas comparten el mismo ancho (la regla de arriba): lo que
+           cambia es que ahora las diez quedan entre dos líneas verticales. */
+        .work.hf-work-h .work-row:last-child { border-right: 1px solid var(--line); }
+        /* Número y titular, al tamaño de la lista vertical: son los mismos
+           elementos, así que aquí solo se coloca el número (arriba a la
+           izquierda) y el titular (abajo), sin tocarles el cuerpo de letra.
+           Antes el número era un numeral gigante y el titular iba un paso más
+           grande; el cliente pidió devolverlos al tamaño de la versión vertical
+           (05/10/2026). */
+        .work.hf-work-h .work-num {
+            grid-area: 1 / 1 / 2 / 2;
+            align-self: start; justify-self: start;
+        }
+        .work.hf-work-h .work-title {
+            grid-area: 3 / 1 / 4 / 3;
+            align-self: end;
+            max-width: 22ch;
+        }
+        .work.hf-work-h .work-go {
+            grid-area: 3 / 3 / 4 / 4;
+            align-self: end; justify-self: end;
+        }
+        /* El fotograma cubre toda la caja (05/10/2026, a petición del cliente) y
+           lleva su propia capa de fusión: un velo negro que mantiene legibles el
+           número y el titular y un lavado lila que lo tiñe desde la izquierda,
+           los dos desvaneciéndose hacia la derecha, donde la foto se ve entera.
+           Antes la foto ocupaba solo la mitad derecha y el fundido lo hacía la
+           máscara lateral; ahora el fundido lo hace esta capa y la máscara se
+           queda solo con las bandas inclinadas del hover. */
+        .work.hf-work-h .work-row::after {
+            width: 100%;
+            background-image:
+                linear-gradient(to right,
+                    rgba(5, 5, 5, 0.94) 0%,
+                    rgba(5, 5, 5, 0.72) 34%,
+                    rgba(5, 5, 5, 0.34) 62%,
+                    rgba(5, 5, 5, 0) 100%),
+                linear-gradient(to right,
+                    rgba(160, 100, 255, 0.22) 0%,
+                    rgba(160, 100, 255, 0.10) 40%,
+                    rgba(160, 100, 255, 0) 74%),
+                var(--img, none);
+            -webkit-mask-image: none;
+                    mask-image: none;
+        }
+        /* Con máscaras compuestas se conserva el descubierto en bandas del hover;
+           ya no hay fundido lateral que componer, así que basta con una máscara. */
+        @supports (mask-composite: intersect) {
+            .work.hf-work-h .work-row::after {
+                -webkit-mask-image:
+                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+                mask-image:
+                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+            }
+        }
+        /* El panel no crece en vertical al pasar el cursor (la lista sí lo hacía
+           para abrir la caja): el desplazamiento lateral se mantiene y la foto,
+           el degradado y las bandas del hover siguen intactos. */
+        .work.hf-work-h .work-row:hover,
+        .work.hf-work-h .work-row:focus-visible {
+            padding-block: var(--work-panel-top) var(--work-panel-bottom);
+            padding-left: calc(var(--pad) + 1.4rem);
+            transition-delay: 0s, 0s, 0s;
+        }
+        /* Salida al clic sin clon (05/10/2026): en el carril no se sustituye el
+           contenido de la caja por una copia —eso apagaba de golpe el número, el
+           titular y el lavado lila—, así que la salida la cuenta la propia caja
+           empujando el fotograma un 5% hacia dentro. El estado de partida es el
+           del hover (opacidad 1, escala 1) y la curva y la duración son las del
+           fundido de la foto, así que el movimiento arranca sin salto. Se fija la
+           opacidad para que el fotograma no se apague si el cursor sale en esos
+           440 ms: la caja se queda quieta y entera hasta que entra la ficha. */
+        .work.hf-work-h .work-row.is-departing::after {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        .work.hf-work-h .work-rail {
+            position: absolute;
+            left: var(--pad); right: var(--pad);
+            bottom: clamp(0.8rem, 1.4vw, 1.3rem);
+            display: flex; align-items: center;
+            pointer-events: none; z-index: 2;
+        }
+        .work.hf-work-h .work-rail-ticks { display: flex; gap: clamp(4px, 0.4vw, 7px); }
+        .work.hf-work-h .work-rail-tick {
+            display: block;
+            width: clamp(12px, 1.4vw, 22px); height: 2px;
+            background: rgba(255, 255, 255, 0.16);
+            transition: background 0.35s, transform 0.35s var(--ease-out);
+        }
+        .work.hf-work-h .work-rail-tick.is-on {
+            background: var(--violet);
+            transform: scaleY(2);
+        }
+        /* Ramas geométricas del final del carril (05/10/2026): cuando la sección
+           se suelta —justo cuando el scroll empieza a bajar hacia About—, de las
+           líneas de cierre del carril (la de abajo y la vertical derecha de la
+           última caja, tras RYUU) bajan unas ramas geométricas que se van
+           formando CON EL SCROLL: al bajar se dibujan y al subir se recogen, en el
+           mismo orden y al revés. Parado el scroll, se quedan como estén.
+           Aquí solo se les da el trazo; la geometría y el dibujo los lleva
+           script.js con semilla fija (las mismas ramas en cada carga).
+           El trazo es el gris de las líneas (--line) y de 1px que no escala: el
+           grosor y el color se mantienen igual mientras baja o sube.
+           Como el bloque cuelga del final de la sección (top: 100%) y la sección
+           de About se pinta después, las ramas quedan SIEMPRE por detrás del
+           texto; solo se dibuja el trazo (nada de opacidad ni escala).
+           El alto lo mide script.js hasta la altura de SYNTHESIS (la tercera línea
+           del titular de About) y lo escribe en --work-branches-h; sin esa medida
+           vale el clamp de reserva. */
+        .work.hf-work-h .work-branches {
+            display: block;
+            position: absolute; top: 100%; left: 0;
+            width: 100%;
+            height: var(--work-branches-h, clamp(420px, 62vh, 760px));
+            pointer-events: none; z-index: 0;
+        }
+        .work.hf-work-h .work-branches svg { display: block; width: 100%; height: 100%; }
+        .work.hf-work-h .work-branches path {
+            fill: none;
+            stroke: var(--line);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+            stroke-dasharray: var(--len, 2000);
+            stroke-dashoffset: var(--len, 2000);   /* el scroll lo baja hasta 0 */
+        }
+    }
 }
 
 /* ── STRIP MARQUEE ───────────────────────────────────────── */
@@ -2095,7 +2333,10 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 
 /* Cross-page GENERATED thumbnail handoff. The clone keeps the row's crop and
-   soft left edge, then expands into the matching film poster. */
+   soft left edge, then expands into the matching film poster.
+   El degradado lila del clon es el mismo de la caja, con el mismo suavizado
+   (05/10/2026): si se cambia uno, hay que cambiar los tres (aquí, la ficha y
+   el clon de llegada de generated.css) o el relevo del clic cambia de tono. */
 .work-transition {
     position: fixed; z-index: 2000; pointer-events: none;
     background-size: cover; background-repeat: no-repeat;
@@ -2108,8 +2349,31 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 .work-transition::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg, rgba(160,100,255,.14), transparent 55%);
+    background: linear-gradient(90deg, rgba(160,100,255,.08), transparent 70%);
     opacity: 1; transition: opacity .22s ease-out;
+}
+/* Clon que viene de una caja del carril de escritorio (05/10/2026): allí el
+   fotograma es a sangre y lleva su capa de fusión, así que el clon cubre la caja
+   entera —sin el fundido lateral que recortaba la mitad derecha— y reproduce la
+   misma capa: velo negro que deja legible el texto y lavado lila desde la
+   izquierda. Al abrirse, la capa se apaga con `is-opening` y queda solo la foto.
+   Es el clon de LLEGADA de la ficha: en la landing el carril ya no construye
+   clon de salida (la caja se queda a la vista hasta que entra la ficha). */
+.work-transition--full {
+    -webkit-mask-image: none;
+            mask-image: none;
+}
+.work-transition--full::after {
+    background:
+        linear-gradient(to right,
+            rgba(5, 5, 5, 0.94) 0%,
+            rgba(5, 5, 5, 0.72) 34%,
+            rgba(5, 5, 5, 0.34) 62%,
+            rgba(5, 5, 5, 0) 100%),
+        linear-gradient(to right,
+            rgba(160, 100, 255, 0.22) 0%,
+            rgba(160, 100, 255, 0.10) 40%,
+            rgba(160, 100, 255, 0) 74%);
 }
 .work-transition.is-opening { transform: scale(1); }
 .work-transition.is-opening::after { opacity: 0; }
