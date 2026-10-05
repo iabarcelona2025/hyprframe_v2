@@ -32,9 +32,11 @@
    - Las ramas son rectilíneas (rejilla de 45°: vertical, horizontal o diagonal
      exacta) y ninguna sale por debajo de RYUU: la maraña vive a la derecha del
      codo de la caja ya centrada.
-   - El dibujo va por distancia al arranque de cada árbol —un tramo empieza justo
-     cuando el que lo engendra acaba—, así que con el scroll la maraña crece y se
-     recoge como un frente: ni piezas sueltas ni ramas que aparezcan por su cuenta.
+   - El dibujo baja como un frente desde la línea de cierre: cada tramo se dibuja
+     al paso del frente por su altura —un tramo empieza justo cuando el que lo
+     engendra acaba, porque las hijas nacen donde muere su padre—, así que por
+     debajo del frente no hay nada dibujado y por encima no falta nada: la maraña
+     crece y se recoge de forma progresiva, sin piezas sueltas ni saltos.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
      mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
@@ -535,6 +537,69 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
             assert.ok(terminadas < paths.length,
                 `y no salta a dibujado del todo (${terminadas}/${paths.length})`);
         }
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: el frente baja con el scroll y por debajo no hay nada dibujado", async () => {
+    const { dom, branches, frame, scrollTo } = boot();
+    try {
+        await frame();
+        const tramos = [...branches.querySelectorAll("path")].map((p) => {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
+            return { p, y0: Number(m[2]), y1: Number(m[4]) };
+        });
+        const len = (t) => Number(t.p.style.getPropertyValue("--len"));
+        // Fracción de trazo ya dibujada (0 = sin empezar, 1 = entero). El dibujo
+        // escribe el dashoffset, así que de ahí sale la tinta.
+        const tinta = (t) => 1 - Number(t.p.style.strokeDashoffset) / len(t);
+        const ir = async (frac) => {
+            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+            await frame();
+            return BRANCH_H * frac;           // el frente, en px de lienzo
+        };
+
+        // 1. Al soltarse la sección, el frente está en la línea de cierre: sin tinta.
+        const cero = await ir(0);
+        assert.equal(cero, 0);
+        assert.ok(tramos.every((t) => tinta(t) === 0), "el dibujo arranca en la línea de cierre");
+
+        // 2. Al bajar, el frente avanza y la tinta no lo pasa: debajo no hay nada
+        //    ya dibujado, y por encima no queda nada a medias.
+        let antes = 0;
+        for (const frac of [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
+            const frente = await ir(frac);
+            let hechas = 0;
+            for (const t of tramos) {
+                const l = tinta(t);
+                if (t.y0 > frente + 1) {
+                    assert.equal(l, 0, `a ${frac}, ningún tramo empieza por debajo del frente: ${t.p.getAttribute("d")}`);
+                    continue;
+                }
+                if (l === 0) continue;
+                // La punta dibujada no baja del frente (salvo el redondeo del dash).
+                const punta = t.y0 + (t.y1 - t.y0) * l;
+                assert.ok(punta <= frente + 1.5,
+                    `a ${frac}, la tinta no pasa del frente (${punta.toFixed(1)} > ${frente})`);
+                if (l === 1) hechas++;
+                // Un tramo que baja entero por encima del frente está acabado:
+                // por encima del frente no hay huecos.
+                if (t.y1 > t.y0 && t.y1 <= frente - 1) {
+                    assert.equal(t.p.style.strokeDashoffset, "0",
+                        `a ${frac}, lo que queda por encima del frente está entero: ${t.p.getAttribute("d")}`);
+                }
+            }
+            assert.ok(hechas >= antes, `a ${frac} el frente no retrocede`);
+            antes = hechas;
+        }
+        assert.equal(antes, tramos.length, "al final del recorrido, el frente ha pasado por todo");
+
+        // 3. Al subir se recoge por el mismo sitio: cada tramo pierde tinta, nunca gana.
+        const a60 = tramos.map(tinta);
+        await ir(0.6);
+        const a30 = tramos.map(tinta);
+        assert.ok(a30.every((l, i) => l <= a60[i]),
+            "al subir el frente, ningún tramo se dibuja de más");
+        assert.ok(a60.some((l, i) => l > a30[i]), "y alguno se recoge");
     } finally { dom.window.close(); }
 });
 

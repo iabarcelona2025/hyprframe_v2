@@ -1264,7 +1264,8 @@
 
        Al soltarse nacen unas ramas geométricas y rectilíneas —a la derecha del
        codo de RYUU, nunca por debajo de la caja— que se van formando con el
-       scroll: al bajar crecen y al subir se recogen (ver más abajo). */
+       scroll: el dibujo baja de la línea de cierre hacia abajo, de forma
+       progresiva, y al subir se recoge por el mismo sitio (ver más abajo). */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1355,22 +1356,22 @@
             branchPaths = [];
         }
 
-        /* Dibujo de las ramas ligado al scroll (05/10/2026): cada tramo tiene su
-           ventana dentro del recorrido que va del final del carril —cuando la
-           sección se suelta— hasta que el lienzo entra entero en pantalla (su
-           alto, que es la distancia hasta SYNTHESIS). Las ventanas están
-           encadenadas por distancia al arranque del árbol (ver traceBranches), así
-           que al bajar la maraña crece de dentro afuera —sin piezas sueltas que
-           aparezcan por su cuenta— y al subir se recoge en el mismo orden y al
-           revés; parado, se queda como esté. Solo se escribe el estilo cuando el
-           número cambia. */
+        /* Dibujo de las ramas ligado al scroll (05/10/2026): el frente baja desde
+           la línea de cierre al ritmo del scroll —el recorrido va del final del
+           carril, cuando la sección se suelta, hasta que el lienzo entra entero en
+           pantalla, que es su alto— y cada tramo se dibuja cuando el frente pasa
+           por su altura: por debajo del frente no hay nada dibujado y por encima
+           está todo, así que la maraña crece hacia abajo de forma progresiva y al
+           subir se recoge por el mismo sitio, en orden inverso. Parado, se queda
+           como esté. Solo se escribe el estilo cuando el número cambia. */
         function paintBranches() {
             if (!branchPaths.length) return;
             const span = Math.max(1, branchSpan);
             let t = (scrollY - branchStart) / span;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
             for (const tramo of branchPaths) {
-                let local = (t - tramo.t0) / (tramo.t1 - tramo.t0);
+                const dur = tramo.t1 - tramo.t0;
+                let local = dur > 0 ? (t - tramo.t0) / dur : (t >= tramo.t0 ? 1 : 0);
                 local = local < 0 ? 0 : local > 1 ? 1 : local;
                 const dash = Math.round(tramo.len * (1 - local));
                 if (dash !== tramo.last) {
@@ -1397,11 +1398,11 @@
            SYNTHESIS y los de su izquierda, cada vez menos) escalándolo: se traza
            para medirlo y se repite a la escala de su tope hasta caer justo encima.
 
-           Cada tramo lleva además su distancia recorrida desde la raíz (dist0 →
-           dist1) y esa es su ventana: un tramo empieza justo cuando el que lo
-           engendra acaba, así que la maraña crece de dentro afuera —el tallo
-           primero y las ramas al ritmo al que el tallo las alcanza— y se recoge al
-           revés. No hay piezas que aparezcan por su cuenta en mitad de nada. */
+           La ventana de dibujo de cada tramo sale de su altura (t0 → t1, en
+           fracción del lienzo), no de su distancia: el dibujo baja con el frente
+           desde la línea de cierre —nada queda ya dibujado por delante— y un tramo
+           empieza justo cuando el que lo engendra acaba, porque las hijas nacen
+           donde muere su padre. No hay piezas sueltas ni saltos. */
         function traceBranches(w, h) {
             const MAX_DEPTH = 5;
             const tramos = [];
@@ -1436,21 +1437,29 @@
                         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
                         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
                     };
-                    let dist = 0;      // distancia recorrida del árbol que se traza
                     let profundo = 0;  // lo más abajo que llega (para escalarlo)
-                    const push = (x0, y0, x1, y1, depth, d0) => {
+                    /* La ventana de dibujo de cada tramo sale de SU ALTURA: el
+                       frente baja de la línea de cierre al ritmo del scroll, así
+                       que un tramo se dibuja al paso del frente por su arranque y
+                       acaba cuando el frente lo pasa. Por debajo del frente no
+                       queda nada dibujado: el dibujo crece hacia abajo, no a
+                       saltos. Los llanos, que no bajan, se dibujan con un barrido
+                       corto en cuanto el frente llega a su altura. */
+                    const push = (x0, y0, x1, y1, depth) => {
                         const xa = Math.round(x0), ya = Math.round(y0);
                         const xb = Math.round(x1), yb = Math.round(y1);
-                        const d1 = d0 + Math.max(1, Math.round(Math.hypot(xb - xa, yb - ya)));
                         profundo = Math.max(profundo, yb);
-                        tramos.push({ d: `M${xa} ${ya}L${xb} ${yb}`, depth, root, dist0: d0, dist1: d1 });
-                        return d1;
+                        tramos.push({
+                            d: `M${xa} ${ya}L${xb} ${yb}`, depth, root,
+                            t0: ya / h,
+                            t1: yb > ya ? yb / h : Math.min(1, (ya + 30) / h),
+                        });
                     };
                     /* Una rama: recta de la rejilla, que se vuelve a partir. `r`
                        es su largo natural —el del árbol sin escalar, así que la
                        estructura no cambia de escala— y el corte en el tope solo
                        acorta el paso: sigue siendo una diagonal exacta. */
-                    const rama = (x, y, i, r, depth, d0) => {
+                    const rama = (x, y, i, r, depth) => {
                         let k = i;
                         let paso = Math.max(1, Math.round(r * esc));
                         if (x + DIRS[k][0] * paso < xMin || x + DIRS[k][0] * paso > xMax) k = espejo(k);
@@ -1460,16 +1469,16 @@
                         // árbol justo encima de su tope, y la rama ya no sigue.
                         const cortada = uy && y + uy * paso > tope;
                         if (cortada) paso = tope - y;
-                        if (r < 8 || (paso < 8 && !cortada)) return d0;
+                        if (r < 8 || (paso < 8 && !cortada)) return;
                         const nx = x + ux * paso, ny = y + uy * paso;
-                        const d1 = push(x, y, nx, ny, depth, d0);
-                        if (cortada || depth >= MAX_DEPTH || r < 22) return d1;
+                        push(x, y, nx, ny, depth);
+                        if (cortada || depth >= MAX_DEPTH || r < 22) return;
                         // Derivación llana corta: el aire de trazado de siempre.
                         if (rnd() < 0.28) {
                             const lado = nx + 40 > xMax ? -1 : nx - 40 < xMin ? 1 : (rnd() < 0.5 ? -1 : 1);
                             const hueco = lado > 0 ? xMax - nx : nx - xMin;
                             const cruce = Math.min(Math.max(1, Math.round((16 + rnd() * 48) * esc)), hueco);
-                            if (cruce >= 1) push(nx, ny, nx + lado * cruce, ny, depth + 1, d1);
+                            if (cruce >= 1) push(nx, ny, nx + lado * cruce, ny, depth + 1);
                         }
                         const hijos = rnd() < 0.62 ? 2 : 1;
                         for (let c = 0; c < hijos; c++) {
@@ -1477,25 +1486,18 @@
                             // El giro se queda en el abanico que baja (SE, S, SW):
                             // los llanos son la derivación de arriba, no un destino.
                             const j = Math.min(3, Math.max(1, k + giro));
-                            rama(nx, ny, j, r * (0.68 + rnd() * 0.2), depth + 1, d1);
+                            rama(nx, ny, j, r * (0.68 + rnd() * 0.2), depth + 1);
                         }
-                        return d1;
                     };
                     // Tallo: primer tramo recto (el de antes: un quinto largo del
                     // árbol) y de ahí el abanico.
-                    rama(Math.round(x), 0, 2, h * (0.2 + rnd() * 0.12), 0, 0);
+                    rama(Math.round(x), 0, 2, h * (0.2 + rnd() * 0.12), 0);
                     if (pasada > 0 && profundo === cap) break;   // ya toca su tope
                     if (!profundo) break;                        // nada que trazar
                     // Un pelo de más que recorta el corte en el tope: así el árbol
                     // cae justo encima de él, ni un píxel menos.
                     esc = Math.min(2.5, Math.max(0.4, esc * (cap + Math.max(4, cap * 0.02)) / profundo));
                     tramos.length = marca;
-                }
-                // Ventana de cada tramo: su distancia al arranque del árbol.
-                const total = tramos.slice(marca).reduce((max, tramo) => Math.max(max, tramo.dist1), 1);
-                for (let i = marca; i < tramos.length; i++) {
-                    tramos[i].t0 = tramos[i].dist0 / total;
-                    tramos[i].t1 = tramos[i].dist1 / total;
                 }
             };
 
