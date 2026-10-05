@@ -1244,30 +1244,50 @@ section { position: relative; }
     width: calc(100% - 20px);
     /* Totalmente frontal: sin perspectiva ni giro en ningún eje. */
     transform: none;
+    /* Contexto de tamaño: 1cqw = 1% del ancho del carrusel. El arco del marco y
+       el del reflejo se miden en cqw, no en % del alto de cada caja, así los dos
+       dibujan exactamente la misma curva (ver --clb-bow). */
+    container-type: inline-size;
 }
 .clb-gallery-frame, .clb-gallery-reflection {
-    /* A single shared curve keeps the reflection locked to the gallery edges. */
+    /* Una sola curva para los dos. Antes cada caja medía su arco en % de su
+       propio alto y, como el reflejo es ~12 veces más bajo que el marco, su arco
+       salía ~12 veces más plano: el reflejo parecía recto bajo un marco curvado.
+       Ahora la flecha se mide en cqw —una fracción del ancho del carrusel, igual
+       para las dos cajas— así que el reflejo reproduce el arco del marco tal
+       cual. 3% del alto del marco (alto = ancho / 1.85) = 3cqw / 1.85. */
+    --clb-bow: calc(3cqw / 1.85);
+    /* Parábola de flecha máxima --clb-bow en el centro: 0.36, 0.64, 0.84, 0.96 y
+       1 son 4x(1-x) en cada 10% del ancho. Los lados siguen rectos y a todo el
+       ancho; los puntos cerrados mantienen el arco suave. */
     --clb-curve: polygon(
-        0 0, 10% 1.08%, 20% 1.92%, 30% 2.52%, 40% 2.88%, 50% 3%,
-        60% 2.88%, 70% 2.52%, 80% 1.92%, 90% 1.08%, 100% 0,
-        100% 100%, 90% 98.92%, 80% 98.08%, 70% 97.48%, 60% 97.12%, 50% 97%,
-        40% 97.12%, 30% 97.48%, 20% 98.08%, 10% 98.92%, 0 100%
+        0 0, 10% calc(var(--clb-bow) * 0.36), 20% calc(var(--clb-bow) * 0.64),
+        30% calc(var(--clb-bow) * 0.84), 40% calc(var(--clb-bow) * 0.96),
+        50% var(--clb-bow),
+        60% calc(var(--clb-bow) * 0.96), 70% calc(var(--clb-bow) * 0.84),
+        80% calc(var(--clb-bow) * 0.64), 90% calc(var(--clb-bow) * 0.36), 100% 0,
+        100% 100%, 90% calc(100% - var(--clb-bow) * 0.36),
+        80% calc(100% - var(--clb-bow) * 0.64), 70% calc(100% - var(--clb-bow) * 0.84),
+        60% calc(100% - var(--clb-bow) * 0.96), 50% calc(100% - var(--clb-bow)),
+        40% calc(100% - var(--clb-bow) * 0.96), 30% calc(100% - var(--clb-bow) * 0.84),
+        20% calc(100% - var(--clb-bow) * 0.64), 10% calc(100% - var(--clb-bow) * 0.36),
+        0 100%
     );
     clip-path: var(--clb-curve);
+}
+/* Respaldo: sin consultas de contenedor (navegadores anteriores a 2023) no hay
+   cqw, así que el arco vuelve a medirse en % del alto de cada caja —el dibujo
+   anterior— en lugar de perder el recorte por completo. */
+@supports not (container-type: inline-size) {
+    .clb-gallery-frame, .clb-gallery-reflection { --clb-bow: 3%; }
 }
 .clb-gallery-frame {
     position: relative; overflow: hidden;
     width: 100%; aspect-ratio: 1.85;
     border: 1px solid #111114;
     background: #09090b;
-    /* Bow only the horizontal edges inward (~3% at their midpoint).
-       Both sides stay straight and full width; close points keep the arc soft. */
-    clip-path: polygon(
-        0 0, 10% 1.08%, 20% 1.92%, 30% 2.52%, 40% 2.88%, 50% 3%,
-        60% 2.88%, 70% 2.52%, 80% 1.92%, 90% 1.08%, 100% 0,
-        100% 100%, 90% 98.92%, 80% 98.08%, 70% 97.48%, 60% 97.12%, 50% 97%,
-        40% 97.12%, 30% 97.48%, 20% 98.08%, 10% 98.92%, 0 100%
-    );
+    /* Sin recorte propio: usa la curva de la regla compartida de arriba, la misma
+       que el reflejo, así las dos no se pueden desincronizar. */
 }
 .clb-gallery-track {
     position: absolute; top: 0; left: 0;
@@ -1281,7 +1301,15 @@ section { position: relative; }
 /* A short, faint strip of each frame fades quickly into the background. */
 .clb-gallery-reflection {
     position: relative; overflow: hidden;
-    width: 100%; height: clamp(1.1rem, 2.8vw, 2rem);
+    width: 100%;
+    /* Alto proporcional al ancho (23:1), igual que el marco, con topes de grosor:
+       así el reflejo escala con el carrusel en vez de quedarse corto en pantallas
+       grandes. Con el alto fijo de antes (clamp en rem/vw) el arco del marco
+       (--clb-bow, medido sobre el ancho) no cabía en la tira entre 620 y 700 px y
+       la partía en dos. Con min/max-height la tira se queda en el rango anterior,
+       entre 1.1rem y 2rem. */
+    height: auto; aspect-ratio: 23 / 1;
+    min-height: 1.1rem; max-height: 2rem;
     margin-top: 0.35rem;
     transform: scaleY(-1); opacity: 0.16;
     -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
@@ -1344,8 +1372,13 @@ section { position: relative; }
         justify-self: start;
     }
     /* El reflejo (sombra) también escala en proporción: su alto es un % fijo del
-       ancho, en vez de un alto fijo, así mantiene la relación con el marco. */
-    .clb-gallery-reflection { height: auto; aspect-ratio: 23 / 1; }
+       ancho, en vez de un alto fijo, así mantiene la relación con el marco. Sin
+       los topes de grosor de móvil/tablet: el margen negativo de abajo se calcula
+       sobre esa proporción exacta (ancho/23). */
+    .clb-gallery-reflection {
+        height: auto; aspect-ratio: 23 / 1;
+        min-height: 0; max-height: none;
+    }
     /* El borde inferior del carrusel coincide con el del botón TEST NOW:
        ambos se alinean al final de la fila; el reflejo queda por debajo. */
     .clb-showcase { align-self: end; }

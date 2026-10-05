@@ -108,21 +108,39 @@ test("gallery faces the viewer head-on and the reflection is short and faint", (
     assert.match(css, /\.clb-gallery-frame\s*\{[^}]*border:\s*1px solid #111114;/);
     assert.match(css, /\.clb-showcase\s*\{[^}]*transform:\s*none;/);
     assert.doesNotMatch(css, /\.clb-showcase\s*\{[^}]*(perspective|rotate[XYZ]?)\(/);
-    assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*height:\s*clamp\(1\.1rem, 2\.8vw, 2rem\);/);
+    // El alto es proporcional al ancho (23:1), con topes de grosor: así la tira
+    // escala con el carrusel y el arco —que se mide sobre el ancho— le cabe
+    // siempre (con un alto fijo se partía en dos en pantallas medianas).
+    const reflectionBox = css.match(/(?:^|\n)\.clb-gallery-reflection\s*\{[^}]*\}/)[0];
+    assert.match(reflectionBox, /aspect-ratio:\s*23 \/ 1;/);
+    assert.match(reflectionBox, /min-height:\s*1\.1rem;\s*max-height:\s*2rem;/);
     assert.match(css, /\.clb-gallery-reflection\s*\{[^}]*opacity:\s*0\.16;/);
     assert.ok(doc.querySelector("#clb .clb-showcase > .clb-gallery-reflection"));
 });
 
 test("the screen and its reflection share the same inward bow", () => {
-    const frameRule = css.match(/\.clb-gallery-frame\s*\{[^}]*\}/)?.[0] || "";
-    const reflectionRule = css.match(/\.clb-gallery-reflection\s*\{[^}]*\}/)?.[0] || "";
-    assert.match(frameRule, /clip-path:\s*polygon\(\s*0 0,/);
-    assert.match(frameRule, /50% 3%/); // top center curves inward
-    assert.match(frameRule, /100% 0,\s*100% 100%/); // right side stays straight
-    assert.match(frameRule, /50% 97%/); // bottom center curves inward
-    assert.match(frameRule, /0 100%\s*\)/); // left side stays straight
-    assert.match(css, /\.clb-gallery-frame,\s*\.clb-gallery-reflection\s*\{[\s\S]*--clb-curve:\s*polygon/);
-    assert.match(reflectionRule, /clip-path:\s*var\(--clb-curve\)/);
+    const shared = css.match(/\.clb-gallery-frame,\s*\.clb-gallery-reflection\s*\{([\s\S]*?)\}/)[1];
+    // Una sola curva para las dos cajas. Su flecha se mide en cqw (3% del alto del
+    // marco = 3cqw / 1.85, con el alto = ancho / 1.85) y no en % del alto de cada
+    // caja: midiéndola en % el reflejo —unas 12 veces más bajo que el marco—
+    // dibujaba un arco 12 veces más plano, recto bajo un marco curvado.
+    assert.match(shared, /--clb-bow:\s*calc\(3cqw \/ 1\.85\)/);
+    assert.match(shared, /--clb-curve:\s*polygon\(\s*0 0,/);
+    assert.match(shared, /50% var\(--clb-bow\)/); // arco superior, flecha máxima en el centro
+    assert.match(shared, /100% 0,\s*100% 100%/); // right side stays straight
+    assert.match(shared, /50% calc\(100% - var\(--clb-bow\)\)/); // arco inferior
+    assert.match(shared, /0 100%\s*\)/); // left side stays straight
+    assert.match(shared, /clip-path:\s*var\(--clb-curve\)/);
+    // El carrusel es el contexto de tamaño que da sentido a los cqw (1cqw = 1% de
+    // su ancho), de modo que marco y reflejo comparten la misma medida.
+    assert.match(css, /\.clb-showcase\s*\{[^}]*container-type:\s*inline-size;/);
+    // Respaldo: sin consultas de contenedor no hay cqw, y el arco vuelve a % del
+    // alto de cada caja en vez de perderse el recorte entero.
+    assert.match(css, /@supports not \(container-type: inline-size\) \{\s*\.clb-gallery-frame, \.clb-gallery-reflection \{ --clb-bow: 3%; \}\s*\}/);
+    // Ninguna de las dos cajas recorta por su cuenta: las dos usan la curva
+    // compartida, así no pueden desincronizarse.
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-gallery-frame\s*\{[^}]*\}/)[0], /clip-path:/);
+    assert.doesNotMatch(css.match(/(?:^|\n)\.clb-gallery-reflection\s*\{[^}]*\}/)[0], /clip-path:/);
 });
 
 test("gallery stacks between intro and features on mobile and stays still with reduced motion", () => {
