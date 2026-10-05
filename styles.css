@@ -43,13 +43,12 @@ html {
     overflow-x: clip;
     max-width: 100%;
 }
-/* Scroll con inercia (script.js, solo escritorio con puntero fino): el
-   movimiento lo escribe el tween en cada frame, así que la animación nativa de
-   los saltos de ancla estorbaría. La clase la pone el propio script cuando lo
-   activa; sin ella —táctil, «reducir movimiento» o ?smooth=0— todo queda igual.
-   Mientras se desplaza, la «respiración» del vídeo del hero se pausa: ese
-   transform continuo reescala la textura en cada frame y compite con el scroll
-   (es un ciclo de 18 s, así que la pausa no se percibe). (30/09/2026) */
+/* La inercia de scroll (hf-smooth) solo se activa en escritorio con puntero
+   fino; allí el tween escribe el movimiento en cada frame y sustituye el
+   comportamiento nativo de las anclas. `is-scrolling` es una señal separada:
+   se marca también con scroll táctil nativo para pausar temporalmente el
+   terminal del hero y su animación de «respiración». El vídeo sigue reproduciéndose.
+   (05/10/2026) */
 html.hf-smooth { scroll-behavior: auto; }
 html.is-scrolling .hero-video { animation-play-state: paused; }
 

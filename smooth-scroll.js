@@ -6,14 +6,28 @@
    para no duplicar el mismo código en cuatro archivos ni obligar a las fichas a
    cargar el JavaScript de la portada. No depende de nada más del sitio.
 
-   Alcance: solo puntero fino y sin «reducir movimiento»; en táctil el scroll
-   nativo ya trae su propia inercia y no se toca. ?smooth=0 lo apaga (útil para
-   comparar o si alguna máquina lo prefiere nativo). (30/09/2026) */
+   Alcance: la inercia solo se activa con puntero fino y sin «reducir
+   movimiento»; en táctil se conserva el scroll nativo. La marca is-scrolling,
+   en cambio, sigue también ese scroll nativo para pausar temporalmente el
+   terminal del hero. ?smooth=0 apaga la inercia (útil para comparar o si alguna
+   máquina lo prefiere nativo). (05/10/2026) */
 (() => {
     "use strict";
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const docEl = document.documentElement;
+
+    // Esta señal de actividad es independiente de la inercia: en táctil se
+    // conserva el scroll nativo, pero el terminal puede callarse mientras ese
+    // scroll está moviendo el documento. Se retira tras 180 ms sin movimiento.
+    let scrollIdle = 0;
+    const markScrolling = () => {
+        docEl.classList.add("is-scrolling");
+        clearTimeout(scrollIdle);
+        scrollIdle = setTimeout(() => docEl.classList.remove("is-scrolling"), 180);
+    };
+    if (isTouch) addEventListener("scroll", markScrolling, { passive: true });
 
     /* ── Cómo funciona ──────────────────────────────────────
        Los portfolios que se sienten «mantequilla» (Lenis y compañía) no mueven
@@ -24,14 +38,15 @@
        IntersectionObserver, las anclas y la accesibilidad siguen funcionando
        igual, porque seguimos desplazando el documento de verdad.
 
-       Alcance: solo con puntero fino y sin «reducir movimiento»; en táctil el
-       scroll nativo ya trae su propia inercia y no se toca. ?smooth=0 lo apaga
-       (útil para comparar o si alguna máquina lo prefiere nativo). */
+       La inercia solo se activa con puntero fino y sin «reducir movimiento»;
+       en táctil se conserva el scroll nativo. La marca is-scrolling también
+       sigue ese movimiento para pausar temporalmente el terminal. ?smooth=0
+       apaga la inercia (útil para comparar o si alguna máquina lo prefiere
+       nativo). */
     const smoothRequested = !isTouch && !reduced && !/[?&]smooth=0(?:&|$)/.test(location.search);
     if (smoothRequested) {
         const LERP = 0.11;          // fracción del recorrido cubierta por frame a 60 fps
         const FRAME_MS = 1000 / 60;
-        const docEl = document.documentElement;
         docEl.classList.add("hf-smooth");
 
         let target = scrollY;
@@ -147,23 +162,10 @@
         addEventListener("resize", () => { target = clampY(target); });
         addEventListener("load", () => { target = current = lastWritten = scrollY; });
 
-        // Mientras hay movimiento, el vídeo del hero no reescala su «respiración»:
-        // ese transform continuo obliga a remuestrear la textura en cada frame y
-        // compite con el scroll. Se reanuda al parar y, al ser un ciclo de 18 s,
-        // no se nota.
-        //
-        // (30/09/2026) Aquí se probó también a sostener el fotograma durante el
-        // gesto —congelar el vídeo mientras la rueda mueve la página— para
-        // esquivar la invalidación de las capas de mezcla del hero. Se ha
-        // RETIRADO: la ganancia no compensaba que el vídeo se parara a la vista.
-        // El vídeo se reproduce siempre; lo que se ajusta para el scroll está en
-        // el terminal (script.js §6c) y en el grano (styles.css .grain).
-        let scrollIdle = 0;
-        const markScrolling = () => {
-            docEl.classList.add("is-scrolling");
-            clearTimeout(scrollIdle);
-            scrollIdle = setTimeout(() => docEl.classList.remove("is-scrolling"), 180);
-        };
+        // El scroll escrito por la inercia renueva la marca compartida en cada
+        // frame; la rueda también la activa desde el gesto inicial. Así el
+        // terminal pausa sus escrituras y CSS pausa la «respiración» del hero,
+        // pero el vídeo continúa reproduciéndose.
         addEventListener("scroll", markScrolling, { passive: true });
         addEventListener("wheel", markScrolling, { passive: true });
     }
