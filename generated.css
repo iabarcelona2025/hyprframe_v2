@@ -536,6 +536,26 @@ body.menu-open .menu-overlay a { visibility: visible; }
 }
 .work-transition.is-opening { transform: scale(1); }
 .work-transition.is-opening::after { opacity: 0; }
+/* Clon a sangre (05/10/2026): el clic en una caja del carril de escritorio llega
+   aquí como la caja entera, con la misma capa de fusión de la landing (velo
+   negro + lavado lila desde la izquierda). Al abrirse hacia el póster, la capa
+   se apaga con `is-opening` y queda la foto limpia. */
+.work-transition--full {
+    -webkit-mask-image: none;
+            mask-image: none;
+}
+.work-transition--full::after {
+    background:
+        linear-gradient(to right,
+            rgba(5, 5, 5, 0.94) 0%,
+            rgba(5, 5, 5, 0.72) 34%,
+            rgba(5, 5, 5, 0.34) 62%,
+            rgba(5, 5, 5, 0) 100%),
+        linear-gradient(to right,
+            rgba(160, 100, 255, 0.22) 0%,
+            rgba(160, 100, 255, 0.10) 40%,
+            rgba(160, 100, 255, 0) 74%);
+}
 .work-transition--departure.is-opening { transform: scale(1.28); }
 /* El clon de llegada se disuelve sobre una caja ya redondeada: mismas esquinas
    de 10px para que el relevo no deje picos rectos. (03/10/2026) */

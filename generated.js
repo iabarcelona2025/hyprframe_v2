@@ -86,7 +86,10 @@
                 black.className = "hf-entry-black";
                 document.body.append(black);
                 const layer = document.createElement("div");
-                layer.className = "work-transition work-transition--arrival";
+                // Si el clic vino de una caja del carril de escritorio, el clon es
+                // la caja entera con su capa de fusión (allí el fotograma es a
+                // sangre); en la lista vertical es la mitad derecha de siempre.
+                layer.className = "work-transition work-transition--arrival" + (origin.full ? " work-transition--full" : "");
                 layer.style.cssText = `left:${origin.left}px;top:${origin.top}px;width:${origin.width}px;height:${origin.height}px;background-image:url('${origin.image}');background-position:${origin.position || "center"};`;
                 document.body.append(layer);
                 // html still has scroll-behavior:smooth here (smooth-scroll.js runs

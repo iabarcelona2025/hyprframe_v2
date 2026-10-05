@@ -41,6 +41,7 @@ const LIST_W = 1440;      // ancho de la ventana del carril
 const PANEL_W = 806;      // 56vw de 1440 (el ancho de panel del CSS)
 const TOP = 4000;         // dónde empieza la sección dentro del documento
 const PANEL_H = 640;      // alto útil de la ventana del carril
+const ROW_LEFT = 100;    // dónde empieza la caja medida (x del rect de la fila)
 const N = 10;
 const RUN = PANEL_W * N - LIST_W;   // 6620 px de recorrido horizontal
 
@@ -93,6 +94,11 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     rows.forEach((row, index) => {
         Object.defineProperty(row, "offsetLeft", { get: () => index * PANEL_W });
         Object.defineProperty(row, "offsetWidth", { get: () => PANEL_W });
+        const left = ROW_LEFT + index * PANEL_W;
+        row.getBoundingClientRect = () => ({
+            left, top: 120, width: PANEL_W, height: PANEL_H,
+            right: left + PANEL_W, bottom: 120 + PANEL_H, x: left, y: 120, toJSON() {},
+        });
     });
     Object.defineProperty(section, "offsetHeight", { get: () => INNER_H + RUN });
     section.getBoundingClientRect = () => ({
@@ -171,17 +177,44 @@ test("las cajas del carril son más pequeñas que al principio", () => {
     assert.ok(Number(m[3]) <= 800, `y su tope también baja (${m[3]}px)`);
 });
 
-test("el degradado y el fotograma se funden más suave en el carril", () => {
+test("el fotograma cubre toda la caja con su capa de fusión", () => {
     const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    const regla = /\.work\.hf-work-h \.work-row::after \{([\s\S]*?)\n        \}/.exec(carril);
+    assert.ok(regla, "el carril define su propio fotograma");
+    const cuerpo = regla[1];
+    assert.match(cuerpo, /width: 100%;/, "la foto cubre la caja entera, no la mitad derecha");
+    assert.match(cuerpo, /-webkit-mask-image: none;\s*mask-image: none;/,
+        "sin fundido lateral: el borde izquierdo lo hace la capa de fusión");
+    assert.match(cuerpo,
+        /linear-gradient\(to right,\s*rgba\(5, 5, 5, 0\.94\) 0%,\s*rgba\(5, 5, 5, 0\.72\) 34%,\s*rgba\(5, 5, 5, 0\.34\) 62%,\s*rgba\(5, 5, 5, 0\) 100%\)/,
+        "el velo negro deja legibles el número y el titular a la izquierda");
+    assert.match(cuerpo,
+        /linear-gradient\(to right,\s*rgba\(160, 100, 255, 0\.22\) 0%,\s*rgba\(160, 100, 255, 0\.10\) 40%,\s*rgba\(160, 100, 255, 0\) 74%\)/,
+        "el lavado lila tiñe la foto desde la izquierda y se apaga hacia la derecha");
+    assert.match(cuerpo, /var\(--img, none\);/, "y debajo está la foto del proyecto");
     assert.match(carril,
-        /\.work\.hf-work-h \.work-row::after \{[\s\S]*?mask-image: linear-gradient\(to left, #000 32%, transparent 100%\)/,
-        "el fundido del fotograma arranca antes y cierra en el borde del panel");
-    assert.match(carril,
-        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?linear-gradient\(to left, #000 32%, transparent 100%\),\s*repeating-linear-gradient\(102deg/,
+        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/,
         "con máscaras compuestas se conserva el descubierto en bandas del hover");
-    assert.match(carril,
-        /\.work\.hf-work-h \.work-row::after \{[\s\S]*?linear-gradient\(to right,\s*var\(--bg\) 0%,\s*rgba\(160, 100, 255, 0\.10\) 22%,\s*rgba\(160, 100, 255, 0\.05\) 48%,\s*rgba\(5, 5, 5, 0\) 80%\)/,
-        "el lila se reparte en más paradas para que la fusión no tenga corte");
+});
+
+test("el clon del clic reproduce la caja a sangre, también al llegar a la ficha", () => {
+    // El clon de salida de la landing y el de llegada de la ficha llevan la
+    // misma capa de fusión que la caja; si no, el relevo cambiaría de aspecto.
+    const generado = fs.readFileSync(path.join(root, "generated.css"), "utf8");
+    const capa = /rgba\(5, 5, 5, 0\.94\) 0%,\s*rgba\(5, 5, 5, 0\.72\) 34%,\s*rgba\(5, 5, 5, 0\.34\) 62%,\s*rgba\(5, 5, 5, 0\) 100%/;
+    for (const [nombre, hoja] of [["landing", css], ["ficha", generado]]) {
+        const bloque = /\.work-transition--full::after \{([\s\S]*?)\n\}/.exec(hoja);
+        assert.ok(bloque && capa.test(bloque[1]),
+            `${nombre}: el clon a sangre lleva la capa de fusión`);
+        assert.match(hoja, /\.work-transition--full \{\s*-webkit-mask-image: none;\s*mask-image: none;\s*\}/,
+            `${nombre}: y sin el fundido lateral que recortaba la mitad derecha`);
+    }
+    assert.match(script, /const full = !!\(workSection && workSection\.classList\.contains\("hf-work-h"\)\);/,
+        "la landing clona la caja entera cuando el carril está activo");
+    assert.match(script, /left: rect\.left, top: rect\.top, width: rect\.width, height: rect\.height/);
+    assert.match(script, /position: imagePosition, full \}/, "y lo anota para la ficha");
+    assert.match(fs.readFileSync(path.join(root, "generated.js"), "utf8"),
+        /origin\.full \? " work-transition--full" : ""/, "la ficha lo reproduce");
 });
 
 for (const page of ["index.html", "es/index.html"]) {
@@ -331,7 +364,16 @@ test("clic: en el carril la fila no crece en vertical; en la lista sí se mantie
         await carril.frame();
         const row = carril.rows[0];
         row.dispatchEvent(new carril.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
-        assert.ok(carril.doc.querySelector(".work-transition--departure"), "el fotograma de salida se prepara igual");
+        const layer = carril.doc.querySelector(".work-transition--departure");
+        assert.ok(layer, "el fotograma de salida se prepara igual");
+        // El fotograma cubre toda la caja: el clon es la caja entera, con su capa.
+        assert.ok(layer.classList.contains("work-transition--full"));
+        assert.equal(layer.style.width, `${PANEL_W}px`);
+        assert.equal(layer.style.left, `${ROW_LEFT}px`);
+        assert.equal(layer.style.height, `${PANEL_H}px`);
+        const guardado = JSON.parse(carril.window.sessionStorage.getItem("hfGeneratedTransition"));
+        assert.equal(guardado.full, true, "y la ficha lo recibe para reproducir la caja a sangre");
+        assert.equal(guardado.width, PANEL_W);
         assert.equal(row.style.paddingBottom, "", "el panel mide la ventana: no hay padding que crecer");
         assert.equal(row.style.paddingTop, "");
     } finally { carril.dom.window.close(); }
@@ -341,6 +383,12 @@ test("clic: en el carril la fila no crece en vertical; en la lista sí se mantie
         await lista.frame();
         const row = lista.rows[0];
         row.dispatchEvent(new lista.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+        const layer = lista.doc.querySelector(".work-transition--departure");
+        assert.ok(layer && !layer.classList.contains("work-transition--full"),
+            "en la lista vertical el clon sigue siendo la mitad derecha");
+        assert.equal(layer.style.width, `${PANEL_W / 2}px`);
+        assert.equal(layer.style.left, `${ROW_LEFT + PANEL_W / 2}px`);
+        assert.equal(JSON.parse(lista.window.sessionStorage.getItem("hfGeneratedTransition")).full, false);
         assert.notEqual(row.style.paddingBottom, "", "la lista vertical conserva el crecimiento de la caja");
     } finally { lista.dom.window.close(); }
 });

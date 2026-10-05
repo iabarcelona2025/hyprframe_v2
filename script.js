@@ -1126,11 +1126,20 @@
     rows.forEach((row) => row.addEventListener("click", (event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const rect = row.getBoundingClientRect();
-        const start = { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
-        const imagePosition = getComputedStyle(row, "::after").backgroundPosition;
-        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition })); } catch (_) {}
+        // En el carril de escritorio (7b) el fotograma cubre toda la caja: el clon
+        // de salida es la caja entera, con su capa de fusión. En la lista vertical
+        // sigue siendo la mitad derecha, que es donde vive la foto.
+        const full = !!(workSection && workSection.classList.contains("hf-work-h"));
+        const start = full
+            ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+            : { left: rect.left + rect.width / 2, top: rect.top, width: rect.width / 2, height: rect.height };
+        // El ::after del carril lleva tres capas (velo, lavado y foto): el
+        // encuadre del proyecto es el de la capa de la foto, y las tres comparten
+        // el mismo valor, así que basta con la primera.
+        const imagePosition = (getComputedStyle(row, "::after").backgroundPosition || "center").split(",")[0].trim();
+        try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition, full })); } catch (_) {}
         const layer = document.createElement("div");
-        layer.className = "work-transition work-transition--departure";
+        layer.className = "work-transition work-transition--departure" + (full ? " work-transition--full" : "");
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
         event.preventDefault();
@@ -1149,7 +1158,7 @@
         // la ventana y no tiene padding vertical que crecer: la fila no puede
         // acompañar al clon, así que la salida se queda en el fotograma que
         // aparece —sin escalar— y nada desborda por debajo del panel.
-        if (!(workSection && workSection.classList.contains("hf-work-h"))) {
+        if (!full) {
             row.style.paddingTop = padding.paddingTop;
             row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
             requestAnimationFrame(() => layer.classList.add("is-opening"));

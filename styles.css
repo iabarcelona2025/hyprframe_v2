@@ -1214,34 +1214,37 @@ section { position: relative; }
             grid-area: 3 / 3 / 4 / 4;
             align-self: end; justify-self: end;
         }
-        /* Fusión más suave entre el degradado lila y el fotograma (05/10/2026):
-           el negro entra antes y el lila se reparte en más paradas, y la máscara
-           del fotograma arranca su fundido antes y lo cierra justo en el borde
-           izquierdo del panel; la foto se disuelve en el negro en vez de
-           aparecer recortada. */
+        /* El fotograma cubre toda la caja (05/10/2026, a petición del cliente) y
+           lleva su propia capa de fusión: un velo negro que mantiene legibles el
+           número y el titular y un lavado lila que lo tiñe desde la izquierda,
+           los dos desvaneciéndose hacia la derecha, donde la foto se ve entera.
+           Antes la foto ocupaba solo la mitad derecha y el fundido lo hacía la
+           máscara lateral; ahora el fundido lo hace esta capa y la máscara se
+           queda solo con las bandas inclinadas del hover. */
         .work.hf-work-h .work-row::after {
+            width: 100%;
             background-image:
                 linear-gradient(to right,
-                    var(--bg) 0%,
-                    rgba(160, 100, 255, 0.10) 22%,
-                    rgba(160, 100, 255, 0.05) 48%,
-                    rgba(5, 5, 5, 0) 80%),
+                    rgba(5, 5, 5, 0.94) 0%,
+                    rgba(5, 5, 5, 0.72) 34%,
+                    rgba(5, 5, 5, 0.34) 62%,
+                    rgba(5, 5, 5, 0) 100%),
+                linear-gradient(to right,
+                    rgba(160, 100, 255, 0.22) 0%,
+                    rgba(160, 100, 255, 0.10) 40%,
+                    rgba(160, 100, 255, 0) 74%),
                 var(--img, none);
-            -webkit-mask-image: linear-gradient(to left, #000 32%, transparent 100%);
-                    mask-image: linear-gradient(to left, #000 32%, transparent 100%);
+            -webkit-mask-image: none;
+                    mask-image: none;
         }
-        /* Con máscaras compuestas (navegadores modernos) se conserva el
-           descubierto en bandas del hover y se suaviza igual el fundido lateral. */
+        /* Con máscaras compuestas se conserva el descubierto en bandas del hover;
+           ya no hay fundido lateral que componer, así que basta con una máscara. */
         @supports (mask-composite: intersect) {
             .work.hf-work-h .work-row::after {
                 -webkit-mask-image:
-                    linear-gradient(to left, #000 32%, transparent 100%),
                     repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
                 mask-image:
-                    linear-gradient(to left, #000 32%, transparent 100%),
                     repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
-                -webkit-mask-composite: source-in;
-                mask-composite: intersect;
             }
         }
         /* El panel no crece en vertical al pasar el cursor (la lista sí lo hacía
@@ -2296,6 +2299,27 @@ label.cookie-purpose-head { cursor: pointer; }
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(90deg, rgba(160,100,255,.08), transparent 70%);
     opacity: 1; transition: opacity .22s ease-out;
+}
+/* Clon de una caja del carril de escritorio (05/10/2026): allí el fotograma es
+   a sangre y lleva su capa de fusión, así que el clon cubre la caja entera
+   —sin el fundido lateral que recortaba la mitad derecha— y reproduce la misma
+   capa: velo negro que deja legible el texto y lavado lila desde la izquierda.
+   Al abrirse, la capa se apaga con `is-opening` y queda solo la foto. */
+.work-transition--full {
+    -webkit-mask-image: none;
+            mask-image: none;
+}
+.work-transition--full::after {
+    background:
+        linear-gradient(to right,
+            rgba(5, 5, 5, 0.94) 0%,
+            rgba(5, 5, 5, 0.72) 34%,
+            rgba(5, 5, 5, 0.34) 62%,
+            rgba(5, 5, 5, 0) 100%),
+        linear-gradient(to right,
+            rgba(160, 100, 255, 0.22) 0%,
+            rgba(160, 100, 255, 0.10) 40%,
+            rgba(160, 100, 255, 0) 74%);
 }
 .work-transition.is-opening { transform: scale(1); }
 .work-transition.is-opening::after { opacity: 0; }
