@@ -37,6 +37,10 @@
      engendra acaba, porque las hijas nacen donde muere su padre—, así que por
      debajo del frente no hay nada dibujado y por encima no falta nada: la maraña
      crece y se recoge de forma progresiva, sin piezas sueltas ni saltos.
+   - El frente va por detrás del recorrido (t = recorrido², GROWTH veces el alto
+     del lienzo): arranca despacio junto a la línea y acaba a la altura de
+     SYNTHESIS. Si fuera 1:1, la tinta coincidiría con lo ya visible y no se vería
+     crecer nada.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
      mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
@@ -66,6 +70,10 @@ const RUN = (N - 1) * PANEL_W + PANEL_W / 2 - LIST_W / 2;   // 6937 px
 // Fracción del recorrido vertical en la que el carril aún no se mueve (N.O.D.E.
 // se queda a la vista). Se lee del propio script para no duplicar el número.
 const HOLD = Number(/const HOLD = ([\d.]+);/.exec(script)[1]);
+// Duración del dibujo de las ramas, en múltiplos del alto del lienzo (se lee del
+// propio script para no duplicar el número).
+const GROWTH = Number(/const GROWTH = ([\d.]+);/.exec(script)[1]);
+const trazo = (alto = BRANCH_H) => Math.round(alto * GROWTH);   // px de scroll del dibujo
 
 function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H, branchH = BRANCH_H } = {}) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), "utf8"), {
@@ -452,8 +460,8 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
         await frame();
         assert.equal(sinDibujar(), paths.length, "al soltarse arranca, aún sin trazo");
 
-        // 3. Con el scroll, se van formando: a mitad de lienzo, ni todas ni ninguna.
-        const span = BRANCH_H;
+        // 3. Con el scroll, se van formando: a mitad del dibujo, ni todas ni ninguna.
+        const span = trazo();
         scrollTo(TOP + range + span * 0.5);
         await frame();
         const aMedias = empezadas();
@@ -463,7 +471,7 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
         const parciales = paths.filter((p) => dash(p) > 0 && dash(p) < len(p)).length;
         assert.ok(parciales > 0, "y trazos a medio hacer, no de golpe");
 
-        // 4. Al entrar el lienzo entero, están todas: y se quedan.
+        // 4. Al final del tramo del dibujo están todas: y se quedan.
         scrollTo(TOP + range + span);
         await frame();
         assert.equal(dibujadas(), paths.length, "al final del recorrido del dibujo, todas");
@@ -508,10 +516,11 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
             llegan.get(k).push(p);
         }
         const padres = (p) => llegan.get(punto(p.getAttribute("d"), 0)) || [];
-        // Con el scroll, el frente avanza por distancia al arranque: un tramo solo
-        // empieza cuando el que lo engendra ya está entero. Ni una pieza suelta.
-        for (const frac of [0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95]) {
-            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+        // Con el scroll, el frente avanza por altura: un tramo solo empieza cuando
+        // el que lo engendra ya está entero. Ni una pieza suelta.
+        const span = trazo();
+        for (const frac of [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]) {
+            scrollTo(TOP + RUN + Math.round(span * frac));
             await frame();
             for (const p of paths) {
                 const arriba = padres(p);
@@ -528,7 +537,7 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
         }
         // Y al subir, el mismo orden: el frente se recoge por las puntas.
         for (const frac of [0.8, 0.5, 0.2]) {
-            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+            scrollTo(TOP + RUN + Math.round(span * frac));
             await frame();
             const terminadas = paths.filter(hecha).length;
             const empezadas = paths.filter(enCurso).length;
@@ -552,10 +561,13 @@ test("escritorio: el frente baja con el scroll y por debajo no hay nada dibujado
         // Fracción de trazo ya dibujada (0 = sin empezar, 1 = entero). El dibujo
         // escribe el dashoffset, así que de ahí sale la tinta.
         const tinta = (t) => 1 - Number(t.p.style.strokeDashoffset) / len(t);
+        // El recorrido del dibujo es más largo que el lienzo y el frente va por
+        // detrás (t = recorrido²): a cada punto del scroll le toca un frente.
+        const span = trazo();
         const ir = async (frac) => {
-            scrollTo(TOP + RUN + Math.round(BRANCH_H * frac));
+            scrollTo(TOP + RUN + Math.round(span * frac));
             await frame();
-            return BRANCH_H * frac;           // el frente, en px de lienzo
+            return BRANCH_H * frac * frac;    // el frente, en px de lienzo
         };
 
         // 1. Al soltarse la sección, el frente está en la línea de cierre: sin tinta.
@@ -659,21 +671,22 @@ test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", asyn
         await frame();
         assert.equal(branches.style.height, "520px", "el lienzo baja hasta el centro de esa línea");
 
-        // Y con el alto medido, el dibujo dura ese alto: la rama más honda —la de
-        // la derecha, que llega al fondo— acaba justo cuando el lienzo entra entero
-        // en pantalla; un píxel antes aún no está.
+        // Y con el alto medido, el dibujo dura GROWTH veces ese alto: la rama más
+        // honda —la de la derecha, que llega al fondo— acaba al final del tramo; un
+        // píxel antes aún no está.
         state.branchH = 520;
         window.dispatchEvent(new window.Event("resize"));
         await frame();
         const paths = [...branches.querySelectorAll("path")];
         const dibujadas = () => paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length;
-        scrollTo(TOP + RUN + 519);
+        const span = trazo(520);
+        scrollTo(TOP + RUN + span - 1);
         await frame();
         assert.ok(dibujadas() < paths.length,
             `un píxel antes del final del tramo aún falta algo (${dibujadas()}/${paths.length})`);
-        scrollTo(TOP + RUN + 520);
+        scrollTo(TOP + RUN + span);
         await frame();
-        assert.equal(dibujadas(), paths.length, "al entrar el lienzo entero, todas dibujadas");
+        assert.equal(dibujadas(), paths.length, "al final del tramo, todas dibujadas");
     } finally { dom.window.close(); }
 });
 
@@ -681,7 +694,7 @@ test("escritorio: redimensionar rehace las ramas al estado que marca el scroll",
     const { dom, window, branches, state, frame, scrollTo } = boot();
     try {
         await frame();
-        scrollTo(TOP + RUN + BRANCH_H);          // dibujo completo
+        scrollTo(TOP + RUN + trazo());           // dibujo completo
         await frame();
         const dibujadas = () => [...branches.querySelectorAll("path")]
             .filter((p) => Number(p.style.strokeDashoffset) === 0).length;
@@ -695,12 +708,13 @@ test("escritorio: redimensionar rehace las ramas al estado que marca el scroll",
         assert.equal(branches.querySelector("svg").getAttribute("viewBox"), `0 0 ${LIST_W} 700`);
         // El mismo scroll sobre otro lienzo (y otro tramo de dibujo) da el mismo
         // estado: no se reinicia la animación ni salta a dibujado del todo.
-        scrollTo(TOP + RUN + 350);               // la mitad del tramo nuevo
+        const span = trazo(700);
+        scrollTo(TOP + RUN + Math.round(span * 0.5));   // la mitad del tramo nuevo
         await frame();
         const hechas = paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length;
         assert.ok(hechas > 0 && hechas < paths.length,
             `a mitad del tramo nuevo hay trazos hechos y pendientes (${hechas}/${paths.length})`);
-        scrollTo(TOP + RUN + 700);
+        scrollTo(TOP + RUN + span);
         await frame();
         assert.equal(paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length, paths.length,
             "y al final del tramo nuevo, todas");

@@ -1265,7 +1265,8 @@
        Al soltarse nacen unas ramas geométricas y rectilíneas —a la derecha del
        codo de RYUU, nunca por debajo de la caja— que se van formando con el
        scroll: el dibujo baja de la línea de cierre hacia abajo, de forma
-       progresiva, y al subir se recoge por el mismo sitio (ver más abajo). */
+       progresiva y a la vista, y al subir se recoge por el mismo sitio (ver más
+       abajo). */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1285,6 +1286,12 @@
         // Tramo inicial, en fracción del recorrido de la sección, en el que el
         // carril no se mueve: N.O.D.E. se queda a la vista antes de arrancar.
         const HOLD = 0.16;
+        // Cuánto dura el dibujo de las ramas, en múltiplos del alto del lienzo.
+        // Con el frente 1:1 la tinta dibujada coincidiría con la parte del lienzo
+        // que ya está a la vista (todo parecería terminado, sin animación que
+        // ver), así que el frente va por detrás: arranca despacio junto a la línea
+        // de cierre y se le ve bajar. Ver paintBranches.
+        const GROWTH = 1.4;
         let branchPaths = [];   // tren de dibujo de las ramas: { el, len, t0, t1, last }
         let branchStart = 0;    // scrollY en el que el carril se suelta y arrancan
         let branchSpan = 0;     // px de scroll que dura el dibujo (el alto del lienzo)
@@ -1357,18 +1364,24 @@
         }
 
         /* Dibujo de las ramas ligado al scroll (05/10/2026): el frente baja desde
-           la línea de cierre al ritmo del scroll —el recorrido va del final del
-           carril, cuando la sección se suelta, hasta que el lienzo entra entero en
-           pantalla, que es su alto— y cada tramo se dibuja cuando el frente pasa
-           por su altura: por debajo del frente no hay nada dibujado y por encima
-           está todo, así que la maraña crece hacia abajo de forma progresiva y al
-           subir se recoge por el mismo sitio, en orden inverso. Parado, se queda
-           como esté. Solo se escribe el estilo cuando el número cambia. */
+           la línea de cierre y cada tramo se dibuja cuando el frente pasa por su
+           altura: por debajo del frente no hay nada dibujado y por encima está
+           todo, así que la maraña crece hacia abajo de forma progresiva y al subir
+           se recoge por el mismo sitio, en orden inverso. Parado, se queda como
+           esté.
+
+           El recorrido dura GROWTH veces el alto del lienzo y el frente va por
+           detrás (t = recorrido²): despacio al principio, junto a la línea, y
+           llegando a SYNTHESIS al final. Así el lienzo que aún no está dibujado se
+           ve a la vista (la maraña crece delante del que mira) en vez de coincidir
+           con lo que ya se ve, que es lo que dejaba el dibujo sin animación.
+           Solo se escribe el estilo cuando el número cambia. */
         function paintBranches() {
             if (!branchPaths.length) return;
             const span = Math.max(1, branchSpan);
             let t = (scrollY - branchStart) / span;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
+            t = t * t;
             for (const tramo of branchPaths) {
                 const dur = tramo.t1 - tramo.t0;
                 let local = dur > 0 ? (t - tramo.t0) / dur : (t >= tramo.t0 ? 1 : 0);
@@ -1556,9 +1569,9 @@
             });
             workBranches.appendChild(svg);
             // El dibujo va con el scroll: arranca donde se suelta la sección y dura
-            // lo que tarda el lienzo en entrar entero en pantalla (su alto).
+            // GROWTH veces el alto del lienzo, para que se vea crecer (ver arriba).
             branchStart = start + range;
-            branchSpan = h;
+            branchSpan = Math.round(h * GROWTH);
             paintBranches();
         }
 
