@@ -1265,6 +1265,7 @@
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
     const workRailTicks = document.getElementById("workRailTicks");
+    const workBranches = document.getElementById("workBranches");
 
     if (workView && workList && workTrack && workRailTicks && rows.length > 1) {
         const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
@@ -1289,6 +1290,7 @@
         let paintedX = null;  // último translate escrito (para no repetirlo)
         let hooked = false;   // la sección está en modo carril y medida
         let queued = 0;       // rAF pendiente
+        let branchesPlayed = false;   // las ramas del final ya se han dibujado
 
         function paint() {
             queued = 0;
@@ -1296,8 +1298,11 @@
             // Los primeros `hold` px de la sección fija no mueven nada: N.O.D.E.
             // sigue a la vista. El recorrido completo se reparte entre el resto.
             const travel = Math.max(1, range - hold);
-            let progress = (scrollY - start - hold) / travel;
-            progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+            const raw = (scrollY - start - hold) / travel;
+            let progress = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+            // Final del carril: es el momento en el que la sección se suelta y el
+            // scroll empieza a bajar hacia About. Ahí arrancan las ramas.
+            if (raw >= 1) playBranches();
             const travelled = progress * run;
             const x = -travelled;
             // Fuera del recorrido el valor no cambia: no se reescribe el estilo
@@ -1335,6 +1340,123 @@
             paintedX = null;
             if (ticks[lit]) ticks[lit].classList.remove("is-on");
             lit = -1;
+            // Las ramas son del carril: sin carril no queda nada (y pueden volver
+            // a dibujarse enteras si el carril regresa al redimensionar).
+            if (workBranches) {
+                workBranches.textContent = "";
+                workBranches.classList.remove("is-playing");
+            }
+            branchesPlayed = false;
+        }
+
+        // Las ramas, una sola vez cada una: la clase enciende la animación de
+        // dibujo y ya no se retira (se quedan de fondo, ya dibujadas).
+        function playBranches() {
+            if (branchesPlayed || !workBranches) return;
+            branchesPlayed = true;
+            workBranches.classList.add("is-playing");
+        }
+
+        /* Traza las ramas dentro del contenedor (w × h) y devuelve los tramos.
+           Nacen en y = 0, que es la línea de cierre del carril (el borde inferior
+           del listado): en el codo de la última caja —tras RYUU, ya centrada— y
+           en varios puntos hacia la derecha, que es el hueco que queda libre.
+           Cada tronco baja partiéndose: los ángulos se ajustan a múltiplos de 45°
+           (geometría recta, sin curvas), las ramas se acortan al bajar y de vez en
+           cuando sale una ramita horizontal, como una derivación. Con semilla
+           fija: las mismas ramas en cada carga. */
+        function traceBranches(w, h) {
+            let seed = 0x51ED270B;   // semilla fija: dibujo reproducible
+            const rnd = () => {
+                seed = (seed + 0x6D2B79F5) | 0;
+                let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+            const FORTY_FIVE = Math.PI / 4;
+            const snap = (angle) => Math.round(angle / FORTY_FIVE) * FORTY_FIVE;
+            const clampX = (x) => Math.min(Math.max(x, 4), w - 4);
+            const MAX_DEPTH = 6;
+            const tramos = [];
+
+            // Arranques: el codo de la última caja (borde derecho, sobre la línea
+            // de cierre) y tres puntos repartidos hacia la derecha, más uno corto
+            // a su izquierda para que la maraña no se vaya solo a un lado.
+            const last = rows[rows.length - 1];
+            const corner = Math.round(last.offsetLeft + last.offsetWidth - run);
+            const roots = [corner];
+            for (let i = 1; i <= 3; i++) roots.push(corner + ((w - corner) * i) / 4);
+            if (corner - w * 0.2 > 8) roots.push(corner - w * 0.2);
+
+            const grow = (x, y, angle, len, depth, root) => {
+                let nx = x + Math.cos(angle) * len;
+                if (nx < 4 || nx > w - 4) {          // se sale de lado: rebota hacia dentro
+                    angle = Math.PI - angle;
+                    nx = x + Math.cos(angle) * len;
+                }
+                nx = clampX(nx);
+                const ny = Math.min(y + Math.sin(angle) * len, h);
+                tramos.push({ d: `M${Math.round(x)} ${Math.round(y)}L${Math.round(nx)} ${Math.round(ny)}`,
+                              depth, root });
+                if (depth >= MAX_DEPTH || ny >= h || len < 22) return;
+                // Derivación horizontal corta: da el aire de circuito.
+                if (rnd() < 0.3) {
+                    const dir = rnd() < 0.5 ? 0 : Math.PI;
+                    const long = 18 + rnd() * 46;
+                    tramos.push({ d: `M${Math.round(nx)} ${Math.round(ny)}L${Math.round(clampX(nx + Math.cos(dir) * long))} ${Math.round(ny)}`,
+                                  depth: depth + 1, root });
+                }
+                const kids = rnd() < 0.62 ? 2 : 1;
+                for (let i = 0; i < kids; i++) {
+                    const turn = (i === 0 ? -1 : 1) * (rnd() < 0.5 ? FORTY_FIVE : Math.PI / 2);
+                    // Se queda en el semicírculo de abajo (nunca sube).
+                    const next = Math.min(Math.max(snap(angle + turn * (0.5 + rnd() * 0.5)), FORTY_FIVE), Math.PI - FORTY_FIVE);
+                    grow(nx, ny, next, len * (0.68 + rnd() * 0.2), depth + 1, root);
+                }
+            };
+            // Los troncos arrancan con largos distintos (unos bajan de un tirón y
+            // otros se ramifican enseguida) para que la maraña no se lea en filas.
+            roots.forEach((x, root) => grow(clampX(x), 0, Math.PI / 2, h * (0.2 + rnd() * 0.12), 0, root));
+
+            // Cada tramo empieza cuando el que lo engendra ya llegó a su punta:
+            // retardo por profundidad, con un pelín de desorden por rama.
+            return tramos.map((tramo) => ({
+                ...tramo,
+                dur: (0.34 + rnd() * 0.3).toFixed(2),
+                delay: (tramo.depth * 0.16 + tramo.root * 0.07 + rnd() * 0.1).toFixed(2),
+            }));
+        }
+
+        function buildBranches() {
+            if (!workBranches) return;
+            const w = Math.round(workBranches.clientWidth);
+            const h = Math.round(workBranches.clientHeight);
+            if (!w || !h) return;                    // sin maqueta (jsdom, pestaña oculta)
+            workBranches.textContent = "";           // se rehace con la medida nueva
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+            svg.setAttribute("aria-hidden", "true");
+            svg.setAttribute("focusable", "false");
+            traceBranches(w, h).forEach(({ d, dur, delay }) => {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", d);
+                // --len: longitud real del trazo, para que el dibujo vaya a ritmo
+                // constante (sin getTotalLength queda la reserva del CSS).
+                if (typeof path.getTotalLength === "function") {
+                    path.style.setProperty("--len", Math.ceil(path.getTotalLength()));
+                }
+                path.style.setProperty("--dur", `${dur}s`);
+                path.style.setProperty("--delay", `${delay}s`);
+                // Si ya se habían dibujado (redimensionar después del final), se
+                // vuelven a trazar ya completas: sin animación y con el trazo
+                // entero, que es como habían quedado.
+                if (branchesPlayed) {
+                    path.style.animation = "none";
+                    path.style.strokeDashoffset = "0";
+                }
+                svg.appendChild(path);
+            });
+            workBranches.appendChild(svg);
         }
 
         function measure() {
@@ -1377,6 +1499,7 @@
             // la pantalla— y ya no se retira la clase: quitarla con la cascada ya
             // consumida dejaría las filas ocultas para siempre.
             rows.forEach((row) => row.classList.add("work-row-visible"));
+            buildBranches();
             hooked = true;
             requestPaint();
         }

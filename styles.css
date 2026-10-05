@@ -1146,6 +1146,7 @@ section { position: relative; }
 .work-view { display: block; }
 .work-track { display: block; }
 .work-rail { display: none; }
+.work-branches { display: none; }
 
 @media (min-width: 1025px) {
     @supports (overflow-x: clip) {
@@ -1298,6 +1299,39 @@ section { position: relative; }
             background: var(--violet);
             transform: scaleY(2);
         }
+        /* Ramas geométricas del final del carril (05/10/2026): cuando la sección
+           se suelta —justo cuando el scroll empieza a bajar hacia About—, de las
+           líneas de cierre del carril (la de abajo y la vertical derecha de la
+           última caja, tras RYUU) bajan unas ramas geométricas que se dibujan
+           solas y se quedan de fondo sobre el arranque de About.
+           Aquí solo se les da el trazo y la animación de dibujo; la geometría la
+           traza script.js con semilla fija (las mismas ramas en cada carga).
+           El trazo es el gris de las líneas (--line) y de 1px que no escala: el
+           grosor y el color se mantienen igual mientras baja y una vez paradas.
+           Como el bloque cuelga del final de la sección (top: 100%) y la sección
+           de About se pinta después, las ramas quedan SIEMPRE por detrás del
+           texto; solo se anima el dibujo (nada de opacidad ni escala). */
+        .work.hf-work-h .work-branches {
+            display: block;
+            position: absolute; top: 100%; left: 0;
+            width: 100%; height: clamp(420px, 62vh, 760px);
+            pointer-events: none; z-index: 0;
+        }
+        .work.hf-work-h .work-branches svg { display: block; width: 100%; height: 100%; }
+        .work.hf-work-h .work-branches path {
+            fill: none;
+            stroke: var(--line);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+            stroke-dasharray: var(--len, 2000);
+            stroke-dashoffset: var(--len, 2000);
+        }
+        /* El dibujo va por ramas: cada una empieza cuando la que la engendra ya
+           ha llegado a su punta (retardo por profundidad), a ritmo constante. */
+        .work.hf-work-h .work-branches.is-playing path {
+            animation: work-branch-grow var(--dur, 0.7s) linear var(--delay, 0s) forwards;
+        }
+        @keyframes work-branch-grow { to { stroke-dashoffset: 0; } }
     }
 }
 

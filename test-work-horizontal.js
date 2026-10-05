@@ -24,6 +24,10 @@
    - El bloque de CSS solo vive dentro de @supports (overflow-x: clip): sin
      clip, el overflow-x de html/body/main sería un contenedor de scroll y el
      sticky no pegaría.
+   - Al soltarse el carril —justo cuando el scroll empieza a bajar hacia About—
+     nacen de las líneas de cierre unas ramas geométricas que se dibujan solas y
+     se quedan de fondo: mismas ramas en cada carga (semilla fija), trazo gris de
+     1px que no escala y animación de dibujo por profundidad.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
      mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
@@ -45,6 +49,7 @@ const LIST_W = 1440;      // ancho de la ventana del carril
 const PANEL_W = 806;      // 56vw de 1440 (el ancho de panel del CSS)
 const TOP = 4000;         // dónde empieza la sección dentro del documento
 const PANEL_H = 640;      // alto útil de la ventana del carril
+const BRANCH_H = 560;    // alto del lienzo de las ramas (clamp(420px, 62vh, 760px))
 const ROW_LEFT = 100;    // dónde empieza la caja medida (x del rect de la fila)
 const N = 10;
 // El carril se detiene con el ÚLTIMO proyecto centrado en la ventana.
@@ -62,7 +67,7 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     });
     const { window } = dom;
     const doc = window.document;
-    const state = { y: TOP, desktop, reduced, listHeight };
+    const state = { y: TOP, desktop, reduced, listHeight, branchH: BRANCH_H };
 
     window.matchMedia = (query) => ({
         get matches() {
@@ -98,6 +103,9 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     const rows = [...track.querySelectorAll(".work-row")];
     Object.defineProperty(list, "clientWidth", { get: () => LIST_W });
     Object.defineProperty(list, "clientHeight", { get: () => state.listHeight });   // alto del panel
+    const branches = doc.getElementById("workBranches");
+    Object.defineProperty(branches, "clientWidth", { get: () => LIST_W });
+    Object.defineProperty(branches, "clientHeight", { get: () => state.branchH });
     Object.defineProperty(view, "offsetHeight", { get: () => INNER_H });   // la pantalla pegada
     rows.forEach((row, index) => {
         Object.defineProperty(row, "offsetLeft", { get: () => index * PANEL_W });
@@ -119,7 +127,7 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
 
     const frame = () => new Promise((resolve) => setTimeout(resolve, 30));
     const scrollTo = (y) => { state.y = y; window.dispatchEvent(new window.Event("scroll")); };
-    return { dom, window, doc, section, view, list, track, rows, state, frame, scrollTo };
+    return { dom, window, doc, section, view, list, track, branches, rows, state, frame, scrollTo };
 }
 
 const transformX = (track) => {
@@ -267,6 +275,17 @@ test("el clon del clic reproduce la caja a sangre, también al llegar a la ficha
 });
 
 for (const page of ["index.html", "es/index.html"]) {
+    test(`${page}: el lienzo de las ramas del final existe y está vacío`, () => {
+        const doc = new JSDOM(fs.readFileSync(path.join(root, page), "utf8")).window.document;
+        const branches = doc.getElementById("workBranches");
+        assert.ok(branches, "el contenedor existe");
+        assert.equal(branches.getAttribute("aria-hidden"), "true", "es decorativo");
+        assert.equal(branches.children.length, 0, "y vacío: las ramas las traza el script");
+        assert.equal(branches.parentElement.id, "work", "cuelga de la sección del carril");
+        assert.equal(branches.previousElementSibling.className, "work-view",
+            "y va justo después de la pantalla del carril");
+    });
+
     test(`${page}: los 10 proyectos viven en el carril y el raíl está listo`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), "utf8")).window.document;
         const view = doc.querySelector(".work-view");
@@ -307,6 +326,109 @@ test("escritorio: la clase y el recorrido se miden, sin mover nada al arrancar",
             "los paneles quedan colocados de una vez: la cascada de la lista vertical "
             + "no debe cruzarse con el recorrido horizontal");
     } finally { dom.window.close(); }
+});
+
+test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan de fondo", () => {
+    assert.match(css, /\.work-branches \{ display: none; \}/, "fuera del carril no existen");
+    const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-branches \{\s*display: block;\s*position: absolute; top: 100%; left: 0;\s*width: 100%; height: clamp\(420px, 62vh, 760px\);\s*pointer-events: none; z-index: 0;\s*\}/,
+        "el lienzo cuelga del final de la sección y no captura el ratón");
+    const trazo = /\.work\.hf-work-h \.work-branches path \{([\s\S]*?)\n        \}/.exec(carril);
+    assert.ok(trazo, "los tramos tienen estilo propio");
+    assert.match(trazo[1], /stroke: var\(--line\);/, "trazo del mismo gris que las líneas");
+    assert.match(trazo[1], /stroke-width: 1;/, "de 1px");
+    assert.match(trazo[1], /vector-effect: non-scaling-stroke;/, "que no escala: el grosor se mantiene");
+    assert.match(trazo[1], /stroke-dasharray: var\(--len, 2000\);/);
+    assert.match(trazo[1], /stroke-dashoffset: var\(--len, 2000\);/);
+    assert.doesNotMatch(trazo[1], /opacity|transform:/, "solo se anima el dibujo, ni opacidad ni escala");
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-branches\.is-playing path \{\s*animation: work-branch-grow var\(--dur, 0\.7s\) linear var\(--delay, 0s\) forwards;\s*\}/,
+        "el dibujo va por ramas, con su retardo, y se queda fijo al terminar");
+    assert.match(carril, /@keyframes work-branch-grow \{ to \{ stroke-dashoffset: 0; \} \}/);
+});
+
+test("escritorio: las ramas se trazan al medir el carril, con raíces en la línea de cierre", async () => {
+    const { dom, doc, branches, frame } = boot();
+    try {
+        await frame();
+        const svg = branches.querySelector("svg");
+        assert.ok(svg, "al montar el carril se traza el svg");
+        assert.equal(svg.getAttribute("viewBox"), `0 0 ${LIST_W} ${BRANCH_H}`);
+        const paths = [...svg.querySelectorAll("path")];
+        assert.ok(paths.length >= 20, `ramas de sobra para que sea intrincado (${paths.length})`);
+        assert.ok(paths.every((p) => /^M(\d+) (\d+)L(\d+) (\d+)$/.test(p.getAttribute("d"))),
+            "todos los tramos son rectos (geometría, sin curvas)");
+        const raices = paths.filter((p) => /^M\d+ 0L/.test(p.getAttribute("d")));
+        assert.ok(raices.length >= 4, `las ramas nacen de la línea de cierre (${raices.length} arranques)`);
+        for (const path of paths) {
+            const ys = [...path.getAttribute("d").matchAll(/[ML](\d+) (\d+)/g)].map((m) => Number(m[2]));
+            assert.ok(ys.every((y, i) => i === 0 || y >= ys[i - 1]), "cada rama baja, nunca sube");
+            assert.ok(ys[ys.length - 1] <= BRANCH_H, "y no se sale por abajo del lienzo");
+        }
+        assert.ok(!branches.classList.contains("is-playing"), "al empezar el carril todavía no se dibuja");
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: el dibujo arranca justo al soltarse la sección, no antes", async () => {
+    const { dom, branches, frame, scrollTo } = boot();
+    try {
+        await frame();
+        const range = RUN, hold = Math.round(range * HOLD);
+        scrollTo(Math.round(TOP + hold + (range - hold) * 0.9));
+        await frame();
+        assert.ok(!branches.classList.contains("is-playing"), "al 90% del recorrido aún no");
+        scrollTo(TOP + range);       // borde de liberación: empieza a bajar hacia About
+        await frame();
+        assert.ok(branches.classList.contains("is-playing"), "justo al soltarse, sí");
+        assert.ok(branches.querySelector("svg"), "el dibujo es el que ya estaba trazado");
+        scrollTo(TOP + range + 900);   // ya dentro de About: siguen ahí, de fondo
+        await frame();
+        assert.ok(branches.classList.contains("is-playing"));
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: redimensionar después del final no repite el dibujo", async () => {
+    const { dom, window, branches, state, frame, scrollTo } = boot();
+    try {
+        await frame();
+        scrollTo(TOP + RUN);        // final del carril: se dibujan
+        await frame();
+        assert.ok(branches.classList.contains("is-playing"));
+        state.branchH = 700;        // otra ventana
+        window.dispatchEvent(new window.Event("resize"));
+        await frame();
+        const paths = [...branches.querySelectorAll("path")];
+        assert.ok(paths.length > 0, "se vuelven a trazar con la medida nueva");
+        assert.equal(branches.querySelector("svg").getAttribute("viewBox"), `0 0 ${LIST_W} 700`);
+        assert.ok(paths.every((p) => p.style.animation === "none"),
+            "ya dibujadas: nada de repetir la animación");
+        assert.ok(paths.every((p) => p.style.strokeDashoffset === "0"),
+            "y con el trazo entero, como habían quedado");
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: el trazado es reproducible (semilla fija) y se retira con el carril", async () => {
+    const primera = boot();
+    let antes;
+    try {
+        await primera.frame();
+        antes = [...primera.branches.querySelectorAll("path")].map((p) => p.getAttribute("d"));
+        assert.ok(antes.length > 0);
+    } finally { primera.dom.window.close(); }
+
+    const segunda = boot();
+    try {
+        await segunda.frame();
+        assert.deepEqual([...segunda.branches.querySelectorAll("path")].map((p) => p.getAttribute("d")),
+            antes, "la semilla fija da las mismas ramas en cada carga");
+        // Sin carril (ventana baja) las ramas se retiran con él.
+        segunda.state.listHeight = 200;
+        segunda.window.dispatchEvent(new segunda.window.Event("resize"));
+        await segunda.frame();
+        assert.equal(segunda.branches.children.length, 0, "sin carril no hay ramas");
+        assert.ok(!segunda.branches.classList.contains("is-playing"));
+    } finally { segunda.dom.window.close(); }
 });
 
 test("escritorio: N.O.D.E. espera, el carril reparte el recorrido y RYUU queda centrada al soltarse", async () => {
