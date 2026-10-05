@@ -1126,9 +1126,9 @@
     rows.forEach((row) => row.addEventListener("click", (event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const rect = row.getBoundingClientRect();
-        // En el carril de escritorio (7b) el fotograma cubre toda la caja: el clon
-        // de salida es la caja entera, con su capa de fusión. En la lista vertical
-        // sigue siendo la mitad derecha, que es donde vive la foto.
+        // En el carril de escritorio (7b) el fotograma cubre toda la caja: el
+        // rect que viaja a la ficha es el de la caja entera. En la lista vertical
+        // es la mitad derecha, que es donde vive la foto.
         const full = !!(workSection && workSection.classList.contains("hf-work-h"));
         const start = full
             ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
@@ -1138,31 +1138,39 @@
         // el mismo valor, así que basta con la primera.
         const imagePosition = (getComputedStyle(row, "::after").backgroundPosition || "center").split(",")[0].trim();
         try { sessionStorage.setItem("hfGeneratedTransition", JSON.stringify({ ...start, image: row.dataset.img, position: imagePosition, full })); } catch (_) {}
+        event.preventDefault();
+        row.classList.add("is-departing");
+
+        // Carril de escritorio (05/10/2026): aquí NO se construye clon. El clon
+        // de salida es una caja nueva con la misma foto, pero sin el número, el
+        // titular ni el lavado lila de la caja real, así que al aparecer —encima,
+        // tapándola— el relevo se notaba: el texto se apagaba de golpe. En el
+        // carril la caja ya está donde tiene que estar (la sección está fija) y
+        // el navegador la sigue pintando hasta que carga la ficha, así que se
+        // deja tal cual y la salida la cuenta la propia caja: el fotograma se
+        // empuja un 5% hacia dentro (ver .is-departing en styles.css) y la ficha
+        // recoge el relevo con su clon de llegada desde el mismo rect.
+        if (full) {
+            setTimeout(() => { location.href = row.href; }, 440);
+            return;
+        }
+
         const layer = document.createElement("div");
-        layer.className = "work-transition work-transition--departure" + (full ? " work-transition--full" : "");
+        layer.className = "work-transition work-transition--departure";
         layer.style.cssText = `left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;background-image:url('${row.dataset.img}');background-position:${imagePosition};`;
         document.body.append(layer);
-        event.preventDefault();
-        // La caja crece con el fotograma (03/10/2026, en móvil también desde
-        // hoy): el clon escala ×1.28 anclado a su borde superior (la línea
-        // que delimita la caja por arriba es el border-bottom de la fila
-        // anterior y no se mueve), así que todo el crecimiento —un 28% del
-        // alto medido al clic— va hacia abajo y la fila lo acompaña sumándolo
-        // a su padding inferior en el mismo frame, con idéntica curva (ver
-        // .work-row.is-departing en styles.css): la línea inferior, propia de
-        // la fila, baja con la caja y el fotograma queda contenido. El rect
-        // guardado arriba no cambia: la llegada al proyecto sigue igual.
+        // La caja crece con el fotograma (03/10/2026): el clon escala ×1.28
+        // anclado a su borde superior (la línea que delimita la caja por arriba
+        // es el border-bottom de la fila anterior y no se mueve), así que todo el
+        // crecimiento —un 28% del alto medido al clic— va hacia abajo y la fila
+        // lo acompaña sumándolo a su padding inferior en el mismo frame, con
+        // idéntica curva (ver .work-row.is-departing en styles.css): la línea
+        // inferior, propia de la fila, baja con la caja y el fotograma queda
+        // contenido. El rect guardado arriba no cambia: la llegada sigue igual.
         const padding = getComputedStyle(row);
-        row.classList.add("is-departing");
-        // En el recorrido horizontal de escritorio (7b) el panel mide el alto de
-        // la ventana y no tiene padding vertical que crecer: la fila no puede
-        // acompañar al clon, así que la salida se queda en el fotograma que
-        // aparece —sin escalar— y nada desborda por debajo del panel.
-        if (!full) {
-            row.style.paddingTop = padding.paddingTop;
-            row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
-            requestAnimationFrame(() => layer.classList.add("is-opening"));
-        }
+        row.style.paddingTop = padding.paddingTop;
+        row.style.paddingBottom = `${parseFloat(padding.paddingBottom) + rect.height * 0.28}px`;
+        requestAnimationFrame(() => layer.classList.add("is-opening"));
         setTimeout(() => { location.href = row.href; }, 440);
     }));
 

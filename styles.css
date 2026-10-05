@@ -1268,6 +1268,18 @@ section { position: relative; }
             padding-left: calc(var(--pad) + 1.4rem);
             transition-delay: 0s, 0s, 0s;
         }
+        /* Salida al clic sin clon (05/10/2026): en el carril no se sustituye el
+           contenido de la caja por una copia —eso apagaba de golpe el número, el
+           titular y el lavado lila—, así que la salida la cuenta la propia caja
+           empujando el fotograma un 5% hacia dentro. El estado de partida es el
+           del hover (opacidad 1, escala 1) y la curva y la duración son las del
+           fundido de la foto, así que el movimiento arranca sin salto. Se fija la
+           opacidad para que el fotograma no se apague si el cursor sale en esos
+           440 ms: la caja se queda quieta y entera hasta que entra la ficha. */
+        .work.hf-work-h .work-row.is-departing::after {
+            opacity: 1;
+            transform: scale(1.05);
+        }
         .work.hf-work-h .work-rail {
             position: absolute;
             left: var(--pad); right: var(--pad);
@@ -2307,11 +2319,13 @@ label.cookie-purpose-head { cursor: pointer; }
     background: linear-gradient(90deg, rgba(160,100,255,.08), transparent 70%);
     opacity: 1; transition: opacity .22s ease-out;
 }
-/* Clon de una caja del carril de escritorio (05/10/2026): allí el fotograma es
-   a sangre y lleva su capa de fusión, así que el clon cubre la caja entera
-   —sin el fundido lateral que recortaba la mitad derecha— y reproduce la misma
-   capa: velo negro que deja legible el texto y lavado lila desde la izquierda.
-   Al abrirse, la capa se apaga con `is-opening` y queda solo la foto. */
+/* Clon que viene de una caja del carril de escritorio (05/10/2026): allí el
+   fotograma es a sangre y lleva su capa de fusión, así que el clon cubre la caja
+   entera —sin el fundido lateral que recortaba la mitad derecha— y reproduce la
+   misma capa: velo negro que deja legible el texto y lavado lila desde la
+   izquierda. Al abrirse, la capa se apaga con `is-opening` y queda solo la foto.
+   Es el clon de LLEGADA de la ficha: en la landing el carril ya no construye
+   clon de salida (la caja se queda a la vista hasta que entra la ficha). */
 .work-transition--full {
     -webkit-mask-image: none;
             mask-image: none;

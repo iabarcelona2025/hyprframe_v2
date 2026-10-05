@@ -18,7 +18,9 @@
      vertical no se cruza con el recorrido horizontal).
    - El teclado lleva el scroll al tramo del proyecto que recibe el foco.
    - Al hacer clic en el carril la fila no crece en vertical (el panel mide la
-     ventana); en la lista vertical se conserva el crecimiento de siempre.
+     ventana) y NO se construye clon de salida: la caja real sigue a la vista
+     hasta que entra la ficha, así que el relevo no se nota; en la lista vertical
+     se conserva el clon y el crecimiento de siempre.
    - El bloque de CSS solo vive dentro de @supports (overflow-x: clip): sin
      clip, el overflow-x de html/body/main sería un contenedor de scroll y el
      sticky no pegaría.
@@ -231,6 +233,19 @@ test("el fotograma cubre toda la caja con su capa de fusión", () => {
         "con máscaras compuestas se conserva el descubierto en bandas del hover");
 });
 
+test("la salida del carril es un empujón del fotograma, sin cambiar el contenido de la caja", () => {
+    const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
+    assert.match(carril,
+        /\.work\.hf-work-h \.work-row\.is-departing::after \{\s*opacity: 1;\s*transform: scale\(1\.05\);\s*\}/,
+        "el fotograma se empuja hacia dentro y se queda encendido");
+    // Sin clon no hay nada que sustituya a la caja: ni el texto ni el lavado
+    // pueden desaparecer al hacer clic.
+    assert.match(script, /if \(full\) \{\s*setTimeout\(\(\) => \{ location\.href = row\.href; \}, 440\);\s*return;\s*\}/,
+        "el clic del carril navega sin crear capa");
+    assert.doesNotMatch(script, /layer\.className = "work-transition work-transition--departure" \+ \(full/,
+        "el clon de salida ya no se personaliza para el carril");
+});
+
 test("el clon del clic reproduce la caja a sangre, también al llegar a la ficha", () => {
     // El clon de salida de la landing y el de llegada de la ficha llevan la
     // misma capa de fusión que la caja; si no, el relevo cambiaría de aspecto.
@@ -415,24 +430,26 @@ test("teclado: el proyecto que recibe el foco entra en pantalla", async () => {
     } finally { dom.window.close(); }
 });
 
-test("clic: en el carril la fila no crece en vertical; en la lista sí se mantiene", async () => {
+test("clic: en el carril no hay relevo a clon; en la lista sí se mantiene", async () => {
     const carril = boot();
     try {
         await carril.frame();
         const row = carril.rows[0];
         row.dispatchEvent(new carril.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
-        const layer = carril.doc.querySelector(".work-transition--departure");
-        assert.ok(layer, "el fotograma de salida se prepara igual");
-        // El fotograma cubre toda la caja: el clon es la caja entera, con su capa.
-        assert.ok(layer.classList.contains("work-transition--full"));
-        assert.equal(layer.style.width, `${PANEL_W}px`);
-        assert.equal(layer.style.left, `${ROW_LEFT}px`);
-        assert.equal(layer.style.height, `${PANEL_H}px`);
-        const guardado = JSON.parse(carril.window.sessionStorage.getItem("hfGeneratedTransition"));
-        assert.equal(guardado.full, true, "y la ficha lo recibe para reproducir la caja a sangre");
-        assert.equal(guardado.width, PANEL_W);
+        // Sin clon: la caja real sigue a la vista (con su número, su titular y su
+        // lavado lila) hasta que entra la ficha, así que el relevo no se nota.
+        assert.equal(carril.doc.querySelectorAll(".work-transition--departure").length, 0,
+            "el carril no construye clon de salida");
+        assert.ok(row.classList.contains("is-departing"), "la salida la cuenta la propia caja");
         assert.equal(row.style.paddingBottom, "", "el panel mide la ventana: no hay padding que crecer");
         assert.equal(row.style.paddingTop, "");
+        // El rect que viaja a la ficha sigue siendo el de la caja entera.
+        const guardado = JSON.parse(carril.window.sessionStorage.getItem("hfGeneratedTransition"));
+        assert.equal(guardado.full, true);
+        assert.equal(guardado.width, PANEL_W);
+        assert.equal(guardado.left, ROW_LEFT);
+        assert.equal(guardado.height, PANEL_H);
+        assert.ok(!/NaN|undefined/.test(carril.window.sessionStorage.getItem("hfGeneratedTransition")));
     } finally { carril.dom.window.close(); }
 
     const lista = boot("index.html", { desktop: false });
@@ -441,8 +458,8 @@ test("clic: en el carril la fila no crece en vertical; en la lista sí se mantie
         const row = lista.rows[0];
         row.dispatchEvent(new lista.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
         const layer = lista.doc.querySelector(".work-transition--departure");
-        assert.ok(layer && !layer.classList.contains("work-transition--full"),
-            "en la lista vertical el clon sigue siendo la mitad derecha");
+        assert.ok(layer, "en la lista vertical el clon de salida sigue siendo el de siempre");
+        assert.ok(!layer.classList.contains("work-transition--full"));
         assert.equal(layer.style.width, `${PANEL_W / 2}px`);
         assert.equal(layer.style.left, `${ROW_LEFT + PANEL_W / 2}px`);
         assert.equal(JSON.parse(lista.window.sessionStorage.getItem("hfGeneratedTransition")).full, false);
