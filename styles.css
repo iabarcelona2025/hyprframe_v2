@@ -918,64 +918,6 @@ section { position: relative; }
 
 /* ── WORK ────────────────────────────────────────────────── */
 .work { padding-bottom: clamp(4rem, 10vw, 8rem); }
-
-/* En escritorio, la rueda vertical recorre la galería de proyectos hacia la
-   derecha. La altura extra de la sección se calcula según el ancho del rail;
-   al terminar, el sticky se libera y la página sigue bajando normalmente. */
-@media (min-width: 1025px) {
-    .work.work-horizontal-ready {
-        height: calc(100vh + var(--work-scroll-distance, 0px));
-        height: calc(100svh + var(--work-scroll-distance, 0px));
-        min-height: 100vh;
-        padding-bottom: 0;
-    }
-    .work.work-horizontal-ready .work-pin {
-        position: sticky; top: 0;
-        display: flex; flex-direction: column;
-        height: 100vh; height: 100svh;
-        overflow: hidden;
-    }
-    .work.work-horizontal-ready .section-head {
-        flex: 0 0 auto;
-        padding-bottom: clamp(1.25rem, 3vw, 2.5rem);
-    }
-    .work.work-horizontal-ready .work-list {
-        display: flex; align-items: stretch;
-        gap: clamp(0.8rem, 1.3vw, 1.4rem);
-        width: max-content; min-width: 100%;
-        flex: 1 0 auto;
-        padding: 1.25rem var(--pad) clamp(2.5rem, 5vw, 4rem);
-        will-change: transform;
-    }
-    .work.work-horizontal-ready .work-row {
-        flex: 0 0 clamp(18rem, 34vw, 32rem);
-        width: clamp(18rem, 34vw, 32rem);
-        height: 100%; min-width: 0;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-rows: auto 1fr auto;
-        align-items: start; gap: 1rem;
-        padding: clamp(1.25rem, 2.1vw, 2rem);
-        border: 1px solid var(--line);
-    }
-    .work.work-horizontal-ready .work-row .work-num {
-        grid-column: 1; grid-row: 1; align-self: start;
-    }
-    .work.work-horizontal-ready .work-row .work-go {
-        grid-column: 2; grid-row: 1; align-self: start;
-    }
-    .work.work-horizontal-ready .work-row .work-title {
-        grid-column: 1 / -1; grid-row: 3; align-self: end;
-        max-width: 100%; font-size: clamp(1.3rem, 2.6vw, 2rem);
-        line-height: 1.05;
-    }
-    .work.work-horizontal-ready .work-row::after { width: 100%; }
-    .work.work-horizontal-ready .work-row:hover,
-    .work.work-horizontal-ready .work-row:focus-visible {
-        padding-block: clamp(1.25rem, 2.1vw, 2rem);
-        padding-left: calc(clamp(1.25rem, 2.1vw, 2rem) + 1rem);
-    }
-}
-
 .work-list { border-top: 1px solid var(--line); }
 .work-row {
     /* El alto de la fila lo determina la flecha (font-size × line-height 1.65).
