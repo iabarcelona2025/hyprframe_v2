@@ -25,9 +25,10 @@
      clip, el overflow-x de html/body/main sería un contenedor de scroll y el
      sticky no pegaría.
    - Al soltarse el carril —justo cuando el scroll empieza a bajar hacia About—
-     nacen de las líneas de cierre unas ramas geométricas que se dibujan solas y
-     se quedan de fondo: mismas ramas en cada carga (semilla fija), trazo gris de
-     1px que no escala y animación de dibujo por profundidad.
+     nacen de las líneas de cierre unas ramas geométricas que se van formando con
+     el scroll (al bajar se dibujan, al subir se recogen) y se quedan de fondo:
+     mismas ramas en cada carga (semilla fija), trazo gris de 1px que no escala y
+     profundidades en escalera, con la última de la derecha hasta SYNTHESIS.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
      mismo elemento visto en tres sitios y no puede cambiar de tono al hacer
@@ -332,20 +333,20 @@ test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan
     assert.match(css, /\.work-branches \{ display: none; \}/, "fuera del carril no existen");
     const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
     assert.match(carril,
-        /\.work\.hf-work-h \.work-branches \{\s*display: block;\s*position: absolute; top: 100%; left: 0;\s*width: 100%; height: clamp\(420px, 62vh, 760px\);\s*pointer-events: none; z-index: 0;\s*\}/,
-        "el lienzo cuelga del final de la sección y no captura el ratón");
+        /\.work\.hf-work-h \.work-branches \{\s*display: block;\s*position: absolute; top: 100%; left: 0;\s*width: 100%;\s*height: var\(--work-branches-h, clamp\(420px, 62vh, 760px\)\);\s*pointer-events: none; z-index: 0;\s*\}/,
+        "el lienzo cuelga del final de la sección, con el alto medido hasta SYNTHESIS "
+        + "(clamp de reserva) y sin capturar el ratón");
     const trazo = /\.work\.hf-work-h \.work-branches path \{([\s\S]*?)\n        \}/.exec(carril);
     assert.ok(trazo, "los tramos tienen estilo propio");
     assert.match(trazo[1], /stroke: var\(--line\);/, "trazo del mismo gris que las líneas");
     assert.match(trazo[1], /stroke-width: 1;/, "de 1px");
     assert.match(trazo[1], /vector-effect: non-scaling-stroke;/, "que no escala: el grosor se mantiene");
     assert.match(trazo[1], /stroke-dasharray: var\(--len, 2000\);/);
-    assert.match(trazo[1], /stroke-dashoffset: var\(--len, 2000\);/);
-    assert.doesNotMatch(trazo[1], /opacity|transform:/, "solo se anima el dibujo, ni opacidad ni escala");
-    assert.match(carril,
-        /\.work\.hf-work-h \.work-branches\.is-playing path \{\s*animation: work-branch-grow var\(--dur, 0\.7s\) linear var\(--delay, 0s\) forwards;\s*\}/,
-        "el dibujo va por ramas, con su retardo, y se queda fijo al terminar");
-    assert.match(carril, /@keyframes work-branch-grow \{ to \{ stroke-dashoffset: 0; \} \}/);
+    assert.match(trazo[1], /stroke-dashoffset: var\(--len, 2000\);\s*\/\* el scroll lo baja hasta 0 \*\//,
+        "sin scroll, sin dibujar: el dibujo lo lleva el scroll, no una animación");
+    assert.doesNotMatch(trazo[1], /opacity|transform:/, "solo se dibuja el trazo, ni opacidad ni escala");
+    assert.doesNotMatch(carril, /work-branch-grow|is-playing/,
+        "no queda animación por tiempo: el dibujo es del scroll");
 });
 
 test("escritorio: las ramas se trazan al medir el carril, con raíces en la línea de cierre", async () => {
@@ -370,41 +371,180 @@ test("escritorio: las ramas se trazan al medir el carril, con raíces en la lín
     } finally { dom.window.close(); }
 });
 
-test("escritorio: el dibujo arranca justo al soltarse la sección, no antes", async () => {
+test("escritorio: las ramas se forman con el scroll y se recogen al subir", async () => {
     const { dom, branches, frame, scrollTo } = boot();
     try {
         await frame();
+        const paths = [...branches.querySelectorAll("path")];
+        const len = (p) => Number(p.style.getPropertyValue("--len"));
+        const dash = (p) => Number(p.style.strokeDashoffset);
+        const dibujadas = () => paths.filter((p) => dash(p) === 0).length;      // terminadas
+        const sinDibujar = () => paths.filter((p) => dash(p) === len(p)).length; // ni empezadas
+        const empezadas = () => paths.filter((p) => dash(p) < len(p)).length;    // en curso o hechas
         const range = RUN, hold = Math.round(range * HOLD);
+
+        // 1. Antes del final del carril no hay nada dibujado.
+        scrollTo(Math.round(TOP + hold + (range - hold) * 0.5));
+        await frame();
+        assert.equal(sinDibujar(), paths.length, "a mitad de recorrido aún no hay ramas");
         scrollTo(Math.round(TOP + hold + (range - hold) * 0.9));
         await frame();
-        assert.ok(!branches.classList.contains("is-playing"), "al 90% del recorrido aún no");
-        scrollTo(TOP + range);       // borde de liberación: empieza a bajar hacia About
+        assert.equal(sinDibujar(), paths.length, "y al 90%, tampoco");
+
+        // 2. Justo al soltarse la sección empieza el dibujo (todavía en cero).
+        scrollTo(TOP + range);
         await frame();
-        assert.ok(branches.classList.contains("is-playing"), "justo al soltarse, sí");
-        assert.ok(branches.querySelector("svg"), "el dibujo es el que ya estaba trazado");
-        scrollTo(TOP + range + 900);   // ya dentro de About: siguen ahí, de fondo
+        assert.equal(sinDibujar(), paths.length, "al soltarse arranca, aún sin trazo");
+
+        // 3. Con el scroll, se van formando: a mitad de lienzo, ni todas ni ninguna.
+        const span = BRANCH_H;
+        scrollTo(TOP + range + span * 0.5);
         await frame();
-        assert.ok(branches.classList.contains("is-playing"));
+        const aMedias = empezadas();
+        const terminadas = dibujadas();   // los primeros troncos ya han acabado
+        assert.ok(aMedias > 0 && aMedias < paths.length,
+            `a mitad del dibujo hay ramas en curso y otras sin empezar (${aMedias}/${paths.length})`);
+        const parciales = paths.filter((p) => dash(p) > 0 && dash(p) < len(p)).length;
+        assert.ok(parciales > 0, "y trazos a medio hacer, no de golpe");
+
+        // 4. Al entrar el lienzo entero, están todas: y se quedan.
+        scrollTo(TOP + range + span);
+        await frame();
+        assert.equal(dibujadas(), paths.length, "al final del recorrido del dibujo, todas");
+        scrollTo(TOP + range + span + 800);
+        await frame();
+        assert.equal(dibujadas(), paths.length, "y ya dentro de About siguen enteras");
+
+        // 5. Al subir, se recogen en el mismo orden y al revés.
+        scrollTo(TOP + range + span * 0.5);
+        await frame();
+        assert.equal(empezadas(), aMedias, `al subir vuelve el mismo estado (${aMedias})`);
+        assert.equal(dibujadas(), terminadas, `y las mismas terminadas (${terminadas})`);
+        assert.equal(sinDibujar(), paths.length - aMedias);
+        scrollTo(TOP + range);
+        await frame();
+        assert.equal(sinDibujar(), paths.length, "y al volver al final del carril, recogidas del todo");
+        scrollTo(TOP + hold);   // muy por encima
+        await frame();
+        assert.equal(sinDibujar(), paths.length);
     } finally { dom.window.close(); }
 });
 
-test("escritorio: redimensionar después del final no repite el dibujo", async () => {
+test("escritorio: los troncos bajan en escalera y el de la derecha llega a SYNTHESIS", async () => {
+    const { dom, doc, branches, frame } = boot();
+    try {
+        await frame();
+        // Cada tronco es una cadena de tramos: se recorren desde cada raíz (los
+        // tramos que nacen en y = 0) siguiendo los nudos compartidos, para saber
+        // hasta dónde baja el árbol entero de esa raíz.
+        const tramos = [...branches.querySelectorAll("path")].map((p) => {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
+            return { x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]) };
+        });
+        const salen = new Map();   // nudo → tramos que salen de ahí
+        for (const t of tramos) {
+            const k = `${t.x0},${t.y0}`;
+            if (!salen.has(k)) salen.set(k, []);
+            salen.get(k).push(t);
+        }
+        const extremos = new Map();   // x de la raíz → y más profunda de su árbol
+        for (const raiz of tramos.filter((t) => t.y0 === 0)) {
+            let profundo = 0;
+            const pila = [raiz];
+            const vistos = new Set();
+            while (pila.length) {
+                const t = pila.pop();
+                profundo = Math.max(profundo, t.y1);
+                const k = `${t.x1},${t.y1}`;
+                if (vistos.has(k)) continue;
+                vistos.add(k);
+                pila.push(...(salen.get(k) || []));
+            }
+            extremos.set(raiz.x0, Math.max(extremos.get(raiz.x0) || 0, profundo));
+        }
+        assert.ok(extremos.size >= 4, `hay varias raíces (${extremos.size})`);
+        // De derecha a izquierda, cada tronco llega menos abajo que el de su derecha.
+        const raices = [...extremos.entries()].sort((a, b) => b[0] - a[0]);
+        const topes = raices.map(([, y]) => y);
+        assert.equal(topes[0], BRANCH_H, "la última de la derecha llega al fondo del lienzo (SYNTHESIS)");
+        for (let i = 1; i < topes.length; i++) {
+            assert.ok(topes[i] < topes[i - 1],
+                `la de su izquierda baja menos (${topes[i]} < ${topes[i - 1]})`);
+        }
+        // Y el listón es la altura de SYNTHESIS: el alto del lienzo se mide desde
+        // el cierre del carril hasta el centro de la tercera línea del titular.
+        const linea3 = doc.querySelector(".about-title .line:nth-child(3)");
+        assert.ok(linea3, "About tiene su tercera línea (SYNTHESIS / SÍNTESIS DIGITAL)");
+        assert.match(fs.readFileSync(path.join(root, "script.js"), "utf8"),
+            /const linea3 = document\.querySelector\("\.about-title \.line:nth-child\(3\)"\)/,
+            "el alto del lienzo se mide hasta esa línea");
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", async () => {
     const { dom, window, branches, state, frame, scrollTo } = boot();
     try {
         await frame();
-        scrollTo(TOP + RUN);        // final del carril: se dibujan
+        assert.equal(branches.style.height, "", "sin medida fiable vale el clamp del CSS");
+        // La tercera línea del titular de About (SYNTHESIS / SÍNTESIS DIGITAL) está
+        // 500px por debajo del cierre del carril; el lienzo llega a su centro, así
+        // que mide 500 + media línea (40/2).
+        const linea3 = window.document.querySelector(".about-title .line:nth-child(3)");
+        assert.ok(linea3, "About tiene su tercera línea");
+        const cierre = TOP + INNER_H + RUN;          // el cierre del carril, en el documento
+        linea3.getBoundingClientRect = () => {
+            const top = cierre + 500 - state.y;
+            return { top, height: 40, bottom: top + 40, left: 0, right: 0, width: 0, x: 0, y: top, toJSON() {} };
+        };
+        window.dispatchEvent(new window.Event("resize"));
         await frame();
-        assert.ok(branches.classList.contains("is-playing"));
-        state.branchH = 700;        // otra ventana
+        assert.equal(branches.style.height, "520px", "el lienzo baja hasta el centro de esa línea");
+
+        // Y con el alto medido, el dibujo dura ese alto: la rama más honda —la de
+        // la derecha, que llega al fondo— acaba justo cuando el lienzo entra entero
+        // en pantalla; un píxel antes aún no está.
+        state.branchH = 520;
+        window.dispatchEvent(new window.Event("resize"));
+        await frame();
+        const paths = [...branches.querySelectorAll("path")];
+        const dibujadas = () => paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length;
+        scrollTo(TOP + RUN + 519);
+        await frame();
+        assert.ok(dibujadas() < paths.length,
+            `un píxel antes del final del tramo aún falta algo (${dibujadas()}/${paths.length})`);
+        scrollTo(TOP + RUN + 520);
+        await frame();
+        assert.equal(dibujadas(), paths.length, "al entrar el lienzo entero, todas dibujadas");
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: redimensionar rehace las ramas al estado que marca el scroll", async () => {
+    const { dom, window, branches, state, frame, scrollTo } = boot();
+    try {
+        await frame();
+        scrollTo(TOP + RUN + BRANCH_H);          // dibujo completo
+        await frame();
+        const dibujadas = () => [...branches.querySelectorAll("path")]
+            .filter((p) => Number(p.style.strokeDashoffset) === 0).length;
+        const total = branches.querySelectorAll("path").length;
+        assert.equal(dibujadas(), total, "con el lienzo a la vista, todas dibujadas");
+        state.branchH = 700;                     // otra ventana: se rehace todo
         window.dispatchEvent(new window.Event("resize"));
         await frame();
         const paths = [...branches.querySelectorAll("path")];
         assert.ok(paths.length > 0, "se vuelven a trazar con la medida nueva");
         assert.equal(branches.querySelector("svg").getAttribute("viewBox"), `0 0 ${LIST_W} 700`);
-        assert.ok(paths.every((p) => p.style.animation === "none"),
-            "ya dibujadas: nada de repetir la animación");
-        assert.ok(paths.every((p) => p.style.strokeDashoffset === "0"),
-            "y con el trazo entero, como habían quedado");
+        // El mismo scroll sobre otro lienzo (y otro tramo de dibujo) da el mismo
+        // estado: no se reinicia la animación ni salta a dibujado del todo.
+        scrollTo(TOP + RUN + 350);               // la mitad del tramo nuevo
+        await frame();
+        const hechas = paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length;
+        assert.ok(hechas > 0 && hechas < paths.length,
+            `a mitad del tramo nuevo hay trazos hechos y pendientes (${hechas}/${paths.length})`);
+        scrollTo(TOP + RUN + 700);
+        await frame();
+        assert.equal(paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length, paths.length,
+            "y al final del tramo nuevo, todas");
     } finally { dom.window.close(); }
 });
 

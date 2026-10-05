@@ -1260,7 +1260,10 @@
        Dos tiempos pedidos por el cliente (05/10/2026): N.O.D.E. se queda quieto
        y a la vista el primer tramo de scroll (HOLD, ver abajo) antes de que el
        carril empiece a correr, y el recorrido termina con RYUU CENTRADA en la
-       ventana, que es el último estado antes de soltarse y seguir bajando. */
+       ventana, que es el último estado antes de soltarse y seguir bajando.
+
+       Al soltarse nacen unas ramas geométricas (ver más abajo) que se van
+       formando con el scroll: al bajar se dibujan y al subir se recogen. */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1280,6 +1283,9 @@
         // Tramo inicial, en fracción del recorrido de la sección, en el que el
         // carril no se mueve: N.O.D.E. se queda a la vista antes de arrancar.
         const HOLD = 0.16;
+        let branchPaths = [];   // tren de dibujo de las ramas: { el, len, t0, t1, last }
+        let branchStart = 0;    // scrollY en el que el carril se suelta y arrancan
+        let branchSpan = 0;     // px de scroll que dura el dibujo (el alto del lienzo)
         let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
         let step = 0;         // recorrido por proyecto (px)
         let windowW = 0;      // ancho de la ventana del carril (px)
@@ -1290,7 +1296,6 @@
         let paintedX = null;  // último translate escrito (para no repetirlo)
         let hooked = false;   // la sección está en modo carril y medida
         let queued = 0;       // rAF pendiente
-        let branchesPlayed = false;   // las ramas del final ya se han dibujado
 
         function paint() {
             queued = 0;
@@ -1300,9 +1305,9 @@
             const travel = Math.max(1, range - hold);
             const raw = (scrollY - start - hold) / travel;
             let progress = raw < 0 ? 0 : raw > 1 ? 1 : raw;
-            // Final del carril: es el momento en el que la sección se suelta y el
-            // scroll empieza a bajar hacia About. Ahí arrancan las ramas.
-            if (raw >= 1) playBranches();
+            // Al soltarse la sección (final del carril) empiezan a formarse las
+            // ramas, y lo hacen con el scroll: bajan al bajar, se recogen al subir.
+            paintBranches();
             const travelled = progress * run;
             const x = -travelled;
             // Fuera del recorrido el valor no cambia: no se reescribe el estilo
@@ -1340,31 +1345,48 @@
             paintedX = null;
             if (ticks[lit]) ticks[lit].classList.remove("is-on");
             lit = -1;
-            // Las ramas son del carril: sin carril no queda nada (y pueden volver
-            // a dibujarse enteras si el carril regresa al redimensionar).
+            // Las ramas son del carril: sin carril no queda nada (y se vuelven a
+            // trazar, al ritmo del scroll, si el carril regresa al redimensionar).
             if (workBranches) {
                 workBranches.textContent = "";
-                workBranches.classList.remove("is-playing");
+                workBranches.style.removeProperty("height");
             }
-            branchesPlayed = false;
+            branchPaths = [];
         }
 
-        // Las ramas, una sola vez cada una: la clase enciende la animación de
-        // dibujo y ya no se retira (se quedan de fondo, ya dibujadas).
-        function playBranches() {
-            if (branchesPlayed || !workBranches) return;
-            branchesPlayed = true;
-            workBranches.classList.add("is-playing");
+        /* Dibujo de las ramas ligado al scroll (05/10/2026): cada tramo tiene su
+           ventana dentro del recorrido que va del final del carril —cuando la
+           sección se suelta— hasta que el lienzo entra entero en pantalla (su
+           alto, que es la distancia hasta SYNTHESIS). Al bajar se van formando y
+           al subir se recogen, en el mismo orden y al revés; parado, se quedan
+           como estén. Solo se escribe el estilo cuando el número cambia. */
+        function paintBranches() {
+            if (!branchPaths.length) return;
+            const span = Math.max(1, branchSpan);
+            let t = (scrollY - branchStart) / span;
+            t = t < 0 ? 0 : t > 1 ? 1 : t;
+            for (const tramo of branchPaths) {
+                let local = (t - tramo.t0) / (tramo.t1 - tramo.t0);
+                local = local < 0 ? 0 : local > 1 ? 1 : local;
+                const dash = Math.round(tramo.len * (1 - local));
+                if (dash !== tramo.last) {
+                    tramo.last = dash;
+                    tramo.el.style.strokeDashoffset = String(dash);
+                }
+            }
         }
 
         /* Traza las ramas dentro del contenedor (w × h) y devuelve los tramos.
            Nacen en y = 0, que es la línea de cierre del carril (el borde inferior
-           del listado): en el codo de la última caja —tras RYUU, ya centrada— y
-           en varios puntos hacia la derecha, que es el hueco que queda libre.
-           Cada tronco baja partiéndose: los ángulos se ajustan a múltiplos de 45°
-           (geometría recta, sin curvas), las ramas se acortan al bajar y de vez en
-           cuando sale una ramita horizontal, como una derivación. Con semilla
-           fija: las mismas ramas en cada carga. */
+           del listado): la de la derecha justo en el codo de la última caja —tras
+           RYUU, ya centrada— y el resto escalonadas hacia la izquierda.
+           Cada tronco baja recto hasta SU tope, y de él salen ramas a 45° (nunca
+           suben, nunca bajan más que el tronco que las engendra) con alguna
+           derivación horizontal corta: geometría recta, sin curvas. Con semilla
+           fija, así que son las mismas ramas en cada carga.
+           Los topes van en escalera (05/10/2026, a petición del cliente): la
+           última de la derecha llega al fondo del lienzo —la altura de SYNTHESIS—
+           y cada una de las anteriores baja un poco menos que la de su derecha. */
         function traceBranches(w, h) {
             let seed = 0x51ED270B;   // semilla fija: dibujo reproducible
             const rnd = () => {
@@ -1376,59 +1398,106 @@
             const FORTY_FIVE = Math.PI / 4;
             const snap = (angle) => Math.round(angle / FORTY_FIVE) * FORTY_FIVE;
             const clampX = (x) => Math.min(Math.max(x, 4), w - 4);
+            const clampA = (a) => Math.min(Math.max(a, FORTY_FIVE), Math.PI - FORTY_FIVE);
             const MAX_DEPTH = 6;
             const tramos = [];
 
-            // Arranques: el codo de la última caja (borde derecho, sobre la línea
-            // de cierre) y tres puntos repartidos hacia la derecha, más uno corto
-            // a su izquierda para que la maraña no se vaya solo a un lado.
+            // Arranques, de derecha a izquierda: el codo de la última caja (el
+            // borde derecho de RYUU ya centrada) y tres puntos repartidos hasta el
+            // borde de la ventana, más uno corto a su izquierda. El tope de cada
+            // tronco baja en escalera y el de la izquierda es el más corto.
             const last = rows[rows.length - 1];
             const corner = Math.round(last.offsetLeft + last.offsetWidth - run);
-            const roots = [corner];
-            for (let i = 1; i <= 3; i++) roots.push(corner + ((w - corner) * i) / 4);
-            if (corner - w * 0.2 > 8) roots.push(corner - w * 0.2);
+            const right = Math.max(0, w - corner);
+            const roots = [
+                { x: corner + right * 0.75, cap: h },            // la última de la derecha: hasta SYNTHESIS
+                { x: corner + right * 0.5, cap: h * 0.78 },      // la anterior: más abajo, pero menos
+                { x: corner + right * 0.25, cap: h * 0.6 },
+                { x: corner, cap: h * 0.45 },
+            ];
+            if (corner - w * 0.2 > 8) roots.push({ x: corner - w * 0.2, cap: h * 0.33 });
 
-            const grow = (x, y, angle, len, depth, root) => {
-                let nx = x + Math.cos(angle) * len;
-                if (nx < 4 || nx > w - 4) {          // se sale de lado: rebota hacia dentro
-                    angle = Math.PI - angle;
-                    nx = x + Math.cos(angle) * len;
-                }
+            const push = (x0, y0, x1, y1, depth, root) => {
+                tramos.push({
+                    d: `M${Math.round(x0)} ${Math.round(y0)}L${Math.round(x1)} ${Math.round(y1)}`,
+                    y: Math.round(y0), depth, root,
+                });
+            };
+
+            // Rama: baja en diagonal (o recta) y se vuelve a partir. Su tope nunca
+            // pasa del de su tronco, así que el tronco es siempre el que más baja.
+            const branch = (x, y, angle, len, depth, cap, root) => {
+                let a = angle;
+                let nx = x + Math.cos(a) * len;
+                if (nx < 4 || nx > w - 4) { a = Math.PI - a; nx = x + Math.cos(a) * len; }   // rebota hacia dentro
                 nx = clampX(nx);
-                const ny = Math.min(y + Math.sin(angle) * len, h);
-                tramos.push({ d: `M${Math.round(x)} ${Math.round(y)}L${Math.round(nx)} ${Math.round(ny)}`,
-                              depth, root });
-                if (depth >= MAX_DEPTH || ny >= h || len < 22) return;
-                // Derivación horizontal corta: da el aire de circuito.
-                if (rnd() < 0.3) {
+                const ny = Math.min(y + Math.sin(a) * len, cap);
+                push(x, y, nx, ny, depth, root);
+                if (depth >= MAX_DEPTH || ny >= cap - 4 || len < 20) return;
+                if (rnd() < 0.35) {                      // derivación horizontal corta
                     const dir = rnd() < 0.5 ? 0 : Math.PI;
-                    const long = 18 + rnd() * 46;
-                    tramos.push({ d: `M${Math.round(nx)} ${Math.round(ny)}L${Math.round(clampX(nx + Math.cos(dir) * long))} ${Math.round(ny)}`,
-                                  depth: depth + 1, root });
+                    const largo = 16 + rnd() * 44;
+                    push(nx, ny, clampX(nx + Math.cos(dir) * largo), ny, depth + 1, root);
                 }
-                const kids = rnd() < 0.62 ? 2 : 1;
+                const kids = rnd() < 0.72 ? 2 : 1;
                 for (let i = 0; i < kids; i++) {
                     const turn = (i === 0 ? -1 : 1) * (rnd() < 0.5 ? FORTY_FIVE : Math.PI / 2);
-                    // Se queda en el semicírculo de abajo (nunca sube).
-                    const next = Math.min(Math.max(snap(angle + turn * (0.5 + rnd() * 0.5)), FORTY_FIVE), Math.PI - FORTY_FIVE);
-                    grow(nx, ny, next, len * (0.68 + rnd() * 0.2), depth + 1, root);
+                    const next = clampA(snap(a + turn * (0.5 + rnd() * 0.5)));
+                    // El hijo nunca llega tan abajo como su padre: la punta más
+                    // honda de cada tronco es la del propio tronco.
+                    branch(nx, ny, next, len * (0.7 + rnd() * 0.18), depth + 1,
+                           Math.min(cap, ny + (cap - ny) * (0.42 + rnd() * 0.28)), root);
                 }
             };
-            // Los troncos arrancan con largos distintos (unos bajan de un tirón y
-            // otros se ramifican enseguida) para que la maraña no se lea en filas.
-            roots.forEach((x, root) => grow(clampX(x), 0, Math.PI / 2, h * (0.2 + rnd() * 0.12), 0, root));
 
-            // Cada tramo empieza cuando el que lo engendra ya llegó a su punta:
-            // retardo por profundidad, con un pelín de desorden por rama.
+            roots.forEach(({ x, cap }, root) => {
+                // Tronco: bajada recta en tramos —con algún codo corto— hasta su
+                // tope. De cada nudo sale una o dos ramas hacia los lados.
+                let cx = clampX(x);
+                let cy = 0;
+                while (cy < cap - 10) {
+                    const jog = rnd() < 0.35 ? (rnd() < 0.5 ? -1 : 1) * (8 + rnd() * 14) : 0;
+                    const nx = clampX(cx + jog);
+                    const ny = Math.min(cy + 58 + rnd() * 96, cap);
+                    push(cx, cy, nx, ny, 0, root);
+                    const kids = rnd() < 0.45 ? 1 : 2;
+                    for (let i = 0; i < kids; i++) {
+                        const dir = i === 0 ? -1 : 1;
+                        const a = clampA(snap(Math.PI / 2 + dir * (rnd() < 0.5 ? FORTY_FIVE : Math.PI / 2)));
+                        branch(nx, ny, a, 44 + rnd() * 78, 1,
+                               Math.min(cap, ny + (cap - ny) * (0.38 + rnd() * 0.3)), root);
+                    }
+                    cx = nx; cy = ny;
+                }
+            });
+
+            // Ventana de cada tramo dentro del recorrido del dibujo: los troncos
+            // bajan primero (por su altura) y las ramas salen después (por su
+            // profundidad). Se normaliza en buildBranches con el total.
             return tramos.map((tramo) => ({
                 ...tramo,
-                dur: (0.34 + rnd() * 0.3).toFixed(2),
-                delay: (tramo.depth * 0.16 + tramo.root * 0.07 + rnd() * 0.1).toFixed(2),
+                t0: (tramo.y / h) * 0.5 + tramo.depth * 0.1 + tramo.root * 0.05 + rnd() * 0.05,
+                dur: 0.24 + rnd() * 0.2,
             }));
         }
 
         function buildBranches() {
             if (!workBranches) return;
+            // Alto del lienzo: hasta la altura de SYNTHESIS (el centro de la
+            // tercera línea del titular de About), medido en el documento. Si no
+            // se puede medir —About no está, la fuente aún no ha cargado— vale el
+            // clamp del CSS. Es el listón que alcanza la rama de la derecha y, a
+            // la vez, los px de scroll que dura el dibujo.
+            const linea3 = document.querySelector(".about-title .line:nth-child(3)");
+            if (linea3) {
+                const abajo = workSection.getBoundingClientRect().bottom + scrollY;
+                const rect = linea3.getBoundingClientRect();
+                const alto = Math.round(rect.top + scrollY + rect.height / 2 - abajo);
+                if (alto >= 200) workBranches.style.height = alto + "px";
+                else workBranches.style.removeProperty("height");
+            } else {
+                workBranches.style.removeProperty("height");
+            }
             const w = Math.round(workBranches.clientWidth);
             const h = Math.round(workBranches.clientHeight);
             if (!w || !h) return;                    // sin maqueta (jsdom, pestaña oculta)
@@ -1437,26 +1506,27 @@
             svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
             svg.setAttribute("aria-hidden", "true");
             svg.setAttribute("focusable", "false");
-            traceBranches(w, h).forEach(({ d, dur, delay }) => {
+            const tramos = traceBranches(w, h);
+            // Normaliza las ventanas entre 0 y 1 (el total de la última en acabar).
+            const total = tramos.reduce((max, t) => Math.max(max, t.t0 + t.dur), 0.001);
+            branchPaths = tramos.map(({ d, t0, dur }) => {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 path.setAttribute("d", d);
-                // --len: longitud real del trazo, para que el dibujo vaya a ritmo
-                // constante (sin getTotalLength queda la reserva del CSS).
-                if (typeof path.getTotalLength === "function") {
-                    path.style.setProperty("--len", Math.ceil(path.getTotalLength()));
-                }
-                path.style.setProperty("--dur", `${dur}s`);
-                path.style.setProperty("--delay", `${delay}s`);
-                // Si ya se habían dibujado (redimensionar después del final), se
-                // vuelven a trazar ya completas: sin animación y con el trazo
-                // entero, que es como habían quedado.
-                if (branchesPlayed) {
-                    path.style.animation = "none";
-                    path.style.strokeDashoffset = "0";
-                }
+                // --len: longitud real del trazo; sin getTotalLength (jsdom) queda
+                // la reserva del CSS, que es la que usa también el dibujo.
+                const medida = typeof path.getTotalLength === "function" ? path.getTotalLength() : 0;
+                const len = Math.max(1, Math.ceil(medida) || 2000);
+                path.style.setProperty("--len", len);
+                path.style.strokeDashoffset = String(len);   // sin scroll: sin dibujar
                 svg.appendChild(path);
+                return { el: path, len, t0: t0 / total, t1: (t0 + dur) / total, last: len };
             });
             workBranches.appendChild(svg);
+            // El dibujo va con el scroll: arranca donde se suelta la sección y dura
+            // lo que tarda el lienzo en entrar entero en pantalla (su alto).
+            branchStart = start + range;
+            branchSpan = h;
+            paintBranches();
         }
 
         function measure() {
