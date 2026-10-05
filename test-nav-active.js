@@ -121,9 +121,9 @@ const GEN = "#work", ABOUT = "#about", SERVICES = "#services", CLB = "#clb", CON
         !/\.main-nav[^{}]*::after/.test(css));
     check("CSS: los rollovers del menú superior no dibujan líneas de color",
         !/\.main-nav a::after|\.main-nav a:hover::after|\.main-nav \.nav-cta::after/.test(css));
-    check("CSS: el rollover amplía la palabra unos 3px sin desplazar los enlaces vecinos",
+    check("CSS: el rollover amplía la palabra aproximadamente 1 px sin desplazar los enlaces vecinos",
         /\.main-nav a\s*\{[^}]*transform-origin:\s*center;[^}]*transition:[^;]*transform/.test(css) &&
-        /\.main-nav a:hover\s*\{ color: var\(--fg\); transform: scale\(1\.24\); \}/.test(css));
+        /\.main-nav a:hover\s*\{ color: var\(--fg\); transform: scale\(1\.08\); \}/.test(css));
     check("la franja de avance ya no existe en las landings, estilos ni script",
         !HTML.includes("scroll-progress") && !HTML_ES.includes("scroll-progress") &&
         !css.includes("scroll-progress") && !js.includes("scrollProgress"));

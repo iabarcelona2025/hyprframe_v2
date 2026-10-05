@@ -228,9 +228,9 @@ html.hf-skip-intro .preloader { display: none; }
     transform-origin: center;
     transition: color 0.3s, transform 0.3s var(--ease-out);
 }
-/* En escritorio, el hover blanquea y amplía visualmente la palabra unos 3px
-   (1.24× sobre el tamaño base), sin desplazar los enlaces vecinos ni subrayar. */
-.main-nav a:hover { color: var(--fg); transform: scale(1.24); }
+/* En escritorio, el hover blanquea y amplía visualmente la palabra aproximadamente 1 px
+   (1.08× sobre el tamaño base), sin desplazar los enlaces vecinos ni subrayar. */
+.main-nav a:hover { color: var(--fg); transform: scale(1.08); }
 /* El scroll-spy mantiene el apartado actual en blanco, sin una línea inferior. */
 .main-nav [aria-current="location"] { color: var(--fg); }
 
