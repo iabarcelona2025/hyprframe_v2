@@ -289,7 +289,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
     width: 100%; height: 100%; object-fit: cover;
     transition: transform 0.9s var(--ease-out);
 }
-.node-player:hover > img, .node-player:focus-within > img { transform: scale(1.06); }
 .node-player__play {
     position: absolute; inset: 0; width: 100%; height: 100%;
     display: grid; place-items: center;
@@ -314,9 +313,32 @@ body.menu-open .menu-overlay a { visibility: visible; }
 @media (forced-colors: active) {
     .node-player__circle::before { background: ButtonText; }
 }
-.node-player__play:hover .node-player__circle, .node-player__play:focus-visible .node-player__circle {
+/* El icono se enciende cuando el ratón entra en él. En móvil (≤560px) el botón
+   sigue ocupando toda la caja, así que su :hover mantiene el encendido de
+   siempre; en escritorio el botón ya no es blanco del ratón —pointer-events:
+   none, ver el bloque de abajo— y la luz la enciende el propio círculo. */
+.node-player__circle:hover, .node-player__play:hover .node-player__circle,
+.node-player__play:focus-visible .node-player__circle {
     background: var(--lime); border-color: var(--lime); color: var(--bg); scale: 1.12; opacity: 0.7; /* 30% de transparencia (27/09/2026) */
 }
+/* Escritorio (05/10/2026): el rollover y el play de la caja de vídeo solo
+   existen en el área del icono. El botón sigue cubriendo la caja —de ahí que el
+   círculo no se mueva ni cambie de talla—, pero deja de ser el blanco del
+   ratón: pointer-events: none en el botón y auto en el círculo reducen el
+   hover, el clic y el cursor (la mano) a la caja del icono —el cuadrado que
+   circunscribe al círculo—: el resto de la caja deja de responder. El
+   fotograma sale del reparto (no reacciona ni se puede arrastrar) y su zoom de
+   rollover solo arranca cuando el ratón entra en ese círculo (:has); en
+   cualquier otro punto de la caja no pasa nada. El foco del teclado conserva
+   el zoom de siempre (focus-within, fuera del bloque). El móvil no entra: allí
+   el toque sigue siendo toda la caja (ver el bloque ≤560px). */
+@media (min-width: 561px) {
+    .node-player__play { pointer-events: none; }
+    .node-player__circle { pointer-events: auto; }
+    .node-player > img { pointer-events: none; }
+    .node-player:has(.node-player__circle:hover) > img { transform: scale(1.06); }
+}
+.node-player:focus-within > img { transform: scale(1.06); }
 .node-player iframe {
     position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
     background: #000; color-scheme: dark; opacity: 0;
@@ -486,7 +508,10 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-player.is-playing > iframe {
         position: relative; grid-area: 1 / 1;
     }
-    .node-player:hover > img, .node-player:focus-within > img { transform: none; }
+    /* El zoom del fotograma es de escritorio: el tacto no tiene rollover y el
+       foco (aquí el toque deja el botón enfocado) tampoco lo enciende. Solo
+       queda por anular el zoom del foco. (05/10/2026) */
+    .node-player:focus-within > img { transform: none; }
     .node-player__synopsis {
         display: block; position: static; grid-row: 2; z-index: auto; pointer-events: auto;
         top: auto; left: auto; width: 100%; max-width: none;

@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=93");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=94");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=34");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -445,18 +445,48 @@ const nodeStill = ruleOf(generatedFlat, ".node-player > img");
 const legacyStill = ruleOf(legacyFlat, ".film-card__poster img");
 assert.ok(!/filter:/.test(nodeStill), "el fotograma no arranca desaturado ni oscurecido");
 assert.match(nodeStill, /transition: transform 0\.9s var\(--ease-out\);/);
-const nodeRollover = ruleOf(generatedFlat, ".node-player:hover > img, .node-player:focus-within > img");
+const nodeRollover = ruleOf(generatedFlat, ".node-player:focus-within > img");
 const legacyRollover = ruleOf(legacyFlat, ".film-card:hover .film-card__poster img, .film-card:focus-visible .film-card__poster img");
 assert.equal(declaration(nodeRollover, "transform"), declaration(legacyRollover, "transform"),
     "el fotograma mantiene el zoom de hover");
 assert.ok(!/filter:/.test(nodeRollover), "el hover no añade desaturación ni cambios de brillo");
+assert.ok(!generatedFlat.includes(".node-player:hover > img"),
+    "el zoom del fotograma ya no cuelga del hover de la caja entera");
+
+/* ── Escritorio: rollover y play solo en el área del icono (05/10/2026) ──
+   El botón sigue cubriendo la caja (así el círculo no se mueve), pero en
+   escritorio deja de capturar el ratón: pointer-events: none en el botón y
+   auto en el círculo reducen hover, clic y cursor a la superficie del icono, y
+   el zoom del fotograma solo se enciende con el ratón dentro de ese círculo
+   (:has) o con el foco del teclado. En móvil (≤560px) el botón sigue siendo
+   toda la caja, así que el toque no cambia. */
+const desktopPlayBlocks = [...css.matchAll(/@media \(min-width: 561px\) \{[\s\S]*?\n\}/g)].map((m) => m[0]);
+const playAreaBlock = desktopPlayBlocks.find((block) => /\.node-player__circle \{ pointer-events: auto; \}/.test(block));
+assert.ok(playAreaBlock, "escritorio: el área activa del icono vive en su propio bloque min-width 561px");
+assert.match(playAreaBlock, /\.node-player__play \{ pointer-events: none; \}/,
+    "escritorio: el botón deja de ser el blanco del ratón (el clic solo vale en el icono)");
+assert.match(playAreaBlock, /\.node-player__circle \{ pointer-events: auto; \}/,
+    "escritorio: el círculo recupera el ratón y con él el rollover y el clic");
+assert.match(playAreaBlock, /\.node-player > img \{ pointer-events: none; \}/,
+    "escritorio: el fotograma no recibe el puntero (ni se arrastra)");
+const iconRollover = ruleOf(generatedFlat, ".node-player:has(.node-player__circle:hover) > img");
+assert.equal(declaration(iconRollover, "transform"), declaration(legacyRollover, "transform"),
+    "el zoom del fotograma sigue siendo el de Captured, pero solo con el ratón en el icono");
+assert.match(playAreaBlock, /\.node-player:has\(\.node-player__circle:hover\) > img \{ transform: scale\(1\.06\); \}/,
+    "el zoom del icono es de escritorio; el móvil no entra");
+const mobilePlayArea = css.match(/@media \(max-width: 560px\) \{[\s\S]*?\n\}/)[0];
+assert.ok(!/pointer-events: none/.test(mobilePlayArea),
+    "móvil: el botón sigue cubriendo toda la caja, el toque no se recorta");
+assert.match(mobilePlayArea, /\.node-player:focus-within > img \{ transform: none; \}/,
+    "móvil: el fotograma no hace zoom (ni con el foco que deja el toque)");
 const nodeCircle = ruleOf(generatedFlat, ".node-player__circle");
 const legacyCircle = ruleOf(legacyFlat, ".film-card__play");
 for (const property of ["width", "border", "border-radius", "color", "font-size", "transition"]) {
     assert.equal(declaration(nodeCircle, property), declaration(legacyCircle, property),
         `el botón de play hereda de Captured la propiedad ${property}`);
 }
-const nodeHover = ruleOf(generatedFlat, ".node-player__play:hover .node-player__circle, .node-player__play:focus-visible .node-player__circle");
+const nodeHover = ruleOf(generatedFlat,
+    ".node-player__circle:hover, .node-player__play:hover .node-player__circle, .node-player__play:focus-visible .node-player__circle");
 const legacyHover = ruleOf(legacyFlat, ".film-card:hover .film-card__play, .film-card:focus-visible .film-card__play");
 for (const property of ["background", "border-color", "color", "scale"]) {
     assert.equal(declaration(nodeHover, property), declaration(legacyHover, property),
@@ -803,7 +833,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=93/);
+    assert.match(es, /generated\.css\?v=94/);
     assert.match(es, /generated\.js\?v=34/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
