@@ -32,6 +32,10 @@
    - Las ramas son rectilíneas (rejilla de 45°: vertical, horizontal o diagonal
      exacta) y ninguna sale por debajo de RYUU: la maraña vive a la derecha del
      codo de la caja ya centrada.
+   - Las ramas viajan DESACTIVADAS (05/10/2026): la página declara
+     window.HYPRFRAME_WORK_BRANCHES = false antes de script.js, así que sin
+     encenderlo no se traza nada; los tests de ramas lo encienden para probar el
+     dibujo (y el carril no cambia con el interruptor).
    - El dibujo baja como un frente desde la línea de cierre: cada tramo se dibuja
      al paso del frente por su altura —un tramo empieza justo cuando el que lo
      engendra acaba, porque las hijas nacen donde muere su padre—, así que por
@@ -75,7 +79,7 @@ const HOLD = Number(/const HOLD = ([\d.]+);/.exec(script)[1]);
 const GROWTH = Number(/const GROWTH = ([\d.]+);/.exec(script)[1]);
 const trazo = (alto = BRANCH_H) => Math.round(alto * GROWTH);   // px de scroll del dibujo
 
-function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H, branchH = BRANCH_H } = {}) {
+function boot(page = "index.html", { desktop = true, reduced = false, listHeight = PANEL_H, branchH = BRANCH_H, branches = false } = {}) {
     const dom = new JSDOM(fs.readFileSync(path.join(root, page), "utf8"), {
         url: "https://hyprframe.com/",
         pretendToBeVisual: true,
@@ -120,9 +124,9 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     const rows = [...track.querySelectorAll(".work-row")];
     Object.defineProperty(list, "clientWidth", { get: () => LIST_W });
     Object.defineProperty(list, "clientHeight", { get: () => state.listHeight });   // alto del panel
-    const branches = doc.getElementById("workBranches");
-    Object.defineProperty(branches, "clientWidth", { get: () => LIST_W });
-    Object.defineProperty(branches, "clientHeight", { get: () => state.branchH });
+    const canvas = doc.getElementById("workBranches");
+    Object.defineProperty(canvas, "clientWidth", { get: () => LIST_W });
+    Object.defineProperty(canvas, "clientHeight", { get: () => state.branchH });
     Object.defineProperty(view, "offsetHeight", { get: () => INNER_H });   // la pantalla pegada
     rows.forEach((row, index) => {
         Object.defineProperty(row, "offsetLeft", { get: () => index * PANEL_W });
@@ -140,11 +144,14 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     });
 
     doc.documentElement.classList.add("hf-skip-intro");   // sin intro: arranque directo
+    // Interruptor de las ramas: en la página lo declara su HTML (en false); aquí
+    // solo se enciende cuando el test las pide (branches: true).
+    if (branches) window.HYPRFRAME_WORK_BRANCHES = true;
     window.eval(script);
 
     const frame = () => new Promise((resolve) => setTimeout(resolve, 30));
     const scrollTo = (y) => { state.y = y; window.dispatchEvent(new window.Event("scroll")); };
-    return { dom, window, doc, section, view, list, track, branches, rows, state, frame, scrollTo };
+    return { dom, window, doc, section, view, list, track, branches: canvas, rows, state, frame, scrollTo };
 }
 
 /* Hasta dónde baja el árbol de cada raíz: se recorren los tramos desde los que
@@ -397,8 +404,32 @@ test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan
         "no queda animación por tiempo: el dibujo es del scroll");
 });
 
+test("las ramas viajan DESACTIVADAS: el interruptor de la página está en false", async () => {
+    // 05/10/2026: las ramas entran en la entrega pero sin dibujarse. La landing
+    // declara el interruptor antes de script.js y, sin encenderlo, el lienzo se
+    // queda vacío (los tests de ramas lo encienden para probar el dibujo).
+    for (const page of ["index.html", "es/index.html"]) {
+        const html = fs.readFileSync(path.join(root, page), "utf8");
+        const m = /window\.HYPRFRAME_WORK_BRANCHES = (true|false);/.exec(html);
+        assert.ok(m, `${page}: la página declara el interruptor de las ramas`);
+        assert.equal(m[1], "false", `${page}: y lo deja apagado`);
+        assert.ok(html.indexOf("HYPRFRAME_WORK_BRANCHES") < html.indexOf("script.js?"),
+            `${page}: el interruptor va antes de script.js, que lo lee al arrancar`);
+    }
+    const { dom, track, branches, frame, scrollTo } = boot();   // sin encenderlo
+    try {
+        await frame();
+        assert.equal(branches.querySelector("svg"), null, "no se traza ni el svg");
+        assert.equal(branches.querySelectorAll("path").length, 0, "ni un solo tramo");
+        assert.equal(branches.style.height, "", "y no se mide el lienzo");
+        // El carril no cambia: sigue corriendo con el scroll.
+        scrollTo(TOP + RUN / 2);
+        await frame();
+        assert.ok(transformX(track) < 0, `el carril sigue corriendo (${transformX(track)})`);
+    } finally { dom.window.close(); }
+});
 test("escritorio: las ramas se trazan al medir el carril, con raíces en la línea de cierre", async () => {
-    const { dom, doc, branches, frame } = boot();
+    const { dom, doc, branches, frame } = boot("index.html", { branches: true });
     try {
         await frame();
         const svg = branches.querySelector("svg");
@@ -436,7 +467,7 @@ test("escritorio: las ramas se trazan al medir el carril, con raíces en la lín
 });
 
 test("escritorio: las ramas se forman con el scroll y se recogen al subir", async () => {
-    const { dom, branches, frame, scrollTo } = boot();
+    const { dom, branches, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         const paths = [...branches.querySelectorAll("path")];
@@ -495,7 +526,7 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
 });
 
 test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos", async () => {
-    const { dom, branches, frame, scrollTo } = boot();
+    const { dom, branches, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         const paths = [...branches.querySelectorAll("path")];
@@ -550,7 +581,7 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
 });
 
 test("escritorio: el frente baja con el scroll y por debajo no hay nada dibujado", async () => {
-    const { dom, branches, frame, scrollTo } = boot();
+    const { dom, branches, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         const tramos = [...branches.querySelectorAll("path")].map((p) => {
@@ -616,7 +647,7 @@ test("escritorio: el frente baja con el scroll y por debajo no hay nada dibujado
 });
 
 test("escritorio: los troncos bajan en escalera y el de la derecha llega a SYNTHESIS", async () => {
-    const { dom, doc, branches, frame } = boot();
+    const { dom, doc, branches, frame } = boot("index.html", { branches: true });
     try {
         await frame();
         const topes = topesPorRaiz(branches);
@@ -642,7 +673,7 @@ test("escritorio: la escalera cae exacta sobre sus topes a cualquier alto de lie
     // tope: ni un píxel corto. Se comprueba en varios altos de lienzo, porque es
     // donde el redondeo podía dejarlo corto.
     for (const alto of [496, 700, 760]) {
-        const { dom, branches, frame } = boot("index.html", { branchH: alto });
+        const { dom, branches, frame } = boot("index.html", { branchH: alto, branches: true });
         try {
             await frame();
             const topes = topesPorRaiz(branches);
@@ -653,7 +684,7 @@ test("escritorio: la escalera cae exacta sobre sus topes a cualquier alto de lie
 });
 
 test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", async () => {
-    const { dom, window, branches, state, frame, scrollTo } = boot();
+    const { dom, window, branches, state, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         assert.equal(branches.style.height, "", "sin medida fiable vale el clamp del CSS");
@@ -691,7 +722,7 @@ test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", asyn
 });
 
 test("escritorio: redimensionar rehace las ramas al estado que marca el scroll", async () => {
-    const { dom, window, branches, state, frame, scrollTo } = boot();
+    const { dom, window, branches, state, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         scrollTo(TOP + RUN + trazo());           // dibujo completo
@@ -722,7 +753,7 @@ test("escritorio: redimensionar rehace las ramas al estado que marca el scroll",
 });
 
 test("escritorio: el trazado es reproducible (semilla fija) y se retira con el carril", async () => {
-    const primera = boot();
+    const primera = boot("index.html", { branches: true });
     let antes;
     try {
         await primera.frame();
@@ -730,7 +761,7 @@ test("escritorio: el trazado es reproducible (semilla fija) y se retira con el c
         assert.ok(antes.length > 0);
     } finally { primera.dom.window.close(); }
 
-    const segunda = boot();
+    const segunda = boot("index.html", { branches: true });
     try {
         await segunda.frame();
         assert.deepEqual([...segunda.branches.querySelectorAll("path")].map((p) => p.getAttribute("d")),

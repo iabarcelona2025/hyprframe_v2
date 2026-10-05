@@ -1266,7 +1266,8 @@
        codo de RYUU, nunca por debajo de la caja— que se van formando con el
        scroll: el dibujo baja de la línea de cierre hacia abajo, de forma
        progresiva y a la vista, y al subir se recoge por el mismo sitio (ver más
-       abajo). */
+       abajo). Hoy viajan DESACTIVADAS: BRANCHES_ON las apaga y la landing lo
+       declara en su HTML (window.HYPRFRAME_WORK_BRANCHES); el carril no cambia. */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1276,6 +1277,13 @@
     if (workView && workList && workTrack && workRailTicks && rows.length > 1) {
         const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
         const desktop = window.matchMedia("(min-width: 1025px)");
+        /* Ramas de WORK → About: DESACTIVADAS (05/10/2026). El dibujo está entero
+           en el módulo, pero mientras este interruptor no se encienda no se traza
+           nada: las ramas viajan en el código sin dibujarse. La landing lo declara
+           antes de cargar este script (window.HYPRFRAME_WORK_BRANCHES) y, para
+           verlas, basta ponerlo en true: el frente, la escalera y la rama de la
+           derecha hasta SYNTHESIS vuelven tal cual. */
+        const BRANCHES_ON = window.HYPRFRAME_WORK_BRANCHES === true;
         // Una muesca por proyecto, en el mismo orden que el listado.
         const ticks = rows.map(() => {
             const tick = document.createElement("i");
@@ -1529,7 +1537,9 @@
         }
 
         function buildBranches() {
-            if (!workBranches) return;
+            // Interruptor apagado: no se traza nada (las ramas son lo único que
+            // este módulo dibuja fuera del carril; el carril sigue igual).
+            if (!workBranches || !BRANCHES_ON) return;
             // Alto del lienzo: hasta la altura de SYNTHESIS (el centro de la
             // tercera línea del titular de About), medido en el documento. Si no
             // se puede medir —About no está, la fuente aún no ha cargado— vale el

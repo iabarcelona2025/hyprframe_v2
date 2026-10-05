@@ -389,7 +389,8 @@
             <!-- Ramas geométricas del final del carril: nacen de las líneas de
                  cierre (bajo la última caja, tras RYUU) y se dibujan al soltarse
                  la sección, quedándose de fondo sobre About. Las traza script.js;
-                 fuera del carril este bloque no se ve. -->
+                 fuera del carril este bloque no se ve, y hoy viajan apagadas
+                 (interruptor antes de script.js, al final de la página). -->
             <div class="work-branches" id="workBranches" aria-hidden="true"></div>
 
             <!-- (fotograma flotante que seguía al cursor desactivado:
@@ -626,7 +627,15 @@
         };
     })();
     </script>
-    <script src="script.js?v=60" defer></script>
+    <!-- ─── Ramas de WORK → About — DESACTIVADO ────────────────────────────
+         Al soltarse el carril nacen unas ramas geométricas que crecen con el
+         scroll; ahora mismo viajan apagadas (el código está dentro, sin trazar).
+         Para verlas, poner el interruptor en true: el frente, la escalera y la
+         rama de la derecha hasta SYNTHESIS vuelven tal cual. -->
+    <script>
+        window.HYPRFRAME_WORK_BRANCHES = false;
+    </script>
+    <script src="script.js?v=61" defer></script>
     <!-- Renderer de las cuatro bolas oculto temporalmente; se conserva para reactivarlo.
     <script src="statement-liquid.js?v=42" defer></script>
     -->
