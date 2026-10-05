@@ -225,10 +225,12 @@ html.hf-skip-intro .preloader { display: none; }
     font-family: var(--font-mono); font-size: calc(0.72rem + 1px); /* 1px más grande */
     letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--muted); position: relative; padding: 0.25rem 0;
-    transition: color 0.3s;
+    transform-origin: center;
+    transition: color 0.3s, transform 0.3s var(--ease-out);
 }
-/* En escritorio, el hover solo cambia el color del texto; no dibuja subrayado. */
-.main-nav a:hover { color: var(--fg); }
+/* En escritorio, el hover blanquea y amplía visualmente la palabra unos 3px
+   (1.24× sobre el tamaño base), sin desplazar los enlaces vecinos ni subrayar. */
+.main-nav a:hover { color: var(--fg); transform: scale(1.24); }
 /* El scroll-spy mantiene el apartado actual en blanco, sin una línea inferior. */
 .main-nav [aria-current="location"] { color: var(--fg); }
 
