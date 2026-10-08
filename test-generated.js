@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=94");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=96");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=34");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -426,8 +426,8 @@ for (const [i, file] of ALL.entries()) {
             `${file}: «${label}» no nombra ${href}`);
     }
 }
-assert.match(css, /\.node-pager__arrow\s*\{[^}]*width:\s*21\.5px;[^}]*height:\s*24\.82px;[^}]*clip-path:\s*polygon\(0 50%, 100% 0, 100% 100%\)/,
-    "flecha anterior reemplazada por triángulo equilátero");
+assert.match(css, /\.node-pager__arrow\s*\{[^}]*width:\s*15\.5px;[^}]*height:\s*17\.9px;[^}]*clip-path:\s*polygon\(0 50%, 100% 0, 100% 100%\)/,
+    "escritorio: la flecha anterior es un triángulo equilátero 6 px más pequeño (21,5→15,5 de ancho, 24,82→17,9 de alto)");
 assert.match(css, /\.node-pager__link--next \.node-pager__arrow\s*\{\s*clip-path:\s*polygon\(100% 50%, 0 0, 0 100%\);/,
     "flecha siguiente reemplazada por triángulo equilátero invertido");
 assert.match(css, /\.node-related\s*\{\s*display:\s*none;\s*\}/,
@@ -697,15 +697,16 @@ assert.match(bandRule, /width: calc\(100% \+ 88px\);[\s\S]*?transform-origin: bo
     "web: la plancha se ciñe a la columna (100% + 8px con el sobrante izquierdo) y ancla su diagonal abajo");
 assert.match(bandRule, /z-index: -1;/,
     "web: la plancha queda detrás del texto");
-/* 04/10/2026 — 7px más de aire bajo el titular: en web la sinopsis baja esos
-   7px y el tope de la plancha sube otros 7px, así que la plancha crece 7px de
-   alto (su borde inferior baja con el texto) sin moverse por arriba: sigue
-   arrancando en el borde superior del titular. En móvil, donde la plancha vive
-   dentro de la caja, el mismo hueco va al arranque de la sinopsis. */
-assert.ok(generatedFlat.includes("top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 7px);"),
-    "web: la sinopsis baja 7px y mantiene el anclaje del titular");
-assert.ok(bandRule.includes("+ 7px));"),
-    "web: la plancha sube su tope 7px y crece 7px de alto");
+/* 08/10/2026 — 10px menos de aire entre el titular y la sinopsis (solo web):
+   el término de aire del 04/10 (+7px) pasa a −3px, así que la sinopsis sube
+   10px (el hueco baja de 23px a 13px). El tope de la plancha recorta el mismo
+   término, así que sigue arrancando en el borde superior del titular y cierra
+   10px más arriba. En móvil, donde la plancha vive dentro de la caja, el hueco
+   va al arranque de la sinopsis y no se toca. */
+assert.ok(generatedFlat.includes("top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) - 3px);"),
+    "web: la sinopsis sube 10px y mantiene el anclaje del titular");
+assert.ok(bandRule.includes("- 3px));"),
+    "web: la plancha recorta el mismo término y cierra con el texto");
 assert.match(mobileBlock, /\.node-player__synopsis \{[^}]*padding: calc\(1\.15rem \+ 7px\) 0 0\.35rem;/,
     "móvil: el mismo hueco de 7px va al arranque de la sinopsis");
 /* La diagonal derecha: el ángulo que tenía la del titular, por construcción
@@ -833,7 +834,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=94/);
+    assert.match(es, /generated\.css\?v=96/);
     assert.match(es, /generated\.js\?v=34/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
