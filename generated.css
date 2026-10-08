@@ -174,11 +174,14 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-player__synopsis {
         text-align: justify;
         --plate-step: calc(1.1rem + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 13px);
-        /* 04/10/2026 — 7px más de aire bajo el titular, solo web: la sinopsis
-           baja esos 7px y el tope de la plancha sube otros 7px (ver ::after),
-           así que la plancha crece 7px de alto —su borde inferior baja con el
-           texto— y sigue arrancando en el borde superior del titular. */
-        top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 7px);
+        /* 08/10/2026 — 10px menos de aire entre el titular y la sinopsis, solo
+           web: el término de aire del 04/10 (+7px) pasa a −3px, así que la
+           sinopsis sube esos 10px y el hueco que la separa del titular baja de
+           23px (16px + 7px) a 13px (16px − 3px). El tope de la plancha
+           (::after) recorta el mismo término, así que sigue naciendo en el
+           borde superior del titular: solo que ahora cierra 10px más arriba,
+           pegada al texto. */
+        top: calc(clamp(1rem, 2.2vw, 2rem) + 1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) - 3px);
         /* 03/10/2026 — Solo web: la tipografía de la sinopsis baja 2px más
            (−7px → −9px sobre el clamp base), el interlineado se recorta otros
            2px (1.45em − 2px) y desaparece el sombreado del texto, que venía de
@@ -191,10 +194,11 @@ body.menu-open .menu-overlay a { visibility: visible; }
     .node-player__synopsis::after {
         content: ""; position: absolute; z-index: -1;
         left: -80px;
-        /* 04/10/2026 — el +7px acompaña a la sinopsis: su tope sube lo mismo
-           que baja el texto, así que la plancha gana 7px de alto sin moverse
-           por arriba (sigue en el arranque del titular). */
-        top: calc(-1 * (1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) + 7px));
+        /* 08/10/2026 — el término de aire de la sinopsis (−3px) va también
+           aquí: su tope se despega del titular exactamente lo mismo que el
+           texto se le acerca, así que la plancha sigue arrancando en el borde
+           superior del titular y cierra 10px más arriba, con el texto. */
+        top: calc(-1 * (1.8rem + 16px + 0.8 * clamp(calc(2.397rem - 26.25px), calc(5.44vw - 44.25px), calc(5.44rem - 44.25px)) - 3px));
         bottom: -0.9rem;
         width: calc(100% + 88px);
         background: rgba(5, 5, 5, 0.65);
