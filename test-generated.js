@@ -185,7 +185,7 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=94");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=95");
         assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=34");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
@@ -426,8 +426,8 @@ for (const [i, file] of ALL.entries()) {
             `${file}: «${label}» no nombra ${href}`);
     }
 }
-assert.match(css, /\.node-pager__arrow\s*\{[^}]*width:\s*21\.5px;[^}]*height:\s*24\.82px;[^}]*clip-path:\s*polygon\(0 50%, 100% 0, 100% 100%\)/,
-    "flecha anterior reemplazada por triángulo equilátero");
+assert.match(css, /\.node-pager__arrow\s*\{[^}]*width:\s*15\.5px;[^}]*height:\s*17\.9px;[^}]*clip-path:\s*polygon\(0 50%, 100% 0, 100% 100%\)/,
+    "escritorio: la flecha anterior es un triángulo equilátero 6 px más pequeño (21,5→15,5 de ancho, 24,82→17,9 de alto)");
 assert.match(css, /\.node-pager__link--next \.node-pager__arrow\s*\{\s*clip-path:\s*polygon\(100% 50%, 0 0, 0 100%\);/,
     "flecha siguiente reemplazada por triángulo equilátero invertido");
 assert.match(css, /\.node-related\s*\{\s*display:\s*none;\s*\}/,
@@ -833,7 +833,7 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=94/);
+    assert.match(es, /generated\.css\?v=95/);
     assert.match(es, /generated\.js\?v=34/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
