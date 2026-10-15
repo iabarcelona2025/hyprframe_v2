@@ -599,6 +599,28 @@ body.menu-open .menu-overlay a { visibility: visible; }
     opacity: 1; pointer-events: none; transition: opacity .6s ease;
 }
 .hf-entry-black.is-fading { opacity: 0; }
+/* Cortinilla del paginador (solo escritorio, ver generated.js): una lámina negra
+   que escala desde el borde de origen. El filo lila va dentro del propio degradado
+   de la lámina, así que mantiene su grosor mientras avanza. Cubre la caja del vídeo. */
+.hf-curtain {
+    position: fixed; z-index: 600; pointer-events: none;
+    background: linear-gradient(to right,
+        #050505 calc(100% - 14px),
+        rgba(160, 100, 255, 0.28) calc(100% - 3px),
+        var(--violet) calc(100% - 3px), var(--violet) 100%);
+    transform-origin: left center; transform: scaleX(0);
+    will-change: transform;
+}
+.hf-curtain--from-right {
+    transform-origin: right center;
+    background: linear-gradient(to left,
+        #050505 calc(100% - 14px),
+        rgba(160, 100, 255, 0.28) calc(100% - 3px),
+        var(--violet) calc(100% - 3px), var(--violet) 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+    .hf-curtain { transition-duration: .01ms !important; }
+}
 @media (prefers-reduced-motion: reduce) {
     .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }

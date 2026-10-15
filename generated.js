@@ -31,6 +31,92 @@
         });
     } catch (_) { /* Storage disabled: standard link navigation still works. */ }
 
+    /* ── Cortinilla del paginador (solo escritorio) ───────────
+       Al pulsar la flecha anterior o siguiente, una cortinilla negra con un
+       borde lila recorre la caja del vídeo en el sentido de la flecha (de
+       izquierda a derecha para «siguiente», de derecha a izquierda para
+       «anterior»). Cuando cubre la caja se navega a la otra pieza; allí la
+       misma cortinilla arranca cubriendo la caja y se retira en el mismo
+       sentido, dejando el póster al descubierto. Móvil y reduced-motion
+       conservan la navegación directa. */
+    const CURTAIN_KEY = "hfGeneratedCurtain";
+    const CURTAIN_MS = 620;
+    const curtainReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const curtainDesktop = window.matchMedia("(min-width: 561px)");
+    const curtainEase = "cubic-bezier(.65,0,.35,1)";
+
+    function clearCurtains() {
+        document.querySelectorAll(".hf-curtain").forEach((el) => el.remove());
+    }
+    // La página restaurada desde la caché del navegador no debe conservar
+    // una cortinilla a medio cerrar.
+    addEventListener("pageshow", (event) => { if (event.persisted) clearCurtains(); });
+
+    function makeCurtain(rect, fromRight) {
+        const curtain = document.createElement("div");
+        curtain.className = "hf-curtain" + (fromRight ? " hf-curtain--from-right" : "");
+        curtain.setAttribute("aria-hidden", "true");
+        curtain.style.left = `${rect.left}px`;
+        curtain.style.top = `${rect.top}px`;
+        curtain.style.width = `${rect.width}px`;
+        curtain.style.height = `${rect.height}px`;
+        document.body.append(curtain);
+        return curtain;
+    }
+
+    // Salida: la cortinilla crece desde el borde de origen hasta cubrir la caja.
+    function coverPlayerThenGo(href, dir) {
+        const player = document.querySelector(".node-player");
+        if (!player) { window.location.href = href; return; }
+        const fromRight = dir !== "next";
+        const curtain = makeCurtain(player.getBoundingClientRect(), fromRight);
+        curtain.style.transform = "scaleX(0)";
+        curtain.style.transition = `transform ${CURTAIN_MS}ms ${curtainEase}`;
+        let went = false;
+        const go = () => {
+            if (went) return;
+            went = true;
+            try { sessionStorage.setItem(CURTAIN_KEY, dir); } catch (_) { /* sin storage: solo se pierde la cortinilla de llegada */ }
+            window.location.href = href;
+        };
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            curtain.style.transform = "scaleX(1)";
+        }));
+        curtain.addEventListener("transitionend", (e) => { if (e.propertyName === "transform") go(); });
+        setTimeout(go, CURTAIN_MS + 120); // red de seguridad si transitionend no llega
+    }
+
+    // Llegada: la cortinilla empieza cubriendo la caja y se retira en el mismo sentido.
+    try {
+        const dir = sessionStorage.getItem(CURTAIN_KEY);
+        if (dir !== null) sessionStorage.removeItem(CURTAIN_KEY);
+        const player = document.querySelector(".node-player");
+        if (dir && player && curtainDesktop.matches && !curtainReduced) {
+            // Al llegar con «siguiente» la cortinilla se recoge hacia la derecha.
+            const fromRight = dir === "next";
+            const curtain = makeCurtain(player.getBoundingClientRect(), fromRight);
+            curtain.style.transform = "scaleX(1)";
+            void curtain.offsetWidth; // fija el estado inicial antes de animar
+            curtain.style.transition = `transform ${CURTAIN_MS}ms ${curtainEase}`;
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                curtain.style.transform = "scaleX(0)";
+            }));
+            const remove = () => curtain.remove();
+            curtain.addEventListener("transitionend", (e) => { if (e.propertyName === "transform") remove(); });
+            setTimeout(remove, CURTAIN_MS + 120);
+        }
+    } catch (_) { /* Storage disabled: la página llega sin cortinilla. */ }
+
+    document.querySelectorAll(".node-pager__link").forEach((link) => {
+        link.addEventListener("click", (event) => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (!curtainDesktop.matches || curtainReduced || !document.querySelector(".node-player")) return;
+            if (document.querySelector(".hf-curtain")) { event.preventDefault(); return; }
+            event.preventDefault();
+            coverPlayerThenGo(link.href, link.classList.contains("node-pager__link--next") ? "next" : "prev");
+        });
+    });
+
     const header = document.getElementById("siteHeader");
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
