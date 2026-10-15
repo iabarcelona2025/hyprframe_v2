@@ -28,22 +28,29 @@
      nacen de las líneas de cierre unas ramas geométricas que se van formando con
      el scroll (al bajar se dibujan, al subir se recogen) y se quedan de fondo:
      mismas ramas en cada carga (semilla fija), trazo gris de 1px que no escala y
-     profundidades en escalera, con la última de la derecha hasta SYNTHESIS.
+     profundidades en escalera, con la última de la derecha extendiéndose aún
+     más abajo —pasa el logo de About— hasta que empieza a verse DNAi (el
+     alto de su titular es el fondo del lienzo), y sin multiplicación de
+     líneas: ningún trazo corre paralelo a otro a 10px o menos solapándolo
+     (el eco repetido de la captura queda podado, con lo que cuelga de él).
    - Las ramas son rectilíneas (rejilla de 45°: vertical, horizontal o diagonal
      exacta) y ninguna sale por debajo de RYUU: la maraña vive a la derecha del
      codo de la caja ya centrada.
-   - Las ramas viajan DESACTIVADAS (05/10/2026): la página declara
-     window.HYPRFRAME_WORK_BRANCHES = false antes de script.js, así que sin
-     encenderlo no se traza nada; los tests de ramas lo encienden para probar el
-     dibujo (y el carril no cambia con el interruptor).
-   - El dibujo baja como un frente desde la línea de cierre: cada tramo se dibuja
-     al paso del frente por su altura —un tramo empieza justo cuando el que lo
-     engendra acaba, porque las hijas nacen donde muere su padre—, así que por
-     debajo del frente no hay nada dibujado y por encima no falta nada: la maraña
-     crece y se recoge de forma progresiva, sin piezas sueltas ni saltos.
-   - El frente va por detrás del recorrido (t = recorrido², GROWTH veces el alto
-     del lienzo): arranca despacio junto a la línea y acaba a la altura de
-     SYNTHESIS. Si fuera 1:1, la tinta coincidiría con lo ya visible y no se vería
+   - Las ramas viajan ACTIVAS SOLO EN ESCRITORIO (desactivadas el 05/10/2026,
+     recuperadas el 15/10/2026): la página declara
+     window.HYPRFRAME_WORK_BRANCHES = true antes de script.js, pero el dibujo
+     solo se traza dentro del carril de escritorio (≥1025px); en móvil/tablet
+     o con «reducir movimiento» no se traza ni se ve nada (y el carril no
+     cambia con el interruptor).
+   - El dibujo se ramifica con el scroll, no todo a la vez (15/10/2026): la
+     ventana de altura de cada tramo se desplaza por raíz (los árboles brotan
+     de izquierda a derecha) y por nivel (una hija no empieza hasta que su
+     padre está entero), conservando la forma y la posición de siempre —solo
+     cambia el cuándo—. Así la maraña crece y se recoge de forma progresiva,
+     sin piezas sueltas ni saltos.
+   - El recorrido va por detrás del avance (t = recorrido², GROWTH veces el alto
+     del lienzo): arranca despacio junto a la línea y acaba cuando empieza
+     a verse DNAi, pasado el logo de About. Si fuera 1:1, la tinta coincidiría con lo ya visible y no se vería
      crecer nada.
    - El degradado lila de la caja es suave y el mismo en la caja y en sus dos
      clones (el de salida de la landing y el de llegada de la ficha): es el
@@ -144,8 +151,9 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     });
 
     doc.documentElement.classList.add("hf-skip-intro");   // sin intro: arranque directo
-    // Interruptor de las ramas: en la página lo declara su HTML (en false); aquí
-    // solo se enciende cuando el test las pide (branches: true).
+    // Interruptor de las ramas: en la página lo declara su HTML (en true, solo
+    // escritorio); como jsdom no ejecuta los <script> de la página, aquí solo
+    // se enciende cuando el test las pide (branches: true).
     if (branches) window.HYPRFRAME_WORK_BRANCHES = true;
     window.eval(script);
 
@@ -389,7 +397,7 @@ test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan
     const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
     assert.match(carril,
         /\.work\.hf-work-h \.work-branches \{\s*display: block;\s*position: absolute; top: 100%; left: 0;\s*width: 100%;\s*height: var\(--work-branches-h, clamp\(420px, 62vh, 760px\)\);\s*pointer-events: none; z-index: 0;\s*\}/,
-        "el lienzo cuelga del final de la sección, con el alto medido hasta SYNTHESIS "
+        "el lienzo cuelga del final de la sección, con el alto medido hasta que empieza DNAi "
         + "(clamp de reserva) y sin capturar el ratón");
     const trazo = /\.work\.hf-work-h \.work-branches path \{([\s\S]*?)\n        \}/.exec(carril);
     assert.ok(trazo, "los tramos tienen estilo propio");
@@ -404,29 +412,45 @@ test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan
         "no queda animación por tiempo: el dibujo es del scroll");
 });
 
-test("las ramas viajan DESACTIVADAS: el interruptor de la página está en false", async () => {
-    // 05/10/2026: las ramas entran en la entrega pero sin dibujarse. La landing
-    // declara el interruptor antes de script.js y, sin encenderlo, el lienzo se
-    // queda vacío (los tests de ramas lo encienden para probar el dibujo).
+test("las ramas viajan ACTIVAS solo en escritorio: el interruptor de la página está en true", async () => {
+    // Desactivadas el 05/10/2026 y recuperadas el 15/10/2026, solo en
+    // escritorio. La landing declara el interruptor en true antes de
+    // script.js, pero fuera del carril de escritorio no se traza nada.
     for (const page of ["index.html", "es/index.html"]) {
         const html = fs.readFileSync(path.join(root, page), "utf8");
         const m = /window\.HYPRFRAME_WORK_BRANCHES = (true|false);/.exec(html);
         assert.ok(m, `${page}: la página declara el interruptor de las ramas`);
-        assert.equal(m[1], "false", `${page}: y lo deja apagado`);
+        assert.equal(m[1], "true", `${page}: y lo deja encendido (solo escritorio)`);
         assert.ok(html.indexOf("HYPRFRAME_WORK_BRANCHES") < html.indexOf("script.js?"),
             `${page}: el interruptor va antes de script.js, que lo lee al arrancar`);
     }
-    const { dom, track, branches, frame, scrollTo } = boot();   // sin encenderlo
+    // En escritorio, con el interruptor encendido, se trazan; el carril corre igual.
+    const escritorio = boot("index.html", { branches: true });
     try {
-        await frame();
-        assert.equal(branches.querySelector("svg"), null, "no se traza ni el svg");
-        assert.equal(branches.querySelectorAll("path").length, 0, "ni un solo tramo");
-        assert.equal(branches.style.height, "", "y no se mide el lienzo");
-        // El carril no cambia: sigue corriendo con el scroll.
-        scrollTo(TOP + RUN / 2);
-        await frame();
-        assert.ok(transformX(track) < 0, `el carril sigue corriendo (${transformX(track)})`);
-    } finally { dom.window.close(); }
+        await escritorio.frame();
+        assert.ok(escritorio.branches.querySelector("svg"), "escritorio: se traza el svg");
+        assert.ok(escritorio.branches.querySelectorAll("path").length > 0, "escritorio: hay tramos");
+        escritorio.scrollTo(TOP + RUN / 2);
+        await escritorio.frame();
+        assert.ok(transformX(escritorio.track) < 0,
+            `el carril sigue corriendo (${transformX(escritorio.track)})`);
+    } finally { escritorio.dom.window.close(); }
+    // Solo en escritorio: en móvil/tablet (o con «reducir movimiento»), aun con
+    // el interruptor en true, no se traza ni el svg ni se mide el lienzo.
+    for (const options of [{ desktop: false, branches: true }, { desktop: true, reduced: true, branches: true }]) {
+        const movil = boot("index.html", options);
+        try {
+            await movil.frame();
+            assert.equal(movil.branches.querySelector("svg"), null,
+                `${JSON.stringify(options)}: no se traza ni el svg`);
+            assert.equal(movil.branches.querySelectorAll("path").length, 0, "ni un solo tramo");
+            assert.equal(movil.branches.style.height, "", "y no se mide el lienzo");
+            assert.equal(movil.branches.children.length, 0, "el lienzo queda vacío");
+        } finally { movil.dom.window.close(); }
+    }
+    // Y el CSS lo respalda: fuera del carril de escritorio no se ven.
+    assert.match(css, /\.work-branches \{ display: none; \}/,
+        "fuera de escritorio el lienzo de las ramas está oculto");
 });
 test("escritorio: las ramas se trazan al medir el carril, con raíces en la línea de cierre", async () => {
     const { dom, doc, branches, frame } = boot("index.html", { branches: true });
@@ -525,7 +549,7 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
     } finally { dom.window.close(); }
 });
 
-test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos", async () => {
+test("escritorio: la maraña se ramifica por niveles, sin ramas sueltas ni saltos", async () => {
     const { dom, branches, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
@@ -547,8 +571,8 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
             llegan.get(k).push(p);
         }
         const padres = (p) => llegan.get(punto(p.getAttribute("d"), 0)) || [];
-        // Con el scroll, el frente avanza por altura: un tramo solo empieza cuando
-        // el que lo engendra ya está entero. Ni una pieza suelta.
+        // Con el scroll, la ramificación avanza por niveles: un tramo solo
+        // empieza cuando el que lo engendra ya está en marcha. Ni una pieza suelta.
         const span = trazo();
         for (const frac of [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]) {
             scrollTo(TOP + RUN + Math.round(span * frac));
@@ -566,7 +590,7 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
                 }
             }
         }
-        // Y al subir, el mismo orden: el frente se recoge por las puntas.
+        // Y al subir, el mismo orden: la ramificación se recoge por las puntas.
         for (const frac of [0.8, 0.5, 0.2]) {
             scrollTo(TOP + RUN + Math.round(span * frac));
             await frame();
@@ -580,91 +604,153 @@ test("escritorio: la maraña crece como un frente, sin ramas sueltas ni saltos",
     } finally { dom.window.close(); }
 });
 
-test("escritorio: el frente baja con el scroll y por debajo no hay nada dibujado", async () => {
+test("escritorio: las ramas se ramifican con el scroll, no todas a la vez", async () => {
     const { dom, branches, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         const tramos = [...branches.querySelectorAll("path")].map((p) => {
             const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
-            return { p, y0: Number(m[2]), y1: Number(m[4]) };
+            return { p, x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]) };
         });
         const len = (t) => Number(t.p.style.getPropertyValue("--len"));
         // Fracción de trazo ya dibujada (0 = sin empezar, 1 = entero). El dibujo
-        // escribe el dashoffset, así que de ahí sale la tinta.
+        // escribe el dashoffset, así que de ahí sale la tinta. La forma y la
+        // posición de cada tramo son las de siempre (su `d` no se toca): lo
+        // que se comprueba aquí es solo el CUÁNDO de cada uno.
         const tinta = (t) => 1 - Number(t.p.style.strokeDashoffset) / len(t);
-        // El recorrido del dibujo es más largo que el lienzo y el frente va por
-        // detrás (t = recorrido²): a cada punto del scroll le toca un frente.
         const span = trazo();
         const ir = async (frac) => {
             scrollTo(TOP + RUN + Math.round(span * frac));
             await frame();
-            return BRANCH_H * frac * frac;    // el frente, en px de lienzo
         };
+        // Quién llega a cada nudo: el padre de un tramo es el que acaba donde
+        // él empieza. Los arranques (en la línea de cierre) no tienen padre.
+        const llegan = new Map();
+        for (const t of tramos) {
+            const k = `${t.x1},${t.y1}`;
+            if (!llegan.has(k)) llegan.set(k, []);
+            llegan.get(k).push(t);
+        }
+        const padres = (t) => llegan.get(`${t.x0},${t.y0}`) || [];
 
-        // 1. Al soltarse la sección, el frente está en la línea de cierre: sin tinta.
-        const cero = await ir(0);
-        assert.equal(cero, 0);
+        // 1. Al soltarse la sección no hay nada dibujado.
+        await ir(0);
         assert.ok(tramos.every((t) => tinta(t) === 0), "el dibujo arranca en la línea de cierre");
 
-        // 2. Al bajar, el frente avanza y la tinta no lo pasa: debajo no hay nada
-        //    ya dibujado, y por encima no queda nada a medias.
-        let antes = 0;
-        for (const frac of [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
-            const frente = await ir(frac);
-            let hechas = 0;
-            for (const t of tramos) {
-                const l = tinta(t);
-                if (t.y0 > frente + 1) {
-                    assert.equal(l, 0, `a ${frac}, ningún tramo empieza por debajo del frente: ${t.p.getAttribute("d")}`);
-                    continue;
-                }
-                if (l === 0) continue;
-                // La punta dibujada no baja del frente (salvo el redondeo del dash).
-                const punta = t.y0 + (t.y1 - t.y0) * l;
-                assert.ok(punta <= frente + 1.5,
-                    `a ${frac}, la tinta no pasa del frente (${punta.toFixed(1)} > ${frente})`);
-                if (l === 1) hechas++;
-                // Un tramo que baja entero por encima del frente está acabado:
-                // por encima del frente no hay huecos.
-                if (t.y1 > t.y0 && t.y1 <= frente - 1) {
-                    assert.equal(t.p.style.strokeDashoffset, "0",
-                        `a ${frac}, lo que queda por encima del frente está entero: ${t.p.getAttribute("d")}`);
-                }
-            }
-            assert.ok(hechas >= antes, `a ${frac} el frente no retrocede`);
-            antes = hechas;
-        }
-        assert.equal(antes, tramos.length, "al final del recorrido, el frente ha pasado por todo");
+        // 2. Las raíces no nacen todas a la vez: brotan de izquierda a
+        //    derecha, así que con poco scroll la primera ya crece y la de la
+        //    derecha aún no ha empezado; esta solo arranca más abajo.
+        const raices = tramos.filter((t) => t.y0 === 0).sort((a, b) => a.x0 - b.x0);
+        assert.ok(raices.length >= 4, `hay varias raíces (${raices.length})`);
+        await ir(0.3);
+        assert.ok(tinta(raices[0]) > 0, "la primera raíz ya crece con poco scroll");
+        assert.equal(tinta(raices[raices.length - 1]), 0,
+            "y la de la derecha aún no ha nacido: no brotan todas a la vez");
+        await ir(0.5);
+        assert.ok(tinta(raices[raices.length - 1]) > 0,
+            "la raíz de la derecha brota al seguir bajando");
 
-        // 3. Al subir se recoge por el mismo sitio: cada tramo pierde tinta, nunca gana.
-        const a60 = tramos.map(tinta);
+        // 3. Ramificación por niveles: ningún tramo empieza antes de que el
+        //    que lo engendra esté entero, en ningún punto del recorrido. Las
+        //    hijas nacen de un padre ya dibujado, nivel a nivel.
+        for (const frac of [0.15, 0.3, 0.45, 0.6, 0.75, 0.9]) {
+            await ir(frac);
+            for (const t of tramos) {
+                if (t.y0 === 0 || tinta(t) === 0) continue;
+                const arriba = padres(t);
+                assert.ok(arriba.length, `todo tramo cuelga de un padre: ${t.p.getAttribute("d")}`);
+                assert.ok(arriba.some((p) => tinta(p) === 1),
+                    `a ${frac}, ningún tramo se ramifica antes de que su padre acabe: ${t.p.getAttribute("d")}`);
+            }
+        }
+
+        // 4. El crecimiento es progresivo: a cada tramo de scroll hay más
+        //    ramas empezadas que en el anterior, sin llegar nunca de golpe.
+        let empezadasAntes = 0;
+        for (const frac of [0.2, 0.35, 0.5, 0.65, 0.8]) {
+            await ir(frac);
+            const empezadas = tramos.filter((t) => tinta(t) > 0).length;
+            const hechas = tramos.filter((t) => tinta(t) === 1).length;
+            assert.ok(empezadas > empezadasAntes,
+                `a ${frac} hay más ramas en marcha que antes (${empezadas} > ${empezadasAntes})`);
+            assert.ok(empezadas < tramos.length,
+                `a ${frac} aún no han brotado todas (${empezadas}/${tramos.length})`);
+            assert.ok(hechas < empezadas,
+                `a ${frac} hay ramas a medio ramificar, no un salto a entero (${hechas}/${empezadas})`);
+            empezadasAntes = empezadas;
+        }
+
+        // 5. Al final del recorrido están todas, y al subir se recogen por el
+        //    mismo sitio: cada tramo pierde tinta, nunca gana.
+        await ir(1);
+        assert.ok(tramos.every((t) => tinta(t) === 1), "al final del recorrido, todas dibujadas");
         await ir(0.6);
+        const a60 = tramos.map(tinta);
+        await ir(0.3);
         const a30 = tramos.map(tinta);
         assert.ok(a30.every((l, i) => l <= a60[i]),
-            "al subir el frente, ningún tramo se dibuja de más");
+            "al subir, ningún tramo se dibuja de más");
         assert.ok(a60.some((l, i) => l > a30[i]), "y alguno se recoge");
     } finally { dom.window.close(); }
 });
 
-test("escritorio: los troncos bajan en escalera y el de la derecha llega a SYNTHESIS", async () => {
+test("escritorio: los troncos bajan en escalera y el de la derecha llega hasta DNAi", async () => {
     const { dom, doc, branches, frame } = boot("index.html", { branches: true });
     try {
         await frame();
         const topes = topesPorRaiz(branches);
         assert.ok(topes.length >= 4, `hay varias raíces (${topes.length})`);
         // De derecha a izquierda, cada árbol llega menos abajo que el de su derecha.
-        assert.equal(topes[0], BRANCH_H, "la última de la derecha llega al fondo del lienzo (SYNTHESIS)");
+        assert.equal(topes[0], BRANCH_H, "la última de la derecha llega al fondo del lienzo (donde empieza DNAi)");
         for (let i = 1; i < topes.length; i++) {
             assert.ok(topes[i] < topes[i - 1],
                 `la de su izquierda baja menos (${topes[i]} < ${topes[i - 1]})`);
         }
-        // Y el listón es la altura de SYNTHESIS: el alto del lienzo se mide desde
-        // el cierre del carril hasta el centro de la tercera línea del titular.
-        const linea3 = doc.querySelector(".about-title .line:nth-child(3)");
-        assert.ok(linea3, "About tiene su tercera línea (SYNTHESIS / SÍNTESIS DIGITAL)");
+        // Y el listón es DNAi, aún más abajo: el alto del lienzo se mide desde
+        // el cierre del carril hasta que empieza a verse su titular, pasando
+        // el logo de About (antes las ramas paraban en la base del logo).
+        const dnai = doc.querySelector("#services .section-title");
+        assert.ok(dnai, "DNAi tiene su titular");
+        assert.ok(doc.querySelector(".about-emblem-wrap"), "y antes pasa el logo de About");
         assert.match(fs.readFileSync(path.join(root, "script.js"), "utf8"),
-            /const linea3 = document\.querySelector\("\.about-title \.line:nth-child\(3\)"\)/,
-            "el alto del lienzo se mide hasta esa línea");
+            /const dnai = document\.querySelector\("#services \.section-title"\)/,
+            "el alto del lienzo se mide hasta que empieza DNAi");
+    } finally { dom.window.close(); }
+});
+
+test("escritorio: sin multiplicación de líneas, ningún eco paralelo repetido", async () => {
+    const { dom, branches, frame } = boot("index.html", { branches: true });
+    try {
+        await frame();
+        const tramos = [...branches.querySelectorAll("path")].map((p) => {
+            const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(p.getAttribute("d"));
+            return { d: p.getAttribute("d"), x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]) };
+        });
+        assert.ok(tramos.length >= 40, `la maraña sigue siendo intrincada (${tramos.length} trazos)`);
+        assert.equal(new Set(tramos.map((t) => t.d)).size, tramos.length, "ningún trazo exacto repetido");
+        const orientacion = (s) => (s.y1 === s.y0 ? "H" : s.x1 === s.x0 ? "V"
+            : ((s.x1 - s.x0) * (s.y1 - s.y0) > 0 ? "D1" : "D2"));
+        const constante = (s, o) => (o === "H" ? s.y0 : o === "V" ? s.x0
+            : o === "D1" ? s.y0 - s.x0 : s.y0 + s.x0);
+        const proyeccion = (s, o) => (o === "H"
+            ? [Math.min(s.x0, s.x1), Math.max(s.x0, s.x1)]
+            : [Math.min(s.y0, s.y1), Math.max(s.y0, s.y1)]);
+        // El eco de la captura: la misma recta trazada dos o tres veces en
+        // paralelo, a pocos píxeles y solapadas. No puede quedar ninguna.
+        for (let i = 0; i < tramos.length; i++) {
+            for (let j = i + 1; j < tramos.length; j++) {
+                const a = tramos[i], b = tramos[j], o = orientacion(a);
+                if (o !== orientacion(b)) continue;
+                let distancia = Math.abs(constante(a, o) - constante(b, o));
+                if (o === "D1" || o === "D2") distancia /= Math.SQRT2;
+                if (distancia > 10) continue;
+                const pa = proyeccion(a, o), pb = proyeccion(b, o);
+                const solape = Math.min(pa[1], pb[1]) - Math.max(pa[0], pb[0]);
+                const corta = Math.min(pa[1] - pa[0], pb[1] - pb[0]);
+                assert.ok(!(corta > 0 && solape >= 6 && solape > corta * 0.5),
+                    `sin líneas multiplicadas: ${a.d} ≈ ${b.d} (a ${distancia.toFixed(1)}px)`);
+            }
+        }
     } finally { dom.window.close(); }
 });
 
@@ -683,34 +769,35 @@ test("escritorio: la escalera cae exacta sobre sus topes a cualquier alto de lie
     }
 });
 
-test("escritorio: el alto del lienzo se mide hasta la altura de SYNTHESIS", async () => {
+test("escritorio: el alto del lienzo se mide hasta que empieza a verse DNAi", async () => {
     const { dom, window, branches, state, frame, scrollTo } = boot("index.html", { branches: true });
     try {
         await frame();
         assert.equal(branches.style.height, "", "sin medida fiable vale el clamp del CSS");
-        // La tercera línea del titular de About (SYNTHESIS / SÍNTESIS DIGITAL) está
-        // 500px por debajo del cierre del carril; el lienzo llega a su centro, así
-        // que mide 500 + media línea (40/2).
-        const linea3 = window.document.querySelector(".about-title .line:nth-child(3)");
-        assert.ok(linea3, "About tiene su tercera línea");
+        // El titular de DNAi empieza 1240px por debajo del cierre del carril
+        // (pasado todo About, logo incluido); el lienzo llega hasta ahí: al
+        // seguir haciendo scroll, las ramificaciones continúan hasta que
+        // DNAi empieza a verse.
+        const dnai = window.document.querySelector("#services .section-title");
+        assert.ok(dnai, "DNAi tiene su titular");
         const cierre = TOP + INNER_H + RUN;          // el cierre del carril, en el documento
-        linea3.getBoundingClientRect = () => {
-            const top = cierre + 500 - state.y;
-            return { top, height: 40, bottom: top + 40, left: 0, right: 0, width: 0, x: 0, y: top, toJSON() {} };
+        dnai.getBoundingClientRect = () => {
+            const top = cierre + 1240 - state.y;
+            return { top, height: 120, bottom: top + 120, left: 0, right: 0, width: 0, x: 0, y: top, toJSON() {} };
         };
         window.dispatchEvent(new window.Event("resize"));
         await frame();
-        assert.equal(branches.style.height, "520px", "el lienzo baja hasta el centro de esa línea");
+        assert.equal(branches.style.height, "1240px", "el lienzo baja hasta que empieza DNAi");
 
         // Y con el alto medido, el dibujo dura GROWTH veces ese alto: la rama más
         // honda —la de la derecha, que llega al fondo— acaba al final del tramo; un
         // píxel antes aún no está.
-        state.branchH = 520;
+        state.branchH = 1240;
         window.dispatchEvent(new window.Event("resize"));
         await frame();
         const paths = [...branches.querySelectorAll("path")];
         const dibujadas = () => paths.filter((p) => Number(p.style.strokeDashoffset) === 0).length;
-        const span = trazo(520);
+        const span = trazo(1240);
         scrollTo(TOP + RUN + span - 1);
         await frame();
         assert.ok(dibujadas() < paths.length,
