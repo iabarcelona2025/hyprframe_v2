@@ -34,131 +34,39 @@
     /* ── Carrusel del paginador (solo escritorio) ─────────────
        Al pulsar la flecha anterior o siguiente, la caja del vídeo se desliza
        como un carrusel: el póster actual sale por un lado y el de la pieza
-       vecina entra por el otro. El póster de destino se pide por adelantado
-       (al pasar el ratón o enfocar la flecha) leyendo su ficha; al llegar, el
-       carrusel retoma el movimiento desde el mismo punto, así que el relevo es
-       continuo. Móvil y reduced-motion conservan la navegación directa. */
+       vecina entra por el otro. La animación la hace la API de transiciones
+       entre documentos (View Transitions): el navegador mantiene la caja en
+       movimiento durante la carga de la página nueva, así que no hay pausa ni
+       repetición. Aquí solo se marca el sentido; el CSS (generated.css) define
+       el movimiento. Móvil y reduced-motion no animan. */
     const CAROUSEL_KEY = "hfGeneratedCarousel";
-    const CAROUSEL_MS = 600;
-    const carouselReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const carouselDesktop = window.matchMedia("(min-width: 561px)");
-    const carouselEase = "cubic-bezier(.65,0,.35,1)";
-    const incomingPosters = new Map();
-
-    function clearCarousels() {
-        document.querySelectorAll(".hf-carousel").forEach((el) => el.remove());
-    }
-    // La página restaurada desde la caché del navegador no debe quedarse con
-    // un carrusel a medio camino.
-    addEventListener("pageshow", (event) => { if (event.persisted) clearCarousels(); });
-
-    function posterOf(img) {
-        return { src: img.currentSrc || img.getAttribute("src") || "", pos: getComputedStyle(img).objectPosition || "center" };
-    }
-
-    // Lee el póster de la ficha de destino (misma web). Se cachea por enlace.
-    function fetchPoster(href) {
-        if (!incomingPosters.has(href)) {
-            const pending = fetch(href, { credentials: "same-origin" })
-                .then((response) => { if (!response.ok) throw new Error("ficha no disponible"); return response.text(); })
-                .then((html) => {
-                    const img = new DOMParser().parseFromString(html, "text/html").querySelector(".node-player > img");
-                    if (!img || !img.getAttribute("src")) return null;
-                    return { src: new URL(img.getAttribute("src"), href).href, pos: img.style.objectPosition || "center" };
-                })
-                .catch(() => null);
-            incomingPosters.set(href, pending);
-        }
-        return incomingPosters.get(href);
-    }
-
-    // Pista de dos paneles (A y B) a la anchura de la caja del vídeo. Con el
-    // strip en 0% se ve A; en -50%, B.
-    function buildCarousel(rect, a, b) {
-        const track = document.createElement("div");
-        track.className = "hf-carousel";
-        track.setAttribute("aria-hidden", "true");
-        track.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
-        const strip = document.createElement("div");
-        strip.className = "hf-carousel__strip";
-        const imgs = [];
-        ["a", "b"].forEach((key, i) => {
-            const panel = document.createElement("div");
-            panel.className = `hf-carousel__panel hf-carousel__panel--${key}`;
-            const img = document.createElement("img");
-            img.alt = "";
-            const info = i === 0 ? a : b;
-            if (info && info.src) { img.src = info.src; img.style.objectPosition = info.pos || "center"; }
-            panel.append(img);
-            strip.append(panel);
-            imgs.push(img);
-        });
-        track.append(strip);
-        document.body.append(track);
-        return { track, strip, imgs };
-    }
-
-    function runCarousel(strip, from, to, onDone) {
-        strip.style.transition = "none";
-        strip.style.transform = `translateX(${from})`;
-        void strip.offsetWidth; // fija el punto de partida antes de animar
-        strip.style.transition = `transform ${CAROUSEL_MS}ms ${carouselEase}`;
-        strip.style.transform = `translateX(${to})`;
-        let done = false;
-        const finish = () => { if (!done) { done = true; onDone(); } };
-        strip.addEventListener("transitionend", (e) => { if (e.target === strip && e.propertyName === "transform") finish(); });
-        setTimeout(finish, CAROUSEL_MS + 150); // red de seguridad si transitionend no llega
-    }
-
-    // Salida: el póster actual sale por el lado de la flecha; el de destino entra.
-    function slideOutThenGo(link, dir) {
-        const href = link.href;
-        const player = document.querySelector(".node-player");
-        const currentImg = player.querySelector(":scope > img");
-        const current = currentImg ? posterOf(currentImg) : { src: "", pos: "center" };
-        const forward = dir === "next";
-        const incomingP = fetchPoster(href);
-        const { track, strip, imgs } = buildCarousel(player.getBoundingClientRect(),
-            forward ? current : null, forward ? null : current);
-        const incomingImg = forward ? imgs[1] : imgs[0];
-        // Si la ficha llega tarde, el panel entra en negro y se completa al llegar.
-        incomingP.then((p) => {
-            if (p && incomingImg && track.isConnected) { incomingImg.src = p.src; incomingImg.style.objectPosition = p.pos; }
-        });
-        runCarousel(strip, forward ? "0%" : "-50%", forward ? "-50%" : "0%", () => {
-            try { sessionStorage.setItem(CAROUSEL_KEY, JSON.stringify({ dir, src: current.src, pos: current.pos })); } catch (_) { /* sin storage: se pierde solo el relevo */ }
-            window.location.href = href;
-        });
-    }
-
-    // Llegada: el carrusel retoma desde el póster que salió y termina en el actual.
-    try {
-        const raw = sessionStorage.getItem(CAROUSEL_KEY);
-        if (raw !== null) sessionStorage.removeItem(CAROUSEL_KEY);
-        const player = document.querySelector(".node-player");
-        const img = player ? player.querySelector(":scope > img") : null;
-        if (raw && img && carouselDesktop.matches && !carouselReduced) {
-            const info = JSON.parse(raw);
-            const current = posterOf(img);
-            const forward = info.dir === "next";
-            const old = { src: info.src, pos: info.pos };
-            const { track, strip } = buildCarousel(player.getBoundingClientRect(),
-                forward ? old : current, forward ? current : old);
-            runCarousel(strip, forward ? "0%" : "-50%", forward ? "-50%" : "0%", () => track.remove());
-        }
-    } catch (_) { /* Storage o JSON no disponibles: la página llega sin carrusel. */ }
+    const carouselReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let pagerDirection = null;
 
     document.querySelectorAll(".node-pager__link").forEach((link) => {
-        const prefetch = () => { if (carouselDesktop.matches) fetchPoster(link.href); };
-        link.addEventListener("pointerenter", prefetch);
-        link.addEventListener("focus", prefetch);
         link.addEventListener("click", (event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            if (!carouselDesktop.matches || carouselReduced || !document.querySelector(".node-player")) return;
-            event.preventDefault();
-            if (document.querySelector(".hf-carousel")) return; // ya en movimiento
-            slideOutThenGo(link, link.classList.contains("node-pager__link--next") ? "next" : "prev");
+            pagerDirection = link.classList.contains("node-pager__link--next") ? "next" : "prev";
+            try { sessionStorage.setItem(CAROUSEL_KEY, pagerDirection); } catch (_) { /* sin storage: navegación sin carrusel */ }
         });
+    });
+
+    // Página de salida: si la navegación no viene de una flecha (o no toca el
+    // carrusel), se cancela la transición para no añadir un fundido a otros enlaces.
+    addEventListener("pageswap", (event) => {
+        if (!event.viewTransition) return;
+        if (!pagerDirection || !carouselDesktop.matches || carouselReduced.matches) event.viewTransition.skipTransition();
+    });
+
+    // Página de llegada: marca el sentido para que el CSS anime el carrusel.
+    addEventListener("pagereveal", (event) => {
+        let dir = null;
+        try { dir = sessionStorage.getItem(CAROUSEL_KEY); sessionStorage.removeItem(CAROUSEL_KEY); } catch (_) { /* sin storage */ }
+        if (!event.viewTransition || !dir || !carouselDesktop.matches || carouselReduced.matches) return;
+        document.documentElement.dataset.carousel = dir;
+        const clear = () => { delete document.documentElement.dataset.carousel; };
+        event.viewTransition.finished.then(clear, clear);
     });
 
     const header = document.getElementById("siteHeader");
