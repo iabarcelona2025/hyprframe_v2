@@ -1296,7 +1296,7 @@ section { position: relative; }
             transition: background 0.35s, transform 0.35s var(--ease-out);
         }
         .work.hf-work-h .work-rail-tick.is-on {
-            background: var(--violet);
+            background: var(--lime);
             transform: scaleY(2);
         }
         /* Ramas geométricas del final del carril (05/10/2026; recuperadas solo
