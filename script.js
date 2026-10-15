@@ -350,27 +350,10 @@
     }
 
     /* El anagrama vuelve a ocultarse bajo la plancha al seguir bajando por
-       About; al subir de nuevo, se desliza otra vez hacia fuera. */
-    if (!reduced && aboutTitle && aboutEmblem) {
-        let previousScrollY = window.scrollY;
-        const updateEmblemForScroll = () => {
-            const currentScrollY = window.scrollY;
-            const emblemTop = Math.max(
-                aboutTitle.getBoundingClientRect().top,
-                aboutEmblem.getBoundingClientRect().top
-            );
-            const coverThreshold = 0;
-            const revealThreshold = -80;
-
-            if (currentScrollY > previousScrollY && (aboutTitle.classList.contains("in") || aboutEmblem.classList.contains("in")) && emblemTop <= coverThreshold) {
-                aboutEmblem.classList.add("is-covered");
-            } else if (currentScrollY < previousScrollY && emblemTop > revealThreshold) {
-                aboutEmblem.classList.remove("is-covered");
-            }
-            previousScrollY = currentScrollY;
-        };
-        window.addEventListener("scroll", updateEmblemForScroll, { passive: true });
-    }
+       About — DESACTIVADO (15/10/2026): sin plancha negra y sin animación del
+       logo (ver styles.css), el anagrama de About queda fijo y visible en su
+       posición final. Ya no hay listener de scroll que añada .is-covered ni
+       lo deslice bajo ninguna plancha al bajar o al subir. */
 
     /* ── 5. Hero word rotator ─────────────────────────────── */
     // Timing: hero visible → 2 s blank → each word 4 s → loop (no further blank).
@@ -1266,8 +1249,10 @@
        codo de RYUU, nunca por debajo de la caja— que se van formando con el
        scroll: el dibujo baja de la línea de cierre hacia abajo, de forma
        progresiva y a la vista, y al subir se recoge por el mismo sitio (ver más
-       abajo). Hoy viajan DESACTIVADAS: BRANCHES_ON las apaga y la landing lo
-       declara en su HTML (window.HYPRFRAME_WORK_BRANCHES); el carril no cambia. */
+       abajo). Recuperadas solo en escritorio (15/10/2026): BRANCHES_ON las
+       enciende desde lo que declara la landing en su HTML
+       (window.HYPRFRAME_WORK_BRANCHES) y solo se trazan dentro del carril
+       (≥1025px, sin «reducir movimiento»); en móvil no existen. */
     const workView = workSection && workSection.querySelector(".work-view");
     const workList = workSection && workSection.querySelector(".work-list");
     const workTrack = document.getElementById("workTrack");
@@ -1277,12 +1262,15 @@
     if (workView && workList && workTrack && workRailTicks && rows.length > 1) {
         const MIN_PANEL_H = 260;   // alto mínimo de panel para que el carril valga la pena
         const desktop = window.matchMedia("(min-width: 1025px)");
-        /* Ramas de WORK → About: DESACTIVADAS (05/10/2026). El dibujo está entero
-           en el módulo, pero mientras este interruptor no se encienda no se traza
-           nada: las ramas viajan en el código sin dibujarse. La landing lo declara
-           antes de cargar este script (window.HYPRFRAME_WORK_BRANCHES) y, para
-           verlas, basta ponerlo en true: el frente, la escalera y la rama de la
-           derecha hasta SYNTHESIS vuelven tal cual. */
+        /* Ramas de WORK → About: ACTIVAS SOLO EN ESCRITORIO (recuperadas el
+           15/10/2026; estuvieron desactivadas desde el 05/10/2026). La landing
+           lo declara antes de cargar este script
+           (window.HYPRFRAME_WORK_BRANCHES = true) y el dibujo —el frente, la
+           escalera y la rama de la derecha hasta que empieza a verse DNAi— vuelve,
+           pero únicamente dentro del carril de escritorio: buildBranches exige
+           además `desktop.matches` y el CSS solo muestra el lienzo bajo
+           `@media (min-width: 1025px)` con `.hf-work-h`, así que en
+           móvil/tablet no se traza ni se ve nada. */
         const BRANCHES_ON = window.HYPRFRAME_WORK_BRANCHES === true;
         // Una muesca por proyecto, en el mismo orden que el listado.
         const ticks = rows.map(() => {
@@ -1300,7 +1288,12 @@
         // ver), así que el frente va por detrás: arranca despacio junto a la línea
         // de cierre y se le ve bajar. Ver paintBranches.
         const GROWTH = 1.4;
+        // Grosor máximo del trazo de las ramas (px): con el scroll van
+        // engrosando desde 1px hasta aquí (ver paintBranches).
+        const ANCHO_MAX = 3;
         let branchPaths = [];   // tren de dibujo de las ramas: { el, len, t0, t1, last }
+        let branchSvg = null;   // el svg de las ramas: lleva el --branch-w del trazo
+        let paintedW = null;    // último grosor escrito (para no repetirlo)
         let branchStart = 0;    // scrollY en el que el carril se suelta y arrancan
         let branchSpan = 0;     // px de scroll que dura el dibujo (el alto del lienzo)
         let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
@@ -1369,20 +1362,30 @@
                 workBranches.style.removeProperty("height");
             }
             branchPaths = [];
+            branchSvg = null;
+            paintedW = null;
         }
 
-        /* Dibujo de las ramas ligado al scroll (05/10/2026): el frente baja desde
-           la línea de cierre y cada tramo se dibuja cuando el frente pasa por su
-           altura: por debajo del frente no hay nada dibujado y por encima está
-           todo, así que la maraña crece hacia abajo de forma progresiva y al subir
-           se recoge por el mismo sitio, en orden inverso. Parado, se queda como
-           esté.
+        /* Dibujo de las ramas ligado al scroll (05/10/2026; ramificación
+           escalonada el 15/10/2026): cada tramo se dibuja en su ventana
+           (t0 → t1, ver traceBranches), desplazada por raíz y por nivel, así
+           que al bajar el scroll la maraña se va RAMIFICANDO —primero los
+           tallos, después las ramas de cada nivel y de cada árbol, no todo a
+           la vez— y al subir se recoge por el mismo sitio, en orden inverso.
+           Parado, se queda como esté. La forma y la posición de cada tramo
+           no cambian: solo cambia cuándo se dibuja.
 
            El recorrido dura GROWTH veces el alto del lienzo y el frente va por
            detrás (t = recorrido²): despacio al principio, junto a la línea, y
-           llegando a SYNTHESIS al final. Así el lienzo que aún no está dibujado se
+           llegando hasta que empieza a verse DNAi al final. Así el lienzo que aún no está dibujado se
            ve a la vista (la maraña crece delante del que mira) en vez de coincidir
            con lo que ya se ve, que es lo que dejaba el dibujo sin animación.
+
+           Con ese mismo frente (t ya recorrido) el trazo SE VA ENGROSANDO
+           conforme baja el scroll: de 1px al soltarse el carril a ANCHO_MAX
+           (3px) cuando el dibujo se completa, y se afina igual al recogerse.
+           El grosor va en la variable --branch-w del svg y los tramos la
+           toman del CSS, así que engrosan todos a la vez, al paso del frente.
            Solo se escribe el estilo cuando el número cambia. */
         function paintBranches() {
             if (!branchPaths.length) return;
@@ -1390,6 +1393,13 @@
             let t = (scrollY - branchStart) / span;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
             t = t * t;
+            if (branchSvg) {
+                const grosor = (1 + (ANCHO_MAX - 1) * t).toFixed(2);
+                if (grosor !== paintedW) {
+                    paintedW = grosor;
+                    branchSvg.style.setProperty("--branch-w", grosor);
+                }
+            }
             for (const tramo of branchPaths) {
                 const dur = tramo.t1 - tramo.t0;
                 let local = dur > 0 ? (t - tramo.t0) / dur : (t >= tramo.t0 ? 1 : 0);
@@ -1415,17 +1425,31 @@
            diagonal exacta—, sin subir nunca y sin medias inclinaciones. Con semilla
            fija: las mismas ramas en cada carga.
 
-           Cada árbol se ajusta a SU tope (la escalera: el de la derecha llega a
-           SYNTHESIS y los de su izquierda, cada vez menos) escalándolo: se traza
+           Cada árbol se ajusta a SU tope (la escalera: el de la derecha llega al
+           fondo del lienzo —donde empieza a verse DNAi— y los de su izquierda, cada vez menos) escalándolo: se traza
            para medirlo y se repite a la escala de su tope hasta caer justo encima.
 
            La ventana de dibujo de cada tramo sale de su altura (t0 → t1, en
-           fracción del lienzo), no de su distancia: el dibujo baja con el frente
-           desde la línea de cierre —nada queda ya dibujado por delante— y un tramo
-           empieza justo cuando el que lo engendra acaba, porque las hijas nacen
-           donde muere su padre. No hay piezas sueltas ni saltos. */
+           fracción del lienzo), comprimida y desplazada por su raíz y por su
+           nivel (ver push): un tramo no empieza hasta que el que lo engendra
+           ha acabado, las raíces no nacen todas a la vez y cada nivel brota
+           después del anterior. No hay piezas sueltas ni saltos, y la
+           geometría —forma y posición de cada tramo— es la de siempre. */
         function traceBranches(w, h) {
             const MAX_DEPTH = 5;
+            /* Ramificación escalonada con el scroll (15/10/2026): la ventana
+               de altura de cada tramo se comprime (ESCALA_T) y se desplaza
+               según su raíz —los cuatro árboles no nacen a la vez, brotan de
+               izquierda a derecha— y según su nivel —una hija no empieza
+               hasta que su padre ha acabado, y cada nivel va tras el
+               anterior—. Entre ambos retrasos la última ventana (raíz de la
+               derecha, nivel más hondo, fondo del lienzo) acaba justo en
+               t = 1: 3·RETRASO_RAIZ + MAX_DEPTH·RETRASO_NIVEL + ESCALA_T = 1.
+               Esto solo mueve el CUÁNDO de cada trazo; el trazo en sí —su
+               `d`, su raíz y su tope— se calcula igual que siempre. */
+            const RETRASO_RAIZ = 0.07;
+            const RETRASO_NIVEL = 0.04;
+            const ESCALA_T = 1 - (3 * RETRASO_RAIZ + MAX_DEPTH * RETRASO_NIVEL);
             const tramos = [];
 
             const last = rows[rows.length - 1];
@@ -1459,21 +1483,27 @@
                         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
                     };
                     let profundo = 0;  // lo más abajo que llega (para escalarlo)
-                    /* La ventana de dibujo de cada tramo sale de SU ALTURA: el
-                       frente baja de la línea de cierre al ritmo del scroll, así
-                       que un tramo se dibuja al paso del frente por su arranque y
-                       acaba cuando el frente lo pasa. Por debajo del frente no
-                       queda nada dibujado: el dibujo crece hacia abajo, no a
-                       saltos. Los llanos, que no bajan, se dibujan con un barrido
-                       corto en cuanto el frente llega a su altura. */
+                    /* La ventana de dibujo de cada tramo sale de SU ALTURA,
+                       comprimida y desplazada (ver RETRASO_* arriba): la base
+                       es la de siempre —un tramo se dibujaría al paso del
+                       frente por su arranque y acabaría cuando el frente lo
+                       pasa, y los llanos, que no bajan, con un barrido corto a
+                       su altura—, pero el desplazamiento por raíz hace que
+                       los árboles no nazcan todos a la vez y el de nivel hace
+                       que una hija empiece RETRASO_NIVEL después de que su
+                       padre acabe (su arranque es el final del padre: misma
+                       base, un nivel más). Así la maraña se ramifica al bajar
+                       el scroll en vez de aparecer entera de golpe. */
                     const push = (x0, y0, x1, y1, depth) => {
                         const xa = Math.round(x0), ya = Math.round(y0);
                         const xb = Math.round(x1), yb = Math.round(y1);
                         profundo = Math.max(profundo, yb);
+                        const retraso = root * RETRASO_RAIZ + depth * RETRASO_NIVEL;
                         tramos.push({
                             d: `M${xa} ${ya}L${xb} ${yb}`, depth, root,
-                            t0: ya / h,
-                            t1: yb > ya ? yb / h : Math.min(1, (ya + 30) / h),
+                            t0: retraso + ESCALA_T * (ya / h),
+                            t1: Math.min(1, retraso + ESCALA_T
+                                * (yb > ya ? yb / h : Math.min(1, (ya + 30) / h))),
                         });
                     };
                     /* Una rama: recta de la rejilla, que se vuelve a partir. `r`
@@ -1525,31 +1555,136 @@
             // Arranques, todos a la derecha del codo de RYUU: el codo mismo (el
             // borde derecho de la última caja) y tres puntos repartidos hasta el
             // borde de la ventana. El tope de cada árbol baja en escalera, de forma
-            // que el de la derecha es el que llega a SYNTHESIS.
+            // que el de la derecha es el que llega al fondo del lienzo (DNAi).
             const hueco = Math.max(0, xMax - xMin);
             const raices = [[0.04, 0.45], [0.32, 0.6], [0.6, 0.78], [0.88, 1]];
             raices.forEach(([f, tope], root) => {
-                // Normalizada por árbol, cada maraña crece a su ritmo y todas
-                // acaban a la vez: cuando el lienzo entra entero en pantalla.
+                // Cada árbol se ajusta a su tope, como siempre; lo que cambia
+                // con el escalonado es el cuándo: las raíces brotan de
+                // izquierda a derecha (RETRASO_RAIZ) y, como la de la derecha
+                // es la más honda, también es la última en completarse —justo
+                // al final del recorrido, cuando empieza a verse DNAi—.
                 arbol(xMin + hueco * f, Math.round(h * tope), root);
             });
-            return tramos;
+
+            /* Sin multiplicación de líneas (15/10/2026): los árboles se
+               cruzan y a veces vuelven a trazar casi el mismo camino a pocos
+               píxeles —la misma recta repetida dos o tres veces en paralelo,
+               como un eco—. Aquí se poda ese eco: un tramo que corre paralelo
+               a otro ya conservado (misma orientación, a 10px o menos y
+               solapado en más de la mitad) no se pinta, y tampoco lo que
+               cuelga de él, para no dejar ramas huérfanas. La espina de cada
+               árbol —el camino desde su raíz hasta su tope— va protegida y
+               nunca se poda: las cuatro raíces siguen llegando a su escalón
+               y la de la derecha, al fondo del lienzo (donde empieza DNAi).
+               Forma y posición del resto no cambian: solo desaparecen los
+               trazos repetidos. */
+            const UMBRAL_PARALELO = 10;   // px: por debajo, dos rectas son «la misma»
+            const geo = tramos.map((tramo, i) => {
+                const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(tramo.d);
+                return {
+                    tramo, i, root: tramo.root, depth: tramo.depth,
+                    x0: Number(m[1]), y0: Number(m[2]), x1: Number(m[3]), y1: Number(m[4]),
+                };
+            });
+            const orientacion = (s) => (s.y1 === s.y0 ? "H" : s.x1 === s.x0 ? "V"
+                : ((s.x1 - s.x0) * (s.y1 - s.y0) > 0 ? "D1" : "D2"));
+            const constante = (s, o) => (o === "H" ? s.y0 : o === "V" ? s.x0
+                : o === "D1" ? s.y0 - s.x0 : s.y0 + s.x0);
+            const proyeccion = (s, o) => (o === "H"
+                ? [Math.min(s.x0, s.x1), Math.max(s.x0, s.x1)]
+                : [Math.min(s.y0, s.y1), Math.max(s.y0, s.y1)]);
+            const esRepetido = (a, b) => {
+                const o = orientacion(a);
+                if (o !== orientacion(b)) return false;
+                let distancia = Math.abs(constante(a, o) - constante(b, o));
+                if (o === "D1" || o === "D2") distancia /= Math.SQRT2;
+                if (distancia > UMBRAL_PARALELO) return false;
+                const pa = proyeccion(a, o), pb = proyeccion(b, o);
+                const solape = Math.min(pa[1], pb[1]) - Math.max(pa[0], pb[0]);
+                const corta = Math.min(pa[1] - pa[0], pb[1] - pb[0]);
+                return corta > 0 && solape >= 6 && solape > corta * 0.5;
+            };
+            // Qué cuelga de cada tramo (misma raíz, arranque = final del padre).
+            const porArranque = new Map();
+            for (const s of geo) {
+                const k = `${s.root}|${s.x0},${s.y0}`;
+                if (!porArranque.has(k)) porArranque.set(k, []);
+                porArranque.get(k).push(s.i);
+            }
+            const descendientes = (i) => {
+                const vistos = new Set();
+                const pila = [i];
+                while (pila.length) {
+                    const cur = geo[pila.pop()];
+                    if (vistos.has(cur.i)) continue;
+                    vistos.add(cur.i);
+                    for (const hijo of porArranque.get(`${cur.root}|${cur.x1},${cur.y1}`) || []) pila.push(hijo);
+                }
+                return vistos;
+            };
+            // Espina protegida de cada árbol: de su raíz a su tope, sin poda.
+            const protegidos = new Set();
+            for (const raiz of [...new Set(geo.map((s) => s.root))]) {
+                const delArbol = geo.filter((s) => s.root === raiz);
+                const tope = Math.max(...delArbol.map((s) => s.y1));
+                let cur = delArbol.find((s) => s.y1 === tope);
+                while (cur) {
+                    protegidos.add(cur.i);
+                    if (cur.y0 === 0) break;
+                    const padres = delArbol
+                        .filter((s) => s.x1 === cur.x0 && s.y1 === cur.y0)
+                        .sort((a, b) => (Number(a.depth !== cur.depth - 1)
+                            - Number(b.depth !== cur.depth - 1)) || a.i - b.i);
+                    cur = padres[0];
+                }
+            }
+            const conservados = [];
+            const podados = new Set();
+            for (const s of geo) {
+                if (podados.has(s.i)) continue;
+                const conflictos = conservados.filter((k) => !podados.has(k.i) && esRepetido(k, s));
+                if (conflictos.length
+                    && !(protegidos.has(s.i) && conflictos.some((k) => protegidos.has(k.i)))) {
+                    if (protegidos.has(s.i)) {
+                        // La espina manda: se retira el eco anterior, no ella.
+                        for (const k of conflictos) {
+                            descendientes(k.i).forEach((j) => {
+                                if (!protegidos.has(j)) podados.add(j);
+                            });
+                        }
+                    } else {
+                        descendientes(s.i).forEach((j) => {
+                            if (!protegidos.has(j)) podados.add(j);
+                        });
+                        continue;
+                    }
+                }
+                conservados.push(s);
+            }
+            return conservados.filter((s) => !podados.has(s.i)).map((s) => s.tramo);
         }
 
         function buildBranches() {
-            // Interruptor apagado: no se traza nada (las ramas son lo único que
-            // este módulo dibuja fuera del carril; el carril sigue igual).
-            if (!workBranches || !BRANCHES_ON) return;
-            // Alto del lienzo: hasta la altura de SYNTHESIS (el centro de la
-            // tercera línea del titular de About), medido en el documento. Si no
-            // se puede medir —About no está, la fuente aún no ha cargado— vale el
-            // clamp del CSS. Es el listón que alcanza la rama de la derecha y, a
-            // la vez, los px de scroll que dura el dibujo.
-            const linea3 = document.querySelector(".about-title .line:nth-child(3)");
-            if (linea3) {
+            // Interruptor apagado o fuera de escritorio: no se traza nada (las
+            // ramas son lo único que este módulo dibuja fuera del carril; el
+            // carril sigue igual). El `desktop.matches` hace explícito que las
+            // ramas recuperadas son solo de la versión de escritorio, aunque
+            // quien llame a esta función cambie en el futuro.
+            if (!workBranches || !BRANCHES_ON || !desktop.matches) return;
+            // Alto del lienzo: las ramas se extienden AÚN MÁS ABAJO (15/10/2026):
+            // pasan el logo de About y continúan por toda la sección hasta que
+            // empieza a verse «DNAi» —la parte alta de su titular—, medido en
+            // el documento (antes tocaban la base del logo y ahí paraban). Si
+            // no se puede medir —DNAi no está, la fuente aún no ha cargado—
+            // vale el clamp del CSS. Es el listón que alcanza la rama de la
+            // derecha y, a la vez, los px de scroll que dura el dibujo: al
+            // seguir bajando, la ramificación sigue creciendo hasta ese punto.
+            const dnai = document.querySelector("#services .section-title");
+            if (dnai) {
                 const abajo = workSection.getBoundingClientRect().bottom + scrollY;
-                const rect = linea3.getBoundingClientRect();
-                const alto = Math.round(rect.top + scrollY + rect.height / 2 - abajo);
+                const rect = dnai.getBoundingClientRect();
+                const alto = Math.round(rect.top + scrollY - abajo);
                 if (alto >= 200) workBranches.style.height = alto + "px";
                 else workBranches.style.removeProperty("height");
             } else {
@@ -1564,6 +1699,8 @@
             svg.setAttribute("aria-hidden", "true");
             svg.setAttribute("focusable", "false");
             const tramos = traceBranches(w, h);
+            branchSvg = svg;   // paintBranches le escribe el grosor (--branch-w)
+            paintedW = null;   // el svg es nuevo: el primer pintado lo fija
             // Cada tramo ya trae su ventana (t0 → t1, en fracción de su árbol).
             branchPaths = tramos.map(({ d, t0, t1 }) => {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");

@@ -126,7 +126,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         [...doc.querySelectorAll(".violet")].every((el) => el.classList.contains("italic")),
         [...doc.querySelectorAll(".violet")].map((el) => el.classList.contains("italic") ? "ok" : "recta").join(","));
     const mobileAboutBlock = (css.match(/@media \(max-width: 600px\)\s*\{([\s\S]*?)\n\}/) || [])[1] || "";
-    check("About en móvil: anagrama y su animación debajo del texto descriptivo y centrados",
+    check("About en móvil: anagrama (fijo, sin plancha ni animación) debajo del texto descriptivo y centrado",
         /\.about\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(mobileAboutBlock) &&
         /\.about-heading,\s*\.about-grid\s*\{[^}]*display:\s*contents/.test(mobileAboutBlock) &&
         /\.about\s*>\s*\.kicker\s*\{[^}]*order:\s*1/.test(mobileAboutBlock) &&
@@ -141,6 +141,33 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.about\s*\{[^}]*overflow:\s*hidden/.test(css) &&
         /\.work-row\s*\{[^}]*overflow:\s*hidden/.test(css) &&
         !/\.about-emblem-wipe\s*\{/.test(mobileAboutBlock));
+    // 15/10/2026 — Plancha negra y animación del logo de About desactivadas:
+    // el anagrama queda fijo y visible en su posición final, sin brillo, sin
+    // reflejo en movimiento y sin volver a taparse al seguir bajando.
+    check("About: plancha negra del logo desactivada (no se pinta)",
+        /\.about-emblem-wipe\s*\{\s*display:\s*none;\s*\}/.test(css));
+    check("About: logo fijo en su posición final, sin transición ni animación",
+        /\.about-emblem\s*\{[^}]*transform:\s*translateX\(0\);[^}]*filter:\s*none;[^}]*transition:\s*none;/.test(css) &&
+        /\.about-emblem-wrap::after\s*\{[^}]*display:\s*none;/.test(css) &&
+        !/animation:\s*about-emblem-(sheen|reflection-hide)/.test(css) &&
+        /\.about-emblem-reflection\s*\{[^}]*opacity:\s*0\.16;[^}]*translate:\s*0 0;[^}]*transition:\s*none;/.test(css));
+    check("About: el scroll ya no tapa el logo (sin .is-covered desde script.js)",
+        !js.includes('classList.add("is-covered")') &&
+        !doc.querySelector(".about-emblem-wrap").classList.contains("is-covered"));
+    // 15/10/2026 — Solo en escritorio (≥1025px): la copia del logo deja de ser
+    // una repetición reflejada y pasa a ir derecha, en la misma posición que
+    // el logo pero 5px más abajo (top: 5px), detrás, desvanecida en la parte
+    // superior (nace transparente y aparece hasta el 25%), íntegra hasta el
+    // 85% y transparente al 100%, como un reflejo sin voltear. Nada fuera.
+    const desktopReflectionAt = css.indexOf("@media (min-width: 1025px) {\n    /* Solo en escritorio: copia del logo SIN reflejar");
+    const desktopReflection = desktopReflectionAt >= 0 ? css.slice(desktopReflectionAt, desktopReflectionAt + 2000) : "";
+    check("About en escritorio: la copia del logo no se refleja, va 5px bajo el logo, detrás, desvanecida arriba y se apaga justo por abajo",
+        desktopReflectionAt >= 0 &&
+        /\.about-emblem-reflection\s*\{[^}]*top:\s*5px;[^}]*z-index:\s*0;[^}]*height:\s*100%;[^}]*transform:\s*none;[^}]*mask-image:\s*linear-gradient\(to bottom, transparent 0%, rgba\(0, 0, 0, 0\.85\) 25%, rgba\(0, 0, 0, 0\.85\) 85%, transparent 100%\);/.test(desktopReflection) &&
+        /\.about-emblem-reflection img\s*\{[^}]*top:\s*0;[^}]*height:\s*100%;/.test(desktopReflection) &&
+        /\.about-emblem\s*\{[^}]*z-index:\s*1;/.test(css));
+    check("About fuera de escritorio: el reflejo sigue reflejado como siempre",
+        /\.about-emblem-reflection\s*\{[^}]*transform:\s*scaleY\(-1\);/.test(css));
     const cross = doc.querySelector(".about-title .accent");
     check("el × de HUMAN INTUITION × MACHINE SYNTHESIS gira con .cross-turn",
         cross && cross.classList.contains("cross-turn"), cross ? cross.className : "missing");

@@ -1299,7 +1299,10 @@ section { position: relative; }
             background: var(--violet);
             transform: scaleY(2);
         }
-        /* Ramas geométricas del final del carril (05/10/2026): cuando la sección
+        /* Ramas geométricas del final del carril (05/10/2026; recuperadas solo
+           en escritorio el 15/10/2026 — esta regla ya vive bajo
+           `@media (min-width: 1025px)` y fuera de ella `.work-branches` es
+           `display: none`, así que en móvil/tablet no se ven): cuando la sección
            se suelta —justo cuando el scroll empieza a bajar hacia About—, de las
            líneas de cierre del carril (la de abajo y la vertical derecha de la
            última caja, tras RYUU) bajan unas ramas geométricas que se van
@@ -1307,14 +1310,19 @@ section { position: relative; }
            mismo orden y al revés. Parado el scroll, se quedan como estén.
            Aquí solo se les da el trazo; la geometría y el dibujo los lleva
            script.js con semilla fija (las mismas ramas en cada carga).
-           El trazo es el gris de las líneas (--line) y de 1px que no escala: el
-           grosor y el color se mantienen igual mientras baja o sube.
+           El trazo es el gris de las líneas (--line) y de un grosor que NO
+           escala con el lienzo pero sí con el scroll: script.js escribe en
+           el svg la variable --branch-w (de 1 al soltarse el carril a 3px
+           cuando el dibujo se completa) y los tramos la toman de ahí, así
+           que las ramas se van engrosando conforme se baja, hasta 3px, y se
+           afinan al recoger; el color se mantiene igual. Solo se dibuja el
+           trazo (nada de opacidad ni escala del dibujo).
            Como el bloque cuelga del final de la sección (top: 100%) y la sección
            de About se pinta después, las ramas quedan SIEMPRE por detrás del
-           texto; solo se dibuja el trazo (nada de opacidad ni escala).
-           El alto lo mide script.js hasta la altura de SYNTHESIS (la tercera línea
-           del titular de About) y lo escribe en --work-branches-h; sin esa medida
-           vale el clamp de reserva. */
+           texto.
+           El alto lo mide script.js hasta que empieza a verse DNAi (el alto
+           de su titular, pasado el logo de About) y lo escribe en
+           --work-branches-h; sin esa medida vale el clamp de reserva. */
         .work.hf-work-h .work-branches {
             display: block;
             position: absolute; top: 100%; left: 0;
@@ -1326,7 +1334,7 @@ section { position: relative; }
         .work.hf-work-h .work-branches path {
             fill: none;
             stroke: var(--line);
-            stroke-width: 1;
+            stroke-width: var(--branch-w, 1);
             vector-effect: non-scaling-stroke;
             stroke-dasharray: var(--len, 2000);
             stroke-dashoffset: var(--len, 2000);   /* el scroll lo baja hasta 0 */
@@ -1680,22 +1688,31 @@ section { position: relative; }
     justify-self: center; translate: calc(25% - 80px - clamp(2rem, 7vw, 7rem) + 50px) 0;
     overflow: visible;
 }
+/* Logo de About SIN plancha y SIN animación (15/10/2026): la plancha negra
+   (.about-emblem-wipe) queda desactivada y el anagrama permanece fijo en su
+   posición final —visible desde el primer momento—, sin deslizarse al
+   entrar, sin brillo (::after), sin reflejo en movimiento y sin volver a
+   taparse al seguir bajando (script.js ya no añade .is-covered). Las reglas
+   de estado (.in / .is-covered) se conservan, pero fijadas a ese mismo
+   estado final, por si hubiera que reactivar el movimiento. */
 .about-emblem {
     position: absolute; top: 0; left: 0; z-index: 1;
     width: auto; max-width: none; height: 100%; object-fit: contain;
-    transform: translateX(calc(100% + 15px));
-    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
-    transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1), filter 0.8s ease-out;
+    transform: translateX(0);
+    filter: none;
+    transition: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap .about-emblem {
     transform: translateX(0); filter: none;
-    transition-delay: 0.3s;
+    transition: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem {
-    transform: translateX(calc(100% + 15px)); filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22));
-    transition-delay: 0s;
+    transform: translateX(0); filter: none;
+    transition: none;
 }
 .about-emblem-wrap::after {
+    /* Brillo del logo desactivado con su animación: nunca se pinta. */
+    display: none;
     content: ""; position: absolute; top: 0; left: 0; z-index: 2;
     width: 50%; height: 100%; pointer-events: none; opacity: 0;
     background: linear-gradient(112deg, transparent 39%, rgba(255, 255, 255, 0.22) 49%, rgba(255, 255, 255, 0.06) 53%, transparent 63%);
@@ -1704,19 +1721,18 @@ section { position: relative; }
     mask: url("assets/images/anagrama-trans-aligned.png") center / 100% 100% no-repeat;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered)::after {
-    animation: about-emblem-sheen 1.2s ease-in-out 1.3s 1 both;
+    animation: none;
 }
-.about-emblem-wipe {
-    position: absolute; top: -5px; left: 50%; z-index: 3;
-    width: calc(50% + 55px); height: calc(100% + 30px);
-    background: linear-gradient(to right, transparent 0, var(--bg) 7px, var(--bg) calc(100% - 30px), transparent 100%);
-}
+/* Plancha negra del logo DESACTIVADA (15/10/2026): el elemento sigue en el
+   HTML por si se reactiva, pero ya no se pinta nada sobre el anagrama. */
+.about-emblem-wipe { display: none; }
 .about-emblem-reflection {
     position: absolute; top: calc(100% + 0.1rem); left: 0;
     width: 50%; height: clamp(1rem, 2.5vw, 1.15rem); overflow: hidden;
-    opacity: 0; transform: scaleY(-1); transform-origin: center;
-    translate: calc(100% + 15px) 0;
-    transition: translate 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+    /* Reflejo fijo, en su estado final: ya no acompaña a ninguna animación. */
+    opacity: 0.16; transform: scaleY(-1); transform-origin: center;
+    translate: 0 0;
+    transition: none;
     -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
             mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 85%);
     pointer-events: none;
@@ -1724,22 +1740,23 @@ section { position: relative; }
 .about-emblem-reflection img {
     position: absolute; left: 0; bottom: 0;
     width: 100%; height: auto; max-width: none;
-    filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
-    transition: filter 0.8s ease-out;
+    filter: none;
+    transition: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection {
-    opacity: 0.16; translate: 0 0; transition-delay: 0.3s;
+    opacity: 0.16; translate: 0 0; transition: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap:not(.is-covered) .about-emblem-reflection img {
-    filter: none; transition-delay: 0.3s;
+    filter: none; transition: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection {
-    translate: calc(100% + 15px) 0; transition-delay: 0s;
-    opacity: 0.16; animation: about-emblem-reflection-hide 0s linear 0.8s forwards;
+    translate: 0 0; transition: none;
+    opacity: 0.16; animation: none;
 }
 .about-title.reveal-lines.in + .about-emblem-wrap.is-covered .about-emblem-reflection img {
-    filter: drop-shadow(-5px 0 1.5px rgba(239, 238, 233, 0.22)); transition-delay: 0s;
+    filter: none; transition: none;
 }
+/* Keyframes de la antigua animación del logo: conservados, sin uso. */
 @keyframes about-emblem-reflection-hide { to { opacity: 0; } }
 @keyframes about-emblem-sheen {
     0% { opacity: 0; background-position: 100% 0; }
@@ -1774,12 +1791,11 @@ section { position: relative; }
 }
 
 @media (max-width: 600px) {
-    /* En móvil, el anagrama y su animación se sitúan debajo del texto
-       descriptivo (.about-copy) y centrados horizontalmente. Como el emblema
-       visible ocupa la mitad izquierda (50%) de .about-emblem-wrap y la mitad
-       derecha aloja la plancha de ocultación (.about-emblem-wipe), desplazar
-       el contenedor un +25% de su propio ancho centra exactamente el anagrama
-       y su animación en la pantalla. */
+    /* En móvil, el anagrama se sitúa debajo del texto descriptivo
+       (.about-copy) y centrado horizontalmente, ya sin plancha ni animación:
+       fijo y visible en su posición final. Como el emblema visible ocupa la
+       mitad izquierda (50%) de .about-emblem-wrap, desplazar el contenedor
+       un +25% de su propio ancho lo centra exactamente en la pantalla. */
     .about {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -1805,21 +1821,21 @@ section { position: relative; }
         translate: 25% 0;
     }
     .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem {
-        transform: translateX(calc(100% + 15px));
-        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
-        transition-delay: 0s;
+        transform: translateX(0);
+        filter: none;
+        transition: none;
     }
     .about-title.reveal-lines.in + .about-emblem-wrap:not(.in)::after {
         animation: none;
     }
     .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection {
-        opacity: 0;
-        translate: calc(100% + 15px) 0;
-        transition-delay: 0s;
+        opacity: 0.16;
+        translate: 0 0;
+        transition: none;
     }
     .about-title.reveal-lines.in + .about-emblem-wrap:not(.in) .about-emblem-reflection img {
-        filter: drop-shadow(5px 0 1.5px rgba(239, 238, 233, 0.22));
-        transition-delay: 0s;
+        filter: none;
+        transition: none;
     }
     .stats {
         order: 5;
@@ -1835,6 +1851,34 @@ section { position: relative; }
     .about-heading { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 25px); }
     /* También acerca 10px las estadísticas al texto descriptivo. */
     .about-copy { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) - 10px); }
+}
+
+@media (min-width: 1025px) {
+    /* Solo en escritorio: copia del logo SIN reflejar (15/10/2026). En vez de
+       la repetición reflejada que vive bajo el anagrama (scaleY(-1), recortada),
+       aquí la copia va derecha —sin voltear— y en LA MISMA POSICIÓN que el
+       logo, 5px más abajo (top: 5px), detrás (z-index: 0 frente
+       al 1 del .about-emblem), con la opacidad tenue de siempre (0.16) y una
+       máscara desvanecida en la parte superior y cuyo apagado comienza justo
+       por abajo: la copia nace transparente arriba, aparece progresivamente
+       hasta el 25% de su alto, se mantiene íntegra hasta el 85% y solo se
+       apaga en el tramo final, hasta hacerse transparente en su borde
+       inferior (100%), para leerse como un reflejo sin estar volteada.
+       Sigue fija, sin animación.
+       Por debajo de 1025px no se toca nada: móvil y tablet conservan el
+       reflejo reflejado de la regla base. */
+    .about-emblem-reflection {
+        top: 5px; left: 0; z-index: 0;
+        width: 50%; height: 100%;
+        overflow: visible;
+        transform: none;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.85) 25%, rgba(0, 0, 0, 0.85) 85%, transparent 100%);
+                mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.85) 25%, rgba(0, 0, 0, 0.85) 85%, transparent 100%);
+    }
+    .about-emblem-reflection img {
+        top: 0; bottom: auto;
+        width: 100%; height: 100%;
+    }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */

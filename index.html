@@ -388,9 +388,10 @@
 
             <!-- Ramas geométricas del final del carril: nacen de las líneas de
                  cierre (bajo la última caja, tras RYUU) y se dibujan al soltarse
-                 la sección, quedándose de fondo sobre About. Las traza script.js;
-                 fuera del carril este bloque no se ve, y hoy viajan apagadas
-                 (interruptor antes de script.js, al final de la página). -->
+                 la sección, quedándose de fondo sobre About. Las traza script.js.
+                 Recuperadas solo en escritorio (15/10/2026): fuera del carril
+                 —móvil/tablet o «reducir movimiento»— este bloque no se ve ni
+                 se traza (interruptor antes de script.js, al final de la página). -->
             <div class="work-branches" id="workBranches" aria-hidden="true"></div>
 
             <!-- (fotograma flotante que seguía al cursor desactivado:
@@ -415,6 +416,8 @@
                     <span class="line"><span class="line-inner">INTUITION<span class="accent cross-turn">×</span></span></span>
                     <span class="line"><span class="line-inner"><span class="violet italic">MACHINE</span> SYNTHESIS</span></span>
                 </h2>
+                <!-- Logo de About fijo, sin plancha ni animación: la plancha
+                     negra (.about-emblem-wipe) queda desactivada en CSS. -->
                 <div class="about-emblem-wrap">
                     <img class="about-emblem" src="assets/images/anagrama-trans-aligned.png" alt="" aria-hidden="true" />
                     <span class="about-emblem-wipe" aria-hidden="true"></span>
@@ -627,13 +630,14 @@
         };
     })();
     </script>
-    <!-- ─── Ramas de WORK → About — DESACTIVADO ────────────────────────────
+    <!-- ─── Ramas de WORK → About — SOLO EN ESCRITORIO ─────────────────────
          Al soltarse el carril nacen unas ramas geométricas que crecen con el
-         scroll; ahora mismo viajan apagadas (el código está dentro, sin trazar).
-         Para verlas, poner el interruptor en true: el frente, la escalera y la
-         rama de la derecha hasta SYNTHESIS vuelven tal cual. -->
+         scroll (15/10/2026: recuperadas). Solo se trazan en escritorio
+         (≥1025px, dentro del carril horizontal): en móvil/tablet el CSS las
+         oculta y script.js no las dibuja, aunque este interruptor esté en
+         true. Para apagarlas, ponerlo en false. -->
     <script>
-        window.HYPRFRAME_WORK_BRANCHES = false;
+        window.HYPRFRAME_WORK_BRANCHES = true;
     </script>
     <script src="script.js?v=61" defer></script>
     <!-- Renderer de las cuatro bolas oculto temporalmente; se conserva para reactivarlo.
