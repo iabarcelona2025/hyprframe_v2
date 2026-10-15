@@ -599,15 +599,6 @@ body.menu-open .menu-overlay a { visibility: visible; }
     opacity: 1; pointer-events: none; transition: opacity .6s ease;
 }
 .hf-entry-black.is-fading { opacity: 0; }
-/* Paginador (solo escritorio, ver generated.js): al pulsar una flecha, la caja del
-   vídeo que sale se desvanece rápido y la que entra aparece con un fundido rápido.
-   La animación corre con la API de transiciones entre documentos. */
-@view-transition { navigation: auto; }
-.node-player { view-transition-name: hf-player; }
-html[data-carousel]::view-transition-old(hf-player) { animation: 260ms ease-in both hf-fade-out; }
-html[data-carousel]::view-transition-new(hf-player) { animation: 260ms ease-out both hf-fade-in; }
-@keyframes hf-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes hf-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
     .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }
@@ -707,3 +698,12 @@ html[data-carousel]::view-transition-new(hf-player) { animation: 260ms ease-out 
     }
     .node-player.is-playing > .node-player__synopsis { opacity: 1; }
 }
+
+/* Fundido del paginador (solo escritorio, ver generated.js): la caja del vídeo
+   se desvanece al salir y aparece con un fundido rápido al entrar. */
+@view-transition { navigation: auto; }
+.node-player { view-transition-name: hf-player; }
+html[data-pager-fade]::view-transition-old(hf-player) { animation: 260ms ease-in both hf-pager-fade-out; }
+html[data-pager-fade]::view-transition-new(hf-player) { animation: 260ms ease-out both hf-pager-fade-in; }
+@keyframes hf-pager-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes hf-pager-fade-in { from { opacity: 0; } to { opacity: 1; } }

@@ -31,41 +31,32 @@
         });
     } catch (_) { /* Storage disabled: standard link navigation still works. */ }
 
-    /* ── Carrusel del paginador (solo escritorio) ─────────────
-       Al pulsar la flecha anterior o siguiente, la caja del vídeo se desliza
-       como un carrusel: el póster actual sale por un lado y el de la pieza
-       vecina entra por el otro. La animación la hace la API de transiciones
-       entre documentos (View Transitions): el navegador mantiene la caja en
-       movimiento durante la carga de la página nueva, así que no hay pausa ni
-       repetición. Aquí solo se marca el sentido; el CSS (generated.css) define
-       el movimiento. Móvil y reduced-motion no animan. */
-    const CAROUSEL_KEY = "hfGeneratedCarousel";
-    const carouselDesktop = window.matchMedia("(min-width: 561px)");
-    const carouselReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let pagerDirection = null;
-
+    /* ── Fundido del paginador (solo escritorio) ──────────────
+       Al pasar a la pieza anterior o siguiente con las flechas, la caja del
+       vídeo hace un fundido de salida y otro de entrada. Lo anima la API de
+       transiciones entre documentos (ver generated.css). El resto de enlaces
+       no se toca, y móvil o movimiento reducido navegan sin fundido. */
+    const PAGER_FADE_KEY = "hfGeneratedPagerFade";
+    const pagerFadeDesktop = window.matchMedia("(min-width: 561px)");
+    const pagerFadeReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let pagerNavigating = false;
     document.querySelectorAll(".node-pager__link").forEach((link) => {
         link.addEventListener("click", (event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            pagerDirection = link.classList.contains("node-pager__link--next") ? "next" : "prev";
-            try { sessionStorage.setItem(CAROUSEL_KEY, pagerDirection); } catch (_) { /* sin storage: navegación sin carrusel */ }
+            pagerNavigating = true;
+            try { sessionStorage.setItem(PAGER_FADE_KEY, "1"); } catch (_) { /* sin storage: navegación sin fundido */ }
         });
     });
-
-    // Página de salida: si la navegación no viene de una flecha (o no toca el
-    // carrusel), se cancela la transición para no añadir un fundido a otros enlaces.
     addEventListener("pageswap", (event) => {
         if (!event.viewTransition) return;
-        if (!pagerDirection || !carouselDesktop.matches || carouselReduced.matches) event.viewTransition.skipTransition();
+        if (!pagerNavigating || !pagerFadeDesktop.matches || pagerFadeReduced.matches) event.viewTransition.skipTransition();
     });
-
-    // Página de llegada: marca el sentido para que el CSS anime el carrusel.
     addEventListener("pagereveal", (event) => {
-        let dir = null;
-        try { dir = sessionStorage.getItem(CAROUSEL_KEY); sessionStorage.removeItem(CAROUSEL_KEY); } catch (_) { /* sin storage */ }
-        if (!event.viewTransition || !dir || !carouselDesktop.matches || carouselReduced.matches) return;
-        document.documentElement.dataset.carousel = dir;
-        const clear = () => { delete document.documentElement.dataset.carousel; };
+        let fade = null;
+        try { fade = sessionStorage.getItem(PAGER_FADE_KEY); sessionStorage.removeItem(PAGER_FADE_KEY); } catch (_) { /* sin storage */ }
+        if (!event.viewTransition || !fade || !pagerFadeDesktop.matches || pagerFadeReduced.matches) return;
+        document.documentElement.dataset.pagerFade = "1";
+        const clear = () => { delete document.documentElement.dataset.pagerFade; };
         event.viewTransition.finished.then(clear, clear);
     });
 
