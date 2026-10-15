@@ -599,20 +599,15 @@ body.menu-open .menu-overlay a { visibility: visible; }
     opacity: 1; pointer-events: none; transition: opacity .6s ease;
 }
 .hf-entry-black.is-fading { opacity: 0; }
-/* Carrusel del paginador (solo escritorio, ver generated.js): la caja del vídeo
-   se desliza como un carrusel entre dos fichas. La animación corre con la API de
-   transiciones entre documentos; el sentido lo marca html[data-carousel]. */
+/* Paginador (solo escritorio, ver generated.js): al pulsar una flecha, la caja del
+   vídeo que sale se desvanece rápido y la que entra aparece con un fundido rápido.
+   La animación corre con la API de transiciones entre documentos. */
 @view-transition { navigation: auto; }
 .node-player { view-transition-name: hf-player; }
-::view-transition-group(hf-player) { animation-duration: 600ms; animation-timing-function: cubic-bezier(.65,0,.35,1); }
-html[data-carousel="next"]::view-transition-old(hf-player) { animation: 600ms cubic-bezier(.65,0,.35,1) both hf-carousel-out-left; }
-html[data-carousel="next"]::view-transition-new(hf-player) { animation: 600ms cubic-bezier(.65,0,.35,1) both hf-carousel-in-right; }
-html[data-carousel="prev"]::view-transition-old(hf-player) { animation: 600ms cubic-bezier(.65,0,.35,1) both hf-carousel-out-right; }
-html[data-carousel="prev"]::view-transition-new(hf-player) { animation: 600ms cubic-bezier(.65,0,.35,1) both hf-carousel-in-left; }
-@keyframes hf-carousel-out-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-@keyframes hf-carousel-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes hf-carousel-out-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
-@keyframes hf-carousel-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+html[data-carousel]::view-transition-old(hf-player) { animation: 260ms ease-in both hf-fade-out; }
+html[data-carousel]::view-transition-new(hf-player) { animation: 260ms ease-out both hf-fade-in; }
+@keyframes hf-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes hf-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
     .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }
