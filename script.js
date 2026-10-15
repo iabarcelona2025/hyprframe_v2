@@ -1218,8 +1218,16 @@
             else if (followerActive) followerStart();
         });
 
-        // preload all hover images so swaps are instant
-        rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
+        // Carga diferida: las 10 imágenes de hover (~1,25 MB) no se piden al
+        // cargar la página; compiten con el vídeo del hero. Se precargan en
+        // cuanto el usuario entra por primera vez en el listado.
+        let hoverImagesPreloaded = false;
+        function preloadHoverImages() {
+            if (hoverImagesPreloaded) return;
+            hoverImagesPreloaded = true;
+            rows.forEach((r) => { const i = new Image(); i.src = r.dataset.img; });
+        }
+        rows.forEach((row) => row.addEventListener("mouseenter", preloadHoverImages, { once: true }));
     }
 
     /* ── 7b. Work: recorrido horizontal del listado en escritorio ─────────────

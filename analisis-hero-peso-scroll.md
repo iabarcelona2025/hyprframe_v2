@@ -569,7 +569,7 @@ Tres opciones, de menos a más conservadora:
 | 7 | ⚠️ **PARCIAL** — terminal en silencio al scrollear (§3.9). Congelar el vídeo se **retiró** por petición | — | −1.620 escrituras/s durante el gesto |
 | 8 | ⏳ Pendiente de medición — umbral del `backdrop-filter` de la cabecera (§3.9) | 10 min | a confirmar en navegador |
 | 8b | 🎯 **SIGUIENTE** — fundir `.hero-log-blend` en el velo: −46 % del trabajo por fotograma de vídeo, **sin parar el vídeo** (§3.10c) | 30 min | el mayor ahorro sin tocar el vídeo |
-| 9 | ⏳ **Carga previa** (§3.10): póster + aplazar las 10 imágenes de hover | 30 min | −6 s de hero negro en 10 Mbps · −1,25 MB de competencia |
+| 9 | ✅ **HECHO** — **Carga previa** (§3.10): póster del vídeo (`assets/images/hero-poster.jpg`, 27 KB) + imágenes de hover diferidas a la primera entrada en el listado | 30 min | −6 s de hero negro en 10 Mbps · −1,25 MB de competencia |
 
 ---
 
