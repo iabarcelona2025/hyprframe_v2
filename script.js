@@ -1288,7 +1288,12 @@
         // ver), así que el frente va por detrás: arranca despacio junto a la línea
         // de cierre y se le ve bajar. Ver paintBranches.
         const GROWTH = 1.4;
+        // Grosor máximo del trazo de las ramas (px): con el scroll van
+        // engrosando desde 1px hasta aquí (ver paintBranches).
+        const ANCHO_MAX = 3;
         let branchPaths = [];   // tren de dibujo de las ramas: { el, len, t0, t1, last }
+        let branchSvg = null;   // el svg de las ramas: lleva el --branch-w del trazo
+        let paintedW = null;    // último grosor escrito (para no repetirlo)
         let branchStart = 0;    // scrollY en el que el carril se suelta y arrancan
         let branchSpan = 0;     // px de scroll que dura el dibujo (el alto del lienzo)
         let run = 0;          // recorrido horizontal total (px que se desplaza el carril)
@@ -1357,6 +1362,8 @@
                 workBranches.style.removeProperty("height");
             }
             branchPaths = [];
+            branchSvg = null;
+            paintedW = null;
         }
 
         /* Dibujo de las ramas ligado al scroll (05/10/2026; ramificación
@@ -1373,6 +1380,12 @@
            llegando hasta que empieza a verse DNAi al final. Así el lienzo que aún no está dibujado se
            ve a la vista (la maraña crece delante del que mira) en vez de coincidir
            con lo que ya se ve, que es lo que dejaba el dibujo sin animación.
+
+           Con ese mismo frente (t ya recorrido) el trazo SE VA ENGROSANDO
+           conforme baja el scroll: de 1px al soltarse el carril a ANCHO_MAX
+           (3px) cuando el dibujo se completa, y se afina igual al recogerse.
+           El grosor va en la variable --branch-w del svg y los tramos la
+           toman del CSS, así que engrosan todos a la vez, al paso del frente.
            Solo se escribe el estilo cuando el número cambia. */
         function paintBranches() {
             if (!branchPaths.length) return;
@@ -1380,6 +1393,13 @@
             let t = (scrollY - branchStart) / span;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
             t = t * t;
+            if (branchSvg) {
+                const grosor = (1 + (ANCHO_MAX - 1) * t).toFixed(2);
+                if (grosor !== paintedW) {
+                    paintedW = grosor;
+                    branchSvg.style.setProperty("--branch-w", grosor);
+                }
+            }
             for (const tramo of branchPaths) {
                 const dur = tramo.t1 - tramo.t0;
                 let local = dur > 0 ? (t - tramo.t0) / dur : (t >= tramo.t0 ? 1 : 0);
@@ -1679,6 +1699,8 @@
             svg.setAttribute("aria-hidden", "true");
             svg.setAttribute("focusable", "false");
             const tramos = traceBranches(w, h);
+            branchSvg = svg;   // paintBranches le escribe el grosor (--branch-w)
+            paintedW = null;   // el svg es nuevo: el primer pintado lo fija
             // Cada tramo ya trae su ventana (t0 → t1, en fracción de su árbol).
             branchPaths = tramos.map(({ d, t0, t1 }) => {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");

@@ -27,7 +27,9 @@
    - Al soltarse el carril —justo cuando el scroll empieza a bajar hacia About—
      nacen de las líneas de cierre unas ramas geométricas que se van formando con
      el scroll (al bajar se dibujan, al subir se recogen) y se quedan de fondo:
-     mismas ramas en cada carga (semilla fija), trazo gris de 1px que no escala y
+     mismas ramas en cada carga (semilla fija), trazo gris que no escala con el
+     lienzo pero se va engrosando con el scroll —de 1px a 3px al completarse el
+     dibujo, con la variable --branch-w del svg— y
      profundidades en escalera, con la última de la derecha extendiéndose aún
      más abajo —pasa el logo de About— hasta que empieza a verse DNAi (el
      alto de su titular es el fondo del lienzo), y sin multiplicación de
@@ -402,8 +404,9 @@ test("CSS: las ramas nacen en la línea de cierre, bajan hacia About y se quedan
     const trazo = /\.work\.hf-work-h \.work-branches path \{([\s\S]*?)\n        \}/.exec(carril);
     assert.ok(trazo, "los tramos tienen estilo propio");
     assert.match(trazo[1], /stroke: var\(--line\);/, "trazo del mismo gris que las líneas");
-    assert.match(trazo[1], /stroke-width: 1;/, "de 1px");
-    assert.match(trazo[1], /vector-effect: non-scaling-stroke;/, "que no escala: el grosor se mantiene");
+    assert.match(trazo[1], /stroke-width: var\(--branch-w, 1\);/,
+        "el grosor lo lleva el scroll (--branch-w del svg: 1px al arrancar, 3px al completar)");
+    assert.match(trazo[1], /vector-effect: non-scaling-stroke;/, "que no escala con el lienzo");
     assert.match(trazo[1], /stroke-dasharray: var\(--len, 2000\);/);
     assert.match(trazo[1], /stroke-dashoffset: var\(--len, 2000\);\s*\/\* el scroll lo baja hasta 0 \*\//,
         "sin scroll, sin dibujar: el dibujo lo lleva el scroll, no una animación");
@@ -500,6 +503,9 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
         const dibujadas = () => paths.filter((p) => dash(p) === 0).length;      // terminadas
         const sinDibujar = () => paths.filter((p) => dash(p) === len(p)).length; // ni empezadas
         const empezadas = () => paths.filter((p) => dash(p) < len(p)).length;    // en curso o hechas
+        // Grosor de la tinta: la variable del svg que el scroll va subiendo.
+        const svg = branches.querySelector("svg");
+        const grosor = () => Number(svg.style.getPropertyValue("--branch-w"));
         const range = RUN, hold = Math.round(range * HOLD);
 
         // 1. Antes del final del carril no hay nada dibujado.
@@ -514,11 +520,15 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
         scrollTo(TOP + range);
         await frame();
         assert.equal(sinDibujar(), paths.length, "al soltarse arranca, aún sin trazo");
+        assert.equal(grosor(), 1, "y la tinta arranca fina: 1px");
 
         // 3. Con el scroll, se van formando: a mitad del dibujo, ni todas ni ninguna.
         const span = trazo();
         scrollTo(TOP + range + span * 0.5);
         await frame();
+        const grosorMedio = grosor();
+        assert.ok(grosorMedio > 1 && grosorMedio < 3,
+            `a mitad del dibujo la tinta ya engrosa pero no llega a 3px (${grosorMedio})`);
         const aMedias = empezadas();
         const terminadas = dibujadas();   // los primeros troncos ya han acabado
         assert.ok(aMedias > 0 && aMedias < paths.length,
@@ -530,19 +540,23 @@ test("escritorio: las ramas se forman con el scroll y se recogen al subir", asyn
         scrollTo(TOP + range + span);
         await frame();
         assert.equal(dibujadas(), paths.length, "al final del recorrido del dibujo, todas");
+        assert.equal(grosor(), 3, "y la tinta ha engrosado hasta los 3px");
         scrollTo(TOP + range + span + 800);
         await frame();
         assert.equal(dibujadas(), paths.length, "y ya dentro de About siguen enteras");
+        assert.equal(grosor(), 3, "y el grosor se queda en 3px, no engrosa más");
 
         // 5. Al subir, se recogen en el mismo orden y al revés.
         scrollTo(TOP + range + span * 0.5);
         await frame();
         assert.equal(empezadas(), aMedias, `al subir vuelve el mismo estado (${aMedias})`);
         assert.equal(dibujadas(), terminadas, `y las mismas terminadas (${terminadas})`);
+        assert.equal(grosor(), grosorMedio, `y la tinta se acopla al mismo avance: se afina a lo que tocaba (${grosorMedio})`);
         assert.equal(sinDibujar(), paths.length - aMedias);
         scrollTo(TOP + range);
         await frame();
         assert.equal(sinDibujar(), paths.length, "y al volver al final del carril, recogidas del todo");
+        assert.equal(grosor(), 1, "y la tinta vuelve a 1px");
         scrollTo(TOP + hold);   // muy por encima
         await frame();
         assert.equal(sinDibujar(), paths.length);

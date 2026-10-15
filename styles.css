@@ -1310,11 +1310,16 @@ section { position: relative; }
            mismo orden y al revés. Parado el scroll, se quedan como estén.
            Aquí solo se les da el trazo; la geometría y el dibujo los lleva
            script.js con semilla fija (las mismas ramas en cada carga).
-           El trazo es el gris de las líneas (--line) y de 1px que no escala: el
-           grosor y el color se mantienen igual mientras baja o sube.
+           El trazo es el gris de las líneas (--line) y de un grosor que NO
+           escala con el lienzo pero sí con el scroll: script.js escribe en
+           el svg la variable --branch-w (de 1 al soltarse el carril a 3px
+           cuando el dibujo se completa) y los tramos la toman de ahí, así
+           que las ramas se van engrosando conforme se baja, hasta 3px, y se
+           afinan al recoger; el color se mantiene igual. Solo se dibuja el
+           trazo (nada de opacidad ni escala del dibujo).
            Como el bloque cuelga del final de la sección (top: 100%) y la sección
            de About se pinta después, las ramas quedan SIEMPRE por detrás del
-           texto; solo se dibuja el trazo (nada de opacidad ni escala).
+           texto.
            El alto lo mide script.js hasta que empieza a verse DNAi (el alto
            de su titular, pasado el logo de About) y lo escribe en
            --work-branches-h; sin esa medida vale el clamp de reserva. */
@@ -1329,7 +1334,7 @@ section { position: relative; }
         .work.hf-work-h .work-branches path {
             fill: none;
             stroke: var(--line);
-            stroke-width: 1;
+            stroke-width: var(--branch-w, 1);
             vector-effect: non-scaling-stroke;
             stroke-dasharray: var(--len, 2000);
             stroke-dashoffset: var(--len, 2000);   /* el scroll lo baja hasta 0 */
