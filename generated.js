@@ -31,89 +31,133 @@
         });
     } catch (_) { /* Storage disabled: standard link navigation still works. */ }
 
-    /* ── Cortinilla del paginador (solo escritorio) ───────────
-       Al pulsar la flecha anterior o siguiente, una cortinilla negra con un
-       borde lila recorre la caja del vídeo en el sentido de la flecha (de
-       izquierda a derecha para «siguiente», de derecha a izquierda para
-       «anterior»). Cuando cubre la caja se navega a la otra pieza; allí la
-       misma cortinilla arranca cubriendo la caja y se retira en el mismo
-       sentido, dejando el póster al descubierto. Móvil y reduced-motion
-       conservan la navegación directa. */
-    const CURTAIN_KEY = "hfGeneratedCurtain";
-    const CURTAIN_MS = 620;
-    const curtainReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const curtainDesktop = window.matchMedia("(min-width: 561px)");
-    const curtainEase = "cubic-bezier(.65,0,.35,1)";
+    /* ── Carrusel del paginador (solo escritorio) ─────────────
+       Al pulsar la flecha anterior o siguiente, la caja del vídeo se desliza
+       como un carrusel: el póster actual sale por un lado y el de la pieza
+       vecina entra por el otro. El póster de destino se pide por adelantado
+       (al pasar el ratón o enfocar la flecha) leyendo su ficha; al llegar, el
+       carrusel retoma el movimiento desde el mismo punto, así que el relevo es
+       continuo. Móvil y reduced-motion conservan la navegación directa. */
+    const CAROUSEL_KEY = "hfGeneratedCarousel";
+    const CAROUSEL_MS = 600;
+    const carouselReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const carouselDesktop = window.matchMedia("(min-width: 561px)");
+    const carouselEase = "cubic-bezier(.65,0,.35,1)";
+    const incomingPosters = new Map();
 
-    function clearCurtains() {
-        document.querySelectorAll(".hf-curtain").forEach((el) => el.remove());
+    function clearCarousels() {
+        document.querySelectorAll(".hf-carousel").forEach((el) => el.remove());
     }
-    // La página restaurada desde la caché del navegador no debe conservar
-    // una cortinilla a medio cerrar.
-    addEventListener("pageshow", (event) => { if (event.persisted) clearCurtains(); });
+    // La página restaurada desde la caché del navegador no debe quedarse con
+    // un carrusel a medio camino.
+    addEventListener("pageshow", (event) => { if (event.persisted) clearCarousels(); });
 
-    function makeCurtain(rect, fromRight) {
-        const curtain = document.createElement("div");
-        curtain.className = "hf-curtain" + (fromRight ? " hf-curtain--from-right" : "");
-        curtain.setAttribute("aria-hidden", "true");
-        curtain.style.left = `${rect.left}px`;
-        curtain.style.top = `${rect.top}px`;
-        curtain.style.width = `${rect.width}px`;
-        curtain.style.height = `${rect.height}px`;
-        document.body.append(curtain);
-        return curtain;
+    function posterOf(img) {
+        return { src: img.currentSrc || img.getAttribute("src") || "", pos: getComputedStyle(img).objectPosition || "center" };
     }
 
-    // Salida: la cortinilla crece desde el borde de origen hasta cubrir la caja.
-    function coverPlayerThenGo(href, dir) {
-        const player = document.querySelector(".node-player");
-        if (!player) { window.location.href = href; return; }
-        const fromRight = dir !== "next";
-        const curtain = makeCurtain(player.getBoundingClientRect(), fromRight);
-        curtain.style.transform = "scaleX(0)";
-        curtain.style.transition = `transform ${CURTAIN_MS}ms ${curtainEase}`;
-        let went = false;
-        const go = () => {
-            if (went) return;
-            went = true;
-            try { sessionStorage.setItem(CURTAIN_KEY, dir); } catch (_) { /* sin storage: solo se pierde la cortinilla de llegada */ }
-            window.location.href = href;
-        };
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            curtain.style.transform = "scaleX(1)";
-        }));
-        curtain.addEventListener("transitionend", (e) => { if (e.propertyName === "transform") go(); });
-        setTimeout(go, CURTAIN_MS + 120); // red de seguridad si transitionend no llega
-    }
-
-    // Llegada: la cortinilla empieza cubriendo la caja y se retira en el mismo sentido.
-    try {
-        const dir = sessionStorage.getItem(CURTAIN_KEY);
-        if (dir !== null) sessionStorage.removeItem(CURTAIN_KEY);
-        const player = document.querySelector(".node-player");
-        if (dir && player && curtainDesktop.matches && !curtainReduced) {
-            // Al llegar con «siguiente» la cortinilla se recoge hacia la derecha.
-            const fromRight = dir === "next";
-            const curtain = makeCurtain(player.getBoundingClientRect(), fromRight);
-            curtain.style.transform = "scaleX(1)";
-            void curtain.offsetWidth; // fija el estado inicial antes de animar
-            curtain.style.transition = `transform ${CURTAIN_MS}ms ${curtainEase}`;
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                curtain.style.transform = "scaleX(0)";
-            }));
-            const remove = () => curtain.remove();
-            curtain.addEventListener("transitionend", (e) => { if (e.propertyName === "transform") remove(); });
-            setTimeout(remove, CURTAIN_MS + 120);
+    // Lee el póster de la ficha de destino (misma web). Se cachea por enlace.
+    function fetchPoster(href) {
+        if (!incomingPosters.has(href)) {
+            const pending = fetch(href, { credentials: "same-origin" })
+                .then((response) => { if (!response.ok) throw new Error("ficha no disponible"); return response.text(); })
+                .then((html) => {
+                    const img = new DOMParser().parseFromString(html, "text/html").querySelector(".node-player > img");
+                    if (!img || !img.getAttribute("src")) return null;
+                    return { src: new URL(img.getAttribute("src"), href).href, pos: img.style.objectPosition || "center" };
+                })
+                .catch(() => null);
+            incomingPosters.set(href, pending);
         }
-    } catch (_) { /* Storage disabled: la página llega sin cortinilla. */ }
+        return incomingPosters.get(href);
+    }
+
+    // Pista de dos paneles (A y B) a la anchura de la caja del vídeo. Con el
+    // strip en 0% se ve A; en -50%, B.
+    function buildCarousel(rect, a, b) {
+        const track = document.createElement("div");
+        track.className = "hf-carousel";
+        track.setAttribute("aria-hidden", "true");
+        track.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
+        const strip = document.createElement("div");
+        strip.className = "hf-carousel__strip";
+        const imgs = [];
+        ["a", "b"].forEach((key, i) => {
+            const panel = document.createElement("div");
+            panel.className = `hf-carousel__panel hf-carousel__panel--${key}`;
+            const img = document.createElement("img");
+            img.alt = "";
+            const info = i === 0 ? a : b;
+            if (info && info.src) { img.src = info.src; img.style.objectPosition = info.pos || "center"; }
+            panel.append(img);
+            strip.append(panel);
+            imgs.push(img);
+        });
+        track.append(strip);
+        document.body.append(track);
+        return { track, strip, imgs };
+    }
+
+    function runCarousel(strip, from, to, onDone) {
+        strip.style.transition = "none";
+        strip.style.transform = `translateX(${from})`;
+        void strip.offsetWidth; // fija el punto de partida antes de animar
+        strip.style.transition = `transform ${CAROUSEL_MS}ms ${carouselEase}`;
+        strip.style.transform = `translateX(${to})`;
+        let done = false;
+        const finish = () => { if (!done) { done = true; onDone(); } };
+        strip.addEventListener("transitionend", (e) => { if (e.target === strip && e.propertyName === "transform") finish(); });
+        setTimeout(finish, CAROUSEL_MS + 150); // red de seguridad si transitionend no llega
+    }
+
+    // Salida: el póster actual sale por el lado de la flecha; el de destino entra.
+    function slideOutThenGo(link, dir) {
+        const href = link.href;
+        const player = document.querySelector(".node-player");
+        const currentImg = player.querySelector(":scope > img");
+        const current = currentImg ? posterOf(currentImg) : { src: "", pos: "center" };
+        const forward = dir === "next";
+        const incomingP = fetchPoster(href);
+        const { track, strip, imgs } = buildCarousel(player.getBoundingClientRect(),
+            forward ? current : null, forward ? null : current);
+        const incomingImg = forward ? imgs[1] : imgs[0];
+        // Si la ficha llega tarde, el panel entra en negro y se completa al llegar.
+        incomingP.then((p) => {
+            if (p && incomingImg && track.isConnected) { incomingImg.src = p.src; incomingImg.style.objectPosition = p.pos; }
+        });
+        runCarousel(strip, forward ? "0%" : "-50%", forward ? "-50%" : "0%", () => {
+            try { sessionStorage.setItem(CAROUSEL_KEY, JSON.stringify({ dir, src: current.src, pos: current.pos })); } catch (_) { /* sin storage: se pierde solo el relevo */ }
+            window.location.href = href;
+        });
+    }
+
+    // Llegada: el carrusel retoma desde el póster que salió y termina en el actual.
+    try {
+        const raw = sessionStorage.getItem(CAROUSEL_KEY);
+        if (raw !== null) sessionStorage.removeItem(CAROUSEL_KEY);
+        const player = document.querySelector(".node-player");
+        const img = player ? player.querySelector(":scope > img") : null;
+        if (raw && img && carouselDesktop.matches && !carouselReduced) {
+            const info = JSON.parse(raw);
+            const current = posterOf(img);
+            const forward = info.dir === "next";
+            const old = { src: info.src, pos: info.pos };
+            const { track, strip } = buildCarousel(player.getBoundingClientRect(),
+                forward ? old : current, forward ? current : old);
+            runCarousel(strip, forward ? "0%" : "-50%", forward ? "-50%" : "0%", () => track.remove());
+        }
+    } catch (_) { /* Storage o JSON no disponibles: la página llega sin carrusel. */ }
 
     document.querySelectorAll(".node-pager__link").forEach((link) => {
+        const prefetch = () => { if (carouselDesktop.matches) fetchPoster(link.href); };
+        link.addEventListener("pointerenter", prefetch);
+        link.addEventListener("focus", prefetch);
         link.addEventListener("click", (event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            if (!curtainDesktop.matches || curtainReduced || !document.querySelector(".node-player")) return;
-            if (document.querySelector(".hf-curtain")) { event.preventDefault(); return; }
+            if (!carouselDesktop.matches || carouselReduced || !document.querySelector(".node-player")) return;
             event.preventDefault();
-            coverPlayerThenGo(link.href, link.classList.contains("node-pager__link--next") ? "next" : "prev");
+            if (document.querySelector(".hf-carousel")) return; // ya en movimiento
+            slideOutThenGo(link, link.classList.contains("node-pager__link--next") ? "next" : "prev");
         });
     });
 
