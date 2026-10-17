@@ -55,9 +55,33 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="styles.css?v=214" />
-        <link rel="stylesheet" href="generated.css?v=96" />
+        <link rel="stylesheet" href="generated.css?v=101" />
     </head>
     <body>
+        <script>
+            /* Fade del paginador (generated.js): si la sesión llega de otra
+               página de Generated, pinta la plancha negra ANTES del primer
+               pintado — es lo que elimina el flash del contenido nuevo.
+               generated.js la reconstruye con sus exclusiones (menu, footer,
+               paginador) y la destapa. Auto-salvado: si generated.js no
+               llega, la plancha se desvanece y se retira sola. */
+            (function () {
+                try {
+                    if (sessionStorage.getItem("hfGeneratedPagerFade")) {
+                        sessionStorage.removeItem("hfGeneratedPagerFade");
+                        window.hfPagerArrive = true;
+                        var veil = document.createElement("div");
+                        veil.className = "hf-pager-veil hf-pager-veil--solid is-on";
+                        veil.setAttribute("aria-hidden", "true");
+                        document.body.appendChild(veil);
+                        setTimeout(function () {
+                            veil.classList.remove("is-on");
+                            setTimeout(function () { veil.remove(); }, 300);
+                        }, 1500);
+                    }
+                } catch (_) {}
+            })();
+        </script>
         <a class="skip-link" href="#main">Skip to content</a>
         <div class="grain" aria-hidden="true"></div>
 
@@ -177,7 +201,7 @@
             };
         })();
         </script>
-        <script src="generated.js?v=34" defer></script>
+        <script src="generated.js?v=38" defer></script>
         <script src="smooth-scroll.js?v=3" defer></script>
         <script src="cookies.js?v=5" defer></script>
     </body>

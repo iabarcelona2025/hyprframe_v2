@@ -72,6 +72,19 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .node-pager__link--next .node-pager__arrow {
     clip-path: polygon(100% 50%, 0 0, 0 100%);
 }
+/* Difracción RGB en las flechas del paginador — el mismo efecto que los
+   titulares (.diffraction de styles.css), adaptado a la flecha: la flecha es
+   una forma clip-path y no texto, así que la penumbra la hace un par de
+   drop-shadows duros (sin difuminar) en los mismos colores y opacidad
+   (magenta/cian al 35%), con offset de 1px — el equivalente a los ±0.009em
+   de los titulares a escala de la flecha (15,5px). El filter va en el
+   enlace, padre del span: sobre el mismo elemento que el clip-path la
+   penumbra saldría de la forma sin recortar (y quedaría cortada); desde el
+   padre filtra la silueta triangular ya recortada. La sombra es de alfa,
+   así el hover lima no la altera, y viaja con el translateX del hover. */
+.node-pager__link {
+    filter: drop-shadow(-1px 0 0 rgba(255, 36, 95, 0.35)) drop-shadow(1px 0 0 rgba(0, 214, 255, 0.35));
+}
 @media (forced-colors: active) {
     .node-pager__arrow { background: ButtonText; }
 }
@@ -599,6 +612,30 @@ body.menu-open .menu-overlay a { visibility: visible; }
     opacity: 1; pointer-events: none; transition: opacity .6s ease;
 }
 .hf-entry-black.is-fading { opacity: 0; }
+/* Velo del paginador (generated.js): el salto entre páginas de Generated es
+   un fade rápido a negro y de vuelta (250ms), a diferencia de la llegada
+   desde la landing (600ms). El efecto no afecta al menu superior, al footer
+   ni al propio paginador (flechas + contador): el JS mide en el momento del
+   clic / la llegada y monta el velo con planchas que dejan libre su recta —
+   top bajo la cabecera (que varía con su estado scrolled), bottom en el
+   tope del footer si es visible, y hasta cuatro planchas alrededor del
+   paginador. z-index 1500: por debajo de las capas de transición del carril
+   (2000) y del reproductor en ventana (2100), que nunca coinciden con este
+   salto. */
+.hf-pager-veil {
+    position: fixed; inset: 0; z-index: 1500;
+    pointer-events: none; opacity: 0; transition: opacity .25s ease;
+}
+.hf-pager-veil.is-on { opacity: 1; }
+.hf-pager-veil__panel { position: absolute; background: #050505; }
+/* Estado antes de que generated.js mida las exclusiones: el script inline
+   (antes del primer pintado) pinta esta plancha negra única si la sesión
+   llega desde otra página de Generated, y generated.js la sustituye por las
+   planchas con hueco para menu, footer y paginador. */
+.hf-pager-veil--solid { background: #050505; }
+@media (prefers-reduced-motion: reduce) {
+    .hf-pager-veil { transition-duration: .01ms; }
+}
 @media (prefers-reduced-motion: reduce) {
     .work-transition, .work-transition::after, .hf-entry-black { transition-duration: .01ms; }
 }

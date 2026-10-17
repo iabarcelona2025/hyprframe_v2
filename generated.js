@@ -23,10 +23,37 @@
                 requestAnimationFrame(() => { root.style.scrollBehavior = previousBehavior; });
             }
         }
+        let pagerVeiled = false; // un solo salto en vuelo
         document.querySelectorAll(".node-pager a").forEach((link) => {
             link.addEventListener("click", (event) => {
                 if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                 sessionStorage.setItem(PAGER_SCROLL_KEY, String(window.scrollY));
+                // Fade out rápido antes del salto: el velo cubre todo el
+                // lienzo (también la cabecera) y la página se descarga ya
+                // en negro total. Con reduced-motion, corte directo sin velo.
+                if (reduced) return;
+                event.preventDefault();
+                if (pagerVeiled) return; // el primer salto ya está en vuelo
+                pagerVeiled = true;
+                try { sessionStorage.setItem("hfGeneratedPagerFade", "1"); } catch (_) { /* la llegada será normal */ }
+                const veil = document.createElement("div");
+                veil.className = "hf-pager-veil";
+                veil.setAttribute("aria-hidden", "true");
+                buildPagerVeil(veil); // sin menu superior, footer ni paginador
+                document.body.append(veil);
+                // rAF doble: pintar el velo en opacidad 0 antes de abrir la transición.
+                requestAnimationFrame(() => requestAnimationFrame(() => veil.classList.add("is-on")));
+                // Navegar en cuanto el velo esté a negro total (transitionend):
+                // el timer fijo anterior descargaba la página a medio fade y el
+                // salto terminaba en un gris, no en negro. El timeout es red.
+                let departed = false;
+                const depart = () => {
+                    if (departed) return;
+                    departed = true;
+                    window.location.assign(link.href);
+                };
+                veil.addEventListener("transitionend", depart);
+                setTimeout(depart, 450);
             });
         });
     } catch (_) { /* Storage disabled: standard link navigation still works. */ }
@@ -138,6 +165,83 @@
             }
         }
     } catch (_) { /* Storage can be disabled; preserve regular navigation. */ }
+
+    // Arma el velo del paginador con planchas que dejan libre lo que no debe
+    // oscurecerse: el menu superior (el velo arranca bajo la cabecera, a su
+    // altura real en ese instante), el footer (si es visible, el velo termina
+    // en su tope) y el propio paginador — flechas y contador: alrededor de su
+    // recta van hasta cuatro planchas (arriba, abajo, izquierda, derecha).
+    // Sin paginador a la vista, una sola plancha cubre todo el contenido.
+    function buildPagerVeil(veil) {
+        const W = window.innerWidth, H = window.innerHeight;
+        const r0 = header ? header.getBoundingClientRect().height : 0;
+        let r1 = H;
+        const footer = document.querySelector(".site-footer");
+        if (footer) {
+            const footerTop = footer.getBoundingClientRect().top;
+            if (footerTop > r0) r1 = footerTop;
+        }
+        const pager = document.querySelector(".node-pager");
+        const p = pager ? pager.getBoundingClientRect() : null;
+        const put = (left, top, width, height) => {
+            if (width > 0.5 && height > 0.5) {
+                const panel = document.createElement("div");
+                panel.className = "hf-pager-veil__panel";
+                panel.style.left = left + "px";
+                panel.style.top = top + "px";
+                panel.style.width = width + "px";
+                panel.style.height = height + "px";
+                veil.appendChild(panel);
+            }
+        };
+        if (p && p.bottom > r0 && p.top < r1) {
+            const aT = Math.max(p.top, r0), aB = Math.min(p.bottom, r1);
+            const aL = Math.max(p.left, 0), aR = Math.min(p.right, W);
+            put(0, r0, W, aT - r0);       // banda entre cabecera y paginador
+            put(0, aB, W, r1 - aB);       // bajo el paginador, hasta el footer
+            put(0, aT, aL, aB - aT);      // a la izquierda del paginador
+            put(aR, aT, W - aR, aB - aT); // a la derecha del paginador
+        } else {
+            put(0, r0, W, r1 - r0);       // plancha única
+        }
+    }
+
+    // Llegada por el paginador (desde otra página de Generated): el script
+    // inline (antes del primer pintado) ya pintó la plancha negra única si la
+    // sesión llega de otro proyecto (window.hfPagerArrive; el flag de la
+    // sesión lo consumió él) — eso es lo que elimina el flash del contenido
+    // nuevo y el salto de scroll. Aquí se reconstruye con las exclusiones
+    // (menu, footer, paginador) y se destapa en 250ms.
+    if (window.hfPagerArrive) {
+        delete window.hfPagerArrive;
+        if (reduced) {
+            const veil = document.querySelector(".hf-pager-veil");
+            if (veil) veil.remove(); // reduced-motion: corte directo, sin velo
+        } else {
+            let veil = document.querySelector(".hf-pager-veil");
+            if (!veil) {
+                // El inline no corrió: pintar aquí la plancha sólida, sin hueco.
+                veil = document.createElement("div");
+                veil.className = "hf-pager-veil hf-pager-veil--solid is-on";
+                veil.setAttribute("aria-hidden", "true");
+                document.body.append(veil);
+            } else {
+                veil.classList.remove("hf-pager-veil--solid");
+            }
+            buildPagerVeil(veil); // sin menu superior, footer ni paginador
+            // rAF doble: pintar el negro antes de empezar a destapar.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                veil.classList.remove("is-on");
+                setTimeout(() => veil.remove(), 320);
+            }));
+        }
+    }
+    // bfcache: si el navegador restaura la página tras el salto, retirar el
+    // velo que la salida dejó a medio fade.
+    addEventListener("pageshow", (event) => {
+        if (!event.persisted) return;
+        document.querySelectorAll(".hf-pager-veil").forEach((v) => v.remove());
+    });
 
     const play = document.getElementById("playFilm");
     const playerBox = play ? play.closest(".node-player") : null;
