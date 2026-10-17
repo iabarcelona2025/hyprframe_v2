@@ -693,6 +693,19 @@ em { font-style: normal; color: var(--violet); }
 .violet { color: var(--violet); }
 /* Cursiva para las palabras violeta de titulares (Montserrat carga ital 800). */
 .italic { font-style: italic; }
+/* Difracción RGB sutil en los bordes de los titulares blancos.
+   Split de canal anamórfico: penumbra rojo-magenta en el borde izquierdo
+   y cian en el derecho — mismos colores que la fringe TV de la sección
+   statement (#ff245f / #00d6ff). Las sombras se pintan bajo el glifo,
+   así solo asoma un hilo de color en el contorno. El offset en em escala
+   con la fuente: el efecto se mantiene igual de sutil en móvil y desktop.
+   Se aplica a todas las palabras de los titulares (blancas y violetas),
+   salvo acentos especiales (el × lima de HUMAN INTUITION × MACHINE SYNTHESIS). */
+.diffraction {
+    text-shadow:
+        -0.009em 0 0 rgba(255, 36, 95, 0.35),
+         0.009em 0 0 rgba(0, 214, 255, 0.35);
+}
 /* × de HUMAN INTUITION × MACHINE SYNTHESIS: giro CONTINUO hacia la derecha
    (sentido horario), en loop y sin retroceder nunca = movimiento de izquierda
    a derecha continuo, con la misma curva y el OVERSHOOT, ahora más rápido.
@@ -2284,7 +2297,7 @@ html:has(body.page-legal) { background: var(--bg-legal); }
 /* Aceptar (sólido, claro) y rechazar (fantasma, mismo cuerpo y misma altura):
    la decisión negativa no cuesta más que la positiva. */
 .cookie-accept { background: var(--fg); color: #0a0a0a; border-color: transparent; }
-.cookie-accept:hover { background: var(--lime); box-shadow: 0 0 24px rgba(163, 223, 2, 0.35); }
+.cookie-accept:hover { background: var(--lime); }
 .cookie-reject { background: transparent; color: var(--fg); border-color: rgba(239, 238, 233, 0.32); }
 .cookie-reject:hover { border-color: var(--fg); box-shadow: 0 0 24px rgba(239, 238, 233, 0.12); }
 
