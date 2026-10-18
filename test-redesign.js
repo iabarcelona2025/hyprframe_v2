@@ -290,6 +290,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     // trace retoma donde estaba en vez de soltar de golpe lo acumulado.
     check("hero code terminal pauses while the burger menu is open, with the same clock freeze as scrolling",
         /if \(document\.documentElement\.classList\.contains\("is-scrolling"\) \|\|\s*document\.body\.classList\.contains\("menu-open"\)\) \{\s*t0 \+= gap;\s*return;\s*\}/.test(js));
+    check("hero terminal caret stops blinking while the burger menu is open",
+        /body\.menu-open\s+\.log-caret\s*\{\s*animation-play-state:\s*paused;\s*\}/.test(css));
     // Y es un comportamiento de móvil/tablet porque el burger sólo se muestra
     // ahí: en escritorio está oculto, así que `menu-open` nunca llega a darse.
     check("the burger only exists at ≤1024px, so the pause can never trigger on desktop",
