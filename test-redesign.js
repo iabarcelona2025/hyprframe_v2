@@ -258,6 +258,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("menu link click closes menu", !doc.body.classList.contains("menu-open")
         && doc.body.style.overflow === ""
         && burger.getAttribute("aria-label") === "Open menu");
+    // 18/10/2026 — Con el menú burger abierto, la trama de código del hero se
+    // pausa igual que durante el scroll: la MISMA condición del bucle y el
+    // MISMO congelado del reloj (t0 += gap), de modo que al cerrar el menú el
+    // trace retoma donde estaba en vez de soltar de golpe lo acumulado.
+    check("hero code terminal pauses while the burger menu is open, with the same clock freeze as scrolling",
+        /if \(document\.documentElement\.classList\.contains\("is-scrolling"\) \|\|\s*document\.body\.classList\.contains\("menu-open"\)\) \{\s*t0 \+= gap;\s*return;\s*\}/.test(js));
+    // Y es un comportamiento de móvil/tablet porque el burger sólo se muestra
+    // ahí: en escritorio está oculto, así que `menu-open` nunca llega a darse.
+    check("the burger only exists at ≤1024px, so the pause can never trigger on desktop",
+        /\.burger\s*\{\s*display:\s*none/.test(css) &&
+        /@media \(max-width: 1024px\)\s*\{[\s\S]*?\.burger\s*\{\s*display:\s*block;\s*\}/.test(css));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");

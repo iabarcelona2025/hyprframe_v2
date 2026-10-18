@@ -71,7 +71,7 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
         assert.match(html, /styles\.css\?v=220/);
-        assert.match(html, /script\.js\?v=61/);
+        assert.match(html, /script\.js\?v=62/);
     }
 });
 
