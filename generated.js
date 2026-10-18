@@ -63,24 +63,19 @@
     const overlay = document.getElementById("menuOverlay");
     header.classList.add("scrolled");
 
-    function toggleMenu(open) {
+    function toggleMenu(open, restoreFocus = false) {
         document.body.classList.toggle("menu-open", open);
         burger.setAttribute("aria-expanded", String(open));
         burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         overlay.setAttribute("aria-hidden", String(!open));
         if (open) overlay.querySelector("a").focus();
-        else burger.focus();
+        else if (restoreFocus) burger.focus();
     }
     burger.addEventListener("click", () => toggleMenu(!document.body.classList.contains("menu-open")));
-    overlay.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
-        document.body.classList.remove("menu-open");
-        burger.setAttribute("aria-expanded", "false");
-        burger.setAttribute("aria-label", "Open menu");
-        overlay.setAttribute("aria-hidden", "true");
-    }));
+    overlay.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => toggleMenu(false)));
     addEventListener("keydown", (event) => {
         if (!document.body.classList.contains("menu-open")) return;
-        if (event.key === "Escape") toggleMenu(false);
+        if (event.key === "Escape") toggleMenu(false, true);
         // Trap keyboard focus inside the mobile navigation while it is open.
         if (event.key !== "Tab") return;
         const links = [...overlay.querySelectorAll("a")];
@@ -92,6 +87,15 @@
             event.preventDefault(); burger.focus();
         }
     });
+
+    // The burger disappears at the desktop breakpoint. Close its menu at the
+    // same boundary so the hidden overlay cannot keep body scroll locked.
+    const desktopMenu = window.matchMedia("(min-width: 1025px)");
+    function closeMenuOnDesktop(event) {
+        if (event.matches && document.body.classList.contains("menu-open")) toggleMenu(false);
+    }
+    if (desktopMenu.addEventListener) desktopMenu.addEventListener("change", closeMenuOnDesktop);
+    else if (desktopMenu.addListener) desktopMenu.addListener(closeMenuOnDesktop);
 
     /* ── On-demand player ─────────────────────────────────────
        The iframe is created only when the visitor presses play, and the opening
