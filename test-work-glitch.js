@@ -75,25 +75,3 @@ test('el glitch corta el número en franjas que se desplazan', () => {
     assert.match(css, /@keyframes work-num-jitter \{[\s\S]*?transform: translate\(-1px, 0\)/,
         'el número original tiembla, como una señal que se descuadra');
 });
-
-test('el fotograma se revela en bloques y ya no en cortinillas diagonales', () => {
-    const seccion = css.slice(css.indexOf('.work-row::after'));
-    assert.doesNotMatch(seccion, /repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\)/,
-        'las cortinillas diagonales quedan retiradas de la sección');
-    assert.match(seccion, /repeating-linear-gradient\(0deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/,
-        'el revelado son bloques horizontales de 32px');
-    assert.match(seccion, /repeating-linear-gradient\(0deg, #000 0 calc\(var\(--work-stripe\) \* 1\.7\), transparent calc\(var\(--work-stripe\) \* 1\.7\) 53px\)/,
-        'un segundo ritmo de 53px se cruza con el primero: el mosaico sale irregular');
-    assert.match(seccion, /transition: --work-stripe 0\.5s steps\(5, end\)/,
-        'y la apertura es a cinco saltos, no un deslizamiento');
-    assert.match(seccion, /repeating-linear-gradient\(0deg, rgba\(0, 0, 0, 0\.32\) 0 1px, transparent 1px 4px\)/,
-        'el fotograma lleva líneas de barrido encima');
-    assert.match(seccion, /animation: work-glitch-jitter 0\.44s steps\(2, end\) infinite/,
-        'y tiembla 1px mientras está abierto');
-    // El carril de escritorio usa el mismo mosaico que la lista vertical.
-    const carril = css.slice(css.indexOf('@media (min-width: 1025px)'));
-    assert.match(carril, /\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(0deg, rgba\(0, 0, 0, 0\.32\) 0 1px, transparent 1px 4px\)/,
-        'el carril también lleva las líneas de barrido');
-    assert.match(carril, /\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(0deg, #000 0 var\(--work-stripe\)/,
-        'y abre el fotograma con los mismos bloques');
-});

@@ -35,28 +35,18 @@ test('all ten rows grow 15% plus 30px after photo and gradient begin, then close
     assert.match(css, /\.work-row:hover, \.work-row:focus-visible\s*\{[^}]*transition-delay: 0\.3s, 0s, 0s;\s*padding-block: calc\(var\(--work-row-pad\) \+ \(2 \* var\(--work-row-pad\) \+ var\(--work-row-content-h\) \+ 1px\) \* 0\.075 \+ 22\.5px\)/);
     assert.match(css, /\.work-row::before\s*\{[^}]*inset: 0;/);
     assert.match(css, /\.work-row::after\s*\{[^}]*top: 0; right: 0; bottom: 0;/);
-    assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{[^}]*opacity: 1; transform: scale\(1\);/,
+    assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{ opacity: 1; transform: scale\(1\); \}/,
         'the thumbnail expands to fill the expanded row');
 });
 
-test('glitch blocks reveal the existing image on hover and keyboard focus', () => {
+test('diagonal slices reveal the existing image on hover and keyboard focus', () => {
     assert.match(script, /row\.style\.setProperty\("--img",/);
     assert.match(css, /@property --work-stripe\s*\{[^}]*syntax: "<length>"/);
     assert.match(css, /@supports \(mask-composite: intersect\)/);
-    assert.match(css, /repeating-linear-gradient\(0deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/,
-        'el fotograma se descubre en bloques horizontales, no en cortinillas diagonales');
-    assert.match(css, /repeating-linear-gradient\(0deg, #000 0 calc\(var\(--work-stripe\) \* 1\.7\), transparent calc\(var\(--work-stripe\) \* 1\.7\) 53px\)/,
-        'un segundo ritmo de bloques se cruza con el primero: barras de alturas dispares');
-    assert.doesNotMatch(css, /repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\)/,
-        'las cortinillas diagonales quedan retiradas');
+    assert.match(css, /repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/);
     assert.match(css, /mask-composite: intersect/);
     assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{ --work-stripe: 32px; \}/);
-    assert.match(css, /transition: --work-stripe 0\.5s steps\(5, end\)/,
-        'la apertura es a saltos, no un deslizamiento continuo');
-    assert.match(css, /repeating-linear-gradient\(0deg, rgba\(0, 0, 0, 0\.32\) 0 1px, transparent 1px 4px\)/,
-        'el fotograma lleva líneas de barrido encima: se lee como señal de vídeo');
-    assert.match(css, /@keyframes work-glitch-jitter\s*\{[\s\S]*?translate: 1px 0/,
-        'y el fotograma tiembla 1px, como una señal sucia');
+    assert.match(css, /transition: --work-stripe 0\.7s/);
 });
 
 test('3D entrance cascades on desktop and mobile, but respects reduced motion', () => {
@@ -80,7 +70,7 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=217/);
+        assert.match(html, /styles\.css\?v=216/);
         assert.match(html, /script\.js\?v=61/);
     }
 });
