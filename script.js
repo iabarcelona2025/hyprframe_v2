@@ -1839,6 +1839,8 @@
     /* ── 10. Fullscreen menu ──────────────────────────────── */
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
+    const heroVideo = document.querySelector(".hero-video");
+    let resumeHeroVideo = false;
 
     function toggleMenu(force) {
         const open = force !== undefined ? force : !document.body.classList.contains("menu-open");
@@ -1846,7 +1848,15 @@
         burger.setAttribute("aria-expanded", String(open));
         burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         overlay.setAttribute("aria-hidden", String(!open));
-        document.body.style.overflow = open ? "hidden" : "";
+        if (heroVideo) {
+            if (open) {
+                resumeHeroVideo = !heroVideo.paused;
+                if (resumeHeroVideo) heroVideo.pause();
+            } else if (resumeHeroVideo) {
+                resumeHeroVideo = false;
+                heroVideo.play().catch(() => {});
+            }
+        }
     }
     burger.addEventListener("click", () => toggleMenu());
     overlay.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => toggleMenu(false)));

@@ -288,11 +288,18 @@ body.menu-open .burger span:nth-child(3) { transform: translate(0px, 0.5px); }
    control above the fullscreen overlay so the triangle animation stays visible
    and the button remains clickable while the menu is open. */
 body.menu-open .site-header { z-index: 900; }
-body.menu-open { overflow: hidden; }
+/* The viewport scroll container is <html> (overflow-x: clip on the root), not
+   body. Lock the actual scroller while the mobile menu is open. */
+html:has(body.menu-open) { overflow: hidden; }
+/* Reserve the scrollbar track only on pages that actually have this menu. */
+html:has(.menu-overlay) { scrollbar-gutter: stable; }
+body.menu-open .hero-video { animation-play-state: paused; }
 
 /* ── Fullscreen menu ─────────────────────────────────────── */
 .menu-overlay {
     position: fixed; inset: 0; z-index: 850;
+    /* Keep the backdrop on a stable compositor layer while its clip animates. */
+    transform: translateZ(0);
     background: rgba(5, 5, 5, 0.65);
     /* El velo se difumina al abrir el menú: la plancha cerrada arranca en
        blur(0) y sube a blur(14px) en 0,12 s. Así el desenfoque ya está

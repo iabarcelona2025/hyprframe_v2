@@ -320,6 +320,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
     check("the overlay blur is already in place before the first menu link starts entering",
         /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
+    check("menu overlay is promoted to a stable compositor layer", /\.menu-overlay\s*\{[^}]*transform:\s*translateZ\(0\)/.test(css));
+    check("menu locks the root viewport scroller rather than body", /html:has\(body\.menu-open\)\s*\{\s*overflow:\s*hidden;\s*\}/.test(css) && !/body\.menu-open\s*\{\s*overflow:\s*hidden/.test(css));
+    check("pages with a menu reserve scrollbar gutter without affecting 404", /html:has\(\.menu-overlay\)\s*\{\s*scrollbar-gutter:\s*stable;\s*\}/.test(css) && !fs.readFileSync(path.join(__dirname, "404.html"), "utf8").includes("menuOverlay"));
+    check("hero video pauses while hidden by the menu and resumes only if it was playing", /body\.menu-open \.hero-video\s*\{\s*animation-play-state:\s*paused;\s*\}/.test(css) && /resumeHeroVideo = !heroVideo\.paused/.test(js) && /if \(resumeHeroVideo\) heroVideo\.pause\(\)/.test(js) && /heroVideo\.play\(\)\.catch/.test(js));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");
