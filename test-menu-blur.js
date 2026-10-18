@@ -1,9 +1,6 @@
-/* Regresión del menú burger: la plancha del overlay se difumina al abrir
-   (blur(0) → blur(14px) en 0,12 s) y ese velo ya está puesto cuando empieza
-   a entrar el primer enlace (transition-delay 0,15 s). La apertura circular
-   de clip-path se conserva en 0,8 s y ni el vídeo, ni el terminal, ni los
-   puntos verdes, ni el selector ES/EN, ni la animación del contenido del
-   menú cambian. */
+/* Regresión del menú burger: el overlay conserva el blur y la apertura circular,
+   se rasteriza en un layer propio, bloquea el scroll raíz y pausa/reanuda el
+   vídeo del hero únicamente mientras está cubierto. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -119,15 +116,26 @@ test('la apertura circular de clip-path se conserva en 0,8 s', () => {
         /clip-path:\s*circle\(150% at calc\(100% - 3rem\) 2\.5rem\)/);
 });
 
-test('el vídeo del hero no se toca', () => {
+test('el vídeo del hero conserva su animación y sólo se pausa mientras el menú lo tapa', () => {
     const video = regla('.hero-video');
     assert.match(video, /opacity:\s*0\.58/);
     assert.match(video, /animation:\s*heroBreath 18s ease-in-out infinite alternate/);
+    assert.match(regla('body.menu-open .hero-video'), /animation-play-state:\s*paused/);
+    const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+    assert.match(js, /resumeHeroVideo = !heroVideo\.paused/);
+    assert.match(js, /if \(resumeHeroVideo\) heroVideo\.pause\(\)/);
+    assert.match(js, /heroVideo\.play\(\)\.catch/);
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
         assert.match(html, /<video class="hero-video" autoplay muted loop playsinline/,
             `${page} sigue con su vídeo`);
     }
+});
+
+test('el overlay permanece en su propio compositor layer y el scroll raíz se bloquea', () => {
+    assert.match(regla('.menu-overlay'), /transform:\s*translateZ\(0\)/);
+    assert.match(regla('html:has(body.menu-open)'), /overflow:\s*hidden/);
+    assert.match(regla('html:has(.menu-overlay)'), /scrollbar-gutter:\s*stable/);
 });
 
 test('el terminal del hero no se toca', () => {
@@ -183,8 +191,8 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=225/, `${page} debe pedir styles.css?v=225`);
-        assert.doesNotMatch(html, /styles\.css\?v=224/, `${page} no puede quedarse en la versión vieja`);
+        assert.match(html, /styles\.css\?v=226/, `${page} debe pedir styles.css?v=225`);
+        assert.doesNotMatch(html, /styles\.css\?v=225/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
     assert.equal(fs.realpathSync(path.join(root, 'es/styles.css')),
@@ -196,7 +204,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!225)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!226)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });
