@@ -311,7 +311,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("burger menu items sit 7px further apart, in all three clamp tramos",
         /\.menu-links\s*\{\s*gap:\s*clamp\(calc\(1rem \+ 7px\), calc\(2\.5vw \+ 7px\), calc\(1\.85rem \+ 7px\)\);\s*\}/.test(burgerBlock) &&
         /\.menu-links \{ display: flex; flex-direction: column; gap: clamp\(0\.7rem, 1\.8vw, 1\.2rem\); \}/.test(css));
-    // 18/10/2026 — Menú burger: la plancha del overlay se difumina al abrir
+    // 19/10/2026 — Fix parpadeo: velo en propio layer (translateZ), html:has para scroll y gutter, vídeo pausado
+    // Causa: visibility hidden→visible remuestrea fondo con backdrop-filter + 8 capas mix-blend-mode por tiles mientras clip-path anima;
+    // html es scroller (overflow-x:clip) así que body overflow no bloqueaba. Fix verificado por test-menu-blur.
+    // 18/10/2026 — Menú burger: la plancha del overlay se difumina al abrir (blur 0→14px 0,12s)
     // (blur(0) → blur(14px) en 0,12 s) para que el velo ya esté puesto cuando
     // empieza a entrar el primer enlace (transition-delay 0,15 s). La apertura
     // circular de clip-path no se toca: sigue siendo de 0,8 s.
@@ -320,6 +323,23 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
     check("the overlay blur is already in place before the first menu link starts entering",
         /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
+    // 19/10/2026 — Fix del parpadeo: velo en su propio layer, scroll bloqueado en html y vídeo pausado
+    check("burger overlay paints in its own layer and keeps clip+blur together",
+        /\.menu-overlay\s*\{[^}]*transform:\s*translateZ\(0\)/.test(css) &&
+        /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(0\)[^}]*clip-path:\s*circle\(0%/.test(css));
+    check("html locks scroll, not body, and gutter stays stable",
+        /html:has\(body\.menu-open\)\s*\{\s*overflow:\s*hidden;/.test(css) &&
+        /html:has\(\.menu-overlay\)\s*\{\s*scrollbar-gutter:\s*stable;/.test(css) &&
+        !/body\.menu-open\s*\{[^}]*overflow:\s*hidden;/.test(css));
+    check("hero video pauses while menu is open (CSS + JS)",
+        /body\.menu-open \.hero-video\s*\{[^}]*animation-play-state:\s*paused;/.test(css) &&
+        /const heroVideo = document\.querySelector\("\.hero-video"\)/.test(js) &&
+        /heroVideo\.pause\(\)/.test(js) && /heroVideo\.play\(\)/.test(js));
+    // Verificación extra: el blur sigue nítido 1.0 porque clip y backdrop están en mismo elemento
+    // Si clip está en ancestro, crea Backdrop Root y blur falla (ver handoff callejón #2)
+    check("overlay clip and blur share same element for sharpness", /\.menu-overlay[^}]*backdrop-filter:[^}]*clip-path/.test(css) && !/\.menu-overlay-wrapper/.test(css));
+    check("hero video resumes only if it was playing",
+        /_wasPlaying/.test(js) && /!heroVideo\.paused/.test(js));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");

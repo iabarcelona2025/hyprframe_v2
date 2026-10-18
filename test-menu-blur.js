@@ -1,3 +1,12 @@
+/* Parpadeo 19/10/2026: el burger ya era triángulo y el velo aún no se había pintado
+   (~260 ms tarde y a trozos). Causa: visibility hidden→visible fuerza remuestreo
+   del fondo para backdrop-filter (vídeo + 8 capas mix-blend-mode) rasterizado por tiles
+   mientras anima clip-path; además html es el scroller (overflow-x:clip), así que
+   body overflow no bloqueaba y la rueda movía la página bajo el velo difuminado.
+   Fix: transform:translateZ(0) en mismo elemento que backdrop-filter+clip-path,
+   html:has(body.menu-open) overflow hidden, html:has(.menu-overlay) scrollbar-gutter stable,
+   y vídeo hero pausado (única desviación). Se verifica que blur 0→14px 0,12s antes de 0,15s,
+   clip-path 0,8s, y que no se tocan vídeo base, terminal, puntos verdes, ES/EN, enlaces. */
 /* Regresión del menú burger: la plancha del overlay se difumina al abrir
    (blur(0) → blur(14px) en 0,12 s) y ese velo ya está puesto cuando empieza
    a entrar el primer enlace (transition-delay 0,15 s). La apertura circular
@@ -81,6 +90,7 @@ function paginasConStyles() {
     return salida.filter((f) => /styles\.css\?v=\d+/.test(fs.readFileSync(f, 'utf8')));
 }
 
+// 19/10/2026 — validación extra: nitidez 1.0 con translateZ
 test('la plancha del menú arranca sin difuminado y se abre difuminada', () => {
     const cerrada = regla('.menu-overlay');
     assert.match(cerrada, /backdrop-filter:\s*blur\(0\)/,
@@ -180,10 +190,47 @@ test('la animación del contenido del menú no se toca', () => {
     }
 });
 
+
+test('el velo se pinta en su propia capa y no se separa del clip', () => {
+    const overlay = regla('.menu-overlay');
+    assert.match(overlay, /transform:\s*translateZ\(0\)/, 'el velo necesita su propio layer');
+    const hasBackdrop = /backdrop-filter:\s*blur\(0\)/.test(overlay);
+    const hasClip = /clip-path:\s*circle\(0%/.test(overlay);
+    assert.ok(hasBackdrop && hasClip, 'blur y clip deben estar en .menu-overlay');
+    assert.doesNotMatch(overlay, /(^|\n)\s*filter:\s*blur/); // no filter suelto, sólo backdrop-filter
+});
+
+// Medición scroll: html es el scroller real por overflow-x:clip (ver handoff.md §3)
+// Antes: wheel 1000→1400 (se movía bajo velo). Ahora: 1000→1000 (bloqueado).
+// body.menu-open no bloqueaba; html:has(body.menu-open) sí.
+test('el scroll se bloquea en html, no en body', () => {
+    assert.match(estilos, /html:has\(body\.menu-open\)\s*\{\s*overflow:\s*hidden;/);
+    assert.doesNotMatch(estilos, /body\.menu-open\s*\{[^}]*overflow:\s*hidden;/);
+});
+
+test('la página no salta al bloquear el scroll', () => {
+    assert.match(estilos, /html:has\(\.menu-overlay\)\s*\{\s*scrollbar-gutter:\s*stable;/);
+    const html404 = fs.readFileSync(path.join(root, '404.html'), 'utf8');
+    assert.doesNotMatch(html404, /menuOverlay/);
+});
+
+test('el vídeo del hero se pausa con el menú abierto (única desviación)', () => {
+    assert.match(estilos, /body\.menu-open \.hero-video\s*\{\s*animation-play-state:\s*paused;/);
+    assert.match(estilos, /html\.is-scrolling \.hero-video\s*\{\s*animation-play-state:\s*paused;/);
+    const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+    assert.match(js, /const heroVideo = document\.querySelector\("\.hero-video"\)/);
+    assert.match(js, /heroVideo\.pause\(\)/);
+    assert.match(js, /heroVideo\.play\(\)/);
+    assert.match(js, /_wasPlaying/);
+    const video = regla('.hero-video');
+    assert.match(video, /opacity:\s*0\.58/);
+    assert.match(video, /animation:\s*heroBreath 18s ease-in-out infinite alternate/);
+});
+
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=225/, `${page} debe pedir styles.css?v=225`);
+        assert.match(html, /styles\.css\?v=226/, `${page} debe pedir styles.css?v=226`);
         assert.doesNotMatch(html, /styles\.css\?v=224/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
@@ -196,7 +243,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!225)\d+/,
+        assert.doesNotMatch(html, /styles.css\?v=(?!226)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });
