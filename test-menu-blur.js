@@ -115,21 +115,24 @@ test('el desenfoque está puesto antes de que entre el primer enlace', () => {
     assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
 });
 
-test('el velo se cierra con la misma apertura circular, no de golpe', () => {
-    // Cerrado, la plancha aguanta visible los 0,8 s que tarda el círculo en
-    // replegarse; sin ese retardo el clip-path de cierre nunca se veía.
+test('el velo se recoge de golpe, sin repliegue circular', () => {
+    // 19/10/2026: se probó a retrasar `visibility` los 0,8 s del clip-path para
+    // que el cierre copiara la apertura en círculo. No gustó el gesto y se
+    // descartó. Se fija aquí para que nadie lo "arregle" otra vez.
     const cerrada = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
-    const vis = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(cerrada);
-    assert.ok(vis, 'la plancha cerrada retrasa su visibility');
-    assert.equal(segundos(vis[1]), 0.8, 'lo justo: el tiempo del clip-path');
-    // Al abrir no puede haber retardo, o el menú tardaría 0,8 s en aparecer.
-    const abierta = /transition:\s*([^;]+);/.exec(regla('body.menu-open .menu-overlay'))[1];
-    const visOpen = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(abierta);
-    assert.ok(visOpen, 'el estado abierto declara su propia transición');
-    assert.equal(segundos(visOpen[1]), 0, 'y sin retardo: se ve en el frame 1');
-    // Y mientras se retira no intercepta toques: sigue tapando la pantalla.
-    assert.match(regla('.menu-overlay'), /pointer-events:\s*none/);
-    assert.match(regla('body.menu-open .menu-overlay'), /pointer-events:\s*auto/);
+    assert.doesNotMatch(cerrada, /visibility/,
+        'la plancha no puede transicionar su visibility al cerrarse');
+    assert.doesNotMatch(cerrada, /[0-9]*\.?[0-9]+s\s+[0-9]*\.?[0-9]+s/,
+        'y tampoco llevar ningún retardo dentro del shorthand');
+    assert.match(regla('.menu-overlay'), /visibility:\s*hidden/);
+    assert.match(regla('body.menu-open .menu-overlay'), /visibility:\s*visible/);
+    // El estado abierto no declara transición propia: hereda la única que hay.
+    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /transition/);
+    // Con `visibility: hidden` la capa ya no intercepta toques al cerrarse.
+    assert.doesNotMatch(regla('.menu-overlay'), /pointer-events/);
+    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /pointer-events/);
+    // Y cerrado no queda ningún filtro vivo detrás de la capa oculta.
+    assert.match(regla('.menu-overlay'), /backdrop-filter:\s*none/);
 });
 
 test('la apertura circular de clip-path se conserva en 0,8 s', () => {
@@ -239,8 +242,8 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=227/, `${page} debe pedir styles.css?v=227`);
-        assert.doesNotMatch(html, /styles\.css\?v=226/, `${page} no puede quedarse en la versión vieja`);
+        assert.match(html, /styles\.css\?v=228/, `${page} debe pedir styles.css?v=228`);
+        assert.doesNotMatch(html, /styles\.css\?v=227/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
     assert.equal(fs.realpathSync(path.join(root, 'es/styles.css')),
@@ -252,7 +255,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!227)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!228)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });

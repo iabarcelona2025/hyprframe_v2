@@ -317,28 +317,23 @@ body.menu-open .hero-video { animation-play-state: paused; }
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
-    /* El retardo de 0,8 s va SOLO en `visibility`, y solo aquí (estado
-       cerrado), que es el estado de llegada al cerrar: la plancha aguanta
-       visible el tiempo justo de completar el círculo que se cierra, en vez de
-       desaparecer de golpe como hasta ahora. Al abrir, manda la transición de
-       la regla abierta, que no lleva retardo, así que el menú se ve ya.
-       Como `visibility` no se interpola de forma continua, el truco es
-       `0.8s` de retardo con duración 0 s. */
-    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0.8s;
+    transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
     padding: 4.5rem var(--pad) 8rem;
+    /* El cierre es INSTANTÁNEO a propósito (19/10/2026). Se probó a retrasar
+       esta `visibility` los mismos 0,8 s del clip-path para que la plancha se
+       replegara en círculo igual que abre —el gesto no convence—, y se
+       descartó: la transición de arriba no lleva `visibility`, así que al
+       quitar `menu-open` la capa deja de pintarse en el primer frame. Y con
+       `visibility: hidden` tampoco intercepta toques, no hace falta añadir
+       `pointer-events`. */
     visibility: hidden;
-    /* Y mientras se retira no puede interceptar toques: sigue ocupando la
-       pantalla entera esos 0,8 s. */
-    pointer-events: none;
 }
 body.menu-open .menu-overlay {
     clip-path: circle(150% at calc(100% - 3rem) 2.5rem);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     visibility: visible;
-    pointer-events: auto;
-    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0s;
 }
 .menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
 .menu-links a {
