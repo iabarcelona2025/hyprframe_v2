@@ -311,6 +311,15 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("burger menu items sit 7px further apart, in all three clamp tramos",
         /\.menu-links\s*\{\s*gap:\s*clamp\(calc\(1rem \+ 7px\), calc\(2\.5vw \+ 7px\), calc\(1\.85rem \+ 7px\)\);\s*\}/.test(burgerBlock) &&
         /\.menu-links \{ display: flex; flex-direction: column; gap: clamp\(0\.7rem, 1\.8vw, 1\.2rem\); \}/.test(css));
+    // 18/10/2026 — Menú burger: la plancha del overlay se difumina al abrir
+    // (blur(0) → blur(14px) en 0,12 s) para que el velo ya esté puesto cuando
+    // empieza a entrar el primer enlace (transition-delay 0,15 s). La apertura
+    // circular de clip-path no se toca: sigue siendo de 0,8 s.
+    check("burger menu overlay ramps its blur from 0 to 14px in 0.12s, keeping the 0.8s circular opening",
+        /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(0\)[^}]*transition:\s*clip-path 0\.8s var\(--ease-out\), backdrop-filter 0\.12s var\(--ease-out\)/.test(css) &&
+        /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
+    check("the overlay blur is already in place before the first menu link starts entering",
+        /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");

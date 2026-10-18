@@ -294,16 +294,23 @@ body.menu-open { overflow: hidden; }
 .menu-overlay {
     position: fixed; inset: 0; z-index: 850;
     background: rgba(5, 5, 5, 0.65);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    /* El velo se difumina al abrir el menú: la plancha cerrada arranca en
+       blur(0) y sube a blur(14px) en 0,12 s. Así el desenfoque ya está
+       puesto cuando empieza a entrar el primer enlace, cuyo
+       transition-delay es 0,15 s (el difuminado acaba antes, a los 0,12 s).
+       La apertura circular de clip-path no se toca: sigue siendo de 0,8 s. */
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
-    transition: clip-path 0.8s var(--ease-out);
+    transition: clip-path 0.8s var(--ease-out), backdrop-filter 0.12s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
     padding: 4.5rem var(--pad) 8rem;
     visibility: hidden;
 }
 body.menu-open .menu-overlay {
     clip-path: circle(150% at calc(100% - 3rem) 2.5rem);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     visibility: visible;
 }
 .menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
