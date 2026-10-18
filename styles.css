@@ -1093,8 +1093,73 @@ section { position: relative; }
     font-family: var(--font-mono); font-size: 0.75rem;
     letter-spacing: 0.2em; color: var(--muted);
     transition: color 0.4s;
+    position: relative;   /* ancla de las copias del glitch (::before/::after) */
 }
 .work-row:hover .work-num { color: var(--violet); }
+.work-row:focus-visible .work-num { color: var(--violet); }
+
+/* ── Glitch digital en los números de WORK (solo escritorio) ──
+   Al pasar el cursor por un proyecto, el número se pone lila (regla de
+   arriba) y, a la vez, se rompe como una señal de vídeo degradada: el
+   número original recibe un corte cromático (rojo/cian, el mismo del
+   filtro statement-tv-fringe) y dos copias sueltas (::before en lima,
+   ::after en cian) se desplazan lateralmente mostrando cada una una
+   franja distinta del número, como un bloque descuadrado.
+   Sólo en escritorio (≥1025px, que es donde la sección se convierte en el
+   carril horizontal de proyectos) y sólo con puntero fino: por debajo la
+   lista es vertical y en táctil no hay hover, así que el efecto no se vería
+   nunca. Con prefers-reduced-motion el número se queda lila, sin romperse:
+   el glitch es movimiento puro, y ahí no se mueve nada. */
+@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .work-num::before,
+    .work-num::after {
+        content: attr(data-num);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s linear;
+    }
+    .work-row:hover .work-num,
+    .work-row:focus-visible .work-num {
+        text-shadow:
+            -0.08em 0 0 rgba(255, 36, 95, 0.55),
+             0.08em 0 0 rgba(0, 214, 255, 0.55);
+        animation: work-num-jitter 0.26s steps(2, end) infinite;
+    }
+    .work-row:hover .work-num::before,
+    .work-row:focus-visible .work-num::before {
+        color: var(--lime);
+        opacity: 0.8;
+        animation: work-num-glitch-a 0.36s steps(3, end) infinite;
+    }
+    .work-row:hover .work-num::after,
+    .work-row:focus-visible .work-num::after {
+        color: #00d6ff;
+        opacity: 0.8;
+        animation: work-num-glitch-b 0.36s steps(3, end) infinite;
+    }
+}
+/* Franjas del glitch: cada copia enseña una banda distinta del número y la
+   desplaza lateralmente, como un bloque de vídeo descuadrado. */
+@keyframes work-num-glitch-a {
+    0%   { transform: translate(0, 0);    clip-path: inset(10% 0 60% 0); }
+    33%  { transform: translate(-3px, 0); clip-path: inset(42% 0 30% 0); }
+    66%  { transform: translate(2px, 0);  clip-path: inset(72% 0 5% 0); }
+    100% { transform: translate(0, 0);    clip-path: inset(10% 0 60% 0); }
+}
+@keyframes work-num-glitch-b {
+    0%   { transform: translate(0, 0);    clip-path: inset(44% 0 32% 0); }
+    33%  { transform: translate(3px, 0);  clip-path: inset(70% 0 8% 0); }
+    66%  { transform: translate(-2px, 0); clip-path: inset(8% 0 58% 0); }
+    100% { transform: translate(0, 0);    clip-path: inset(44% 0 32% 0); }
+}
+@keyframes work-num-jitter {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(-1px, 0); }
+}
 .work-title {
     /* Ajuste pedido por el cliente (24/09/2026): bajada fuerte de tamaño.
        Escala completa más pequeña (antes 70.4px en desktop y 30.4px en móvil):
