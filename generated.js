@@ -194,9 +194,14 @@
                 veil.appendChild(panel);
             }
         };
+        // The arrows move 0.3rem outward on hover. The pager's layout rect
+        // excludes that transform and its RGB shadow, so reserve their full
+        // animation extent (not just their position at the instant of click).
+        const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        const arrowBleed = 0.3 * rootSize + 3;
         if (p && p.bottom > r0 && p.top < r1) {
-            const aT = Math.max(p.top, r0), aB = Math.min(p.bottom, r1);
-            const aL = Math.max(p.left, 0), aR = Math.min(p.right, W);
+            const aT = Math.max(p.top - 3, r0), aB = Math.min(p.bottom + 3, r1);
+            const aL = Math.max(p.left - arrowBleed, 0), aR = Math.min(p.right + arrowBleed, W);
             put(0, r0, W, aT - r0);       // banda entre cabecera y paginador
             put(0, aB, W, r1 - aB);       // bajo el paginador, hasta el footer
             put(0, aT, aL, aB - aT);      // a la izquierda del paginador

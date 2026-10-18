@@ -735,3 +735,42 @@ body.menu-open .menu-overlay a { visibility: visible; }
     }
     .node-player.is-playing > .node-player__synopsis { opacity: 1; }
 }
+
+/* Desktop opener: budget header, pager and footer before sizing the 16:9
+   player. Container units keep the title/synopsis proportional to the actual
+   video width, including short laptop and ultrawide windows. Mobile retains
+   its existing layout. Do not hide overflow on the document: zoomed content
+   and unusually small windows must remain accessible. */
+@media (min-width: 561px) {
+    body { min-height: 100svh; display: flex; flex-direction: column; }
+    main { flex: 0 0 auto; }
+    .node-hero { padding-top: 109px; }
+    .node-hero__meta-row { padding-bottom: 36px; }
+    .node-hero__image { display: none; }
+    .node-film { margin-top: 0; padding-top: 0; }
+    .node-player:not(.is-windowed) {
+        width: min(85.5%, calc((100svh - 214px) * 16 / 9));
+        container-type: inline-size;
+    }
+    .node-player > .node-hero__title {
+        top: 23px;
+    }
+    .node-player h1 {
+        font-size: clamp(12px, 3.3cqw, 36px);
+    }
+    .node-player > .node-hero__title h1,
+    .node-player__synopsis {
+        padding-left: clamp(16px, 2.8cqw, 36px);
+    }
+    .node-player__synopsis {
+        top: calc(16px + 1.8rem + 13px + 0.8 * clamp(12px, 3.3cqw, 36px));
+        font-size: clamp(10px, 1.55cqw, 18px);
+        line-height: 1.35;
+        --plate-step: calc(1.1rem + 0.8 * clamp(12px, 3.3cqw, 36px) + 13px);
+    }
+    .node-player__synopsis::after {
+        top: calc(-1 * (1.8rem + 13px + 0.8 * clamp(12px, 3.3cqw, 36px)));
+    }
+    .site-footer { margin-top: auto; padding-top: 8px; padding-bottom: 8px; }
+    .site-footer .footer-row { margin-top: 0; padding-top: 8px; }
+}
