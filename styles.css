@@ -660,6 +660,7 @@ body.loaded .hero-sub {
     mix-blend-mode: screen;
     animation: logCaret 1.1s steps(1, end) infinite;
 }
+body.menu-open .log-caret { animation-play-state: paused; }
 @keyframes logCaret { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
 /* Móvil: el bloque del hero (kicker + título + sub) se sube entero para
