@@ -298,9 +298,9 @@ body.menu-open .hero-video { animation-play-state: paused; }
 /* ── Fullscreen menu ─────────────────────────────────────── */
 /* El velo NO anima el radio del desenfoque (18/10/2026). Subir blur(0) →
    blur(14px) obligaba al compositor a remuestrear el fondo difuminado de TODA
-   la pantalla en cada frame, a la vez que el clip-path —entonces un círculo—
-   se estaba recortando: en móvil eso se traducía en que los seis apartados
-   entraban a saltos (parpadeaban). Es exactamente el motivo por el que el 30/09/2026 se
+   la pantalla en cada frame, a la vez que el clip-path circular se estaba
+   recortando: en móvil eso se traducía en que los seis apartados entraban a
+   saltos (parpadeaban). Es exactamente el motivo por el que el 30/09/2026 se
    sacó el `backdrop-filter` de la transición de la cabecera —ver § Header—; la
    diferencia es que allí la franja mide 60 px y aquí mide la ventana entera.
    El desenfoque queda FIJADO en 14px: ya está puesto desde el primer frame,
@@ -316,75 +316,24 @@ body.menu-open .hero-video { animation-play-state: paused; }
     background: rgba(5, 5, 5, 0.65);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    /* ── Geometría del despliegue: la plancha nace del burger (19/10/2026) ──
-       Nada de círculo ni de cortinilla. Al pulsar, las tres líneas del icono se
-       montan en un triángulo (dos giros de ±60° y la base horizontal: ver el
-       bloque de `.burger span` arriba); la plancha arranca EXACTAMENTE en ese
-       triángulo y se despliega desde él, con el frente de canto recto y
-       irregular —los seis vértices salen de los tres lados y de sus puntos
-       medios y cada uno se va por su lado, así que la silueta no es una figura
-       que crece uniforme, es un abanico de rectas que rompe del botón—.
-       Los seis vértices del estado cerrado son el triángulo del icono, medido
-       desde su centroide: ápice (0,-15), base (±13,+7,5) y los puntos medios de
-       sus tres lados (±6,5,-3,75) y (0,+7,5), en px sobre la ancla --menu-bx
-       (x) y 2.5rem (y) — la misma esquina desde la que se abría el círculo, para
-       que el gesto siga anclado al botón.
-       --menu-bx es el centro EXACTO del icono: el burger mide 34px y es el último
-       hijo de .header-meta, así que cae a 17px del canto derecho del padding de
-       la cabecera — que es --pad en las tres variantes de la barra (reposo,
-       .scrolled y el 0.8rem fijo de generated.css), así que el ancla es exacta en
-       las 28 páginas. Las 3rem con las que se conformaba el círculo se van hasta
-       11px a la izquierda del botón en un móvil de 390px: con un germen de
-       26px, se notaba que la plancha no nacía de las tres líneas. La y se queda en 2.5rem, que es el punto
-       medio entre el centro del icono en reposo (43px) y con la cabecera recogida
-       (36px): a medio camino de los dos, y el scroll está bloqueado mientras el
-       menú está abierto, así que no cambia a mitad de gesto.
-       Los seis del estado abierto caen SIEMPRE fuera de la ventana (±60% / 160%
-       sobre las cuatro rectas prolongadas del borde): si alguno se colara dentro
-       quedaría un canto de la pantalla sin velo y los enlaces, que se recortan
-       con la plancha, se comerían el borde. En orden horario en los dos estados
-       y con el mismo número de vértices, que es lo que permite interpolar: con
-       distinto conteo el navegador no interpola y el clip salta.
-       El repliegue es la misma película al revés: la plancha se recoloca en el
-       triángulo del icono. */
-    --menu-bx: calc(100% - var(--pad) - 17px);
-    clip-path: polygon(
-        var(--menu-bx)                    calc(2.5rem - 15px),    /* ápice            → arriba-izq.  */
-        calc(var(--menu-bx) + 6.5px)      calc(2.5rem - 3.75px),  /* lado der. (pend.)  → arriba-der.  */
-        calc(var(--menu-bx) + 13px)       calc(2.5rem + 7.5px),   /* esq. der. de base  → abajo-der.   */
-        var(--menu-bx)                    calc(2.5rem + 7.5px),   /* mitad de la base   → abajo        */
-        calc(var(--menu-bx) - 13px)       calc(2.5rem + 7.5px),   /* esq. izq. de base  → abajo-izq.   */
-        calc(var(--menu-bx) - 6.5px)      calc(2.5rem - 3.75px)   /* lado izq. (pend.)  → media izq.   */
-    );
-    /* El retardo de 0,8 s va SOLO en `visibility` y SOLO en este estado cerrado,
-       que es el estado de llegada al cerrar: la plancha aguanta visible el
-       tiempo justo de replegarse en el triángulo del icono. Al abrir manda la
-       transición de la regla abierta, que no lleva retardo, así que el menú se
-       ve en el primer frame. Como `visibility` no interpola de forma continua,
-       el truco es duración 0 s + retardo 0,8 s. */
-    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0.8s;
+    clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
+    transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
     padding: 4.5rem var(--pad) 8rem;
+    /* El cierre es INSTANTÁNEO a propósito (19/10/2026). Se probó a retrasar
+       esta `visibility` los mismos 0,8 s del clip-path para que la plancha se
+       replegara en círculo igual que abre —el gesto no convence—, y se
+       descartó: la transición de arriba no lleva `visibility`, así que al
+       quitar `menu-open` la capa deja de pintarse en el primer frame. Y con
+       `visibility: hidden` tampoco intercepta toques, no hace falta añadir
+       `pointer-events`. */
     visibility: hidden;
-    /* Y mientras se recoge no puede interceptar toques: aguanta visible esos
-       0,8 s tapando la pantalla entera, pero la página de debajo vuelve a estar
-       viva en el instante del cierre. */
-    pointer-events: none;
 }
 body.menu-open .menu-overlay {
-    clip-path: polygon(
-        -60%  -60%,   /* → la recta superior, desbordando la ventana a la izquierda */
-        160%  -60%,   /* → la misma recta superior, desbordando a la derecha        */
-        160%  160%,   /* → el canto derecho, ya en la esquina inferior              */
-        60%   160%,   /* → la recta inferior, desplazado a la derecha del centro    */
-        -60%  160%,   /* → la recta inferior, por la izquierda                      */
-        -60%  60%     /* → el canto izquierdo, a media altura                       */
-    );
+    clip-path: circle(150% at calc(100% - 3rem) 2.5rem);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     visibility: visible;
-    pointer-events: auto;
-    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0s;
 }
 .menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
 .menu-links a {

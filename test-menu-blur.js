@@ -1,9 +1,6 @@
-/* Regresión del menú burger: el overlay se despliega y se recoge desde el
-   triángulo que forman las tres líneas del burger —polígono de seis vértices de
-   canto recto, ni círculo ni cortinilla—, llega difuminado desde el primer frame
-   sin animar el radio del filtro, se rasteriza en un layer propio, bloquea el
-   scroll raíz, mantiene los puntos verdes quietos hasta la apertura y
-   pausa/reanuda el vídeo del hero únicamente mientras está cubierto. */
+/* Regresión del menú burger: el overlay conserva el blur y la apertura circular,
+   se rasteriza en un layer propio, bloquea el scroll raíz y pausa/reanuda el
+   vídeo del hero únicamente mientras está cubierto. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -59,15 +56,6 @@ function reglas(selector, css = estilos) {
     return salida;
 }
 
-/* Los vértices del polygon() del selector dado, tal y como los escribe el
-   navegador: sin comentarios y sin el `polygon(` del principio. */
-function vertices(selector, css = estilos) {
-    const cuerpo = regla(selector, css);
-    const m = /clip-path:\s*polygon\(([\s\S]*?)\)\s*;/.exec(cuerpo);
-    assert.ok(m, `${selector} no recorta con polygon()`);
-    return m[1].split(',').map((v) => v.replace(/\s+/g, ' ').trim());
-}
-
 /* Los segundos de un valor CSS con unidades s. */
 function segundos(valor) {
     const m = /([0-9]*\.?[0-9]+)s/.exec(valor);
@@ -120,71 +108,39 @@ test('el desenfoque está puesto antes de que entre el primer enlace', () => {
     assert.equal(retraso, 0.15, 'el primer enlace entra a los 0,15 s');
     assert.match(regla('body.menu-open .menu-overlay'), /backdrop-filter:\s*blur\(14px\)/,
         'y el velo ya está difuminado desde el primer frame de la apertura');
-    // La transición de la plancha sigue siendo solo el barrido de clip-path.
+    // La transición de la plancha sigue siendo solo la apertura circular.
     const transicion = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
     assert.match(transicion, /^clip-path 0\.8s var\(--ease-out\)/);
     // Y el propio difuminado no puede retrasarse.
     assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
 });
 
-test('el despliegue nace del triángulo del burger: seis vértices, canto recto', () => {
-    const cerrada = regla('.menu-overlay');
-    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/,
-        'el frente lo mueve la transición de clip-path, en 0,8 s');
-    const antes = vertices('.menu-overlay');
-    const despues = vertices('body.menu-open .menu-overlay');
-    // Misma cuenta de vértices en los dos estados: con uno de más o de menos el
-    // navegador NO interpola y el recorte salta en lugar de abrirse.
-    assert.equal(antes.length, 6, 'el triángulo del icono entra con sus tres lados y sus tres medios');
-    assert.equal(despues.length, antes.length, 'y la ventana cubierta tiene los mismos seis vértices');
-    // Cerrado: los seis vértices SON el triángulo del icono, medido en px desde
-    // el centroide del burger (ápice a -15px, base a +7,5px, esquinas a ±13px).
-    assert.deepEqual(antes, [
-        'var(--menu-bx) calc(2.5rem - 15px)',
-        'calc(var(--menu-bx) + 6.5px) calc(2.5rem - 3.75px)',
-        'calc(var(--menu-bx) + 13px) calc(2.5rem + 7.5px)',
-        'var(--menu-bx) calc(2.5rem + 7.5px)',
-        'calc(var(--menu-bx) - 13px) calc(2.5rem + 7.5px)',
-        'calc(var(--menu-bx) - 6.5px) calc(2.5rem - 3.75px)',
-    ], 'el germen del despliegue es la propia silueta del botón, sin curvas');
-    // El ancla coincide con el centro del icono: 17px dentro del padding
-    // derecho de la cabecera (--pad), que es el hueco real a todas las anchuras
-    // y en las fichas (generated.css y legacy.css fijan el mismo padding).
-    assert.match(cerrada, /--menu-bx:\s*calc\(100% - var\(--pad\) - 17px\)/,
-        'la plancha nace del burger, no de una estimación a 3rem del canto');
-    // Abierto: todo fuera de la ventana (±60% / 60% / 160%), así que ningún canto
-    // se queda sin velo ni ningún enlace recortado al final de la apertura.
-    assert.deepEqual(despues, [
-        '-60% -60%', '160% -60%', '160% 160%', '60% 160%', '-60% 160%', '-60% 60%',
-    ], 'el estado abierto desborda la ventana por los seis vértices');
-    // Y la geometría sigue siendo rectilínea: ni arcos ni `inset()` de cortinilla.
-    const los2 = antes.concat(despues).join(' ');
-    assert.doesNotMatch(cerrada + regla('body.menu-open .menu-overlay'), /circle\(/,
-        'no queda ni un arco en el menú');
-    assert.doesNotMatch(los2, /\binset\(|\bround\b/,
-        'ni canto con radios: el frente es de rectas');
+test('el velo se recoge de golpe, sin repliegue circular', () => {
+    // 19/10/2026: se probó a retrasar `visibility` los 0,8 s del clip-path para
+    // que el cierre copiara la apertura en círculo. No gustó el gesto y se
+    // descartó. Se fija aquí para que nadie lo "arregle" otra vez.
+    const cerrada = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
+    assert.doesNotMatch(cerrada, /visibility/,
+        'la plancha no puede transicionar su visibility al cerrarse');
+    assert.doesNotMatch(cerrada, /[0-9]*\.?[0-9]+s\s+[0-9]*\.?[0-9]+s/,
+        'y tampoco llevar ningún retardo dentro del shorthand');
+    assert.match(regla('.menu-overlay'), /visibility:\s*hidden/);
+    assert.match(regla('body.menu-open .menu-overlay'), /visibility:\s*visible/);
+    // El estado abierto no declara transición propia: hereda la única que hay.
+    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /transition/);
+    // Con `visibility: hidden` la capa ya no intercepta toques al cerrarse.
+    assert.doesNotMatch(regla('.menu-overlay'), /pointer-events/);
+    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /pointer-events/);
+    // Y cerrado no queda ningún filtro vivo detrás de la capa oculta.
+    assert.match(regla('.menu-overlay'), /backdrop-filter:\s*none/);
 });
 
-test('el repliegue reproduce el barrido: aguanta visible 0,8 s y no tapa los toques', () => {
-    // Sin ese retardo en `visibility` el barrido de vuelta no se vería: la capa
-    // dejaría de pintarse en el frame 1 (así estaba cuando el cierre era seco).
-    const transicion = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
-    const vis = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(transicion);
-    assert.ok(vis, 'la plancha cerrada retrasa su visibility');
-    assert.equal(segundos(vis[1]), 0.8, 'lo justo: lo que tarda el clip-path');
-    // Al abrir no puede haber retardo, o el menú tardaría 0,8 s en aparecer.
-    const abierta = /transition:\s*([^;]+);/.exec(regla('body.menu-open .menu-overlay'))[1];
-    const visOpen = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(abierta);
-    assert.ok(visOpen, 'el estado abierto declara su propia transición');
-    assert.equal(segundos(visOpen[1]), 0, 'y sin retardo: se ve en el frame 1');
-    // Y mientras se recoge no intercepta toques: sigue tapando la pantalla.
-    assert.match(regla('.menu-overlay'), /pointer-events:\s*none/);
-    assert.match(regla('body.menu-open .menu-overlay'), /pointer-events:\s*auto/);
-    // Cerrado no queda ningún filtro vivo detrás de la capa oculta.
-    assert.match(regla('.menu-overlay'), /backdrop-filter:\s*none/);
-    // Nadie puede retrasar aquí un `transition-delay` suelto: retrasaría también
-    // el difuminado y el menú entraría a destiempo.
-    assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
+test('la apertura circular de clip-path se conserva en 0,8 s', () => {
+    const cerrada = regla('.menu-overlay');
+    assert.match(cerrada, /clip-path:\s*circle\(0% at calc\(100% - 3rem\) 2\.5rem\)/);
+    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/);
+    assert.match(regla('body.menu-open .menu-overlay'),
+        /clip-path:\s*circle\(150% at calc\(100% - 3rem\) 2\.5rem\)/);
 });
 
 test('el vídeo del hero conserva su animación y sólo se pausa mientras el menú lo tapa', () => {
@@ -286,8 +242,8 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=230/, `${page} debe pedir styles.css?v=230`);
-        assert.doesNotMatch(html, /styles\.css\?v=229/, `${page} no puede quedarse en la versión vieja`);
+        assert.match(html, /styles\.css\?v=228/, `${page} debe pedir styles.css?v=228`);
+        assert.doesNotMatch(html, /styles\.css\?v=227/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
     assert.equal(fs.realpathSync(path.join(root, 'es/styles.css')),
@@ -299,7 +255,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!230)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!228)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });
