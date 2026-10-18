@@ -215,8 +215,8 @@ test("CSS: el carril solo existe en escritorio y solo si el sticky puede pegar",
     assert.match(css, /\.work-rail \{ display: none; \}/, "fuera del carril el raíl no se ve");
     assert.match(css, /\.work\.work-3d-ready \.work-track \{\s*perspective: 1100px;/,
         "el carril hereda el punto de fuga de la entrada 3D de las filas");
-    // El hover de siempre sigue en pie dentro del carril (foto + bandas).
-    assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after \{ opacity: 1; transform: scale\(1\); \}/);
+    // El hover de siempre sigue en pie dentro del carril (foto + bloques).
+    assert.match(css, /\.work-row:hover::after, \.work-row:focus-visible::after\s*\{[^}]*opacity: 1; transform: scale\(1\);/);
 });
 
 test("el degradado lila de las cajas es suave y el mismo en la caja y en sus dos clones", () => {
@@ -303,8 +303,13 @@ test("el fotograma cubre toda la caja con su capa de fusión", () => {
         "el lavado lila tiñe la foto desde la izquierda y se apaga hacia la derecha");
     assert.match(cuerpo, /var\(--img, none\);/, "y debajo está la foto del proyecto");
     assert.match(carril,
-        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/,
-        "con máscaras compuestas se conserva el descubierto en bandas del hover");
+        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(0deg, #000 0 var\(--work-stripe\), transparent var\(--work-stripe\) 32px\)/,
+        "con máscaras compuestas se conserva el descubierto en bloques del hover");
+    assert.match(carril,
+        /@supports \(mask-composite: intersect\) \{\s*\.work\.hf-work-h \.work-row::after \{[\s\S]*?repeating-linear-gradient\(0deg, #000 0 calc\(var\(--work-stripe\) \* 1\.7\), transparent calc\(var\(--work-stripe\) \* 1\.7\) 53px\)/,
+        "el segundo ritmo de bloques cruza el primero: el mosaico sale irregular");
+    assert.doesNotMatch(carril, /repeating-linear-gradient\(102deg, #000 0 var\(--work-stripe\)/,
+        "las cortinillas diagonales no vuelven al carril");
 });
 
 test("la salida del carril es un empujón del fotograma, sin cambiar el contenido de la caja", () => {

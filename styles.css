@@ -1038,11 +1038,14 @@ section { position: relative; }
 /* Fotograma del proyecto dentro de la fila: mitad derecha,
    fundido con el degradado lila→negro del hover.
    El brillo lila del fundido baja con el degradado de la caja (05/10/2026):
-   0,22 → 0,16, para que la foto entre por negro y no por violeta. */
+   0,22 → 0,16, para que la foto entre por negro y no por violeta.
+   Encima del fotograma van las líneas de barrido (scanlines): el fotograma
+   se lee como una señal de vídeo, no como una foto suelta (18/10/2026). */
 .work-row::after {
     content: ""; position: absolute; top: 0; right: 0; bottom: 0;
     width: 50%;
     background-image:
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 4px),
         linear-gradient(to right, var(--bg) 0%, rgba(160, 100, 255, 0.16) 30%, rgba(5, 5, 5, 0) 70%),
         var(--img, none);
     background-size: cover;
@@ -1053,11 +1056,26 @@ section { position: relative; }
     transition: opacity 0.55s var(--ease-out), transform 0.9s var(--ease-out);
     pointer-events: none; z-index: 0;
 }
-.work-row:hover::after, .work-row:focus-visible::after { opacity: 1; transform: scale(1); }
+.work-row:hover::after, .work-row:focus-visible::after {
+    opacity: 1; transform: scale(1);
+    /* El fotograma tiembla 1px en pasos, como una señal que no cuadra. Va en
+       `translate` y no en `transform` para no pelear con el scale del hover. */
+    animation: work-glitch-jitter 0.44s steps(2, end) infinite;
+}
 
-/* El fotograma se descubre en bandas inclinadas ~12° respecto a la vertical,
-   como la cursiva de la web. Componemos las bandas con el fundido lateral
-   existente; sin soporte para máscaras compuestas, queda el fade original. */
+/* El fotograma ya no se descubre con las cortinillas diagonales: ahora entra a
+   saltos, en bloques horizontales de altura irregular, como una señal de vídeo
+   que se descuadra (18/10/2026).
+   La máscara se compone de tres capas y se intersectan:
+   · el fundido lateral que ya existía (sólo en la lista vertical),
+   · bloques de 32px: un `repeating-linear-gradient` horizontal cuyo ancho es
+     la variable --work-stripe,
+   · un segundo ritmo de 53px, 1,7 veces más ancho, contra el que se cruza el
+     anterior: donde ambos coinciden queda un mosaico de barras de alturas
+     dispares en lugar de una rejilla regular.
+   --work-stripe pasa de 0 a 32px en cinco saltos (steps(5, end)): la apertura
+   es a tirones, no un deslizamiento continuo. Sin soporte para máscaras
+   compuestas, queda el fade original. */
 @property --work-stripe {
     syntax: "<length>";
     inherits: false;
@@ -1068,15 +1086,22 @@ section { position: relative; }
         --work-stripe: 0px;
         -webkit-mask-image:
             linear-gradient(to left, #000 42%, transparent 98%),
-            repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+            repeating-linear-gradient(0deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px),
+            repeating-linear-gradient(0deg, #000 0 calc(var(--work-stripe) * 1.7), transparent calc(var(--work-stripe) * 1.7) 53px);
         mask-image:
             linear-gradient(to left, #000 42%, transparent 98%),
-            repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+            repeating-linear-gradient(0deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px),
+            repeating-linear-gradient(0deg, #000 0 calc(var(--work-stripe) * 1.7), transparent calc(var(--work-stripe) * 1.7) 53px);
         -webkit-mask-composite: source-in;
         mask-composite: intersect;
-        transition: --work-stripe 0.7s var(--ease-out), opacity 0.35s, transform 0.9s var(--ease-out);
+        transition: --work-stripe 0.5s steps(5, end), opacity 0.35s, transform 0.9s var(--ease-out);
     }
     .work-row:hover::after, .work-row:focus-visible::after { --work-stripe: 32px; }
+}
+/* El temblor del fotograma: 1px en pasos, como una señal sucia. */
+@keyframes work-glitch-jitter {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 1px 0; }
 }
 
 /* Encuadre vertical a la altura de los ojos, por proyecto */
@@ -1320,6 +1345,7 @@ section { position: relative; }
         .work.hf-work-h .work-row::after {
             width: 100%;
             background-image:
+                repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 4px),
                 linear-gradient(to right,
                     rgba(5, 5, 5, 0.94) 0%,
                     rgba(5, 5, 5, 0.72) 34%,
@@ -1333,14 +1359,17 @@ section { position: relative; }
             -webkit-mask-image: none;
                     mask-image: none;
         }
-        /* Con máscaras compuestas se conserva el descubierto en bandas del hover;
-           ya no hay fundido lateral que componer, así que basta con una máscara. */
+        /* Con máscaras compuestas se conserva el descubierto en bloques del
+           hover; ya no hay fundido lateral que componer, así que bastan las
+           dos capas de bloques. */
         @supports (mask-composite: intersect) {
             .work.hf-work-h .work-row::after {
                 -webkit-mask-image:
-                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+                    repeating-linear-gradient(0deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px),
+                    repeating-linear-gradient(0deg, #000 0 calc(var(--work-stripe) * 1.7), transparent calc(var(--work-stripe) * 1.7) 53px);
                 mask-image:
-                    repeating-linear-gradient(102deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px);
+                    repeating-linear-gradient(0deg, #000 0 var(--work-stripe), transparent var(--work-stripe) 32px),
+                    repeating-linear-gradient(0deg, #000 0 calc(var(--work-stripe) * 1.7), transparent calc(var(--work-stripe) * 1.7) 53px);
             }
         }
         /* El panel no crece en vertical al pasar el cursor (la lista sí lo hacía
