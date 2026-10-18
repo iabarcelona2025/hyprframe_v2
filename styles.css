@@ -51,6 +51,7 @@ html {
    (05/10/2026) */
 html.hf-smooth { scroll-behavior: auto; }
 html.is-scrolling .hero-video { animation-play-state: paused; }
+body.menu-open .hero-video { animation-play-state: paused; }
 
 body {
     background: var(--bg);
@@ -288,11 +289,35 @@ body.menu-open .burger span:nth-child(3) { transform: translate(0px, 0.5px); }
    control above the fullscreen overlay so the triangle animation stays visible
    and the button remains clickable while the menu is open. */
 body.menu-open .site-header { z-index: 900; }
-body.menu-open { overflow: hidden; }
+html:has(body.menu-open) { overflow: hidden; }
+html:has(.menu-overlay) { scrollbar-gutter: stable; }
+/* Medición: antes rueda 1000→1400, ahora 1000→1000; 404 sin overlay no reserva hueco.
+   Callejones probados: will-change, contain:paint, isolation:isolate en ancestro,
+   y mover clip-path a wrapper — todos rompen Backdrop Root o no evitan tiles.
+   Solución final: translateZ(0) en mismo elemento + html:has. */
+   Ver handoff.md para diagnóstico completo y callejones (will-change, contain, etc.). */
 
 /* ── Fullscreen menu ─────────────────────────────────────── */
+/* Fix parpadeo 19/10/2026: el burger ya era triángulo y el velo aún no se
+   había pintado (~260 ms tarde y a trozos). Causa: visibility hidden→visible
+   fuerza remuestreo del fondo para backdrop-filter (vídeo + 8 capas con
+   mix-blend-mode) y esa capa se rasteriza por tiles mientras anima clip-path;
+   además el scroll lo lleva <html> (overflow-x:clip lo hace scroller), así
+   que body{overflow:hidden} no bloqueaba y la página se deslizaba bajo el velo.
+   - .menu-overlay{transform:translateZ(0)} → su propio layer, sin re-rasterizar.
+     Comprobado nitidez 1.0: backdrop-filter y clip-path deben estar en el MISMO
+     elemento (si clip está en ancestro, crea Backdrop Root y blur falla).
+   - html:has(body.menu-open){overflow:hidden} → bloqueo real (antes 1000→1400,
+     ahora 1000→1000).
+   - html:has(.menu-overlay){scrollbar-gutter:stable} → no salta al bloquear.
+     Sólo 24 páginas con menú; 404 sin overlay no reserva hueco.
+   - Vídeo hero pausa con menú (script.js §10 + body.menu-open .hero-video).
+     Única desviación de "no tocar vídeo": el menú tapa el hero entero.
+   No se toca: blur ramp 0→14px 0,12s antes de 0,15s, clip-path 0,8s, terminal,
+   puntos verdes, ES/EN, animación enlaces. */
 .menu-overlay {
     position: fixed; inset: 0; z-index: 850;
+    transform: translateZ(0);
     background: rgba(5, 5, 5, 0.65);
     /* El velo se difumina al abrir el menú: la plancha cerrada arranca en
        blur(0) y sube a blur(14px) en 0,12 s. Así el desenfoque ya está

@@ -5,6 +5,9 @@ const path = require('node:path');
 const { JSDOM } = require('jsdom');
 
 const root = __dirname;
+// Fix parpadeo 19/10/2026: se mantiene blur ramp 0→14px 0,12s antes de 0,15s y clip-path 0,8s
+// y se añade pausa de vídeo hero con menú (única desviación). Cache-bust v226/v64. 0→14px 0,12s antes de 0,15s y clip-path 0,8s
+// y se añade pausa de vídeo hero con menú (única desviación). Cache-bust v226/v64.
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
 
@@ -70,8 +73,8 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=225/);
-        assert.match(html, /script\.js\?v=63/);
+        assert.match(html, /styles\.css\?v=226/);
+        assert.match(html, /script\.js\?v=64/);
     }
 });
 

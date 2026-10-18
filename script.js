@@ -1839,10 +1839,29 @@
     /* ── 10. Fullscreen menu ──────────────────────────────── */
     const burger = document.getElementById("burger");
     const overlay = document.getElementById("menuOverlay");
+    // Fix parpadeo 19/10/2026: el vídeo del hero se pausa con el menú abierto
+    // (única desviación de "no tocar el vídeo": el menú tapa el hero entero).
+    // Antes el vídeo seguía corriendo bajo el velo difuminado gastando GPU;
+    // ahora se pausa en toggleMenu y se reanuda sólo si estaba corriendo.
+    // CSS complementa con body.menu-open .hero-video { animation-play-state: paused; }
+    const heroVideo = document.querySelector(".hero-video");
+    // Nota: heroVideo puede ser null en páginas sin hero (404, legacy, project-*)
+    // y en esas páginas el toggle sigue funcionando sin vídeo.
 
     function toggleMenu(force) {
         const open = force !== undefined ? force : !document.body.classList.contains("menu-open");
         document.body.classList.toggle("menu-open", open);
+        // Pausa el vídeo del hero mientras el menú está abierto; al cerrar
+        // vuelve a arrancar sólo si estaba corriendo (desviación declarada:
+        // el menú tapa el hero entero, así que no se ve).
+        if (heroVideo) {
+            if (open) {
+                heroVideo._wasPlaying = !heroVideo.paused && !heroVideo.ended;
+                heroVideo.pause();
+            } else if (heroVideo._wasPlaying) {
+                heroVideo.play().catch(() => {});
+            }
+        }
         burger.setAttribute("aria-expanded", String(open));
         burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         overlay.setAttribute("aria-hidden", String(!open));
