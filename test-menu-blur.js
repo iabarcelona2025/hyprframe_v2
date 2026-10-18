@@ -1,8 +1,9 @@
-/* Regresión del menú burger: el overlay se despliega y se recoge con un barrido
-   recto (inset, no círculo), llega difuminado desde el primer frame sin animar
-   el radio del filtro, se rasteriza en un layer propio, bloquea el scroll raíz,
-   mantiene los puntos verdes quietos hasta la apertura y pausa/reanuda el vídeo
-   del hero únicamente mientras está cubierto. */
+/* Regresión del menú burger: el overlay se despliega y se recoge desde el
+   triángulo que forman las tres líneas del burger —polígono de seis vértices de
+   canto recto, ni círculo ni cortinilla—, llega difuminado desde el primer frame
+   sin animar el radio del filtro, se rasteriza en un layer propio, bloquea el
+   scroll raíz, mantiene los puntos verdes quietos hasta la apertura y
+   pausa/reanuda el vídeo del hero únicamente mientras está cubierto. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -56,6 +57,15 @@ function reglas(selector, css = estilos) {
     }
     assert.ok(salida.length, `no aparece la regla ${selector} en styles.css`);
     return salida;
+}
+
+/* Los vértices del polygon() del selector dado, tal y como los escribe el
+   navegador: sin comentarios y sin el `polygon(` del principio. */
+function vertices(selector, css = estilos) {
+    const cuerpo = regla(selector, css);
+    const m = /clip-path:\s*polygon\(([\s\S]*?)\)\s*;/.exec(cuerpo);
+    assert.ok(m, `${selector} no recorta con polygon()`);
+    return m[1].split(',').map((v) => v.replace(/\s+/g, ' ').trim());
 }
 
 /* Los segundos de un valor CSS con unidades s. */
@@ -117,19 +127,42 @@ test('el desenfoque está puesto antes de que entre el primer enlace', () => {
     assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
 });
 
-test('el despliegue es un barrido recto de clip-path en 0,8 s, sin círculos', () => {
-    // 19/10/2026: fuera el círculo que crecía desde el burger. La geometría es
-    // la del barrido de las filas de WORK: `inset()` de derecha a izquierda.
+test('el despliegue nace del triángulo del burger: seis vértices, canto recto', () => {
     const cerrada = regla('.menu-overlay');
-    assert.match(cerrada, /clip-path:\s*inset\(0 0 0 100%\)/,
-        'cerrado: la plancha está entera fuera del canto izquierdo');
-    assert.match(regla('body.menu-open .menu-overlay'), /clip-path:\s*inset\(0 0 0 0\)/,
-        'abierto: cubre los cuatro cantos');
+    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/,
+        'el frente lo mueve la transición de clip-path, en 0,8 s');
+    const antes = vertices('.menu-overlay');
+    const despues = vertices('body.menu-open .menu-overlay');
+    // Misma cuenta de vértices en los dos estados: con uno de más o de menos el
+    // navegador NO interpola y el recorte salta en lugar de abrirse.
+    assert.equal(antes.length, 6, 'el triángulo del icono entra con sus tres lados y sus tres medios');
+    assert.equal(despues.length, antes.length, 'y la ventana cubierta tiene los mismos seis vértices');
+    // Cerrado: los seis vértices SON el triángulo del icono, medido en px desde
+    // el centroide del burger (ápice a -15px, base a +7,5px, esquinas a ±13px).
+    assert.deepEqual(antes, [
+        'var(--menu-bx) calc(2.5rem - 15px)',
+        'calc(var(--menu-bx) + 6.5px) calc(2.5rem - 3.75px)',
+        'calc(var(--menu-bx) + 13px) calc(2.5rem + 7.5px)',
+        'var(--menu-bx) calc(2.5rem + 7.5px)',
+        'calc(var(--menu-bx) - 13px) calc(2.5rem + 7.5px)',
+        'calc(var(--menu-bx) - 6.5px) calc(2.5rem - 3.75px)',
+    ], 'el germen del despliegue es la propia silueta del botón, sin curvas');
+    // El ancla coincide con el centro del icono: 17px dentro del padding
+    // derecho de la cabecera (--pad), que es el hueco real a todas las anchuras
+    // y en las fichas (generated.css y legacy.css fijan el mismo padding).
+    assert.match(cerrada, /--menu-bx:\s*calc\(100% - var\(--pad\) - 17px\)/,
+        'la plancha nace del burger, no de una estimación a 3rem del canto');
+    // Abierto: todo fuera de la ventana (±60% / 60% / 160%), así que ningún canto
+    // se queda sin velo ni ningún enlace recortado al final de la apertura.
+    assert.deepEqual(despues, [
+        '-60% -60%', '160% -60%', '160% 160%', '60% 160%', '-60% 160%', '-60% 60%',
+    ], 'el estado abierto desborda la ventana por los seis vértices');
+    // Y la geometría sigue siendo rectilínea: ni arcos ni `inset()` de cortinilla.
+    const los2 = antes.concat(despues).join(' ');
     assert.doesNotMatch(cerrada + regla('body.menu-open .menu-overlay'), /circle\(/,
         'no queda ni un arco en el menú');
-    // SIN `round`: los cantos son rectos también a mitad del barrido.
-    assert.doesNotMatch(cerrada + regla('body.menu-open .menu-overlay'), /inset\([^)]*\bround\b/);
-    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/);
+    assert.doesNotMatch(los2, /\binset\(|\bround\b/,
+        'ni canto con radios: el frente es de rectas');
 });
 
 test('el repliegue reproduce el barrido: aguanta visible 0,8 s y no tapa los toques', () => {
@@ -253,8 +286,8 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=229/, `${page} debe pedir styles.css?v=229`);
-        assert.doesNotMatch(html, /styles\.css\?v=228/, `${page} no puede quedarse en la versión vieja`);
+        assert.match(html, /styles\.css\?v=230/, `${page} debe pedir styles.css?v=230`);
+        assert.doesNotMatch(html, /styles\.css\?v=229/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
     assert.equal(fs.realpathSync(path.join(root, 'es/styles.css')),
@@ -266,7 +299,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!229)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!230)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });

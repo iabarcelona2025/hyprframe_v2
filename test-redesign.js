@@ -325,19 +325,23 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("burger menu overlay keeps a fixed 14px blur (never animated) and the 0.8s clip-path sweep",
         /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*none[^}]*transition:\s*clip-path 0\.8s var\(--ease-out\)(?!,\s*backdrop-filter)/.test(css) &&
         /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
-    // 19/10/2026 — Geometría: fuera el círculo que crecía desde el burger. El
-    // desplegar y el recoger son un corte recto que barre de derecha a
-    // izquierda, la misma sintaxis `inset()` del fundido lila de las filas de
-    // WORK (.work-row::before), sin radios.
+    // 19/10/2026 — Geometría: fuera el círculo que crecía desde el burger y
+    // fuera también la cortinilla recta. El desplegar (y su revés al recoger)
+    // arranca del triángulo en que se montan las TRES LÍNEAS del icono al
+    // pulsarlo, y abre en abanico con un polígono de seis vértices de canto
+    // recto: geometría irregular, sin arcos y sin radios.
     // Sin los comentarios de la hoja: dentro de la regla se explica de dónde
     // viene el cambio y esas palabras mencionan el `circle()` antiguo, que es
     // justo lo que no puede haber en las declaraciones.
     const cssPlano = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    check("burger menu overlay opens and closes with a straight inset() sweep, no circle",
-        /\.menu-overlay\s*\{[^}]*clip-path:\s*inset\(0 0 0 100%\)/.test(cssPlano) &&
-        /body\.menu-open \.menu-overlay\s*\{[^}]*clip-path:\s*inset\(0 0 0 0\)/.test(cssPlano) &&
+    check("burger menu overlay unfolds from the burger's triangle as a 6-vertex straight-edge polygon",
+        (cssPlano.match(/\.menu-overlay\s*\{[^}]*?clip-path:\s*polygon\(([^;]*?)\)\s*;/) || [])
+            [1]?.split(',').length === 6 &&
+        /body\.menu-open \.menu-overlay\s*\{[^}]*clip-path:\s*polygon\(/.test(cssPlano) &&
+        /\.menu-overlay\s*\{[^}]*--menu-bx:\s*calc\(100% - var\(--pad\) - 17px\)/.test(cssPlano) &&
+        /\.menu-overlay\s*\{[^}]*clip-path:\s*polygon\(\s*var\(--menu-bx\)\s+calc\(2\.5rem - 15px\)/.test(cssPlano) &&
         !/\.menu-overlay[^{]*\{[^}]*circle\(/.test(cssPlano) &&
-        !/\.menu-overlay[^{]*\{[^}]*\binset\([^)]*\bround\b/.test(cssPlano));
+        !/\.menu-overlay[^{]*\{[^}]*\binset\(/.test(cssPlano));
     check("the overlay blur is already in place before the first menu link starts entering",
         /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
     check("menu overlay is promoted to a stable compositor layer", /\.menu-overlay\s*\{[^}]*transform:\s*translateZ\(0\)/.test(css));
