@@ -14,11 +14,27 @@ const dom = new JSDOM(html, {
 const { window } = dom;
 const doc = window.document;
 /* --- minimal browser API stubs jsdom lacks --- */
-window.matchMedia = (q) => ({
-    matches: q === "(min-width: 561px)", media: q,
-    addEventListener() {}, removeEventListener() {},
-    addListener() {}, removeListener() {},
-});
+const mediaQueries = new Map();
+window.matchMedia = (q) => {
+    if (!mediaQueries.has(q)) {
+        const listeners = new Set();
+        const media = {
+            matches: q === "(min-width: 561px)",
+            media: q,
+            addEventListener(name, listener) { if (name === "change") listeners.add(listener); },
+            removeEventListener(name, listener) { if (name === "change") listeners.delete(listener); },
+            addListener(listener) { listeners.add(listener); },
+            removeListener(listener) { listeners.delete(listener); },
+            setMatches(matches) {
+                if (this.matches === matches) return;
+                this.matches = matches;
+                listeners.forEach((listener) => listener({ matches, media: q }));
+            },
+        };
+        mediaQueries.set(q, media);
+    }
+    return mediaQueries.get(q);
+};
 const indexDoc = new JSDOM(index).window.document;
 const errors = [];
 window.addEventListener("error", (event) => errors.push(event.message));
@@ -233,6 +249,13 @@ try {
     assert.equal(burger.getAttribute("aria-expanded"), "true");
     assert.equal(menu.getAttribute("aria-hidden"), "false");
     assert.equal(doc.activeElement, menu.querySelector("a"));
+    const desktopMenu = mediaQueries.get("(min-width: 1025px)");
+    desktopMenu.setMatches(true);
+    assert.ok(!doc.body.classList.contains("menu-open"), "al cruzar a escritorio se cierra el menú móvil");
+    assert.equal(burger.getAttribute("aria-expanded"), "false");
+    assert.equal(menu.getAttribute("aria-hidden"), "true");
+    desktopMenu.setMatches(false);
+    burger.click();
     key("Escape");
     assert.ok(!doc.body.classList.contains("menu-open"));
     assert.equal(doc.activeElement, burger);

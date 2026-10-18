@@ -1852,6 +1852,15 @@
     overlay.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => toggleMenu(false)));
     addEventListener("keydown", (e) => { if (e.key === "Escape") toggleMenu(false); });
 
+    // If a mobile menu is left open while the viewport grows into the desktop
+    // layout, remove every part of its state. Otherwise body stays scroll-locked
+    // and the hero terminal remains paused even though the overlay is hidden.
+    function closeMenuOnDesktop(event) {
+        if (event.matches && document.body.classList.contains("menu-open")) toggleMenu(false);
+    }
+    if (navDesktop.addEventListener) navDesktop.addEventListener("change", closeMenuOnDesktop);
+    else if (navDesktop.addListener) navDesktop.addListener(closeMenuOnDesktop);
+
 
 
 })();

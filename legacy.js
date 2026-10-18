@@ -28,6 +28,15 @@
         link.addEventListener("click", () => setMenu(false));
     });
 
+    // The burger disappears at the desktop breakpoint. Close its menu at the
+    // same boundary so the hidden overlay cannot keep body scroll locked.
+    const desktopMenu = window.matchMedia("(min-width: 1025px)");
+    function closeMenuOnDesktop(event) {
+        if (event.matches && document.body.classList.contains("menu-open")) setMenu(false);
+    }
+    if (desktopMenu.addEventListener) desktopMenu.addEventListener("change", closeMenuOnDesktop);
+    else if (desktopMenu.addListener) desktopMenu.addListener(closeMenuOnDesktop);
+
     // Match Generated: phones use Vimeo inline in the card, not the Captured modal.
     // Keep the initial layout decision stable while the device rotates.
     const mobileVideoQuery = window.matchMedia("(max-width: 560px)");

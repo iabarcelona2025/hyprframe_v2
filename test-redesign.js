@@ -14,11 +14,27 @@ const dom = new JSDOM(html, {
 const { window } = dom;
 
 /* --- minimal browser API stubs jsdom lacks --- */
-window.matchMedia = (q) => ({
-    matches: false, media: q,
-    addEventListener() {}, removeEventListener() {},
-    addListener() {}, removeListener() {},
-});
+const mediaQueries = new Map();
+window.matchMedia = (q) => {
+    if (!mediaQueries.has(q)) {
+        const listeners = new Set();
+        const media = {
+            matches: false,
+            media: q,
+            addEventListener(name, listener) { if (name === "change") listeners.add(listener); },
+            removeEventListener(name, listener) { if (name === "change") listeners.delete(listener); },
+            addListener(listener) { listeners.add(listener); },
+            removeListener(listener) { listeners.delete(listener); },
+            setMatches(matches) {
+                if (this.matches === matches) return;
+                this.matches = matches;
+                listeners.forEach((listener) => listener({ matches, media: q }));
+            },
+        };
+        mediaQueries.set(q, media);
+    }
+    return mediaQueries.get(q);
+};
 class IOStub {
     constructor(cb) { this.cb = cb; }
     observe(el) { setTimeout(() => this.cb([{ isIntersecting: true, target: el }], this), 5); }
@@ -254,6 +270,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("burger click opens menu", doc.body.classList.contains("menu-open")
         && burger.getAttribute("aria-expanded") === "true"
         && burger.getAttribute("aria-label") === "Close menu");
+    const desktopMenu = mediaQueries.get("(min-width: 1025px)");
+    desktopMenu.setMatches(true);
+    check("crossing to desktop closes the mobile menu and releases its scroll lock",
+        !doc.body.classList.contains("menu-open")
+        && doc.body.style.overflow === ""
+        && burger.getAttribute("aria-expanded") === "false"
+        && burger.getAttribute("aria-label") === "Open menu"
+        && doc.getElementById("menuOverlay").getAttribute("aria-hidden") === "true");
+    desktopMenu.setMatches(false);
+    burger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     doc.querySelector(".menu-links a").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
     check("menu link click closes menu", !doc.body.classList.contains("menu-open")
         && doc.body.style.overflow === ""

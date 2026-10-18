@@ -30,6 +30,31 @@ const declaration = (rule, property) => {
     return match[1];
 };
 
+function installMatchMedia(window) {
+    const queries = new Map();
+    window.matchMedia = (query) => {
+        if (!queries.has(query)) {
+            const listeners = new Set();
+            const media = {
+                matches: false,
+                media: query,
+                addEventListener(name, listener) { if (name === "change") listeners.add(listener); },
+                removeEventListener(name, listener) { if (name === "change") listeners.delete(listener); },
+                addListener(listener) { listeners.add(listener); },
+                removeListener(listener) { listeners.delete(listener); },
+                setMatches(matches) {
+                    if (this.matches === matches) return;
+                    this.matches = matches;
+                    listeners.forEach((listener) => listener({ matches, media: query }));
+                },
+            };
+            queries.set(query, media);
+        }
+        return queries.get(query);
+    };
+    return queries;
+}
+
 /* Las diez piezas de la sección, en el orden de SELECTED WORK de la landing:
    N.O.D.E. y, después, las nueve que comparten su plantilla. */
 const PAGES = [
@@ -167,11 +192,7 @@ for (const page of PAGES) {
     });
     const { window } = dom;
     const doc = window.document;
-    window.matchMedia = (q) => ({
-        matches: false, media: q,
-        addEventListener() {}, removeEventListener() {},
-        addListener() {}, removeListener() {},
-    });
+    const mediaQueries = installMatchMedia(window);
     const errors = [];
     window.addEventListener("error", (event) => errors.push(event.message));
 
@@ -185,8 +206,8 @@ for (const page of PAGES) {
         for (const style of ["styles.css", "generated.css"]) {
             assert.ok(doc.querySelector(`link[href^="${style}"]`), `${page.file}: no carga ${style}`);
         }
-        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=96");
-        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=34");
+        assert.equal(doc.querySelector('link[href^="generated.css"]').getAttribute("href"), "generated.css?v=103");
+        assert.equal(doc.querySelector('script[src^="generated.js"]').getAttribute("src"), "generated.js?v=40");
         assert.ok(!doc.querySelector("style"), `${page.file}: todavía lleva CSS inline`);
         // Kanit → Montserrat: las diez páginas cargan la misma familia y sus pesos
         assert.ok(!/family=Kanit/.test(html), `${page.file}: todavía carga Kanit`);
@@ -335,6 +356,13 @@ for (const page of PAGES) {
         assert.equal(burger.getAttribute("aria-expanded"), "true");
         assert.equal(menu.getAttribute("aria-hidden"), "false");
         assert.equal(doc.activeElement, menu.querySelector("a"), `${page.file}: al abrir, el foco entra en el menú`);
+        const desktopMenu = mediaQueries.get("(min-width: 1025px)");
+        desktopMenu.setMatches(true);
+        assert.ok(!doc.body.classList.contains("menu-open"), `${page.file}: al cruzar a escritorio se cierra el menú móvil`);
+        assert.equal(burger.getAttribute("aria-expanded"), "false");
+        assert.equal(menu.getAttribute("aria-hidden"), "true");
+        desktopMenu.setMatches(false);
+        burger.click();
         window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
         assert.ok(!doc.body.classList.contains("menu-open"));
         assert.equal(doc.activeElement, burger, `${page.file}: Escape cierra el menú y devuelve el foco al botón`);
@@ -834,8 +862,8 @@ for (const file of ALL) {
     assert.match(es, /<a class="node-story__all" href="index\.html#work">VER TODO ↗<\/a>/,
         `es/${file}: el enlace de salida no es VER TODO ↗`);
     assert.ok(!/VER TODO EL TRABAJO/.test(es), `es/${file}: sigue el texto largo`);
-    assert.match(es, /generated\.css\?v=96/);
-    assert.match(es, /generated\.js\?v=34/);
+    assert.match(es, /generated\.css\?v=103/);
+    assert.match(es, /generated\.js\?v=40/);
     assert.ok(!/class="kicker"/.test(es), `es/${file}: sigue GENERATED y el punto verde`);
 }
 
