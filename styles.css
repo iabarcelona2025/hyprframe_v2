@@ -296,22 +296,37 @@ html:has(.menu-overlay) { scrollbar-gutter: stable; }
 body.menu-open .hero-video { animation-play-state: paused; }
 
 /* ── Fullscreen menu ─────────────────────────────────────── */
+/* El velo NO anima el radio del desenfoque (18/10/2026). Subir blur(0) →
+   blur(14px) obligaba al compositor a remuestrear el fondo difuminado de TODA
+   la pantalla en cada frame, a la vez que el clip-path circular se estaba
+   recortando: en móvil eso se traducía en que los seis apartados entraban a
+   saltos (parpadeaban). Es exactamente el motivo por el que el 30/09/2026 se
+   sacó el `backdrop-filter` de la transición de la cabecera —ver § Header—; la
+   diferencia es que allí la franja mide 60 px y aquí mide la ventana entera.
+   El desenfoque queda FIJADO en 14px: ya está puesto desde el primer frame,
+   que era la intención original (entrar difuminado antes de que llegue el
+   primer enlace, cuyo retardo es 0,15 s), sin coste por frame.
+   Cerrado lleva `none`, no `blur(0)`: un filtro activo —aunque sea a radio 0—
+   crea un backdrop root que obliga a compositar la plancha mientras no se ve,
+   o sea durante todo el scroll de la página. */
 .menu-overlay {
     position: fixed; inset: 0; z-index: 850;
     /* Keep the backdrop on a stable compositor layer while its clip animates. */
     transform: translateZ(0);
     background: rgba(5, 5, 5, 0.65);
-    /* El velo se difumina al abrir el menú: la plancha cerrada arranca en
-       blur(0) y sube a blur(14px) en 0,12 s. Así el desenfoque ya está
-       puesto cuando empieza a entrar el primer enlace, cuyo
-       transition-delay es 0,15 s (el difuminado acaba antes, a los 0,12 s).
-       La apertura circular de clip-path no se toca: sigue siendo de 0,8 s. */
-    backdrop-filter: blur(0);
-    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
-    transition: clip-path 0.8s var(--ease-out), backdrop-filter 0.12s var(--ease-out);
+    transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
     padding: 4.5rem var(--pad) 8rem;
+    /* El cierre es INSTANTÁNEO a propósito (19/10/2026). Se probó a retrasar
+       esta `visibility` los mismos 0,8 s del clip-path para que la plancha se
+       replegara en círculo igual que abre —el gesto no convence—, y se
+       descartó: la transición de arriba no lleva `visibility`, así que al
+       quitar `menu-open` la capa deja de pintarse en el primer frame. Y con
+       `visibility: hidden` tampoco intercepta toques, no hace falta añadir
+       `pointer-events`. */
     visibility: hidden;
 }
 body.menu-open .menu-overlay {
@@ -335,12 +350,25 @@ body.menu-open .menu-overlay {
 .menu-links a .pulse {
     display: inline-block; vertical-align: middle;
     margin-right: 0.45em; transform: translateY(-0.08em);
+    /* (18/10/2026) Fuera del menú el punto está QUIETO. El `animation: pulse
+       2s infinite` de .pulse arrancaba con la página y no se paraba nunca, así
+       que los seis anillos se estaban expandiendo por debajo de una plancha
+       oculta: repintado que no ve nadie. Y al abrir, cada punto
+       llegaba en un momento distinto de su ciclo —los apartados aparecían con el
+       halo a medio hacer, que es lo que parpadeaba—. `animation-name` (y no el
+       shorthand) para no pisar ni la duración ni el retardo de cada enlace. */
+    animation-name: none;
 }
 .menu-links a:nth-child(2) .pulse { animation-delay: 0.33s; }
 .menu-links a:nth-child(3) .pulse { animation-delay: 0.66s; }
 .menu-links a:nth-child(4) .pulse { animation-delay: 1s; }
 .menu-links a:nth-child(5) .pulse { animation-delay: 1.33s; }
 .menu-links a:nth-child(6) .pulse { animation-delay: 1.66s; }
+/* Con el menú abierto la onda arranca DE CERO, en el mismo instante en que
+   entra la plancha: el retardo de cada punto (0,33 / 0,66 / 1 / 1,33 /
+   1,66 s) vuelve a ser lo que pretendía ser, una cascada contada desde la
+   apertura y no un fragmento al azar del ciclo de 2 s. */
+body.menu-open .menu-links a .pulse { animation-name: pulse; }
 .menu-links a:hover { color: var(--violet); }
 body.menu-open .menu-links a { opacity: 1; transform: translateY(0); }
 body.menu-open .menu-links a:nth-child(1) { transition-delay: 0.15s; }
@@ -2456,6 +2484,14 @@ label.cookie-purpose-head { cursor: pointer; }
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+        /* Los retardos también se anulan (18/10/2026). Sin esto, con
+           «reducir movimiento» activo en el móvil la duración caía a 0,01 ms
+           pero el retardo escalonado seguía vivo: los seis apartados del menú
+           burger entraban UNO CADA 70 ms, sin animación, saltando de
+           opacity:0 a opacity:1 de golpe —parpadeo puro—. Mismo criterio que
+           ya se aplica a mano en .about-emblem-reflection, abajo. */
+        animation-delay: 0s !important;
+        transition-delay: 0s !important;
     }
     html { scroll-behavior: auto; }
     [data-reveal] { opacity: 1; transform: none; }
