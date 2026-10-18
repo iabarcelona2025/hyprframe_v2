@@ -112,10 +112,15 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
    animación viva en su lista; con `none` desaparece de verdad. Los @keyframes
    se conservan (no cuestan nada) por si se quiere volver atrás.
    Antes de esto se probó a correrlo solo mientras se desplaza; se ha quitado
-   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b. */
+   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b.
+
+   (18/10/2026) Opacidad bajada de 0,05 a 0,03: el grano deja de ensuciar los
+   degradados claros (hero, tarjetas) y sigue haciendo su trabajo de dither
+   anti-banding. La desviación del ruido baja proporcionalmente, de ±1,8 a
+   ~±1,1 niveles (1σ). */
 .grain {
     position: fixed; inset: 0; z-index: 900; pointer-events: none;
-    opacity: 0.05;
+    opacity: 0.03;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     animation: none;
     will-change: transform;
