@@ -320,11 +320,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     // frame mientras el clip-path se recortaba, y en móvil los seis apartados
     // entraban saltando (parpadeaban). El blur va fijado en 14px desde el primer
     // frame —la intención de partida sigue cumplida, y con más holgura— y la
-    // transición de la plancha vuelve a ser solo la apertura circular de 0,8 s.
-    // Mismo criterio que la cabecera (§ Header) desde el 30/09/2026.
-    check("burger menu overlay keeps a fixed 14px blur (never animated) and the 0.8s circular opening",
+    // transición de la plancha vuelve a ser solo su barrido de clip-path, de
+    // 0,8 s. Mismo criterio que la cabecera (§ Header) desde el 30/09/2026.
+    check("burger menu overlay keeps a fixed 14px blur (never animated) and the 0.8s clip-path sweep",
         /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*none[^}]*transition:\s*clip-path 0\.8s var\(--ease-out\)(?!,\s*backdrop-filter)/.test(css) &&
         /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
+    // 19/10/2026 — Geometría: fuera el círculo que crecía desde el burger. El
+    // desplegar y el recoger son un corte recto que barre de derecha a
+    // izquierda, la misma sintaxis `inset()` del fundido lila de las filas de
+    // WORK (.work-row::before), sin radios.
+    // Sin los comentarios de la hoja: dentro de la regla se explica de dónde
+    // viene el cambio y esas palabras mencionan el `circle()` antiguo, que es
+    // justo lo que no puede haber en las declaraciones.
+    const cssPlano = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    check("burger menu overlay opens and closes with a straight inset() sweep, no circle",
+        /\.menu-overlay\s*\{[^}]*clip-path:\s*inset\(0 0 0 100%\)/.test(cssPlano) &&
+        /body\.menu-open \.menu-overlay\s*\{[^}]*clip-path:\s*inset\(0 0 0 0\)/.test(cssPlano) &&
+        !/\.menu-overlay[^{]*\{[^}]*circle\(/.test(cssPlano) &&
+        !/\.menu-overlay[^{]*\{[^}]*\binset\([^)]*\bround\b/.test(cssPlano));
     check("the overlay blur is already in place before the first menu link starts entering",
         /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
     check("menu overlay is promoted to a stable compositor layer", /\.menu-overlay\s*\{[^}]*transform:\s*translateZ\(0\)/.test(css));

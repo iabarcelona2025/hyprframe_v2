@@ -1,6 +1,8 @@
-/* Regresión del menú burger: el overlay conserva el blur y la apertura circular,
-   se rasteriza en un layer propio, bloquea el scroll raíz y pausa/reanuda el
-   vídeo del hero únicamente mientras está cubierto. */
+/* Regresión del menú burger: el overlay se despliega y se recoge con un barrido
+   recto (inset, no círculo), llega difuminado desde el primer frame sin animar
+   el radio del filtro, se rasteriza en un layer propio, bloquea el scroll raíz,
+   mantiene los puntos verdes quietos hasta la apertura y pausa/reanuda el vídeo
+   del hero únicamente mientras está cubierto. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -108,39 +110,48 @@ test('el desenfoque está puesto antes de que entre el primer enlace', () => {
     assert.equal(retraso, 0.15, 'el primer enlace entra a los 0,15 s');
     assert.match(regla('body.menu-open .menu-overlay'), /backdrop-filter:\s*blur\(14px\)/,
         'y el velo ya está difuminado desde el primer frame de la apertura');
-    // La transición de la plancha sigue siendo solo la apertura circular.
+    // La transición de la plancha sigue siendo solo el barrido de clip-path.
     const transicion = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
     assert.match(transicion, /^clip-path 0\.8s var\(--ease-out\)/);
     // Y el propio difuminado no puede retrasarse.
     assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
 });
 
-test('el velo se recoge de golpe, sin repliegue circular', () => {
-    // 19/10/2026: se probó a retrasar `visibility` los 0,8 s del clip-path para
-    // que el cierre copiara la apertura en círculo. No gustó el gesto y se
-    // descartó. Se fija aquí para que nadie lo "arregle" otra vez.
-    const cerrada = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
-    assert.doesNotMatch(cerrada, /visibility/,
-        'la plancha no puede transicionar su visibility al cerrarse');
-    assert.doesNotMatch(cerrada, /[0-9]*\.?[0-9]+s\s+[0-9]*\.?[0-9]+s/,
-        'y tampoco llevar ningún retardo dentro del shorthand');
-    assert.match(regla('.menu-overlay'), /visibility:\s*hidden/);
-    assert.match(regla('body.menu-open .menu-overlay'), /visibility:\s*visible/);
-    // El estado abierto no declara transición propia: hereda la única que hay.
-    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /transition/);
-    // Con `visibility: hidden` la capa ya no intercepta toques al cerrarse.
-    assert.doesNotMatch(regla('.menu-overlay'), /pointer-events/);
-    assert.doesNotMatch(regla('body.menu-open .menu-overlay'), /pointer-events/);
-    // Y cerrado no queda ningún filtro vivo detrás de la capa oculta.
-    assert.match(regla('.menu-overlay'), /backdrop-filter:\s*none/);
+test('el despliegue es un barrido recto de clip-path en 0,8 s, sin círculos', () => {
+    // 19/10/2026: fuera el círculo que crecía desde el burger. La geometría es
+    // la del barrido de las filas de WORK: `inset()` de derecha a izquierda.
+    const cerrada = regla('.menu-overlay');
+    assert.match(cerrada, /clip-path:\s*inset\(0 0 0 100%\)/,
+        'cerrado: la plancha está entera fuera del canto izquierdo');
+    assert.match(regla('body.menu-open .menu-overlay'), /clip-path:\s*inset\(0 0 0 0\)/,
+        'abierto: cubre los cuatro cantos');
+    assert.doesNotMatch(cerrada + regla('body.menu-open .menu-overlay'), /circle\(/,
+        'no queda ni un arco en el menú');
+    // SIN `round`: los cantos son rectos también a mitad del barrido.
+    assert.doesNotMatch(cerrada + regla('body.menu-open .menu-overlay'), /inset\([^)]*\bround\b/);
+    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/);
 });
 
-test('la apertura circular de clip-path se conserva en 0,8 s', () => {
-    const cerrada = regla('.menu-overlay');
-    assert.match(cerrada, /clip-path:\s*circle\(0% at calc\(100% - 3rem\) 2\.5rem\)/);
-    assert.match(/transition:\s*([^;]+);/.exec(cerrada)[1], /clip-path\s+0\.8s/);
-    assert.match(regla('body.menu-open .menu-overlay'),
-        /clip-path:\s*circle\(150% at calc\(100% - 3rem\) 2\.5rem\)/);
+test('el repliegue reproduce el barrido: aguanta visible 0,8 s y no tapa los toques', () => {
+    // Sin ese retardo en `visibility` el barrido de vuelta no se vería: la capa
+    // dejaría de pintarse en el frame 1 (así estaba cuando el cierre era seco).
+    const transicion = /transition:\s*([^;]+);/.exec(regla('.menu-overlay'))[1];
+    const vis = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(transicion);
+    assert.ok(vis, 'la plancha cerrada retrasa su visibility');
+    assert.equal(segundos(vis[1]), 0.8, 'lo justo: lo que tarda el clip-path');
+    // Al abrir no puede haber retardo, o el menú tardaría 0,8 s en aparecer.
+    const abierta = /transition:\s*([^;]+);/.exec(regla('body.menu-open .menu-overlay'))[1];
+    const visOpen = /visibility\s+0s\s+linear\s+([0-9]*\.?[0-9]+s)/.exec(abierta);
+    assert.ok(visOpen, 'el estado abierto declara su propia transición');
+    assert.equal(segundos(visOpen[1]), 0, 'y sin retardo: se ve en el frame 1');
+    // Y mientras se recoge no intercepta toques: sigue tapando la pantalla.
+    assert.match(regla('.menu-overlay'), /pointer-events:\s*none/);
+    assert.match(regla('body.menu-open .menu-overlay'), /pointer-events:\s*auto/);
+    // Cerrado no queda ningún filtro vivo detrás de la capa oculta.
+    assert.match(regla('.menu-overlay'), /backdrop-filter:\s*none/);
+    // Nadie puede retrasar aquí un `transition-delay` suelto: retrasaría también
+    // el difuminado y el menú entraría a destiempo.
+    assert.doesNotMatch(regla('.menu-overlay'), /transition-delay/);
 });
 
 test('el vídeo del hero conserva su animación y sólo se pausa mientras el menú lo tapa', () => {
@@ -242,8 +253,8 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=228/, `${page} debe pedir styles.css?v=228`);
-        assert.doesNotMatch(html, /styles\.css\?v=227/, `${page} no puede quedarse en la versión vieja`);
+        assert.match(html, /styles\.css\?v=229/, `${page} debe pedir styles.css?v=229`);
+        assert.doesNotMatch(html, /styles\.css\?v=228/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
     assert.equal(fs.realpathSync(path.join(root, 'es/styles.css')),
@@ -255,7 +266,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!228)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!229)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });

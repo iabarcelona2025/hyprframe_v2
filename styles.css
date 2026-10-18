@@ -298,9 +298,9 @@ body.menu-open .hero-video { animation-play-state: paused; }
 /* ── Fullscreen menu ─────────────────────────────────────── */
 /* El velo NO anima el radio del desenfoque (18/10/2026). Subir blur(0) →
    blur(14px) obligaba al compositor a remuestrear el fondo difuminado de TODA
-   la pantalla en cada frame, a la vez que el clip-path circular se estaba
-   recortando: en móvil eso se traducía en que los seis apartados entraban a
-   saltos (parpadeaban). Es exactamente el motivo por el que el 30/09/2026 se
+   la pantalla en cada frame, a la vez que el clip-path —entonces un círculo—
+   se estaba recortando: en móvil eso se traducía en que los seis apartados
+   entraban a saltos (parpadeaban). Es exactamente el motivo por el que el 30/09/2026 se
    sacó el `backdrop-filter` de la transición de la cabecera —ver § Header—; la
    diferencia es que allí la franja mide 60 px y aquí mide la ventana entera.
    El desenfoque queda FIJADO en 14px: ya está puesto desde el primer frame,
@@ -316,24 +316,43 @@ body.menu-open .hero-video { animation-play-state: paused; }
     background: rgba(5, 5, 5, 0.65);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
-    transition: clip-path 0.8s var(--ease-out);
+    /* ── Geometría del despliegue: barrido recto (19/10/2026) ──────────────
+       La plancha se descubre con un corte recto desde su borde derecho hacia el
+       izquierdo y, al recogerse, se cierra de vuelta hacia la derecha. Es la
+       misma geometría y el mismo sentido que ya usa el fundido lila de las filas
+       de WORK (.work-row::before, 28/09/2026), y nace del lado donde está el
+       burger: el gesto sigue contando lo mismo que contaba el círculo —el menú
+       sale del botón— sin curvas por delante.
+       Antes: circle(0% → 150% at calc(100% - 3rem) 2.5rem), un óvalo que crecía
+       desde el botón; el replegarse en arco no convencía. `inset()` con los
+       cuatro cantos o bien a 0 o bien a 100%, y SIN `round`: arriba, abajo, a
+       la izquierda y a la derecha el canto es recto en los dos extremos de la
+       animación y a mitad del barrido.
+       `clip-path` se anima por pintado —no lo compone el GPU—, igual que el
+       círculo, pero ahora es lo ÚNICO que se anima de la plancha. */
+    clip-path: inset(0 0 0 100%);
+    /* El retardo de 0,8 s va SOLO en `visibility` y SOLO en este estado cerrado,
+       que es el estado de llegada al cerrar: la plancha aguanta visible el
+       tiempo justo de completar el barrido de recogida. Al abrir manda la
+       transición de la regla abierta, que no lleva retardo, así que el menú se
+       ve en el primer frame. Como `visibility` no interpola de forma continua,
+       el truco es duración 0 s + retardo 0,8 s. */
+    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0.8s;
     display: flex; flex-direction: column; justify-content: center;
     padding: 4.5rem var(--pad) 8rem;
-    /* El cierre es INSTANTÁNEO a propósito (19/10/2026). Se probó a retrasar
-       esta `visibility` los mismos 0,8 s del clip-path para que la plancha se
-       replegara en círculo igual que abre —el gesto no convence—, y se
-       descartó: la transición de arriba no lleva `visibility`, así que al
-       quitar `menu-open` la capa deja de pintarse en el primer frame. Y con
-       `visibility: hidden` tampoco intercepta toques, no hace falta añadir
-       `pointer-events`. */
     visibility: hidden;
+    /* Y mientras se recoge no puede interceptar toques: aguanta visible esos
+       0,8 s tapando la pantalla entera, pero la página de debajo vuelve a estar
+       viva en el instante del cierre. */
+    pointer-events: none;
 }
 body.menu-open .menu-overlay {
-    clip-path: circle(150% at calc(100% - 3rem) 2.5rem);
+    clip-path: inset(0 0 0 0);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     visibility: visible;
+    pointer-events: auto;
+    transition: clip-path 0.8s var(--ease-out), visibility 0s linear 0s;
 }
 .menu-links { display: flex; flex-direction: column; gap: clamp(0.7rem, 1.8vw, 1.2rem); }
 .menu-links a {
