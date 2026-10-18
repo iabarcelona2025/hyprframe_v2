@@ -47,8 +47,8 @@ test('el glitch sólo existe en escritorio, con puntero fino y con movimiento pe
         'las copias del glitch se pintan con el número leído del atributo');
     assert.match(bloque, /\.work-row:hover \.work-num::before/);
     assert.match(bloque, /\.work-row:hover \.work-num::after/);
-    assert.match(bloque, /\.work-row:hover \.work-num,\s*\.work-row:focus-visible \.work-num \{[^}]*text-shadow/s,
-        'el número original recibe su fantasma de píxel al volver lila');
+    assert.doesNotMatch(bloque, /text-shadow/,
+        'la cifra no lleva sombra propia: el efecto son las franjas de detrás');
 });
 
 test('fuera del bloque de escritorio no queda ninguna regla del glitch', () => {
@@ -61,41 +61,39 @@ test('el glitch se dispara a la vez que el número se pone lila', () => {
     assert.match(css, /\.work-row:hover \.work-num \{ color: var\(--violet\); \}/,
         'el número sigue poniéndose lila al pasar el cursor');
     const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
-    assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?animation: work-num-pixel-a/);
-    assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?animation: work-num-pixel-b/);
+    assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?animation: work-num-slice-a/);
+    assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?animation: work-num-slice-b/);
 });
 
-test('el glitch es de píxeles, no una tele mal sintonizada', () => {
+test('el glitch es el de casa: franjas de la 404, no una tele mal sintonizada', () => {
     const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
-    // La rejilla que convierte las copias en cuadrados sueltos.
-    assert.match(bloque, /repeating-linear-gradient\(90deg, #000 0 3px, transparent 3px 6px\)/,
-        'las copias se recortan con una rejilla de 3px');
-    assert.match(bloque, /repeating-linear-gradient\(0deg, #000 0 3px, transparent 3px 6px\)/,
-        'en las dos direcciones, para que los restos sean cuadrados');
-    assert.match(bloque, /mask-composite: intersect/);
-    // Y va dentro de @supports: sin máscaras compuestas la copia saldría
-    // entera (un fantasma de color, justo lo que se quiere evitar).
-    assert.match(bloque, /@supports \(mask-composite: intersect\)/);
-    // Ni una rastro de aberración cromática ni de temblor.
-    assert.doesNotMatch(css, /rgba\(255, 36, 95, 0\.55\)/, 'sin franja roja');
-    assert.doesNotMatch(css, /rgba\(0, 214, 255, 0\.55\)/, 'ni franja cian');
-    assert.doesNotMatch(css, /work-num-jitter/, 'ni temblor de la cifra');
+    // Las copias van detrás de la cifra y se recortan en franjas, como en la 404.
+    assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?z-index: -1;/);
+    assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?z-index: -2;/);
+    assert.match(css, /@keyframes work-num-slice-a \{[\s\S]*?clip-path: inset\(10% 0 80% 0\)/,
+        'las franjas son las de la 404');
+    assert.match(css, /@keyframes work-num-slice-b \{[\s\S]*?clip-path: inset\(65% 0 15% 0\)/);
+    // Los dos colores del glitch de casa: blanco roto y lima.
+    assert.match(bloque, /color: var\(--fg\);/);
+    assert.match(bloque, /color: var\(--lime\);/);
+    // Ni una gota de la aberración cromática que parecía una tele.
+    assert.doesNotMatch(bloque, /rgba\(255, 36, 95/, 'sin franja roja');
+    assert.doesNotMatch(bloque, /rgba\(0, 214, 255/, 'ni franja cian');
+    assert.doesNotMatch(bloque, /#00d6ff/, 'ni cian puro');
+    assert.doesNotMatch(css, /work-num-pixel-/, 'ni el glitch de píxeles');
     assert.doesNotMatch(css, /work-num-glitch-/, 'ni el glitch de franjas anterior');
-    // El único fantasma es duro y de 2px: un píxel de desplazamiento.
-    assert.match(bloque, /text-shadow: 2px 0 rgba\(160, 100, 255, 0\.45\);/);
 });
 
-test('los píxeles saltan en pasos redondos de 3px', () => {
-    for (const name of ['work-num-pixel-a', 'work-num-pixel-b']) {
+test('el glitch dura 2 s y después la cifra se queda quieta en lila', () => {
+    const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
+    for (const name of ['work-num-slice-a', 'work-num-slice-b']) {
+        assert.match(bloque, new RegExp(`animation: ${name} 2s steps\\(1, end\\) 1 forwards;`),
+            `${name} dura 2 s, una sola vez y se queda en su último fotograma`);
         const kf = new RegExp(`@keyframes ${name} \\{([\\s\\S]*?)\\n\\}`).exec(css);
         assert.ok(kf, `falta @keyframes ${name}`);
-        const saltos = [...kf[1].matchAll(/translate\((-?[0-9]+)px, (-?[0-9]+)px\)/g)];
-        assert.ok(saltos.length >= 3, 'la animación tiene al menos tres posiciones');
-        for (const [, x, y] of saltos) {
-            assert.equal(Math.abs(Number(x) % 3), 0, `el salto horizontal ${x}px no es múltiplo del píxel`);
-            assert.equal(Math.abs(Number(y) % 3), 0, `el salto vertical ${y}px no es múltiplo del píxel`);
-        }
+        const ultimo = kf[1].trim().split('\n').pop();
+        assert.match(ultimo, /opacity: 0;/, 'el último fotograma apaga la copia: el efecto se acaba');
     }
-    assert.match(css, /animation: work-num-pixel-a 0\.52s steps\(3, end\) infinite/,
-        'y se mueven a saltos, no deslizando');
+    // Y la cifra se queda en lila: el color del hover no vuelve al gris.
+    assert.match(css, /\.work-row:hover \.work-num \{ color: var\(--violet\); \}/);
 });
