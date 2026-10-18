@@ -1358,30 +1358,20 @@ section { position: relative; }
             align-self: end; justify-self: end;
         }
         /* El fotograma cubre toda la caja (05/10/2026, a petición del cliente) y
-           lleva su propia capa de fusión: un velo que mantiene legibles el número
-           y el titular y un lavado lila que lo tiñe desde la izquierda, los dos
-           desvaneciéndose hacia la derecha, donde la foto se ve entera.
+           lleva su propia capa de fusión: un velo negro que mantiene legibles el
+           número y el titular y un lavado lila que lo tiñe desde la izquierda,
+           los dos desvaneciéndose hacia la derecha, donde la foto se ve entera.
            Antes la foto ocupaba solo la mitad derecha y el fundido lo hacía la
            máscara lateral; ahora el fundido lo hace esta capa y la máscara se
-           queda solo con las bandas inclinadas del hover.
-           (19/10/2026) El velo deja de ser negro y se tiñe de lila: era un
-           degradado grisáceo —gris porque el velo neutro sobre la foto la
-           desaturaba justo donde más se nota— y ahora es la mezcla de --bg con
-           --violet al 16%, es decir #1e142d opaco. Mismos ALFAS que antes
-           (0,94 / 0,72 / 0,34 / 0): lo que cambia es el color, no la cantidad de
-           velo, así que la legibilidad del número y del titular se mantiene igual
-           (15,2:1 sobre --fg frente al 17,5:1 del negro; AAA los dos). Se
-           replican las tres capas de la fusión a la vez —esta, el clon de llegada
-           de la landing y el de la ficha en generated.css— porque si una se queda
-           gris, el relevo del clic cambia de tono. */
+           queda solo con las bandas inclinadas del hover. */
         .work.hf-work-h .work-row::after {
             width: 100%;
             background-image:
                 linear-gradient(to right,
-                    rgba(30, 20, 45, 0.94) 0%,
-                    rgba(30, 20, 45, 0.72) 34%,
-                    rgba(30, 20, 45, 0.34) 62%,
-                    rgba(30, 20, 45, 0) 100%),
+                    rgba(5, 5, 5, 0.94) 0%,
+                    rgba(5, 5, 5, 0.72) 34%,
+                    rgba(5, 5, 5, 0.34) 62%,
+                    rgba(5, 5, 5, 0) 100%),
                 linear-gradient(to right,
                     rgba(160, 100, 255, 0.22) 0%,
                     rgba(160, 100, 255, 0.10) 40%,
@@ -2563,9 +2553,8 @@ label.cookie-purpose-head { cursor: pointer; }
 /* Clon que viene de una caja del carril de escritorio (05/10/2026): allí el
    fotograma es a sangre y lleva su capa de fusión, así que el clon cubre la caja
    entera —sin el fundido lateral que recortaba la mitad derecha— y reproduce la
-   misma capa: velo teñido de lila que deja legible el texto y lavado lila desde
-   la izquierda (mismo #1e142d y mismas alfas que la caja: ver arriba).
-   Al abrirse, la capa se apaga con `is-opening` y queda solo la foto.
+   misma capa: velo negro que deja legible el texto y lavado lila desde la
+   izquierda. Al abrirse, la capa se apaga con `is-opening` y queda solo la foto.
    Es el clon de LLEGADA de la ficha: en la landing el carril ya no construye
    clon de salida (la caja se queda a la vista hasta que entra la ficha). */
 .work-transition--full {
@@ -2575,10 +2564,10 @@ label.cookie-purpose-head { cursor: pointer; }
 .work-transition--full::after {
     background:
         linear-gradient(to right,
-            rgba(30, 20, 45, 0.94) 0%,
-            rgba(30, 20, 45, 0.72) 34%,
-            rgba(30, 20, 45, 0.34) 62%,
-            rgba(30, 20, 45, 0) 100%),
+            rgba(5, 5, 5, 0.94) 0%,
+            rgba(5, 5, 5, 0.72) 34%,
+            rgba(5, 5, 5, 0.34) 62%,
+            rgba(5, 5, 5, 0) 100%),
         linear-gradient(to right,
             rgba(160, 100, 255, 0.22) 0%,
             rgba(160, 100, 255, 0.10) 40%,

@@ -584,13 +584,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .work-transition.is-opening::after { opacity: 0; }
 /* Clon a sangre (05/10/2026): el clic en una caja del carril de escritorio llega
    aquí como la caja entera, con la misma capa de fusión de la landing (velo
-   teñido de lila + lavado lila desde la izquierda). Al abrirse hacia el póster,
-   la capa se apaga con `is-opening` y queda la foto limpia.
-   (19/10/2026) El velo se tiñe igual que en la caja y que en el clon de la
-   landing —#1e142d, la mezcla de --bg con --violet al 16%, con las mismas alfas:
-   ver el bloque `.work.hf-work-h .work-row::after` de styles.css—. Son TRES
-   capas que tienen que ir a una; si esta se queda gris, el relevo del clic se
-   ve cambiar de tono a mitad de camino. */
+   negro + lavado lila desde la izquierda). Al abrirse hacia el póster, la capa
+   se apaga con `is-opening` y queda la foto limpia. */
 .work-transition--full {
     -webkit-mask-image: none;
             mask-image: none;
@@ -598,10 +593,10 @@ body.menu-open .menu-overlay a { visibility: visible; }
 .work-transition--full::after {
     background:
         linear-gradient(to right,
-            rgba(30, 20, 45, 0.94) 0%,
-            rgba(30, 20, 45, 0.72) 34%,
-            rgba(30, 20, 45, 0.34) 62%,
-            rgba(30, 20, 45, 0) 100%),
+            rgba(5, 5, 5, 0.94) 0%,
+            rgba(5, 5, 5, 0.72) 34%,
+            rgba(5, 5, 5, 0.34) 62%,
+            rgba(5, 5, 5, 0) 100%),
         linear-gradient(to right,
             rgba(160, 100, 255, 0.22) 0%,
             rgba(160, 100, 255, 0.10) 40%,

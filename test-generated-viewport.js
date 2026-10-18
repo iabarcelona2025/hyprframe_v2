@@ -17,7 +17,7 @@ for (const dir of ['.', 'es']) {
     assert.equal(pages.length, 10);
     for (const page of pages) {
         const html = fs.readFileSync(`${dir}/${page}`, 'utf8');
-        assert.match(html, /generated\.css\?v=104/);
+        assert.match(html, /generated\.css\?v=103/);
         assert.match(html, /class="node-player__synopsis"/);
     }
 }

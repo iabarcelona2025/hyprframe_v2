@@ -295,15 +295,9 @@ test("el fotograma cubre toda la caja con su capa de fusión", () => {
     assert.match(cuerpo, /width: 100%;/, "la foto cubre la caja entera, no la mitad derecha");
     assert.match(cuerpo, /-webkit-mask-image: none;\s*mask-image: none;/,
         "sin fundido lateral: el borde izquierdo lo hace la capa de fusión");
-    // El velo tiñe el fondo de la caja con el lila de la web (19/10/2026): era
-    // rgba(5,5,5,…) y se leía grisáceo sobre la foto. Mismas alfas: lo que se
-    // cambia es el color, no la cantidad de velo, así que la legibilidad no se
-    // toca. #1e142d = --bg mezclado con --violet al 16%.
     assert.match(cuerpo,
-        /linear-gradient\(to right,\s*rgba\(30, 20, 45, 0\.94\) 0%,\s*rgba\(30, 20, 45, 0\.72\) 34%,\s*rgba\(30, 20, 45, 0\.34\) 62%,\s*rgba\(30, 20, 45, 0\) 100%\)/,
-        "el velo teñido de lila deja legibles el número y el titular a la izquierda");
-    assert.doesNotMatch(cuerpo, /rgba\(5, 5, 5, 0\.94\)/,
-        "y no vuelve a ser neutro: un velo gris desatura la foto justo donde más se nota");
+        /linear-gradient\(to right,\s*rgba\(5, 5, 5, 0\.94\) 0%,\s*rgba\(5, 5, 5, 0\.72\) 34%,\s*rgba\(5, 5, 5, 0\.34\) 62%,\s*rgba\(5, 5, 5, 0\) 100%\)/,
+        "el velo negro deja legibles el número y el titular a la izquierda");
     assert.match(cuerpo,
         /linear-gradient\(to right,\s*rgba\(160, 100, 255, 0\.22\) 0%,\s*rgba\(160, 100, 255, 0\.10\) 40%,\s*rgba\(160, 100, 255, 0\) 74%\)/,
         "el lavado lila tiñe la foto desde la izquierda y se apaga hacia la derecha");
@@ -330,10 +324,7 @@ test("el clon del clic reproduce la caja a sangre, también al llegar a la ficha
     // El clon de salida de la landing y el de llegada de la ficha llevan la
     // misma capa de fusión que la caja; si no, el relevo cambiaría de aspecto.
     const generado = fs.readFileSync(path.join(root, "generated.css"), "utf8");
-    // Las dos capas de relevo del clic llevan el velo TEÑIDO, idéntico al de la
-    // caja; si una se queda gris (o con otras alfas) el tono salta a mitad del
-    // traqueteo.
-    const capa = /rgba\(30, 20, 45, 0\.94\) 0%,\s*rgba\(30, 20, 45, 0\.72\) 34%,\s*rgba\(30, 20, 45, 0\.34\) 62%,\s*rgba\(30, 20, 45, 0\) 100%/;
+    const capa = /rgba\(5, 5, 5, 0\.94\) 0%,\s*rgba\(5, 5, 5, 0\.72\) 34%,\s*rgba\(5, 5, 5, 0\.34\) 62%,\s*rgba\(5, 5, 5, 0\) 100%/;
     for (const [nombre, hoja] of [["landing", css], ["ficha", generado]]) {
         const bloque = /\.work-transition--full::after \{([\s\S]*?)\n\}/.exec(hoja);
         assert.ok(bloque && capa.test(bloque[1]),
