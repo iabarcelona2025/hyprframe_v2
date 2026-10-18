@@ -311,12 +311,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("burger menu items sit 7px further apart, in all three clamp tramos",
         /\.menu-links\s*\{\s*gap:\s*clamp\(calc\(1rem \+ 7px\), calc\(2\.5vw \+ 7px\), calc\(1\.85rem \+ 7px\)\);\s*\}/.test(burgerBlock) &&
         /\.menu-links \{ display: flex; flex-direction: column; gap: clamp\(0\.7rem, 1\.8vw, 1\.2rem\); \}/.test(css));
-    // 18/10/2026 — Menú burger: la plancha del overlay se difumina al abrir
-    // (blur(0) → blur(14px) en 0,12 s) para que el velo ya esté puesto cuando
-    // empieza a entrar el primer enlace (transition-delay 0,15 s). La apertura
-    // circular de clip-path no se toca: sigue siendo de 0,8 s.
-    check("burger menu overlay ramps its blur from 0 to 14px in 0.12s, keeping the 0.8s circular opening",
-        /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(0\)[^}]*transition:\s*clip-path 0\.8s var\(--ease-out\), backdrop-filter 0\.12s var\(--ease-out\)/.test(css) &&
+    // 18/10/2026 — Menú burger: la plancha del overlay se difumina al abrir.
+    // La primera versión lo hacía con una rampa (blur(0) → blur(14px) en 0,12 s)
+    // para que el velo ya estuviera puesto cuando empieza a entrar el primer
+    // enlace (transition-delay 0,15 s).
+    // 18/10/2026 (2ª pasada) — esa rampa se quita: animar el radio del
+    // desenfoque obligaba a remuestrear el fondo de TODA la pantalla en cada
+    // frame mientras el clip-path se recortaba, y en móvil los seis apartados
+    // entraban saltando (parpadeaban). El blur va fijado en 14px desde el primer
+    // frame —la intención de partida sigue cumplida, y con más holgura— y la
+    // transición de la plancha vuelve a ser solo la apertura circular de 0,8 s.
+    // Mismo criterio que la cabecera (§ Header) desde el 30/09/2026.
+    check("burger menu overlay keeps a fixed 14px blur (never animated) and the 0.8s circular opening",
+        /\.menu-overlay\s*\{[^}]*backdrop-filter:\s*none[^}]*transition:\s*clip-path 0\.8s var\(--ease-out\)(?!,\s*backdrop-filter)/.test(css) &&
         /body\.menu-open \.menu-overlay\s*\{[^}]*backdrop-filter:\s*blur\(14px\)/.test(css));
     check("the overlay blur is already in place before the first menu link starts entering",
         /body\.menu-open \.menu-links a:nth-child\(1\)\s*\{\s*transition-delay:\s*0\.15s;/.test(css));
