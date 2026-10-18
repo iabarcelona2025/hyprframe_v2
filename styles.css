@@ -293,7 +293,9 @@ body.menu-open { overflow: hidden; }
 /* ── Fullscreen menu ─────────────────────────────────────── */
 .menu-overlay {
     position: fixed; inset: 0; z-index: 850;
-    background: var(--bg);
+    background: rgba(5, 5, 5, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     clip-path: circle(0% at calc(100% - 3rem) 2.5rem);
     transition: clip-path 0.8s var(--ease-out);
     display: flex; flex-direction: column; justify-content: center;
