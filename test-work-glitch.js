@@ -48,7 +48,7 @@ test('el glitch sólo existe en escritorio, con puntero fino y con movimiento pe
     assert.match(bloque, /\.work-row:hover \.work-num::before/);
     assert.match(bloque, /\.work-row:hover \.work-num::after/);
     assert.match(bloque, /\.work-row:hover \.work-num,\s*\.work-row:focus-visible \.work-num \{[^}]*text-shadow/s,
-        'el número original recibe el corte cromático al volver lila');
+        'el número original recibe su fantasma de píxel al volver lila');
 });
 
 test('fuera del bloque de escritorio no queda ninguna regla del glitch', () => {
@@ -61,17 +61,41 @@ test('el glitch se dispara a la vez que el número se pone lila', () => {
     assert.match(css, /\.work-row:hover \.work-num \{ color: var\(--violet\); \}/,
         'el número sigue poniéndose lila al pasar el cursor');
     const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
-    assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?animation: work-num-glitch-a/);
-    assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?animation: work-num-glitch-b/);
+    assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?animation: work-num-pixel-a/);
+    assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?animation: work-num-pixel-b/);
 });
 
-test('el glitch corta el número en franjas que se desplazan', () => {
-    for (const name of ['work-num-glitch-a', 'work-num-glitch-b']) {
+test('el glitch es de píxeles, no una tele mal sintonizada', () => {
+    const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
+    // La rejilla que convierte las copias en cuadrados sueltos.
+    assert.match(bloque, /repeating-linear-gradient\(90deg, #000 0 3px, transparent 3px 6px\)/,
+        'las copias se recortan con una rejilla de 3px');
+    assert.match(bloque, /repeating-linear-gradient\(0deg, #000 0 3px, transparent 3px 6px\)/,
+        'en las dos direcciones, para que los restos sean cuadrados');
+    assert.match(bloque, /mask-composite: intersect/);
+    // Y va dentro de @supports: sin máscaras compuestas la copia saldría
+    // entera (un fantasma de color, justo lo que se quiere evitar).
+    assert.match(bloque, /@supports \(mask-composite: intersect\)/);
+    // Ni una rastro de aberración cromática ni de temblor.
+    assert.doesNotMatch(css, /rgba\(255, 36, 95, 0\.55\)/, 'sin franja roja');
+    assert.doesNotMatch(css, /rgba\(0, 214, 255, 0\.55\)/, 'ni franja cian');
+    assert.doesNotMatch(css, /work-num-jitter/, 'ni temblor de la cifra');
+    assert.doesNotMatch(css, /work-num-glitch-/, 'ni el glitch de franjas anterior');
+    // El único fantasma es duro y de 2px: un píxel de desplazamiento.
+    assert.match(bloque, /text-shadow: 2px 0 rgba\(160, 100, 255, 0\.45\);/);
+});
+
+test('los píxeles saltan en pasos redondos de 3px', () => {
+    for (const name of ['work-num-pixel-a', 'work-num-pixel-b']) {
         const kf = new RegExp(`@keyframes ${name} \\{([\\s\\S]*?)\\n\\}`).exec(css);
         assert.ok(kf, `falta @keyframes ${name}`);
-        assert.match(kf[1], /clip-path: inset\(/, 'las copias muestran una franja del número');
-        assert.match(kf[1], /transform: translate\(-?[0-9]px, 0\)/, 'y se desplazan lateralmente');
+        const saltos = [...kf[1].matchAll(/translate\((-?[0-9]+)px, (-?[0-9]+)px\)/g)];
+        assert.ok(saltos.length >= 3, 'la animación tiene al menos tres posiciones');
+        for (const [, x, y] of saltos) {
+            assert.equal(Math.abs(Number(x) % 3), 0, `el salto horizontal ${x}px no es múltiplo del píxel`);
+            assert.equal(Math.abs(Number(y) % 3), 0, `el salto vertical ${y}px no es múltiplo del píxel`);
+        }
     }
-    assert.match(css, /@keyframes work-num-jitter \{[\s\S]*?transform: translate\(-1px, 0\)/,
-        'el número original tiembla, como una señal que se descuadra');
+    assert.match(css, /animation: work-num-pixel-a 0\.52s steps\(3, end\) infinite/,
+        'y se mueven a saltos, no deslizando');
 });
