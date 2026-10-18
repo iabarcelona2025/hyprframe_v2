@@ -269,6 +269,20 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("the burger only exists at ≤1024px, so the pause can never trigger on desktop",
         /\.burger\s*\{\s*display:\s*none/.test(css) &&
         /@media \(max-width: 1024px\)\s*\{[\s\S]*?\.burger\s*\{\s*display:\s*block;\s*\}/.test(css));
+    // 18/10/2026 — Menú burger: las letras bajan otros 10px sobre los -10px que
+    // ya traía el bloque móvil (total -20px frente a la talla base) y el hueco
+    // entre apartados gana 7px. El delta va en los TRES tramos del clamp, como
+    // hace el resto del sitio (p. ej. .legacy-next h2), para que el ajuste sea
+    // exacto a cualquier ancho y no sólo en el tramo central. Se ancla en
+    // `.burger { display: block; }`, que es único de ese bloque, para no
+    // colarse en el otro @media (max-width: 1024px) que hay más arriba.
+    const burgerBlock = css.slice(css.indexOf(".burger { display: block; }"));
+    check("burger menu letters sit 20px under the base size, in all three clamp tramos",
+        /\.menu-links a\s*\{[^}]*font-size:\s*clamp\(calc\(2\.4rem - 20px\), calc\(9vw - 20px\), calc\(6rem - 20px\)\)/.test(burgerBlock) &&
+        /\.menu-links a\s*\{\s*font-family: "Montserrat", var\(--font-head\), sans-serif; font-weight: 800;\s*font-size: clamp\(2\.4rem, 9vw, 6rem\)/.test(css));
+    check("burger menu items sit 7px further apart, in all three clamp tramos",
+        /\.menu-links\s*\{\s*gap:\s*clamp\(calc\(1rem \+ 7px\), calc\(2\.5vw \+ 7px\), calc\(1\.85rem \+ 7px\)\);\s*\}/.test(burgerBlock) &&
+        /\.menu-links \{ display: flex; flex-direction: column; gap: clamp\(0\.7rem, 1\.8vw, 1\.2rem\); \}/.test(css));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");

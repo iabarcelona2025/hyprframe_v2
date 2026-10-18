@@ -2286,18 +2286,25 @@ html:has(body.page-legal) { background: var(--bg-legal); }
     .main-nav { display: none; }
     .burger { display: block; }
     .header-meta > .lang-switch { display: none; }
-    /* Menú burger en móvil: letras un paso más finas y 10px más pequeñas. El
-       -10px va en los tres tramos del clamp, así que la reducción es exacta a
-       cualquier ancho. ES / EN queda intacto: .menu-lang tiene su propia talla
-       (0.95rem) y sus enlaces no son .menu-links a. */
+    /* Menú burger en móvil: letras un paso más finas y 20px más pequeñas que
+       la talla base. Los -20px son los -10px que ya traía este bloque más
+       otros -10px pedidos el 18/10/2026. El descuento va en los TRES tramos
+       del clamp, no envuelto en un calc exterior, así que la reducción es
+       exacta a cualquier ancho y no sólo en el tramo central.
+       ES / EN queda intacto: .menu-lang tiene su propia talla (0.95rem) y sus
+       enlaces no son .menu-links a. */
     .menu-links a {
         font-weight: 700; /* 800 → 700 */
-        font-size: clamp(calc(2.4rem - 10px), calc(9vw - 10px), calc(6rem - 10px)); /* -10px */
+        font-size: clamp(calc(2.4rem - 20px), calc(9vw - 20px), calc(6rem - 20px)); /* -20px */
     }
-    /* Más aire entre los enlaces: el hueco sube ~un 40% (0,7/1,8vw/1,2rem →
-       1/2,5vw/1,85rem). Al crecer la pila, el centrado la reparte hacia arriba
-       y hacia abajo. */
-    .menu-links { gap: clamp(1rem, 2.5vw, 1.85rem); }
+    /* Más aire entre los enlaces: al hueco que ya tenía este bloque
+       (1/2,5vw/1,85rem) se le suman 7px el 18/10/2026, otra vez en los tres
+       tramos para que el aumento sea exacto a cualquier ancho. Al crecer la
+       pila, el centrado la reparte hacia arriba y hacia abajo.
+       Ojo: como la letra ha bajado 10px más, la pila resulta ~32px MÁS CORTA
+       que antes pese al hueco mayor, así que no hay riesgo nuevo de
+       desbordamiento en pantallas bajas. */
+    .menu-links { gap: clamp(calc(1rem + 7px), calc(2.5vw + 7px), calc(1.85rem + 7px)); }
     /* Y el bloque sube un poco: con justify-content: center, cada rem de
        padding inferior de más sube el conjunto medio rem. 8rem → 10rem = 16px
        hacia arriba, sin tocar el hueco de 4,5rem que libra la cabecera. */
