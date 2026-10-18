@@ -66,6 +66,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("About stats move 10px closer to their description on web only",
         /\.about-copy\s*\{[^}]*margin:\s*0 0 clamp\(2\.5rem, 6vw, 4\.5rem\)/.test(css) &&
         /@media \(min-width: 861px\)[\s\S]*?\.about-copy\s*\{[^}]*margin-bottom:\s*calc\(clamp\(2\.5rem, 6vw, 4\.5rem\) - 10px\)/.test(css));
+    // 18/10/2026 — Solo en escritorio (≥1025px): el anagrama de la derecha se
+    // acerca 90px hacia la izquierda. Móvil y tablet conservan el desplazamiento
+    // de la regla base, y los -90px no aparecen en ningún otro sitio del CSS.
+    check("About anagram moves 90px left on desktop only; mobile and tablet keep the base offset",
+        /\.about-emblem-wrap\s*\{[^}]*translate:\s*calc\(25% - 80px - clamp\(2rem, 7vw, 7rem\) \+ 50px\) 0/.test(css) &&
+        /@media \(min-width: 1025px\)[\s\S]*?\.about-emblem-wrap\s*\{[^}]*translate:\s*calc\(25% - 80px - clamp\(2rem, 7vw, 7rem\) \+ 50px - 90px\) 0/.test(css) &&
+        (css.match(/- 90px\) 0/g) || []).length === 1);
     check("clock removed from header", doc.getElementById("clock") === null);
 
     // reveals + line-mask titles observed → .in applied by IO stub
@@ -251,6 +258,31 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("menu link click closes menu", !doc.body.classList.contains("menu-open")
         && doc.body.style.overflow === ""
         && burger.getAttribute("aria-label") === "Open menu");
+    // 18/10/2026 — Con el menú burger abierto, la trama de código del hero se
+    // pausa igual que durante el scroll: la MISMA condición del bucle y el
+    // MISMO congelado del reloj (t0 += gap), de modo que al cerrar el menú el
+    // trace retoma donde estaba en vez de soltar de golpe lo acumulado.
+    check("hero code terminal pauses while the burger menu is open, with the same clock freeze as scrolling",
+        /if \(document\.documentElement\.classList\.contains\("is-scrolling"\) \|\|\s*document\.body\.classList\.contains\("menu-open"\)\) \{\s*t0 \+= gap;\s*return;\s*\}/.test(js));
+    // Y es un comportamiento de móvil/tablet porque el burger sólo se muestra
+    // ahí: en escritorio está oculto, así que `menu-open` nunca llega a darse.
+    check("the burger only exists at ≤1024px, so the pause can never trigger on desktop",
+        /\.burger\s*\{\s*display:\s*none/.test(css) &&
+        /@media \(max-width: 1024px\)\s*\{[\s\S]*?\.burger\s*\{\s*display:\s*block;\s*\}/.test(css));
+    // 18/10/2026 — Menú burger: las letras bajan otros 10px sobre los -10px que
+    // ya traía el bloque móvil (total -20px frente a la talla base) y el hueco
+    // entre apartados gana 7px. El delta va en los TRES tramos del clamp, como
+    // hace el resto del sitio (p. ej. .legacy-next h2), para que el ajuste sea
+    // exacto a cualquier ancho y no sólo en el tramo central. Se ancla en
+    // `.burger { display: block; }`, que es único de ese bloque, para no
+    // colarse en el otro @media (max-width: 1024px) que hay más arriba.
+    const burgerBlock = css.slice(css.indexOf(".burger { display: block; }"));
+    check("burger menu letters sit 20px under the base size, in all three clamp tramos",
+        /\.menu-links a\s*\{[^}]*font-size:\s*clamp\(calc\(2\.4rem - 20px\), calc\(9vw - 20px\), calc\(6rem - 20px\)\)/.test(burgerBlock) &&
+        /\.menu-links a\s*\{\s*font-family: "Montserrat", var\(--font-head\), sans-serif; font-weight: 800;\s*font-size: clamp\(2\.4rem, 9vw, 6rem\)/.test(css));
+    check("burger menu items sit 7px further apart, in all three clamp tramos",
+        /\.menu-links\s*\{\s*gap:\s*clamp\(calc\(1rem \+ 7px\), calc\(2\.5vw \+ 7px\), calc\(1\.85rem \+ 7px\)\);\s*\}/.test(burgerBlock) &&
+        /\.menu-links \{ display: flex; flex-direction: column; gap: clamp\(0\.7rem, 1\.8vw, 1\.2rem\); \}/.test(css));
 
     /* ── Cursor propio desactivado (29/09/2026): cruceta, punto y rollover fuera ── */
     const link = doc.querySelector(".work-row");

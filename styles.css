@@ -112,10 +112,15 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
    animación viva en su lista; con `none` desaparece de verdad. Los @keyframes
    se conservan (no cuestan nada) por si se quiere volver atrás.
    Antes de esto se probó a correrlo solo mientras se desplaza; se ha quitado
-   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b. */
+   también porque el grano no era lo que hacía pesado el scroll — ver §3.10b.
+
+   (18/10/2026) Opacidad bajada de 0,05 a 0,03: el grano deja de ensuciar los
+   degradados claros (hero, tarjetas) y sigue haciendo su trabajo de dither
+   anti-banding. La desviación del ruido baja proporcionalmente, de ±1,8 a
+   ~±1,1 niveles (1σ). */
 .grain {
     position: fixed; inset: 0; z-index: 900; pointer-events: none;
-    opacity: 0.05;
+    opacity: 0.03;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     animation: none;
     will-change: transform;
@@ -1088,8 +1093,73 @@ section { position: relative; }
     font-family: var(--font-mono); font-size: 0.75rem;
     letter-spacing: 0.2em; color: var(--muted);
     transition: color 0.4s;
+    position: relative;   /* ancla de las copias del glitch (::before/::after) */
 }
 .work-row:hover .work-num { color: var(--violet); }
+.work-row:focus-visible .work-num { color: var(--violet); }
+
+/* ── Glitch digital en los números de WORK (solo escritorio) ──
+   Al pasar el cursor por un proyecto, el número se pone lila (regla de
+   arriba) y, a la vez, se rompe como una señal de vídeo degradada: el
+   número original recibe un corte cromático (rojo/cian, el mismo del
+   filtro statement-tv-fringe) y dos copias sueltas (::before en lima,
+   ::after en cian) se desplazan lateralmente mostrando cada una una
+   franja distinta del número, como un bloque descuadrado.
+   Sólo en escritorio (≥1025px, que es donde la sección se convierte en el
+   carril horizontal de proyectos) y sólo con puntero fino: por debajo la
+   lista es vertical y en táctil no hay hover, así que el efecto no se vería
+   nunca. Con prefers-reduced-motion el número se queda lila, sin romperse:
+   el glitch es movimiento puro, y ahí no se mueve nada. */
+@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .work-num::before,
+    .work-num::after {
+        content: attr(data-num);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s linear;
+    }
+    .work-row:hover .work-num,
+    .work-row:focus-visible .work-num {
+        text-shadow:
+            -0.08em 0 0 rgba(255, 36, 95, 0.55),
+             0.08em 0 0 rgba(0, 214, 255, 0.55);
+        animation: work-num-jitter 0.26s steps(2, end) infinite;
+    }
+    .work-row:hover .work-num::before,
+    .work-row:focus-visible .work-num::before {
+        color: var(--lime);
+        opacity: 0.8;
+        animation: work-num-glitch-a 0.36s steps(3, end) infinite;
+    }
+    .work-row:hover .work-num::after,
+    .work-row:focus-visible .work-num::after {
+        color: #00d6ff;
+        opacity: 0.8;
+        animation: work-num-glitch-b 0.36s steps(3, end) infinite;
+    }
+}
+/* Franjas del glitch: cada copia enseña una banda distinta del número y la
+   desplaza lateralmente, como un bloque de vídeo descuadrado. */
+@keyframes work-num-glitch-a {
+    0%   { transform: translate(0, 0);    clip-path: inset(10% 0 60% 0); }
+    33%  { transform: translate(-3px, 0); clip-path: inset(42% 0 30% 0); }
+    66%  { transform: translate(2px, 0);  clip-path: inset(72% 0 5% 0); }
+    100% { transform: translate(0, 0);    clip-path: inset(10% 0 60% 0); }
+}
+@keyframes work-num-glitch-b {
+    0%   { transform: translate(0, 0);    clip-path: inset(44% 0 32% 0); }
+    33%  { transform: translate(3px, 0);  clip-path: inset(70% 0 8% 0); }
+    66%  { transform: translate(-2px, 0); clip-path: inset(8% 0 58% 0); }
+    100% { transform: translate(0, 0);    clip-path: inset(44% 0 32% 0); }
+}
+@keyframes work-num-jitter {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(-1px, 0); }
+}
 .work-title {
     /* Ajuste pedido por el cliente (24/09/2026): bajada fuerte de tamaño.
        Escala completa más pequeña (antes 70.4px en desktop y 30.4px en móvil):
@@ -1892,6 +1962,15 @@ section { position: relative; }
         top: 0; bottom: auto;
         width: 100%; height: 100%;
     }
+    /* Solo en escritorio (18/10/2026): el anagrama de la derecha se acerca
+       90px hacia la izquierda. Se suma al desplazamiento que ya trae la regla
+       base de .about-emblem-wrap —que es el que lo separa del titular—, así
+       que por debajo de 1025px (móvil y tablet) el anagrama se queda donde
+       estaba. El reflejo vive dentro del mismo contenedor, de modo que se
+       desplaza con él y sigue alineado bajo el logo. */
+    .about-emblem-wrap {
+        translate: calc(25% - 80px - clamp(2rem, 7vw, 7rem) + 50px - 90px) 0;
+    }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */
@@ -2207,18 +2286,25 @@ html:has(body.page-legal) { background: var(--bg-legal); }
     .main-nav { display: none; }
     .burger { display: block; }
     .header-meta > .lang-switch { display: none; }
-    /* Menú burger en móvil: letras un paso más finas y 10px más pequeñas. El
-       -10px va en los tres tramos del clamp, así que la reducción es exacta a
-       cualquier ancho. ES / EN queda intacto: .menu-lang tiene su propia talla
-       (0.95rem) y sus enlaces no son .menu-links a. */
+    /* Menú burger en móvil: letras un paso más finas y 20px más pequeñas que
+       la talla base. Los -20px son los -10px que ya traía este bloque más
+       otros -10px pedidos el 18/10/2026. El descuento va en los TRES tramos
+       del clamp, no envuelto en un calc exterior, así que la reducción es
+       exacta a cualquier ancho y no sólo en el tramo central.
+       ES / EN queda intacto: .menu-lang tiene su propia talla (0.95rem) y sus
+       enlaces no son .menu-links a. */
     .menu-links a {
         font-weight: 700; /* 800 → 700 */
-        font-size: clamp(calc(2.4rem - 10px), calc(9vw - 10px), calc(6rem - 10px)); /* -10px */
+        font-size: clamp(calc(2.4rem - 20px), calc(9vw - 20px), calc(6rem - 20px)); /* -20px */
     }
-    /* Más aire entre los enlaces: el hueco sube ~un 40% (0,7/1,8vw/1,2rem →
-       1/2,5vw/1,85rem). Al crecer la pila, el centrado la reparte hacia arriba
-       y hacia abajo. */
-    .menu-links { gap: clamp(1rem, 2.5vw, 1.85rem); }
+    /* Más aire entre los enlaces: al hueco que ya tenía este bloque
+       (1/2,5vw/1,85rem) se le suman 7px el 18/10/2026, otra vez en los tres
+       tramos para que el aumento sea exacto a cualquier ancho. Al crecer la
+       pila, el centrado la reparte hacia arriba y hacia abajo.
+       Ojo: como la letra ha bajado 10px más, la pila resulta ~32px MÁS CORTA
+       que antes pese al hueco mayor, así que no hay riesgo nuevo de
+       desbordamiento en pantallas bajas. */
+    .menu-links { gap: clamp(calc(1rem + 7px), calc(2.5vw + 7px), calc(1.85rem + 7px)); }
     /* Y el bloque sube un poco: con justify-content: center, cada rem de
        padding inferior de más sube el conjunto medio rem. 8rem → 10rem = 16px
        hacia arriba, sin tocar el hueco de 4,5rem que libra la cabecera. */

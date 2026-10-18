@@ -865,11 +865,19 @@
                 // El reloj se desplaza con el hueco (`t0 += gap`), así que
                 // `elapsed` no avanza: al volver se retoma donde estaba, sin
                 // soltar de golpe los caracteres acumulados ni saltarse un ciclo
-                // de contadores. Se usa `is-scrolling` como señal única de
-                // «hay desplazamiento»: smooth-scroll.js la marca tanto durante
+                // de contadores. Se usa `is-scrolling` como señal de «hay
+                // desplazamiento»: smooth-scroll.js la marca tanto durante
                 // la inercia de escritorio como ante el scroll nativo táctil.
                 // Así el móvil conserva su scroll nativo y solo pausa el terminal.
-                if (document.documentElement.classList.contains("is-scrolling")) {
+                // Con el menú burger abierto se pausa igual (18/10/2026): en
+                // móvil y tablet el overlay tapa el hero entero, pero el trace
+                // seguiría reescribiéndose detrás —unos 1.620 cambios de nodo
+                // por segundo en el hilo principal que nadie ve—. `menu-open`
+                // es la misma señal que ya usa smooth-scroll.js para no
+                // secuestrar la rueda, y como el burger sólo se muestra a
+                // ≤1024px, en escritorio esta rama no se activa nunca.
+                if (document.documentElement.classList.contains("is-scrolling") ||
+                    document.body.classList.contains("menu-open")) {
                     t0 += gap;
                     return;
                 }
