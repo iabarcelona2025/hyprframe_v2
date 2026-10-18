@@ -1962,6 +1962,15 @@ section { position: relative; }
         top: 0; bottom: auto;
         width: 100%; height: 100%;
     }
+    /* Solo en escritorio (18/10/2026): el anagrama de la derecha se acerca
+       90px hacia la izquierda. Se suma al desplazamiento que ya trae la regla
+       base de .about-emblem-wrap —que es el que lo separa del titular—, así
+       que por debajo de 1025px (móvil y tablet) el anagrama se queda donde
+       estaba. El reflejo vive dentro del mismo contenedor, de modo que se
+       desplaza con él y sigue alineado bajo el logo. */
+    .about-emblem-wrap {
+        translate: calc(25% - 80px - clamp(2rem, 7vw, 7rem) + 50px - 90px) 0;
+    }
 }
 
 /* ── CONTACT ─────────────────────────────────────────────── */

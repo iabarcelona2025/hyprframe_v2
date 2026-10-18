@@ -66,6 +66,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("About stats move 10px closer to their description on web only",
         /\.about-copy\s*\{[^}]*margin:\s*0 0 clamp\(2\.5rem, 6vw, 4\.5rem\)/.test(css) &&
         /@media \(min-width: 861px\)[\s\S]*?\.about-copy\s*\{[^}]*margin-bottom:\s*calc\(clamp\(2\.5rem, 6vw, 4\.5rem\) - 10px\)/.test(css));
+    // 18/10/2026 — Solo en escritorio (≥1025px): el anagrama de la derecha se
+    // acerca 90px hacia la izquierda. Móvil y tablet conservan el desplazamiento
+    // de la regla base, y los -90px no aparecen en ningún otro sitio del CSS.
+    check("About anagram moves 90px left on desktop only; mobile and tablet keep the base offset",
+        /\.about-emblem-wrap\s*\{[^}]*translate:\s*calc\(25% - 80px - clamp\(2rem, 7vw, 7rem\) \+ 50px\) 0/.test(css) &&
+        /@media \(min-width: 1025px\)[\s\S]*?\.about-emblem-wrap\s*\{[^}]*translate:\s*calc\(25% - 80px - clamp\(2rem, 7vw, 7rem\) \+ 50px - 90px\) 0/.test(css) &&
+        (css.match(/- 90px\) 0/g) || []).length === 1);
     check("clock removed from header", doc.getElementById("clock") === null);
 
     // reveals + line-mask titles observed → .in applied by IO stub
