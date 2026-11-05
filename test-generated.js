@@ -344,7 +344,7 @@ for (const page of PAGES) {
             assert.notEqual(card.getAttribute("href"), page.file, `${page.file}: se enlaza a sí misma`);
         });
         const footer = doc.querySelector(".footer-row");
-        assert.equal(footer.querySelector("span").textContent.trim(), "© 2026 HYPRFRAME. All rights reserved.");
+        assert.equal(footer.querySelector("span").textContent.trim(), "© 2025 HYPRFRAME. All rights reserved.");
         assert.match(footer.textContent, /Cookie policy/, `${page.file}: el pie enlaza la política de cookies`);
 
         /* ── Comportamiento: menú móvil, cabecera y reproductor bajo demanda ── */
