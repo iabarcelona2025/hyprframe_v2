@@ -128,6 +128,17 @@ Es, con diferencia, **la categoría con más trabajo de hilo principal de toda l
 
 A favor: el bucle está bien criado —se para fuera de pantalla y con la pestaña oculta (`script.js:694-706`), y con `prefers-reduced-motion` pinta el bloque quieto—, y el estado se persiste en `sessionStorage` al salir.
 
+> **Actualización 16/11/2026 — esta sección ya no describe el código actual.** El
+> churn (y los cuatro contadores de ciclo que lo movían) se ha eliminado: los
+> números lima del trace son **texto literal** y no se reescriben nunca. En cada
+> paso solo cambia la línea que se está escribiendo, así que el panel deja de
+> re-rasterizarse 20 veces por segundo. También han caído el `filter` de
+> `.log-line` y el de `.log-num` (`styles.css`), con lo que las 92 + 175
+> superficies filtradas de §3.3 desaparecen; quedan el `mix-blend-mode` del panel
+> y el de `.log-body`. Se mantiene todo lo demás: escritura carácter a carácter,
+> ventana deslizante, cursor, pausas (scroll, menú abierto, pestaña oculta, fuera
+> de pantalla), `prefers-reduced-motion` y la persistencia en `sessionStorage`.
+
 ### 3.3 Mezclas, filtros y máscaras del panel — ~18 %
 
 Lo que el CSS le pide a la GPU por cada frame del vídeo y por cada paso del terminal:

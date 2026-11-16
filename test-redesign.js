@@ -285,11 +285,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         && doc.body.style.overflow === ""
         && burger.getAttribute("aria-label") === "Open menu");
     // 18/10/2026 — Con el menú burger abierto, la trama de código del hero se
-    // pausa igual que durante el scroll: la MISMA condición del bucle y el
-    // MISMO congelado del reloj (t0 += gap), de modo que al cerrar el menú el
-    // trace retoma donde estaba en vez de soltar de golpe lo acumulado.
-    check("hero code terminal pauses while the burger menu is open, with the same clock freeze as scrolling",
-        /if \(document\.documentElement\.classList\.contains\("is-scrolling"\) \|\|\s*document\.body\.classList\.contains\("menu-open"\)\) \{\s*t0 \+= gap;\s*return;\s*\}/.test(js));
+    // pausa igual que durante el scroll: la MISMA condición del bucle. Desde el
+    // 16/11/2026 ya no hay reloj que congelar (los números no cambian), así que
+    // la pausa es un simple `return`: al cerrar el menú se retoma donde estaba.
+    check("hero code terminal pauses while the burger menu is open, with the same pause as scrolling",
+        /if \(document\.documentElement\.classList\.contains\("is-scrolling"\) \|\|\s*document\.body\.classList\.contains\("menu-open"\)\) return;/.test(js) &&
+        !/t0 \+= gap/.test(js));
     check("hero terminal caret stops blinking while the burger menu is open",
         /body\.menu-open\s+\.log-caret\s*\{\s*animation-play-state:\s*paused;\s*\}/.test(css));
     // Y es un comportamiento de móvil/tablet porque el burger sólo se muestra
@@ -456,35 +457,42 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /Q_Tensor \[1, 32, 128, 64\]/.test(heroLog.textContent) &&
         /#15496 \(" tensor"\)/.test(heroLog.textContent) &&
         /ε = 1e-05/.test(heroLog.textContent) && /θ=10000/.test(heroLog.textContent));
-    // el bloque está vivo: dos muestras separadas 400 ms
-    const logSnap = () => heroLog.querySelector(".log-body").textContent;
-    const logBefore = logSnap();
-    await wait(400);
-    const logAfter = logSnap();
-    check("hero log: los valores numéricos cambian a gran velocidad mientras se escribe",
-        logAfter !== logBefore, logAfter === logBefore ? "sin cambios en 400 ms" : "cambiando");
-    // invariante: en las líneas YA escritas solo cambian los números, nunca el
-    // ancho de un campo (la línea en curso no cuenta: se está escribiendo)
-    const widthsByLog = () => {
-        const map = {};
-        heroLog.querySelectorAll(".log-line.is-done").forEach((l) => { map[l.dataset.log] = l.textContent.length; });
+    // Los números lima son ahora texto literal: dentro de una línea ya escrita
+    // no cambia ni un carácter (la línea en curso sí: se está escribiendo).
+    // Se compara por índice de trace (data-log), no por posición: la ventana
+    // deslizante puede sacar líneas por arriba entre las dos muestras.
+    const doneTexts = () => {
+        const map = new Map();
+        heroLog.querySelectorAll(".log-line.is-done").forEach((l) => {
+            if (!map.has(l.dataset.log)) map.set(l.dataset.log, l.textContent);
+        });
         return map;
     };
-    const wBefore = widthsByLog();
-    await wait(400);
-    const wAfter = widthsByLog();
-    const sameWidth = Object.keys(wBefore).every((k) => wAfter[k] === undefined || wAfter[k] === wBefore[k]);
-    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
-        Object.keys(wBefore).length > 20 && sameWidth,
-        `${Object.keys(wBefore).length} líneas escritas, anchos idénticos`);
-    // sin franja: los números se mueven en todas las líneas ya escritas
-    const doneSnap = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
-    await wait(400);
-    const doneNow = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
-    const moved = doneSnap.filter((txt, i) => doneNow[i] !== undefined && txt !== doneNow[i]).length;
-    check("hero log: los números cambian en todo el bloque escrito, sin depender de ninguna franja",
-        moved > 3 && !/is-hot|is-head/.test(js) && !/is-hot|is-head/.test(css),
-        `${moved} líneas cambiando en 400 ms`);
+    const frozenBefore = doneTexts();
+    await wait(600);
+    const frozenAfter = doneTexts();
+    const comparable = [...frozenBefore.keys()].filter((k) => frozenAfter.has(k));
+    check("hero log: los números de las líneas ya escritas no cambian (sin churn)",
+        comparable.length > 20 && comparable.every((k) => frozenBefore.get(k) === frozenAfter.get(k)),
+        `${comparable.length} líneas escritas, texto idéntico tras 600 ms`);
+    check("hero log: los campos lima llevan el valor literal del trace, con su ancho y decimales",
+        /Timestep: 450\/1000 \(t=0\.45\)/.test(js) &&
+        /Allocation: 128\/512 tokens/.test(js) &&
+        /Generating Token #1025/.test(js) &&
+        /Timestep: 450\/1000 \(t=0\.45\)/.test(heroLog.textContent) &&
+        /Allocation: 128\/512 tokens/.test(heroLog.textContent) &&
+        /0x7f8a9a40/.test(heroLog.textContent) &&
+        // solo las líneas ya escritas: la línea en curso lleva campos a medias
+        (() => {
+            const done = [...heroLog.querySelectorAll(".log-line.is-done .log-num")];
+            return done.length > 100 &&
+                done.every((el) => /^(0[xX][0-9a-fA-F]+|-?\d[\d,]*\.\d+)$/.test(el.textContent));
+        })(),
+        `${heroLog.querySelectorAll(".log-line.is-done .log-num").length} campos lima escritos`);
+    check("hero log: sin churn, sin contadores ni reloj de ciclo — nada que reescriba el texto",
+        !/const CHURN =/.test(js) && !/function randomize/.test(js) &&
+        !/COUNTERS|advanceCounters|paintCounters|const CYCLE/.test(js) &&
+        !/\{\{/.test(js) && !/is-hot|is-head/.test(js) && !/is-hot|is-head/.test(css));
     check("hero log: se escribe carácter a carácter, con cursor al final de la línea activa",
         /const CHARS_MIN = 8, CHARS_VAR = 24;/.test(js) && /function typeChars/.test(js) &&
         /\.log-caret\s*\{[^}]*animation:\s*logCaret/.test(css) &&
@@ -502,12 +510,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
         /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 calc\(38% \+ 35px\)\)/.test(css));
-    check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
-        /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
-        /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
-    check("hero log: contadores de ciclo (capa, timestep, token, KV-cache) sobre el propio texto",
-        /\{\{24:layer\}\}/.test(js) && /\{\{450:timestep\}\}/.test(js) &&
-        /\{\{1025:token\}\}/.test(js) && /advanceCounters\(\)/.test(js));
+    check("hero log: rAF único y throttled a ~20 fps",
+        /const TICK = 50;/.test(js) && /now - last < TICK/.test(js) &&
+        /requestAnimationFrame\(frame\)/.test(js));
     check("hero log: se detiene fuera de pantalla y con la pestaña oculta",
         /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
         /cancelAnimationFrame\(raf\)/.test(js));

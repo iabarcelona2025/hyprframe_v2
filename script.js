@@ -427,37 +427,42 @@
     // carácter a carácter y en bucle, como si el modelo estuviera escupiendo su
     // traza por consola.
     //
+    // Simplificado (16/11/2026) — los números lima ya NO cambian:
+    // · Fuera el CHURN: antes, en cada paso de escritura se reescribían ~81
+    //   campos numéricos repartidos por TODO el panel, así que los números
+    //   bailaban también en las líneas ya escritas. Cada reescritura invalidaba
+    //   la cadena de filtros y mezclas de .hero-log (ver
+    //   analisis-hero-peso-scroll.md §5), 20 veces por segundo. Ahora los
+    //   números son texto literal: se escriben una vez y se quedan quietos.
+    // · Fuera los cuatro contadores de ciclo (capa, timestep, token, KV-cache)
+    //   y el reloj de 5 s que los movía: sus antiguos huecos son ya valores
+    //   fijos en el texto.
+    // Lo que queda, que es todo lo que se ve:
     // · Fase de llenado: arranca vacío y va escribiendo líneas hacia abajo.
     // · Pantalla llena: al llegar al final del panel, cada línea nueva empuja
     //   la más vieja fuera del DOM (ventana deslizante) → el bloque se queda
     //   lleno y la información sigue fluyendo, como un terminal de verdad.
     // · Sin franja ni barrido: el único foco es el cursor, que parpadea al
     //   final de la línea que se está escribiendo ahora mismo.
-    // · Los números de las líneas ya escritas siguen cambiando (CHURN).
-    // · El texto es literal y los campos numéricos conservan el ancho y los
-    //   decimales del original, así que la maquetación nunca baila.
+    // · Los campos numéricos conservan el ancho, el signo y los decimales del
+    //   original, así que la maquetación nunca baila.
     // · Un único rAF throttled escribiendo sobre nodos de texto (node.data, no
     //   textContent), se para fuera de pantalla, y con prefers-reduced-motion
     //   pinta el bloque ya escrito y quieto.
     const heroLog = document.getElementById("heroLog");
 
     if (heroLog) {
-        const CYCLE = 5000;      // ms — los contadores avanzan una vez por ciclo
         const TICK = 50;         // ms entre pasos de escritura (~20 fps)
         const LEAD = 1.3;        // line-height, el mismo que en el CSS
         const FS_MIN = 6, FS_MAX = 11;
         const CHARS_MIN = 8, CHARS_VAR = 24;   // caracteres por paso (8-32)
-        const CHURN = 0.45;      // fracción de campos que cambia por paso
-        const HEX = "0123456789abcdef";
-        // Contadores: avanzan una vez por ciclo de 5 s (no con el barrido).
-        const COUNTERS = {
-            layer:    { v: 24,   min: 1,    max: 32,    step: 1 },
-            timestep: { v: 450,  min: 0,    max: 450,   step: -1 },
-            token:    { v: 1025, min: 1025, max: 99999, step: 1 },
-            kvtokens: { v: 128,  min: 8,    max: 512,   step: 8 },
-        };
+        // Los números lima del trace: hexadecimales (0x7f8a9a40) y decimales
+        // (-0.0124, 98.4). Los enteros sueltos (formas de tensor, IDs, índices,
+        // 1e-05) se quedan como texto normal, igual que antes. Nada de lo que
+        // captura este regex se vuelve a reescribir: es texto literal.
+        const NUM = /0[xX][0-9a-fA-F]+|-?\d[\d,]*\.\d+/g;
         const LOG = [
-`[LAYER {{24:layer}}/32 :: Self-Attention Multi-Head Matrix Multiplication]`,
+`[LAYER 24/32 :: Self-Attention Multi-Head Matrix Multiplication]`,
 ``,
 `Q_Tensor [1, 32, 128, 64] × K_Tensor^T [1, 32, 64, 128] -> Softmax Scaling (1/√d)`,
 ``,
@@ -482,7 +487,7 @@
 `μ = -0.0124 | σ² = 0.8412 | ε = 1e-05 -> Normalized Scale Vector Output`,
 ``,
 `[KV-CACHE MANAGEMENT :: FlashAttention-2 PagedMemory]`,
-`Block_ID: 0x7f8a9a40 | Allocation: {{128:kvtokens}}/512 tokens | Cache Hit Rate: 98.4%`,
+`Block_ID: 0x7f8a9a40 | Allocation: 128/512 tokens | Cache Hit Rate: 98.4%`,
 `Head_03: [0.12, -0.45, 0.88, 0.01] ... [Rotary Embedding (RoPE) applied: θ=10000]`,
 `Head_04: [0.00,  0.31,-0.12, 0.94] ... [Rotary Embedding (RoPE) applied: θ=10000]`,
 ``,
@@ -521,7 +526,7 @@
 ``,
 `[AUTOREGRESSIVE LOOP NEXT TOKEN PREDICTION]`,
 `Context Token Window: [ ... 1021, 1022, 1023, 15496 ]`,
-`Generating Token #{{1025:token}}... Target Latency: 11.8ms | Status: COMPUTING LAYER 01/32`,
+`Generating Token #1025... Target Latency: 11.8ms | Status: COMPUTING LAYER 01/32`,
 ``,
 `--------------------------------------------------------------------------------`,
 `[MOE ROUTING :: Mixture of Experts Sparsity Gating (8 Experts / Top-2 Active)]`,
@@ -531,7 +536,7 @@
 `  -> Routing Tensor Payload [1, 4096] to Experts CUDA Sub-stream 1 & 4... DONE`,
 ``,
 `[LATENT DIFFUSION / DENOISING STEP :: Scheduler: DPM++ 2M Karras]`,
-`Timestep: {{450:timestep}}/1000 (t={{0.45:tscale}}) | Noise Prediction Vector ε_θ(x_t, t)`,
+`Timestep: 450/1000 (t=0.45) | Noise Prediction Vector ε_θ(x_t, t)`,
 `   Latent Grid [1, 4, 64, 64]:`,
 `   [-0.0124,  0.8812, -1.4012,  0.0041 ...  0.3391]`,
 `   [ 1.1023, -0.0092,  0.4120, -0.8912 ... -0.1204]`,
@@ -553,67 +558,14 @@
 
         const linesEl = heroLog.querySelector("[data-log-lines]");
 
-        // Contador {{muestra:nombre}} · hex 0x… · notación científica (1e-05)
-        // · números (-?d[,ddd][.ddd]). Lo que no encaja en un campo dinámico
-        // (enteros sueltos: formas, IDs, índices) se deja tal cual.
-        const TOKEN = /\{\{\S+?:\w+\}\}|0[xX][0-9a-fA-F]+|\d+e[+-]?\d+|-?\d[\d,]*(?:\.\d+)?/g;
-
-        function makeSpec(tok) {
-            const counter = /^\{\{(\S+?):(\w+)\}\}$/.exec(tok);
-            if (counter) return { kind: "counter", name: counter[2], width: counter[1].length, sample: counter[1] };
-            if (/^0[xX][0-9a-fA-F]+$/.test(tok)) {
-                const digits = tok.slice(2);
-                return { kind: "hex", len: digits.length, upper: /[A-F]/.test(digits), sample: tok };
-            }
-            if (/e[+-]/i.test(tok)) return null;      // 1e-05: constante
-            if (tok.indexOf(".") < 0) return null;    // enteros: estructura, no medida
-            const neg = tok[0] === "-";
-            const body = neg ? tok.slice(1) : tok;
-            const dot = body.indexOf(".");
-            const intDigits = dot;
-            const dec = body.length - dot - 1;
-            const mag = Math.abs(parseFloat(tok));
-            // rango plausible: por debajo de 1 se mantiene en [0,1); por encima,
-            // hasta el doble de la muestra sin pasarse del ancho del campo
-            const hi = mag < 1 ? 1 : Math.min(Math.pow(10, intDigits), mag * 2);
-            return { kind: "float", dec, body: body.length, signed: neg, hi, sample: tok };
-        }
-
-        // random=false → el valor literal del texto (primer pintado)
-        function render(spec, random) {
-            if (spec.kind === "counter") {
-                const s = spec.name === "tscale"
-                    ? (COUNTERS.timestep.v / 1000).toFixed(2)
-                    : String(COUNTERS[spec.name].v);
-                return s.length >= spec.width ? s.slice(-spec.width) : s.padStart(spec.width, " ");
-            }
-            if (!random) return spec.sample;
-            if (spec.kind === "hex") {
-                let s = spec.upper ? "0X" : "0x";
-                for (let i = 0; i < spec.len; i++) {
-                    const c = HEX[(Math.random() * 16) | 0];
-                    s += spec.upper ? c.toUpperCase() : c;
-                }
-                return s;
-            }
-            let v = Math.random() * (spec.hi - Math.pow(10, -spec.dec));
-            if (spec.signed && Math.random() < 0.5) v = -v;
-            let s = Math.abs(v).toFixed(spec.dec);
-            if (s.length > spec.body) s = s.slice(-spec.body);
-            while (s.length < spec.body) s = "0" + s;
-            return spec.signed ? (v < 0 ? "-" : " ") + s : s;
-        }
-
         // Cursor de escritura: viaja al final de la línea que se está escribiendo.
         const caret = document.createElement("span");
         caret.className = "log-caret";
 
-        const lines = [];        // ventana deslizante: [{ el, parts, fields, done }]
+        const lines = [];        // ventana deslizante: [{ el, parts, pi, done }]
         let maxLines = LOG.length; // líneas que caben en el panel
         let logIndex = 0;        // siguiente línea del trace
         let cur = null;          // línea en curso (null → toca abrir otra)
-        let persistedElapsed = 0;
-        let currentElapsed = 0;
         const LOG_STATE_KEY = "hfHeroLogState";
 
         // Construye la línea con toda su estructura (texto + spans de números)
@@ -622,40 +574,51 @@
             const el = document.createElement("div");
             el.className = "log-line";
             const parts = [];
-            const fields = [];
-            let last = 0, m;
-            TOKEN.lastIndex = 0;
-            const addText = (str) => {
+            const addPart = (str, isNum) => {
                 const node = document.createTextNode("");
-                el.appendChild(node);
-                parts.push({ node: node, full: str });
-            };
-            while ((m = TOKEN.exec(text))) {
-                if (m.index > last) addText(text.slice(last, m.index));
-                const spec = makeSpec(m[0]);
-                if (!spec) {
-                    addText(m[0]);
-                } else {
+                if (isNum) {
                     const span = document.createElement("span");
                     span.className = "log-num";
-                    const node = document.createTextNode("");
                     span.appendChild(node);
                     el.appendChild(span);
-                    parts.push({ node: node, full: render(spec, false) });
-                    fields.push({ node: node, spec: spec });
+                } else {
+                    el.appendChild(node);
                 }
+                parts.push({ node: node, full: str });
+            };
+            let last = 0, m;
+            NUM.lastIndex = 0;
+            while ((m = NUM.exec(text))) {
+                if (m.index > last) addPart(text.slice(last, m.index), false);
+                addPart(m[0], true);
                 last = m.index + m[0].length;
             }
-            if (last < text.length) addText(text.slice(last));
+            if (last < text.length) addPart(text.slice(last), false);
             // las líneas en blanco necesitan contenido para ocupar su alto
-            if (!parts.length) addText(" ");
-            return { el: el, parts: parts, fields: fields, pi: 0, done: false };
+            if (!parts.length) addPart(" ", false);
+            return { el: el, parts: parts, pi: 0, done: false };
         }
 
         /* El landing es una página estática, así que al volver desde otra página
-           el documento se crea de nuevo. Guardamos el estado visual del trace en
-           sessionStorage para que el terminal continúe donde estaba, en vez de
-           volver a aparecer vacío y empezar desde la primera línea. */
+           el documento se crea de nuevo. Guardamos el progreso (qué línea toca y
+           cuántos caracteres lleva escritos) para que el terminal continúe donde
+           estaba, en vez de volver a aparecer vacío y empezar por la primera. */
+        function persistLogState() {
+            if (!lines.length) return;
+            try {
+                sessionStorage.setItem(LOG_STATE_KEY, JSON.stringify({
+                    v: 2,
+                    logIndex: logIndex,
+                    lines: lines.map((line) => ({
+                        index: Number(line.el.dataset.log),
+                        chars: line.parts.reduce((n, part) => n + part.node.data.length, 0),
+                    })),
+                }));
+            } catch (e) {
+                // sessionStorage puede estar bloqueado o lleno; el terminal sigue funcionando.
+            }
+        }
+
         function restoreLogState() {
             let state;
             try {
@@ -663,16 +626,7 @@
             } catch (e) {
                 return;
             }
-            if (!state || state.version !== 1 || !Array.isArray(state.lines)) return;
-
-            Object.keys(COUNTERS).forEach((name) => {
-                const saved = state.counters && state.counters[name];
-                if (Number.isFinite(saved)) COUNTERS[name].v = saved;
-            });
-            if (Number.isFinite(state.elapsed)) {
-                persistedElapsed = Math.max(0, state.elapsed);
-                currentElapsed = persistedElapsed;
-            }
+            if (!state || state.v !== 2 || !Array.isArray(state.lines)) return;
             if (Number.isFinite(state.logIndex)) logIndex = Math.max(0, state.logIndex);
 
             state.lines.forEach((saved) => {
@@ -680,17 +634,15 @@
                 if (!Number.isInteger(index) || index < 0 || index >= LOG.length) return;
                 const line = buildLine(LOG[index]);
                 line.el.dataset.log = String(index);
-                const savedParts = Array.isArray(saved.parts) ? saved.parts : [];
-                line.parts.forEach((part, partIndex) => {
-                    if (typeof savedParts[partIndex] === "string") {
-                        part.node.data = savedParts[partIndex];
-                    } else {
-                        part.node.data = part.full;
-                    }
+                let left = Number.isFinite(saved.chars) ? saved.chars : Infinity;
+                line.parts.forEach((part) => {
+                    const take = Math.max(0, Math.min(part.full.length, left));
+                    part.node.data = part.full.slice(0, take);
+                    left -= take;
                 });
                 line.pi = line.parts.findIndex((part) => part.node.data.length < part.full.length);
                 if (line.pi < 0) line.pi = line.parts.length;
-                line.done = saved.done !== false && line.pi >= line.parts.length;
+                line.done = line.pi >= line.parts.length;
                 if (line.done) line.el.classList.add("is-done");
                 lines.push(line);
                 linesEl.appendChild(line.el);
@@ -703,26 +655,6 @@
                 old.el.remove();
             }
             if (cur && !reduced) cur.el.appendChild(caret);
-        }
-
-        function persistLogState() {
-            if (!lines.length) return;
-            try {
-                sessionStorage.setItem(LOG_STATE_KEY, JSON.stringify({
-                    version: 1,
-                    savedAt: Date.now(),
-                    elapsed: currentElapsed,
-                    logIndex: logIndex,
-                    counters: Object.fromEntries(Object.entries(COUNTERS).map(([name, counter]) => [name, counter.v])),
-                    lines: lines.map((line) => ({
-                        index: Number(line.el.dataset.log),
-                        done: line.done,
-                        parts: line.parts.map((part) => part.node.data),
-                    })),
-                }));
-            } catch (e) {
-                // sessionStorage puede estar bloqueado o lleno; el terminal sigue funcionando.
-            }
         }
 
         // pagehide cubre los enlaces a otras páginas y también el cierre de la pestaña.
@@ -763,38 +695,6 @@
         function finishLine(line) {
             line.done = true;
             line.el.classList.add("is-done");
-        }
-
-        // Los números de las líneas ya escritas siguen vivos: en cada paso se
-        // mueve una parte de sus campos (ratio 0-1).
-        function randomize(line, ratio) {
-            line.fields.forEach((f) => {
-                if (f.spec.kind === "counter") return;   // lo mueve el ciclo
-                if (ratio < 1 && Math.random() > ratio) return;
-                const t = render(f.spec, true);
-                if (f.node.data !== t) f.node.data = t;
-            });
-        }
-
-        function paintCounters() {
-            lines.forEach((line) => {
-                line.fields.forEach((f) => {
-                    if (f.spec.kind !== "counter") return;
-                    // si el campo aún se está escribiendo, no se adelanta
-                    if (f.node.data.length < f.spec.width) return;
-                    const t = render(f.spec, false);
-                    if (f.node.data !== t) f.node.data = t;
-                });
-            });
-        }
-
-        function advanceCounters() {
-            Object.keys(COUNTERS).forEach((k) => {
-                const c = COUNTERS[k];
-                c.v += c.step;
-                if (c.v > c.max) c.v = c.min;
-                if (c.v < c.min) c.v = c.max;
-            });
         }
 
         // Ajusta el font-size al alto disponible y deriva cuántas líneas caben
@@ -840,51 +740,34 @@
                 cur = null;
             }
         } else {
-            let raf = 0, running = false, inView = false;
-            let elapsed = currentElapsed, t0 = 0, last = 0, cycle = -1;
+            let raf = 0, running = false, inView = false, last = 0;
 
             function frame(now) {
                 raf = requestAnimationFrame(frame);
                 if (now - last < TICK) return;
-                // Hueco real desde el último paso. En el primer frame tras
-                // start() last = 0 (centinela), así que vale el propio TICK; en
-                // el resto el throttle de arriba ya garantiza el mínimo.
-                const gap = last ? now - last : TICK;
                 last = now;
                 // Con la rueda en marcha el terminal se calla. Rendimiento
-                // (30/09/2026): cada paso reescribe ~81 campos, y cada
-                // reescritura invalida la línea, el filtro de su span y la
-                // cadena de mezclas del panel — unos 1.620 cambios de nodo de
-                // texto por segundo compitiendo en el HILO PRINCIPAL con el
-                // propio scroll, que lo escribe smooth-scroll.js desde rAF (con
-                // el wheel anulado, el scroll ya no puede correr en el
-                // compositor). Callarlo mientras se desplaza libera ese hilo
-                // justo en el frame que lo necesita; a 6 px y ~15 % de alfa,
-                // unos cientos de ms sin escribir no se ven, y el rAF sigue
-                // vivo para reanudar al instante.
-                // El reloj se desplaza con el hueco (`t0 += gap`), así que
-                // `elapsed` no avanza: al volver se retoma donde estaba, sin
-                // soltar de golpe los caracteres acumulados ni saltarse un ciclo
-                // de contadores. Se usa `is-scrolling` como señal de «hay
-                // desplazamiento»: smooth-scroll.js la marca tanto durante
-                // la inercia de escritorio como ante el scroll nativo táctil.
-                // Así el móvil conserva su scroll nativo y solo pausa el terminal.
+                // (30/09/2026): con el wheel anulado, el scroll ya no puede correr
+                // en el compositor y lo escribe smooth-scroll.js desde rAF, así
+                // que el hilo principal se libera justo en el frame que lo
+                // necesita. Como ahora solo se escribe la línea en curso, parar
+                // durante el desplazamiento es casi cosmético, pero sigue siendo
+                // gratis y evita cualquier trabajo extra.
+                // `is-scrolling` es la señal de «hay desplazamiento»:
+                // smooth-scroll.js la marca tanto durante la inercia de escritorio
+                // como ante el scroll nativo táctil, así que el móvil conserva su
+                // scroll nativo y solo pausa el terminal.
                 // Con el menú burger abierto se pausa igual (18/10/2026): en
                 // móvil y tablet el overlay tapa el hero entero, pero el trace
-                // seguiría reescribiéndose detrás —unos 1.620 cambios de nodo
-                // por segundo en el hilo principal que nadie ve—. `menu-open`
-                // es la misma señal que ya usa smooth-scroll.js para no
-                // secuestrar la rueda, y como el burger sólo se muestra a
-                // ≤1024px, en escritorio esta rama no se activa nunca.
+                // seguiría escribiéndose detrás. `menu-open` es la misma señal que
+                // ya usa smooth-scroll.js para no secuestrar la rueda, y como el
+                // burger sólo se muestra a ≤1024px, en escritorio esta rama no se
+                // activa nunca.
                 if (document.documentElement.classList.contains("is-scrolling") ||
-                    document.body.classList.contains("menu-open")) {
-                    t0 += gap;
-                    return;
-                }
-                elapsed = now - t0;
-                currentElapsed = elapsed;
+                    document.body.classList.contains("menu-open")) return;
 
-                // 1) escribir: un golpe de teclas por paso, con cadencia viva
+                // Escribir: un golpe de teclas por paso, con cadencia viva.
+                // (Los números ya escritos no se tocan: son texto fijo.)
                 let budget = CHARS_MIN + ((Math.random() * CHARS_VAR) | 0);
                 let guard = 0;
                 while (budget > 0 && guard++ < 64) {
@@ -893,24 +776,11 @@
                     budget = typeChars(cur, budget);
                     if (cur.pi >= cur.parts.length) { finishLine(cur); cur = null; }
                 }
-
-                // 2) los números de las líneas ya escritas siguen cambiando
-                lines.forEach((l) => { if (l.done) randomize(l, CHURN); });
-
-                // 3) los contadores (capa, timestep, token, KV-cache) avanzan
-                //    una vez por ciclo, sobre el texto ya escrito
-                const c = Math.floor(elapsed / CYCLE);
-                if (c !== cycle) {
-                    cycle = c;
-                    advanceCounters();
-                    paintCounters();
-                }
             }
 
             function start() {
                 if (running) return;
                 running = true;
-                t0 = performance.now() - elapsed;  // se reanuda donde estaba
                 last = 0;
                 raf = requestAnimationFrame(frame);
             }
@@ -934,6 +804,7 @@
             onHeroReady(() => io.observe(heroLog)); // ni un frame tras el preloader
         }
     }
+
 
     /* ── 6a. Statement: fondo de círculos / metaballs ───────── */
     // Las cuatro bolas quedan estáticas temporalmente. Se conserva el cálculo

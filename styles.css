@@ -580,8 +580,9 @@ body.loaded .hero-sub {
 
 /* ── HERO · LOG DE INFERENCIA (trace del modelo) ───────────────
    Panel tipo terminal a la derecha del hero con el trace de un forward pass
-   (script.js §6c). El texto es literal: lo único que se mueve son los números,
-   reescritos por un "cabezal" que recorre las líneas en ciclos de 5 s.
+   (script.js §6c). Todo el texto es literal, incluidos los números lima: se
+   escriben una vez y ya no cambian. Lo único que se mueve es la escritura
+   (las líneas entran carácter a carácter y la ventana desliza hacia abajo).
    Ubicación/encuadre:
    · right NEGATIVO → el panel se sale por el margen derecho y lo recorta el
      overflow:hidden del .hero, así que nunca se ve completo: de cada línea
@@ -674,19 +675,24 @@ body.loaded .hero-sub {
     /* overlay suave: letras teñidas por el vídeo, pero legibles */
     mix-blend-mode: overlay;
 }
-/* Terminal: punto medio — visible pero fundido con el vídeo */
+/* Terminal: punto medio — visible pero fundido con el vídeo.
+   Simplificado (16/11/2026): fuera el `filter` de cada línea y de cada campo
+   numérico (blur(0.15px) y un brightness/saturate casi neutros). Eran dos
+   filtros por línea —~90 líneas y ~700 spans— que se re-rasterizaban 20 veces
+   por segundo con el churn anterior. El fundido de mezcla, que es lo que de
+   verdad tiñe las letras con el vídeo, se queda igual: esto no cambia el
+   aspecto, solo quita trabajo. */
 .log-line {
     display: block; white-space: pre;
     color: rgba(239, 238, 233, 0.52);
     text-shadow: 0 0 8px rgba(160, 100, 255, 0.14);
     mix-blend-mode: screen;
     opacity: 0.88;
-    filter: blur(0.15px);
 }
+/* Números lima: valores FIJOS, el mismo tono y glow de siempre. */
 .log-num {
     color: rgba(163, 223, 2, 0.60);
     text-shadow: 0 0 8px rgba(163, 223, 2, 0.28), 0 0 16px rgba(163, 223, 2, 0.14);
-    filter: brightness(1.08) saturate(1.0);
     mix-blend-mode: screen;
 }
 /* Cursor de escritura: bloque verde ácido parpadeando justo donde se está
