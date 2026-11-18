@@ -21,6 +21,40 @@
     <meta name="twitter:image" content="https://hyprframe.com/assets/images/og-home.jpg" />
     <meta name="theme-color" content="#050505" />
 
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://hyprframe.com/#organization",
+          "name": "HYPRFRAME",
+          "url": "https://hyprframe.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://hyprframe.com/assets/images/logo.png"
+          },
+          "sameAs": [
+            "https://www.linkedin.com/company/hyprframe/"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://hyprframe.com/#website",
+          "url": "https://hyprframe.com/",
+          "name": "HYPRFRAME",
+          "publisher": {
+            "@id": "https://hyprframe.com/#organization"
+          },
+          "inLanguage": [
+            "en",
+            "es"
+          ]
+        }
+      ]
+    }
+    </script>
+
     <script>
     /* INTRO (contador 0→100) — solo una vez por sesión de navegador.
        Mismo comportamiento que en la landing EN: ?intro=1 la fuerza (también
