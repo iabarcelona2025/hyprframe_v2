@@ -432,6 +432,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /\.service-row:hover \.service-plus\s*\{[^}]*color:\s*var\(--lime\);[^}]*animation:\s*servicePlusSpin\s+1\.6s\s+linear\s+infinite;/.test(css)
         && /@keyframes servicePlusSpin\s*\{\s*from\s*\{\s*transform:\s*rotate\(135deg\);\s*\}\s*to\s*\{\s*transform:\s*rotate\(495deg\);\s*\}\s*\}/.test(css)
         && /\.service-plus\s*\{[^}]*display:\s*inline-block;/.test(css));
+    check("DNAi: el + gira sobre su propio centro, sin orbitar en la columna",
+        /\.service-plus\s*\{[^}]*justify-self:\s*start;/.test(css)
+        && /\.service-plus\s*\{[^}]*width:\s*max-content;/.test(css)
+        && /\.service-plus\s*\{[^}]*transform-origin:\s*50% 50%;/.test(css));
     check("DNAi: el giro continuo del + respeta prefers-reduced-motion",
         /@media \(prefers-reduced-motion: reduce\) \{\s*\.service-row:hover \.service-plus \{ animation: none; transform: rotate\(135deg\); \}\s*\}/.test(css));
     check("DNAi: rejilla de dos columnas y + visible también por debajo de 900px",

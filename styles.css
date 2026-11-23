@@ -1523,19 +1523,24 @@ section { position: relative; }
        que se fue. Mismos tipo, tamaño y color: al pasar por encima se vuelve
        lima y gira sin parar (ver más abajo). */
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
-    /* display: inline-block para que el rotate del keyframe tenga efecto (un
-       <span> en línea no admite transform). El giro del 135° del principio
-       pasó a ser el arranque de la rotación continua de abajo. */
+    /* La cruz tiene que girar sobre sí misma. Como ítem de rejilla, por defecto
+       se estiraba a todo el ancho de su columna (6rem) y el giro se hacía
+       alrededor del centro de la columna: la cruz orbitaba en vez de rotar
+       sobre su eje. Con justify-self: start la caja se ajusta al glifo y el
+       centro de la caja es el centro de la cruz. (23/11/2026) */
+    justify-self: start;
+    width: max-content;
     display: inline-block;
+    transform-origin: 50% 50%;
     transition: color 0.5s var(--ease-out);
     transform: rotate(0deg);
 }
-/* Rollover: la cruceta no se queda parada en 135°, gira sin parar mientras el
-   ratón siga sobre el apartado. El keyframe recorre 135° → 495° (135° + 360°),
-   así que engancha con el ángulo de partida y en cada vuelta vuelve a pasar por
-   el mismo punto: no hay salto al empezar ni al repetir. Al salir del rollover
-   desaparece la animación y la transición devuelve el + a los 0° con suavidad.
-   (23/11/2026) */
+/* Rollover: la cruz se queda en su sitio (135°: el + ya es una ×) y sigue
+   girando sobre su propio eje, sin desplazarse, mientras el ratón siga sobre
+   el apartado. El keyframe recorre 135° → 495° (135° + 360°), así que engancha
+   con el ángulo en el que se queda y en cada vuelta pasa por la misma postura:
+   no hay salto ni al empezar ni al repetir. Al salir del rollover desaparece la
+   animación y el + vuelve a 0° con suavidad. (23/11/2026) */
 .service-row:hover .service-plus {
     color: var(--lime);
     animation: servicePlusSpin 1.6s linear infinite;
