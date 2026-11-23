@@ -463,15 +463,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         /Q_Tensor \[1, 32, 128, 64\]/.test(heroLog.textContent) &&
         /#15496 \(" tensor"\)/.test(heroLog.textContent) &&
         /ε = 1e-05/.test(heroLog.textContent) && /θ=10000/.test(heroLog.textContent));
-    // el bloque está vivo: dos muestras separadas 400 ms
-    const logSnap = () => heroLog.querySelector(".log-body").textContent;
-    const logBefore = logSnap();
-    await wait(400);
-    const logAfter = logSnap();
-    check("hero log: los valores numéricos cambian a gran velocidad mientras se escribe",
-        logAfter !== logBefore, logAfter === logBefore ? "sin cambios en 400 ms" : "cambiando");
-    // invariante: en las líneas YA escritas solo cambian los números, nunca el
-    // ancho de un campo (la línea en curso no cuenta: se está escribiendo)
+    // Los campos resaltados conservan el valor literal aunque el terminal siga
+    // escribiendo y desplazando el resto de líneas.
+    const yellowValues = () => {
+        const map = {};
+        heroLog.querySelectorAll(".log-line.is-done").forEach((line) => {
+            map[line.dataset.log] = [...line.querySelectorAll(".log-num")].map((n) => n.textContent).join("|");
+        });
+        return map;
+    };
+    const valuesBefore = yellowValues();
+    await wait(800);
+    const valuesAfter = yellowValues();
+    const stableValues = Object.keys(valuesBefore).filter((key) =>
+        Object.hasOwn(valuesAfter, key) && valuesAfter[key] === valuesBefore[key]);
+    check("hero log: los valores amarillos permanecen fijos mientras el terminal sigue animado",
+        stableValues.length > 20, `${stableValues.length} líneas conservan sus valores`);
+    // invariante: en las líneas YA escritas se mantienen los anchos de campo
+    // (la línea en curso no cuenta: se está escribiendo)
     const widthsByLog = () => {
         const map = {};
         heroLog.querySelectorAll(".log-line.is-done").forEach((l) => { map[l.dataset.log] = l.textContent.length; });
@@ -481,17 +490,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await wait(400);
     const wAfter = widthsByLog();
     const sameWidth = Object.keys(wBefore).every((k) => wAfter[k] === undefined || wAfter[k] === wBefore[k]);
-    check("hero log: solo cambian los números — el ancho de cada campo y la maquetación no se mueven",
+    check("hero log: el ancho de cada campo y la maquetación no se mueven",
         Object.keys(wBefore).length > 20 && sameWidth,
         `${Object.keys(wBefore).length} líneas escritas, anchos idénticos`);
-    // sin franja: los números se mueven en todas las líneas ya escritas
-    const doneSnap = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
-    await wait(400);
-    const doneNow = [...heroLog.querySelectorAll(".log-line.is-done")].map((l) => l.textContent);
-    const moved = doneSnap.filter((txt, i) => doneNow[i] !== undefined && txt !== doneNow[i]).length;
-    check("hero log: los números cambian en todo el bloque escrito, sin depender de ninguna franja",
-        moved > 3 && !/is-hot|is-head/.test(js) && !/is-hot|is-head/.test(css),
-        `${moved} líneas cambiando en 400 ms`);
     check("hero log: se escribe carácter a carácter, con cursor al final de la línea activa",
         /const CHARS_MIN = 8, CHARS_VAR = 24;/.test(js) && /function typeChars/.test(js) &&
         /\.log-caret\s*\{[^}]*animation:\s*logCaret/.test(css) &&
@@ -509,12 +510,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     check("hero log: degradado superior (más corto que el lateral) para fundir la cabecera",
         /\.log-body\s*\{[^}]*mask-image:\s*linear-gradient\(to bottom,\s*transparent 0,\s*#000 4\.5rem\)/.test(css) &&
         /\.hero-log\s*\{[^}]*mask-image:\s*linear-gradient\(to right,\s*transparent 0,\s*#000 calc\(38% \+ 35px\)\)/.test(css));
-    check("hero log: ciclo de 5 s, rAF único y throttled a ~20 fps",
-        /const CYCLE = 5000;/.test(js) && /const TICK = 50;/.test(js) &&
-        /now - last < TICK/.test(js) && /requestAnimationFrame\(frame\)/.test(js));
-    check("hero log: contadores de ciclo (capa, timestep, token, KV-cache) sobre el propio texto",
+    check("hero log: escritura animada a ~20 fps, sin trabajo de reescritura de valores",
+        /const TICK = 50;/.test(js) && /now - last < TICK/.test(js) &&
+        /requestAnimationFrame\(frame\)/.test(js) && !/randomize\(|advanceCounters\(|paintCounters\(/.test(js));
+    check("hero log: los campos resaltados usan sus valores literales fijos",
         /\{\{24:layer\}\}/.test(js) && /\{\{450:timestep\}\}/.test(js) &&
-        /\{\{1025:token\}\}/.test(js) && /advanceCounters\(\)/.test(js));
+        /\{\{1025:token\}\}/.test(js) && /\{\{128:kvtokens\}\}/.test(js) &&
+        /full: spec\.sample/.test(js));
     check("hero log: se detiene fuera de pantalla y con la pestaña oculta",
         /inView && !document\.hidden/.test(js) && /visibilitychange/.test(js) &&
         /cancelAnimationFrame\(raf\)/.test(js));
