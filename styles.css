@@ -1520,12 +1520,40 @@ section { position: relative; }
 .service-row:hover .service-body p { max-height: 8rem; opacity: 1; margin-top: 0.6rem; }
 .service-plus {
     /* Era el + de la derecha; ahora abre cada apartado, en el sitio del número
-       que se fue. Mismos tipo, tamaño, color y animación: al pasar por encima
-       gira 135° (de + a ×) y se vuelve lima. */
+       que se fue. Mismos tipo, tamaño y color: al pasar por encima se vuelve
+       lima y gira sin parar (ver más abajo). */
     font-family: var(--font-mono); font-size: 1.4rem; color: var(--muted);
-    transition: transform 0.35s var(--ease-out), color 0.5s var(--ease-out);
+    /* La cruz tiene que girar sobre sí misma. Como ítem de rejilla, por defecto
+       se estiraba a todo el ancho de su columna (6rem) y el giro se hacía
+       alrededor del centro de la columna: la cruz orbitaba en vez de rotar
+       sobre su eje. Con justify-self: start la caja se ajusta al glifo y el
+       centro de la caja es el centro de la cruz. (23/11/2026) */
+    justify-self: start;
+    width: max-content;
+    display: inline-block;
+    transform-origin: 50% 50%;
+    transition: color 0.5s var(--ease-out);
+    transform: rotate(0deg);
 }
-.service-row:hover .service-plus { transform: rotate(135deg); color: var(--lime); }
+/* Rollover: la cruz se queda en su sitio (135°: el + ya es una ×) y sigue
+   girando sobre su propio eje, sin desplazarse, mientras el ratón siga sobre
+   el apartado. El keyframe recorre 135° → 495° (135° + 360°), así que engancha
+   con el ángulo en el que se queda y en cada vuelta pasa por la misma postura:
+   no hay salto ni al empezar ni al repetir. Al salir del rollover desaparece la
+   animación y el + vuelve a 0° con suavidad. (23/11/2026) */
+.service-row:hover .service-plus {
+    color: var(--lime);
+    animation: servicePlusSpin 1.6s linear infinite;
+}
+@keyframes servicePlusSpin {
+    from { transform: rotate(135deg); }
+    to   { transform: rotate(495deg); }
+}
+/* Con reducir movimiento la cruceta solo se tiñe de lima: quieta en 135°,
+   como antes, sin giro continuo. */
+@media (prefers-reduced-motion: reduce) {
+    .service-row:hover .service-plus { animation: none; transform: rotate(135deg); }
+}
 
 @media (max-width: 900px) {
     .service-row { grid-template-columns: 3.5rem 1fr; }
