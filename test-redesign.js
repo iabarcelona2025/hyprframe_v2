@@ -428,9 +428,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
             && row.firstElementChild.classList.contains("service-plus")
             && row.firstElementChild.textContent.trim() === "+"
             && row.firstElementChild.getAttribute("aria-hidden") === "true"));
-    check("DNAi: el + conserva su animación (gira 135° y se vuelve lima al hover)",
-        /\.service-row:hover \.service-plus\s*\{\s*transform:\s*rotate\(135deg\);\s*color:\s*var\(--lime\);\s*\}/.test(css)
-        && /\.service-plus\s*\{[^}]*transition:\s*transform\s+0\.35s\s+var\(--ease-out\),\s*color\s+0\.5s\s+var\(--ease-out\)/.test(css));
+    check("DNAi: el + se vuelve lima y gira sin parar durante todo el rollover",
+        /\.service-row:hover \.service-plus\s*\{[^}]*color:\s*var\(--lime\);[^}]*animation:\s*servicePlusSpin\s+1\.6s\s+linear\s+infinite;/.test(css)
+        && /@keyframes servicePlusSpin\s*\{\s*from\s*\{\s*transform:\s*rotate\(135deg\);\s*\}\s*to\s*\{\s*transform:\s*rotate\(495deg\);\s*\}\s*\}/.test(css)
+        && /\.service-plus\s*\{[^}]*display:\s*inline-block;/.test(css));
+    check("DNAi: el giro continuo del + respeta prefers-reduced-motion",
+        /@media \(prefers-reduced-motion: reduce\) \{\s*\.service-row:hover \.service-plus \{ animation: none; transform: rotate\(135deg\); \}\s*\}/.test(css));
     check("DNAi: rejilla de dos columnas y + visible también por debajo de 900px",
         /\.service-row\s*\{[^}]*grid-template-columns:\s*6rem 1fr;/.test(css)
         && /@media \(max-width: 900px\) \{[\s\S]*?\.service-row \{ grid-template-columns: 3\.5rem 1fr; \}/.test(css)
