@@ -53,6 +53,23 @@ test('las transiciones del rollover siguen en la regla base', () => {
     assert.match(bloque[1], /transition:\s*color 0\.4s, padding-left 0\.5s var\(--ease-out\), border-color 0\.4s/);
 });
 
+test('las flechas de CONTACT repiten el rollover de las flechas de WORK', () => {
+    const base = /\.contact-link span\s*\{([^}]*)\}/.exec(css);
+    assert.ok(base, 'existe el bloque .contact-link span');
+    assert.match(base[1], /color:\s*var\(--muted\)/);
+    assert.match(base[1], /transition:\s*transform 0\.5s var\(--ease-out\), color 0\.4s/);
+
+    const hover = /\.contact-link:hover span\s*\{([^}]*)\}/.exec(css);
+    assert.ok(hover, 'existe el bloque .contact-link:hover span');
+    assert.match(hover[1], /color:\s*var\(--lime\)/);
+
+    const work = /\.work-row:hover \.work-go\s*\{([^}]*)\}/.exec(css);
+    assert.ok(work, 'existe el bloque .work-row:hover .work-go');
+    const transform = /transform:\s*([^;]+)/;
+    assert.equal(transform.exec(hover[1])[1], transform.exec(work[1])[1],
+        'CONTACT y WORK comparten el mismo desplazamiento de flecha');
+});
+
 test('script.js sigue limitando el imán a los elementos .magnetic', () => {
     assert.match(js, /document\.querySelectorAll\("\.magnetic"\)/,
         'los enlaces de CONTACT quedan fuera por marcado, no por un caso especial en el JS');
