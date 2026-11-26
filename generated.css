@@ -40,8 +40,8 @@ body.menu-open .menu-overlay a { visibility: visible; }
    the portfolio with a bare arrow-colon-arrow row; the section keeps that triad
    but grouped around the position counter and without the names of the pieces,
    so it reads as one small control and never competes with the title under it.
-   Which piece each arrow leads to lives in the link's aria-label, and the cycle
-   follows SELECTED WORK on the landing. */
+   Which piece each arrow leads to lives in the link's aria-label. Dek Bass is
+   positioned immediately after Polestar 5 in the English project cycle. */
 .node-pager {
     position: relative; z-index: 5;
     display: flex; align-items: center; justify-content: center;

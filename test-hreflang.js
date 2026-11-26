@@ -8,11 +8,20 @@ const { test } = require("node:test");
 const { JSDOM } = require("jsdom");
 
 const origin = "https://hyprframe.com/";
+const projectPages = fs.readdirSync(__dirname)
+    .filter(file => /^project-.*\.html$/.test(file))
+    .sort();
+const bilingualProjectPages = projectPages.filter(file =>
+    fs.existsSync(path.join(__dirname, "es", file))
+);
+const englishOnlyProjectPages = projectPages.filter(file =>
+    !fs.existsSync(path.join(__dirname, "es", file))
+);
 const pages = [
     "index.html",
     "legacy.html",
     "cookie-policy.html",
-    ...fs.readdirSync(__dirname).filter(file => /^project-.*\.html$/.test(file)).sort(),
+    ...bilingualProjectPages,
 ];
 
 function readPage(file) {
@@ -66,6 +75,19 @@ for (const page of pages) {
                 `${file} must not carry noindex once the site is live`
             );
         }
+    });
+}
+
+for (const page of englishOnlyProjectPages) {
+    test(`${page}: English-only page has a self canonical and no dangling Spanish alternate`, () => {
+        const version = readPage(page);
+        const url = origin + page;
+        assert.equal(version.lang, "en");
+        assert.deepEqual(version.canonical, [url]);
+        assert.deepEqual(version.alternates, [{
+            lang: "en", href: url, rel: "alternate", inHead: true,
+        }]);
+        assert.ok(!version.robots.some(content => /\bnoindex\b/i.test(content)));
     });
 }
 

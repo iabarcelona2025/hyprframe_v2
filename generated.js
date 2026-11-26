@@ -1,6 +1,6 @@
 /* HYPRFRAME / GENERATED — brand navigation and on-demand film player shared by
-   every page of the Generated section (N.O.D.E., Deep, Polestar 5, Distant,
-   Exit Plan, Stained, Asics Vulcano, Farewell, IAD, Ryuu).
+   every page of the Generated section (N.O.D.E., Deep, Polestar 5, Dek Bass,
+   Distant, Exit Plan, Stained, Asics Vulcano, Farewell, IAD, Ryuu).
    Each page declares its own video with data-vimeo / data-title on .node-player. */
 (() => {
     "use strict";

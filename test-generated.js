@@ -1,11 +1,8 @@
-/* Smoke test de la sección GENERATED: las 10 páginas de vídeo comparten el
-   esqueleto, el estilo y el script (styles.css + generated.css + generated.js).
-   project-node.html (N.O.D.E.) abre la lista porque es la pieza de referencia:
-   sus particularidades —los cuatro puntos del titular, el reproductor heredado
-   de Captured, el ciclo del vídeo— se comprueban aquí, y el resto de páginas se
-   recorren en bucle contra esa misma plantilla. Se comprueba que ninguna se ha
-   quedado con restos del diseño anterior y que el reproductor de cada una
-   apunta a su propio Vimeo. */
+/* Smoke test de las fichas GENERATED: las 10 entradas de la landing y Dek Bass
+   comparten el esqueleto, el estilo y el script (styles.css + generated.css +
+   generated.js). project-node.html (N.O.D.E.) abre la lista de trabajo porque
+   es la pieza de referencia; Dek Bass se comprueba aparte como nuevo elemento
+   del paginador y reproductor. */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -55,8 +52,8 @@ function installMatchMedia(window) {
     return queries;
 }
 
-/* Las diez piezas de la sección, en el orden de SELECTED WORK de la landing:
-   N.O.D.E. y, después, las nueve que comparten su plantilla. */
+/* Las diez fichas que siguen en SELECTED WORK de la landing. Dek Bass es la
+   nueva pieza 04 del ciclo de flechas, inmediatamente después de Polestar 5. */
 const PAGES = [
     // La página de referencia conserva de momento el titular de portada del
     // estudio en <title> (su og:title sí nombra la pieza).
@@ -73,6 +70,11 @@ const PAGES = [
     { file: "project-ryuu.html", vimeo: "1136653573", piece: "Ryuu, the Dragon's Course", aria: "Ryuu, the Dragon's Course [Trailer]" },
 ];
 const ALL = PAGES.map((page) => page.file);
+const PAGER_ORDER = [
+    "project-node.html", "project-deep.html", "project-polestar5.html", "project-dek.html",
+    "project-distant.html", "project-exit.html", "project-stained.html", "project-asics.html",
+    "project-farewell.html", "project-iad.html", "project-ryuu.html",
+];
 
 const indexDoc = new JSDOM(read("index.html")).window.document;
 const script = read("generated.js");
@@ -379,6 +381,33 @@ for (const page of PAGES) {
     console.log(`PASS  GENERATED · ${page.file}: opener, vídeo ${page.vimeo}, historia, relacionadas y reproductor`);
 }
 
+/* Dek Bass se añade al ciclo de flechas después de Polestar 5 y utiliza el
+   mismo reproductor Vimeo, aunque todavía no figure en la lista de la landing. */
+{
+    const page = { file: "project-dek.html", vimeo: "1250410992", piece: "Dek Bass", aria: "Dek Bass" };
+    const html = read(page.file);
+    const dom = new JSDOM(html, {
+        url: `http://localhost:8080/${page.file}`, runScripts: "outside-only", pretendToBeVisual: true,
+    });
+    const { window } = dom;
+    const doc = window.document;
+    installMatchMedia(window);
+    const errors = [];
+    window.addEventListener("error", (event) => errors.push(event.message));
+    try {
+        assert.equal(doc.title, "Dek Bass — Generative AI Video | HYPRFRAME");
+        assert.equal(doc.querySelector(".node-player > img").getAttribute("src"), "assets/images/dekbass.jpg");
+        assert.equal(doc.querySelector(".node-player").dataset.vimeo, page.vimeo);
+        assert.equal(doc.querySelector(".node-player__play").disabled, false);
+        window.eval(script);
+        exercisePlayer(window, doc, page);
+        assert.deepEqual(errors, [], `${page.file}: errores en consola`);
+    } finally {
+        dom.window.close();
+    }
+    console.log(`PASS  GENERATED · ${page.file}: imagen, posición y vídeo ${page.vimeo}`);
+}
+
 /* ── N.O.D.E.: el marcado y el texto que solo tiene la pieza de referencia ── */
 {
     const doc = new JSDOM(read("project-node.html")).window.document;
@@ -411,14 +440,15 @@ const workTitles = Object.fromEntries(workRows.map((el) => [
     new URL(el.getAttribute("href"), "http://localhost:8080/index.html").pathname.slice(1),
     el.querySelector(".work-title").textContent.trim(),
 ]));
-assert.deepEqual(workOrder, ALL, "el paginador sigue el orden de SELECTED WORK");
+workTitles["project-dek.html"] = "DEK BASS";
+assert.deepEqual(workOrder, ALL, "la landing conserva el orden de sus diez entradas de WORK");
 
 /* ── Paginador anterior / siguiente: arriba, sin nombres y en ciclo cerrado ── */
 assert.match(css, /\.node-pager \{[^}]*justify-content: center/,
     "el grupo se recoge en torno al contador en vez de repartirse de borde a borde");
 assert.ok(!/node-pager__name|node-pager__kicker|node-pager__text/.test(css),
     "generated.css arrastra las clases de cuando el paginador mostraba nombres");
-for (const [i, file] of ALL.entries()) {
+for (const [i, file] of PAGER_ORDER.entries()) {
     const doc = new JSDOM(read(file)).window.document;
     const pager = doc.querySelector(".node-pager");
     assert.ok(pager && pager.tagName === "NAV", `${file}: falta el <nav> del paginador`);
@@ -434,11 +464,12 @@ for (const [i, file] of ALL.entries()) {
     const next = pager.querySelector('a[rel="next"]');
     assert.equal(pager.querySelectorAll("a").length, 2, `${file}: solo anterior y siguiente`);
     assert.equal(pager.children.length, 3, `${file}: flecha anterior, contador, flecha siguiente`);
-    const expected = [ALL[(i - 1 + ALL.length) % ALL.length], ALL[(i + 1) % ALL.length]];
+    const expected = [PAGER_ORDER[(i - 1 + PAGER_ORDER.length) % PAGER_ORDER.length],
+        PAGER_ORDER[(i + 1) % PAGER_ORDER.length]];
     assert.deepEqual([prev.getAttribute("href"), next.getAttribute("href")], expected,
-        `${file}: el ciclo no respeta el orden de la landing`);
+        `${file}: el ciclo de flechas no respeta el orden de las 11 fichas`);
     assert.equal(pager.querySelector(".node-pager__count").textContent.trim(),
-        `${String(i + 1).padStart(2, "0")} / ${ALL.length}`, `${file}: contador fuera de sitio`);
+        `${String(i + 1).padStart(2, "0")} / ${PAGER_ORDER.length}`, `${file}: contador fuera de sitio`);
     for (const [link, href] of [[prev, expected[0]], [next, expected[1]]]) {
         assert.ok(fs.existsSync(path.join(root, href)), `${file}: destino roto ${href}`);
         // Sin nombres a la vista: la flecha es decorativa y solo queda la palabra.
@@ -1388,7 +1419,7 @@ Promise.all([
        viewport; el recorte lo devuelve a 85px bajo la cabecera. */
     arrivalThumbnailTop(true, -60),
 ]).then(() => {
-    console.log(`\n✅ ALL PASS — ${ALL.length} páginas GENERATED con el estilo de project-node.html`);
+    console.log(`\n✅ ALL PASS — ${PAGER_ORDER.length} fichas en el ciclo de flechas, con el estilo de project-node.html`);
 }).catch((error) => {
     console.error(error);
     process.exit(1);
