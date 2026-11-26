@@ -2177,7 +2177,17 @@ section { position: relative; }
 .contact-link:hover {
     color: var(--fg); padding-left: 1rem; border-color: var(--violet);
 }
-.contact-link span { color: var(--violet); }
+/* Flechas ↗: mismo rollover que las de WORK — gris en reposo, verde lima y
+   desplazamiento diagonal hacia arriba al pasar el ratón. El borde violeta y
+   la sangría de la fila siguen viniendo de .contact-link:hover. */
+.contact-link span {
+    color: var(--muted);
+    transition: transform 0.5s var(--ease-out), color 0.4s;
+}
+.contact-link:hover span {
+    transform: translate(6px, -6px) rotate(0deg);
+    color: var(--lime);
+}
 .contact-icon { display: block; width: 1.4em; height: 1.4em; color: var(--fg); flex-shrink: 0; }
 
 /* Escritorio: START A PROJECT arranca a la misma altura visual que el kicker
