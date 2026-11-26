@@ -1209,6 +1209,49 @@ section { position: relative; }
     0%, 100% { transform: translate(0, 0); }
     50%      { transform: translate(-1px, 0); }
 }
+
+/* ── Mismo glitch en móvil/tablet, sólo con rollover ──
+   Por debajo de 1025px la lista es vertical, pero el efecto se comporta
+   igual que en escritorio: el número está en reposo hasta que la fila recibe
+   hover (o foco visible), momento en el que se pone lila —regla global de
+   .work-row:hover .work-num— y se rompe con el corte rojo/cian, el temblor
+   de 1 px y las dos copias lima/cian de las mismas franjas y tiempos.
+   Las copias arrancan invisibles y sólo se encienden con el hover, así que
+   en táctil sin hover el número queda como estaba. Con «reducir movimiento»
+   no se aplica, igual que en escritorio. */
+@media (max-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .work-num::before,
+    .work-num::after {
+        content: attr(data-num);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s linear;
+    }
+    .work-row:hover .work-num,
+    .work-row:focus-visible .work-num {
+        text-shadow:
+            -0.08em 0 0 rgba(255, 36, 95, 0.55),
+             0.08em 0 0 rgba(0, 214, 255, 0.55);
+        animation: work-num-jitter 0.26s steps(2, end) infinite;
+    }
+    .work-row:hover .work-num::before,
+    .work-row:focus-visible .work-num::before {
+        color: var(--lime);
+        opacity: 0.8;
+        animation: work-num-glitch-a 0.36s steps(3, end) infinite;
+    }
+    .work-row:hover .work-num::after,
+    .work-row:focus-visible .work-num::after {
+        color: #00d6ff;
+        opacity: 0.8;
+        animation: work-num-glitch-b 0.36s steps(3, end) infinite;
+    }
+}
+
 .work-title {
     /* Ajuste pedido por el cliente (24/09/2026): bajada fuerte de tamaño.
        Escala completa más pequeña (antes 70.4px en desktop y 30.4px en móvil):
