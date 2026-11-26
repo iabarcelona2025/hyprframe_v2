@@ -41,7 +41,7 @@ test('la sección de la landing que se Glitchea es la de los mundos generados', 
     assert.match(doc.querySelector('#work .section-side').textContent, /Generated worlds/i);
 });
 
-test('el glitch sólo existe en escritorio, con puntero fino y con movimiento permitido', () => {
+test('el glitch de escritorio existe con puntero fino y con movimiento permitido', () => {
     const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
     assert.match(bloque, /\.work-num::before,\s*\.work-num::after \{[^}]*content: attr\(data-num\)/s,
         'las copias del glitch se pintan con el número leído del atributo');
@@ -51,10 +51,12 @@ test('el glitch sólo existe en escritorio, con puntero fino y con movimiento pe
         'la cifra recibe su corte cromático al volver lila');
 });
 
-test('fuera del bloque de escritorio no queda ninguna regla del glitch', () => {
-    const fuera = css.replace(bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)'), '');
+test('fuera de los bloques de escritorio y móvil no queda ninguna regla del glitch', () => {
+    const fuera = css
+        .replace(bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)'), '')
+        .replace(bloqueMedia('@media (max-width: 1024px) and (prefers-reduced-motion: no-preference)'), '');
     assert.doesNotMatch(fuera, /\.work-num::(before|after)/,
-        'el glitch no puede colarse en móvil o en táctil');
+        'el glitch no puede colarse fuera de esos dos ámbitos');
 });
 
 test('el glitch se dispara a la vez que el número se pone lila', () => {
@@ -63,6 +65,21 @@ test('el glitch se dispara a la vez que el número se pone lila', () => {
     const bloque = bloqueMedia('@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)');
     assert.match(bloque, /\.work-row:hover \.work-num::before,[\s\S]*?animation: work-num-glitch-a/);
     assert.match(bloque, /\.work-row:hover \.work-num::after,[\s\S]*?animation: work-num-glitch-b/);
+});
+
+test('en móvil el glitch sólo se enciende con rollover y usa el mismo efecto', () => {
+    const bloque = bloqueMedia('@media (max-width: 1024px) and (prefers-reduced-motion: no-preference)');
+    assert.match(bloque, /\.work-num::before,\s*\.work-num::after \{[^}]*content: attr\(data-num\)[^}]*opacity: 0;/s,
+        'las copias arrancan invisibles y leen el número del atributo');
+    assert.match(bloque, /\.work-row:hover \.work-num,\s*\.work-row:focus-visible \.work-num \{[^}]*text-shadow:[^}]*rgba\(255, 36, 95, 0\.55\)[^}]*rgba\(0, 214, 255, 0\.55\)/s,
+        'el corte rojo/cian y el temblor esperan al hover');
+    assert.match(bloque, /\.work-row:hover \.work-num,\s*\.work-row:focus-visible \.work-num \{[\s\S]*?animation: work-num-jitter 0\.26s steps\(2, end\) infinite/);
+    assert.match(bloque, /\.work-row:hover \.work-num::before,\s*\.work-row:focus-visible \.work-num::before \{[^}]*color: var\(--lime\);[^}]*opacity: 0\.8;[^}]*animation: work-num-glitch-a 0\.36s steps\(3, end\) infinite/s);
+    assert.match(bloque, /\.work-row:hover \.work-num::after,\s*\.work-row:focus-visible \.work-num::after \{[^}]*color: #00d6ff;[^}]*opacity: 0\.8;[^}]*animation: work-num-glitch-b 0\.36s steps\(3, end\) infinite/s);
+    // Ninguna animación ni color puede aplicarse a la cifra en reposo.
+    const reposo = bloque.match(/\.work-num::before,[\s\S]*?\n    \}\n/)[0];
+    assert.doesNotMatch(reposo, /animation|var\(--violet\)|#00d6ff|var\(--lime\)/,
+        'sin hover el número queda en su estado original');
 });
 
 test('el glitch es el de franjas con deriva cromática', () => {
