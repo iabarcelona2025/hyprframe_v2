@@ -207,6 +207,13 @@ try {
         "the YOUR STORY box is 20% tighter");
     assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(calc\(2\.6rem - 10px\), calc\(7\.2vw - 10px\), calc\(8rem - 10px\)\)\/0\.97/,
         "las letras de YOUR STORY bajan 10px en los tres tramos del clamp (EN y ES)");
+    // YOUR STORY / GOES NEXT.: difracción RGB en todo el titular; GOES NEXT. en lila (26/11/2026)
+    const enNextTitle = doc.querySelector("#nextTitle");
+    assert.ok(enNextTitle.classList.contains("diffraction"), "YOUR STORY / GOES NEXT. lleva difracción en el titular");
+    const enNextLila = enNextTitle.querySelector("span");
+    assert.equal(enNextLila.textContent.trim(), "GOES NEXT.");
+    assert.ok(enNextLila.classList.contains("diffraction"), "GOES NEXT. lleva difracción");
+    assert.match(html, /id="nextTitle" class="diffraction">YOUR STORY<br \/><span class="diffraction">GOES NEXT\.<\/span>/);
     // TU HISTORIA, LA SIGUIENTE.: difracción RGB en todo el titular; LA SIGUIENTE. en lila (26/11/2026)
     const esNextTitle = esLegacyDoc.querySelector("#nextTitle");
     assert.ok(esNextTitle.classList.contains("diffraction"), "TU HISTORIA, LA SIGUIENTE. lleva difracción en el titular");
