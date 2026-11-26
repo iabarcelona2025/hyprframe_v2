@@ -172,28 +172,52 @@ test('el terminal del hero no se toca', () => {
         'el cursor del terminal se sigue parando con el menú abierto');
 });
 
-test('los puntos verdes: la cascada se cuenta desde que se abre el menú', () => {
-    assert.match(estilos, /\n\.pulse \{[^}]*background:\s*var\(--lime\)/s,
-        'el punto verde sigue siendo lima');
-    assert.match(estilos, /\n\.pulse \{[^}]*animation:\s*pulse 2s infinite/s);
+test('los triángulos verdes y su halo triangular conservan la cascada del menú', () => {
+    const pulse = regla('.pulse');
+    assert.match(pulse, /width:\s*8px/);
+    assert.match(pulse, /height:\s*8px/);
+    assert.match(pulse, /isolation:\s*isolate/);
+    assert.doesNotMatch(pulse, /border-radius|box-shadow/,
+        'ni el indicador ni su halo dependen de una forma circular');
+
+    assert.match(estilos,
+        /\.pulse::before,\s*\.pulse::after\s*\{[^}]*width:\s*6\.93px;[^}]*height:\s*6px;[^}]*clip-path:\s*polygon\(50% 0,\s*100% 100%,\s*0 100%\)/s,
+        'el indicador y el halo comparten la misma silueta equilátera');
+    const triangle = regla('.pulse::before');
+    assert.match(triangle, /z-index:\s*1/);
+    assert.match(triangle, /background:\s*var\(--lime\)/);
+
+    const haloRule = /}\s*\.pulse::after\s*\{([^}]+)\}/.exec(estilos);
+    assert.ok(haloRule, 'existe una capa animada independiente para el halo');
+    const halo = haloRule[1];
+    assert.match(halo, /opacity:\s*0\.6/);
+    assert.match(halo, /transform-origin:\s*50% 66\.6667%/);
+    assert.match(halo, /animation:\s*pulse 2s infinite/);
+    assert.match(estilos, /70% \{ opacity: 0; transform: translateX\(-50%\) scale\(3\.5\); \}/,
+        'el halo triangular se expande y se desvanece como el anterior');
+    assert.match(estilos,
+        /\.kicker \.pulse,\s*\.legacy-hero__label \.pulse\s*\{\s*transform:\s*translateY\(2px\);\s*\}/,
+        'los triángulos junto al texto quedan 2px por debajo de su posición original');
+
     const enMenu = regla('.menu-links a .pulse');
     assert.match(enMenu, /display:\s*inline-block/);
     assert.match(enMenu, /margin-right:\s*0\.45em/);
+    assert.match(enMenu, /transform:\s*translateY\(-0\.08em\)/,
+        'el triángulo del menú burger conserva su posición original');
     for (const [n, delay] of [[2, '0.33'], [3, '0.66'], [4, '1'], [5, '1.33'], [6, '1.66']]) {
         assert.match(estilos,
-            new RegExp(`\\.menu-links a:nth-child\\(${n}\\) \\.pulse \\{ animation-delay: ${delay}s; \\}`),
-            `el punto ${n} sigue con su retardo`);
+            new RegExp(`\\.menu-links a:nth-child\\(${n}\\) \\.pulse::after \\{ animation-delay: ${delay}s; \\}`),
+            `el halo triangular ${n} sigue con su retardo`);
     }
-    // Con el menú cerrado los seis anillos NO corren: lo hacían desde la carga
-    // de la página, así que al desplegar cada punto caía en una fase distinta
-    // del ciclo y los apartados entraban con el halo a medio hacer (parpadeo).
-    assert.match(enMenu, /animation-name:\s*none/, 'quietos mientras el menú está oculto');
-    assert.match(regla('body.menu-open .menu-links a .pulse'), /animation-name:\s*pulse/,
-        'la onda arranca con la apertura');
-    // `animation-name`, no el shorthand: el shorthand se llevaría por delante
-    // la duración de .pulse y el retardo escalonado de cada enlace.
-    assert.doesNotMatch(enMenu, /animation:\s*/);
-    assert.doesNotMatch(regla('body.menu-open .menu-links a .pulse'), /animation:\s*/);
+    // Con el menú cerrado los seis halos NO corren: al desplegar cada uno
+    // arranca desde cero, sin aparecer a mitad de una expansión invisible.
+    const haloEnMenu = regla('.menu-links a .pulse::after');
+    assert.match(haloEnMenu, /animation-name:\s*none/, 'quietos mientras el menú está oculto');
+    const haloAlAbrir = regla('body.menu-open .menu-links a .pulse::after');
+    assert.match(haloAlAbrir, /animation-name:\s*pulse/, 'la onda arranca con la apertura');
+    // `animation-name`, no el shorthand: se conservan duración y retardo.
+    assert.doesNotMatch(haloEnMenu, /animation:\s*/);
+    assert.doesNotMatch(haloAlAbrir, /animation:\s*/);
 });
 
 test('con «reducir movimiento» el menú entra entero, sin saltos escalonados', () => {
@@ -242,7 +266,7 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=231/, `${page} debe pedir styles.css?v=231`);
+        assert.match(html, /styles\.css\?v=235/, `${page} debe pedir styles.css?v=235`);
         assert.doesNotMatch(html, /styles\.css\?v=228/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
@@ -255,7 +279,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!231)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!235)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });
