@@ -559,6 +559,8 @@ body.loaded .hero-sub {
     white-space: nowrap;
 }
 .marquee-track.reverse { animation-direction: reverse; }
+/* Pausar solo la marquesina del hero mientras el menú la cubre. */
+body.menu-open .hero-marquee .marquee-track { animation-play-state: paused; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
 .hero-marquee .marquee-dot,
