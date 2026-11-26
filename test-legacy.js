@@ -207,12 +207,15 @@ try {
         "the YOUR STORY box is 20% tighter");
     assert.match(legacyCss, /\.legacy-next h2 \{[^}]*font:\s*700 clamp\(calc\(2\.6rem - 10px\), calc\(7\.2vw - 10px\), calc\(8rem - 10px\)\)\/0\.97/,
         "las letras de YOUR STORY bajan 10px en los tres tramos del clamp (EN y ES)");
-    // TU HISTORIA / ES LA SIGUIENTE.: difracción RGB como los titulares de sección (26/11/2026)
+    // TU HISTORIA, LA SIGUIENTE.: difracción RGB en todo el titular; LA SIGUIENTE. en lila (26/11/2026)
     const esNextTitle = esLegacyDoc.querySelector("#nextTitle");
-    const esNextSpans = [...esNextTitle.querySelectorAll("span.diffraction")];
-    assert.equal(esNextSpans.length, 2, "TU HISTORIA y ES LA SIGUIENTE. llevan difracción");
-    assert.deepEqual(esNextSpans.map((s) => s.textContent.trim()), ["TU HISTORIA", "ES LA SIGUIENTE."]);
-    assert.match(esLegacy, /id="nextTitle"><span class="diffraction">TU HISTORIA<\/span><br \/><span class="diffraction">ES LA SIGUIENTE\.<\/span>/);
+    assert.ok(esNextTitle.classList.contains("diffraction"), "TU HISTORIA, LA SIGUIENTE. lleva difracción en el titular");
+    const esNextLila = esNextTitle.querySelector("span");
+    assert.equal(esNextLila.textContent.trim(), "LA SIGUIENTE.");
+    assert.ok(esNextLila.classList.contains("diffraction"), "LA SIGUIENTE. lleva difracción");
+    assert.match(esLegacy, /id="nextTitle" class="diffraction">TU HISTORIA,<br \/><span class="diffraction">LA SIGUIENTE\.<\/span>/);
+    assert.match(legacyCss, /\.legacy-next h2 span\s*\{[^}]*color:\s*var\(--violet\)/,
+        "LA SIGUIENTE. se pinta en lila (--violet)");
     const plays = [...doc.querySelectorAll(".film-card__play")];
     assert.equal(plays.length, 8);
     assert.ok(plays.every((play) => play.textContent === ""), "play triangles are drawn in CSS, not with a font glyph");
