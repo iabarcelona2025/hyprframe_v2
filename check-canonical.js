@@ -3,7 +3,7 @@ const { JSDOM } = require("jsdom");
 
 const pages = ["index.html","legacy.html","builder.html","cookie-policy.html","project-asics.html","project-deep.html",
 "project-distant.html","project-exit.html","project-farewell.html","project-iad.html",
-"project-node.html","project-polestar5.html","project-ryuu.html","project-stained.html"];
+"project-node.html","project-polestar5.html","project-ryuu.html","project-stained.html","project-dek.html"];
 
 let fail = 0;
 for (const f of pages) {

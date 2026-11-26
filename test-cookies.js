@@ -158,19 +158,20 @@ const consentOf = (window) => {
         .filter((a) => a[0] === "consent" && a[1] === "default")
         .map((a) => a[2]);
 
-    // Las 28 páginas envían el interruptor encendido, con defaults 'denied'
+    // Las 29 páginas envían el interruptor encendido, con defaults 'denied'
     // globales (sin restricción de región: todo el EEE queda cubierto), y el
     // bloque va ANTES del gtag.js cuando la página lo carga.
     const projectPages = [
         "project-asics.html", "project-deep.html", "project-distant.html",
         "project-exit.html", "project-farewell.html", "project-iad.html",
         "project-node.html", "project-polestar5.html", "project-ryuu.html",
-        "project-stained.html",
+        "project-stained.html", "project-dek.html",
     ];
+    const translatedProjectPages = projectPages.filter((p) => p !== "project-dek.html");
     const allPages = [
         "index.html", "legacy.html", "builder.html", ...projectPages,
         "es/index.html", "es/legacy.html", "es/builder.html",
-        ...projectPages.map((p) => "es/" + p),
+        ...translatedProjectPages.map((p) => "es/" + p),
         "cookie-policy.html", "es/cookie-policy.html",
     ];
     for (const page of allPages) {
