@@ -82,8 +82,8 @@ try {
     const esLegacyDoc = new JSDOM(esLegacy).window.document;
     assert.equal(doc.querySelector("#filmsTitle").textContent.trim(), "WORK");
     assert.doesNotMatch(doc.querySelector("#filmsTitle").textContent, /SELECTED/i);
-    assert.equal(esLegacyDoc.querySelector("#filmsTitle").textContent.trim(), "PROYECTOS");
-    assert.doesNotMatch(esLegacyDoc.querySelector("#filmsTitle").textContent, /SELECTED|DESTACADOS/i);
+    assert.equal(esLegacyDoc.querySelector("#filmsTitle").textContent.trim(), "WORK");
+    assert.doesNotMatch(esLegacyDoc.querySelector("#filmsTitle").textContent, /SELECTED|DESTACADOS|PROYECTOS/i);
     const genus = { "legacy.html": "MUSIC VIDEO", "es/legacy.html": "VIDEOCLIP" };
     const genusType = { "legacy.html": "CAMPAIGN", "es/legacy.html": "CAMPAÑA" };
     const genusSpot = { "legacy.html": "COMMERCIAL", "es/legacy.html": "SPOT" };
@@ -196,6 +196,12 @@ try {
         "the heading moves up 20px while the equal bottom padding keeps the videos in place");
     assert.equal(doc.querySelector("#filmsTitle span").textContent, "WORK");
     assert.match(legacyCss, /\.legacy-work__heading h2 span\s*\{[^}]*font-style:\s*italic;/);
+    // CAPTURADO ES: «PROYECTOS» → «WORK» en lila y cursiva, con el mismo span
+    // que la versión EN (26/11/2026).
+    assert.equal(esLegacyDoc.querySelector("#filmsTitle span").textContent, "WORK");
+    assert.ok(esLegacyDoc.querySelector("#filmsTitle span").classList.contains("diffraction"),
+        "Capturado ES: WORK lleva la difracción de los titulares, como en EN");
+    assert.match(legacyCss, /\.legacy-work__heading h2 span\s*\{[^}]*color:\s*var\(--violet\)/);
     // YOUR STORY / GOES NEXT: caja y letras al 80% (27/09/2026) y −10px (04/10/2026)
     assert.match(legacyCss, /\.legacy-next \{[^}]*padding:\s*clamp\(4rem, 8vw, 7\.2rem\) var\(--pad\)/,
         "the YOUR STORY box is 20% tighter");
