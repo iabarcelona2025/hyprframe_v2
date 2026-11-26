@@ -170,8 +170,64 @@ body.menu-open, body.modal-open { overflow: hidden; }
 }
 .film-card:hover .film-card__info { border-color: var(--violet); }
 .film-card__number {
+    position: relative;
     flex: 0 0 auto;
     font: 400 0.7rem/1.4 var(--font-mono); letter-spacing: 0.2em; color: var(--violet);
+}
+
+/* El mismo glitch cromático que la numeración de GENERATED, ahora activado
+   en rollover/foco de cada tarjeta de CAPTURED. Comparte keyframes y tiempos. */
+@media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .film-card__number::before,
+    .film-card__number::after {
+        content: attr(data-num);
+        position: absolute; left: 0; top: 0; width: 100%;
+        pointer-events: none; opacity: 0;
+        transition: opacity 0.15s linear;
+    }
+    .film-card:hover .film-card__number,
+    .film-card:focus-visible .film-card__number {
+        text-shadow:
+            -0.08em 0 0 rgba(255, 36, 95, 0.55),
+             0.08em 0 0 rgba(0, 214, 255, 0.55);
+        animation: work-num-jitter 0.26s steps(2, end) infinite;
+    }
+    .film-card:hover .film-card__number::before,
+    .film-card:focus-visible .film-card__number::before {
+        color: var(--lime); opacity: 0.8;
+        animation: work-num-glitch-a 0.36s steps(3, end) infinite;
+    }
+    .film-card:hover .film-card__number::after,
+    .film-card:focus-visible .film-card__number::after {
+        color: #00d6ff; opacity: 0.8;
+        animation: work-num-glitch-b 0.36s steps(3, end) infinite;
+    }
+}
+@media (max-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .film-card__number::before,
+    .film-card__number::after {
+        content: attr(data-num);
+        position: absolute; left: 0; top: 0; width: 100%;
+        pointer-events: none; opacity: 0;
+        transition: opacity 0.15s linear;
+    }
+    .film-card:hover .film-card__number,
+    .film-card:focus-visible .film-card__number {
+        text-shadow:
+            -0.08em 0 0 rgba(255, 36, 95, 0.55),
+             0.08em 0 0 rgba(0, 214, 255, 0.55);
+        animation: work-num-jitter 0.26s steps(2, end) infinite;
+    }
+    .film-card:hover .film-card__number::before,
+    .film-card:focus-visible .film-card__number::before {
+        color: var(--lime); opacity: 0.8;
+        animation: work-num-glitch-a 0.36s steps(3, end) infinite;
+    }
+    .film-card:hover .film-card__number::after,
+    .film-card:focus-visible .film-card__number::after {
+        color: #00d6ff; opacity: 0.8;
+        animation: work-num-glitch-b 0.36s steps(3, end) infinite;
+    }
 }
 .film-card__title {
     min-width: 0; flex: 1;

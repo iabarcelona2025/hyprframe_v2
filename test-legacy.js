@@ -90,7 +90,10 @@ try {
     for (const [name, src] of [["legacy.html", html], ["es/legacy.html", esLegacy]]) {
         const cards = [...new JSDOM(src).window.document.querySelectorAll(".film-card")];
         const types = cards.map((card) => card.querySelector(".film-card__type").textContent.trim());
+        const numbers = cards.map((card) => card.querySelector(".film-card__number"));
         assert.equal(types.length, 8, `${name}: ocho vídeos`);
+        assert.ok(numbers.every((number) => number.dataset.num === number.textContent.trim()),
+            `${name}: cada cifra lleva el mismo data-num para sus copias de glitch`);
         assert.ok(types.every((type) => !/\s\/\s/.test(type)),
             `${name}: fuera «/ FILM» y «/ MOTION» — ${types.join(", ")}`);
         assert.ok(!/THE SUNDAY|EL DOMINGO/.test(src), `${name}: ya no queda «THE SUNDAY»`);
@@ -170,6 +173,14 @@ try {
     // Play triangles are drawn in CSS (no "▶" glyph) and centred on their circle, which
     // keeps its centre on hover (`translate`, not `transform`, so `scale` can't drift it).
     const legacyCss = fs.readFileSync(path.join(root, "legacy.css"), "utf8");
+    assert.match(legacyCss, /\.film-card__number\s*\{[^}]*position:\s*relative/s,
+        "the number anchors its glitch copies");
+    assert.match(legacyCss,
+        /@media \(min-width: 1025px\) and \(hover: hover\) and \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\.film-card__number::before,\s*\.film-card__number::after \{[^}]*content: attr\(data-num\)[\s\S]*?\.film-card:hover \.film-card__number::before,[\s\S]*?animation: work-num-glitch-a 0\.36s steps\(3, end\) infinite[\s\S]*?\.film-card:hover \.film-card__number::after,[\s\S]*?animation: work-num-glitch-b 0\.36s steps\(3, end\) infinite/s,
+        "Captured numbers reuse the hover glitch on desktop");
+    assert.match(legacyCss,
+        /@media \(max-width: 1024px\) and \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\.film-card:hover \.film-card__number,[\s\S]*?animation: work-num-jitter 0\.26s steps\(2, end\) infinite/s,
+        "Captured numbers also glitch on mobile rollover");
     assert.equal(doc.querySelector(".legacy-hero__bottom p").textContent,
         "Real places. Real people.Stories worth keeping.");
     assert.match(legacyCss, /\.legacy-hero\s*\{[^}]*min-height: min\(410px, 47svh\)/);
