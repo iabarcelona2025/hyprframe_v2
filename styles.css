@@ -346,29 +346,22 @@ body.menu-open .menu-overlay {
 }
 /* Only scale menu item labels; the green indicators and ES / EN switch stay unchanged. */
 .menu-links a .menu-link-label { font-size: calc(1em + 3px); }
-/* Punto verde animado (mismo .pulse que los kickers del index) en lugar de los números */
+/* Triángulo verde animado (mismo .pulse que los kickers del index) en lugar de los números */
 .menu-links a .pulse {
     display: inline-block; vertical-align: middle;
     margin-right: 0.45em; transform: translateY(-0.08em);
-    /* (18/10/2026) Fuera del menú el punto está QUIETO. El `animation: pulse
-       2s infinite` de .pulse arrancaba con la página y no se paraba nunca, así
-       que los seis anillos se estaban expandiendo por debajo de una plancha
-       oculta: repintado que no ve nadie. Y al abrir, cada punto
-       llegaba en un momento distinto de su ciclo —los apartados aparecían con el
-       halo a medio hacer, que es lo que parpadeaba—. `animation-name` (y no el
-       shorthand) para no pisar ni la duración ni el retardo de cada enlace. */
-    animation-name: none;
 }
-.menu-links a:nth-child(2) .pulse { animation-delay: 0.33s; }
-.menu-links a:nth-child(3) .pulse { animation-delay: 0.66s; }
-.menu-links a:nth-child(4) .pulse { animation-delay: 1s; }
-.menu-links a:nth-child(5) .pulse { animation-delay: 1.33s; }
-.menu-links a:nth-child(6) .pulse { animation-delay: 1.66s; }
-/* Con el menú abierto la onda arranca DE CERO, en el mismo instante en que
-   entra la plancha: el retardo de cada punto (0,33 / 0,66 / 1 / 1,33 /
-   1,66 s) vuelve a ser lo que pretendía ser, una cascada contada desde la
-   apertura y no un fragmento al azar del ciclo de 2 s. */
-body.menu-open .menu-links a .pulse { animation-name: pulse; }
+/* (18/10/2026) Fuera del menú el halo está QUIETO. La onda del ::after no
+   arranca con la página ni se repinta por debajo de una plancha oculta. */
+.menu-links a .pulse::after { animation-name: none; }
+.menu-links a:nth-child(2) .pulse::after { animation-delay: 0.33s; }
+.menu-links a:nth-child(3) .pulse::after { animation-delay: 0.66s; }
+.menu-links a:nth-child(4) .pulse::after { animation-delay: 1s; }
+.menu-links a:nth-child(5) .pulse::after { animation-delay: 1.33s; }
+.menu-links a:nth-child(6) .pulse::after { animation-delay: 1.66s; }
+/* Con el menú abierto la onda triangular arranca DE CERO. Cada halo empieza
+   su retardo cuando entra la plancha, no a mitad de un ciclo que nadie veía. */
+body.menu-open .menu-links a .pulse::after { animation-name: pulse; }
 .menu-links a:hover { color: var(--violet); }
 body.menu-open .menu-links a { opacity: 1; transform: translateY(0); }
 body.menu-open .menu-links a:nth-child(1) { transition-delay: 0.15s; }
@@ -421,15 +414,34 @@ body.menu-open .menu-lang { opacity: 1; transform: translateY(0); transition-del
     margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 .pulse {
-    width: 8px; height: 8px; border-radius: 50%;
+    position: relative; display: inline-block; flex: 0 0 8px;
+    width: 8px; height: 8px; isolation: isolate;
+}
+.pulse::before,
+.pulse::after {
+    content: ""; position: absolute; top: 0; left: 50%;
+    width: 6.93px; height: 6px;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.pulse::before {
+    z-index: 1; transform: translateX(-50%);
     background: var(--lime);
-    box-shadow: 0 0 0 0 rgba(163, 223, 2, 0.6);
+}
+.pulse::after {
+    z-index: 0;
+    transform: translateX(-50%) scale(1);
+    transform-origin: 50% 66.6667%;
+    background: var(--lime); opacity: 0.6;
     animation: pulse 2s infinite;
 }
+/* Baja 3px solo los indicadores junto a texto; el selector del menú burger
+   conserva su propio ajuste vertical. */
+.kicker .pulse,
+.legacy-hero__label .pulse { transform: translateY(2px); }
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(163, 223, 2, 0.6); }
-    70% { box-shadow: 0 0 0 10px rgba(163, 223, 2, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(163, 223, 2, 0); }
+    0% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    70% { opacity: 0; transform: translateX(-50%) scale(3.5); }
+    100% { opacity: 0; transform: translateX(-50%) scale(1); }
 }
 
 .hero-title {
