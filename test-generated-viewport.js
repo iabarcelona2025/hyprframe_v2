@@ -12,9 +12,9 @@ assert.match(desktop, /padding-top: 109px/);
 assert.match(desktop, /padding-bottom: 36px/);
 assert.match(desktop, /font-size: clamp\(10px, 1\.55cqw, 18px\)/);
 assert.match(desktop, /\.node-player:not\(\.is-windowed\)/);
-for (const dir of ['.', 'es']) {
+for (const [dir, expected] of [['.', 11], ['es', 10]]) {
     const pages = fs.readdirSync(dir).filter(name => /^project-.*\.html$/.test(name));
-    assert.equal(pages.length, 10);
+    assert.equal(pages.length, expected);
     for (const page of pages) {
         const html = fs.readFileSync(`${dir}/${page}`, 'utf8');
         assert.match(html, /generated\.css\?v=103/);
@@ -26,4 +26,4 @@ for (const height of [600, 720, 768, 800, 900, 1080, 1440]) {
     const playerHeight = ((height - 214) * 16 / 9) * 9 / 16;
     assert.ok(playerHeight + 214 <= height + 0.001);
 }
-console.log('PASS: desktop viewport contract, all 20 localized Generated pages');
+console.log('PASS: desktop viewport contract, 21 Generated pages (11 EN + 10 ES)');
