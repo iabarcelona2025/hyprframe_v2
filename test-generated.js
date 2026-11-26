@@ -1,4 +1,4 @@
-/* Smoke test de las fichas GENERATED: las 10 entradas de la landing y Dek Bass
+/* Smoke test de las fichas GENERATED: las 11 entradas de la landing
    comparten el esqueleto, el estilo y el script (styles.css + generated.css +
    generated.js). project-node.html (N.O.D.E.) abre la lista de trabajo porque
    es la pieza de referencia; Dek Bass se comprueba aparte como nuevo elemento
@@ -52,8 +52,9 @@ function installMatchMedia(window) {
     return queries;
 }
 
-/* Las diez fichas que siguen en SELECTED WORK de la landing. Dek Bass es la
-   nueva pieza 04 del ciclo de flechas, inmediatamente después de Polestar 5. */
+/* El smoke test general cubre diez de las once fichas de WORK en la landing.
+   Dek Bass —la pieza 04, inmediatamente después de Polestar 5— se comprueba
+   aparte como nuevo elemento del paginador y reproductor. */
 const PAGES = [
     // La página de referencia conserva de momento el titular de portada del
     // estudio en <title> (su og:title sí nombra la pieza).
@@ -440,8 +441,11 @@ const workTitles = Object.fromEntries(workRows.map((el) => [
     new URL(el.getAttribute("href"), "http://localhost:8080/index.html").pathname.slice(1),
     el.querySelector(".work-title").textContent.trim(),
 ]));
+// La ficha de la parrilla se titula «DEK BASS BOOM», pero el paginador nombra
+// la pieza «Dek Bass»: para el cotejo de aria-labels manda el nombre que
+// enseña el paginador.
 workTitles["project-dek.html"] = "DEK BASS";
-assert.deepEqual(workOrder, ALL, "la landing conserva el orden de sus diez entradas de WORK");
+assert.deepEqual(workOrder, PAGER_ORDER, "la landing conserva el orden de sus once entradas de WORK");
 
 /* ── Paginador anterior / siguiente: arriba, sin nombres y en ciclo cerrado ── */
 assert.match(css, /\.node-pager \{[^}]*justify-content: center/,

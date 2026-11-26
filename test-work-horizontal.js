@@ -1,5 +1,5 @@
 /* Recorrido horizontal del listado de proyectos en escritorio: la sección
-   Generated/WORK se queda fija y avanza por los 10 proyectos hacia la derecha
+   Generated/WORK se queda fija y avanza por los 11 proyectos hacia la derecha
    al hacer scroll, y se libera cuando el último queda a la vista para que el
    scroll vertical siga hacia About. Se ejecuta el script real contra el HTML
    real en jsdom, con la maqueta falsa que jsdom no trae (anchos, alturas,
@@ -13,7 +13,7 @@
      sección está fija y N.O.D.E. quieto a la vista; después el recorrido se
      reparte 1:1 dentro de lo que queda. Al soltarse, el carril está al final
      (-run) sin pasarse, con RYUU centrada en la ventana.
-   - El raíl enciende el proyecto en curso y termina en 10.
+   - El raíl enciende el proyecto en curso y termina en 11.
    - Los paneles quedan colocados de una vez (la cascada de entrada de la lista
      vertical no se cruza con el recorrido horizontal).
    - El teclado lleva el scroll al tramo del proyecto que recibe el foco.
@@ -77,9 +77,9 @@ const TOP = 4000;         // dónde empieza la sección dentro del documento
 const PANEL_H = 640;      // alto útil de la ventana del carril
 const BRANCH_H = 560;    // alto del lienzo de las ramas (clamp(420px, 62vh, 760px))
 const ROW_LEFT = 100;    // dónde empieza la caja medida (x del rect de la fila)
-const N = 10;
+const N = 11;
 // El carril se detiene con el ÚLTIMO proyecto centrado en la ventana.
-const RUN = (N - 1) * PANEL_W + PANEL_W / 2 - LIST_W / 2;   // 6937 px
+const RUN = (N - 1) * PANEL_W + PANEL_W / 2 - LIST_W / 2;   // 7743 px
 // Fracción del recorrido vertical en la que el carril aún no se mueve (N.O.D.E.
 // se queda a la vista). Se lee del propio script para no duplicar el número.
 const HOLD = Number(/const HOLD = ([\d.]+);/.exec(script)[1]);
@@ -125,7 +125,7 @@ function boot(page = "index.html", { desktop = true, reduced = false, listHeight
     Object.defineProperty(doc.documentElement, "clientHeight", { configurable: true, get: () => INNER_H });
     window.scrollTo = (x, y) => { state.y = y; window.dispatchEvent(new window.Event("scroll")); };
 
-    // ── maqueta falsa: el carril de 10 paneles de 806px dentro de una ventana de 1440 ──
+    // ── maqueta falsa: el carril de 11 paneles de 806px dentro de una ventana de 1440 ──
     const section = doc.getElementById("work");
     const view = section.querySelector(".work-view");
     const list = doc.getElementById("workList");
@@ -266,7 +266,7 @@ test("las cajas del carril son más pequeñas que al principio y todas del mismo
     assert.ok(Number(m[2]) >= 32 && Number(m[2]) <= 44,
         `el panel baja del 56vw original (${m[2]}vw)`);
     assert.ok(Number(m[3]) <= 800, `y su tope también baja (${m[3]}px)`);
-    // Un único ancho para las diez cajas: ninguna se ajusta por su posición
+    // Un único ancho para las once cajas: ninguna se ajusta por su posición
     // (la última se cierra por la derecha, pero no cambia de tamaño).
     const carril = css.slice(css.indexOf("@media (min-width: 1025px)"));
     // Todas las reglas del carril que apuntan a una caja (sin contar la ::after
@@ -278,7 +278,7 @@ test("las cajas del carril son más pequeñas que al principio y todas del mismo
     assert.equal(conAncho.length, 1,
         `solo una declaración de ancho para las cajas (${conAncho.length})`);
     assert.match(conAncho[0][1], /^clamp\(340px, 40vw, 780px\)$/,
-        "y es la misma para las diez");
+        "y es la misma para las once");
     assert.doesNotMatch(carril, /\.work\.hf-work-h \.work-row:(first|last)-child \{[^}]*width:/,
         "ni la primera ni la última cambian de ancho");
     assert.match(carril, /\.work\.hf-work-h \.work-row:last-child \{ border-right: 1px solid var\(--line\); \}/,
@@ -352,16 +352,16 @@ for (const page of ["index.html", "es/index.html"]) {
             "y va justo después de la pantalla del carril");
     });
 
-    test(`${page}: los 10 proyectos viven en el carril y el raíl está listo`, () => {
+    test(`${page}: los 11 proyectos viven en el carril y el raíl está listo`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), "utf8")).window.document;
         const view = doc.querySelector(".work-view");
         const list = doc.querySelector(".work-view > .work-list");
         const track = list && list.querySelector(":scope > .work-track");
         const rows = track ? [...track.querySelectorAll(".work-row")] : [];
         assert.ok(view && list && track, "la estructura del carril está en el HTML");
-        assert.equal(rows.length, 10);
+        assert.equal(rows.length, 11);
         assert.deepEqual(rows.map((row) => row.querySelector(".work-num").textContent),
-            ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]);
+            ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]);
         const rail = doc.querySelector(".work-view > .work-rail");
         assert.ok(rail && rail.getAttribute("aria-hidden") === "true",
             "el raíl es decorativo y lo rellena el script");
@@ -370,9 +370,9 @@ for (const page of ["index.html", "es/index.html"]) {
         // cliente (05/10/2026): el raíl es solo la fila de muescas.
         assert.equal(doc.querySelectorAll(".work-rail-count, #workRailNow").length, 0,
             "sin contador ni caja de contador, ni en el HTML ni creados por el script");
-        assert.doesNotMatch(rail.textContent, /\/\s*10/);
+        assert.doesNotMatch(rail.textContent, /\/\s*\d+/);
         assert.equal(doc.querySelectorAll("#work .work-rail-tick").length, 0,
-            "las 10 muescas las crea el script, no el HTML");
+            "las 11 muescas las crea el script, no el HTML");
     });
 }
 
@@ -483,7 +483,7 @@ test("escritorio: las ramas se trazan al medir el carril, con raíces en la lín
         }
         // Ninguna rama sale por debajo de RYUU: la maraña vive a la derecha de su
         // codo (el borde derecho de la caja centrada), no debajo de la caja.
-        const corner = 9 * PANEL_W + PANEL_W - RUN;   // el codo de RYUU al soltarse
+        const corner = (N - 1) * PANEL_W + PANEL_W - RUN;   // el codo de RYUU al soltarse
         for (const path of paths) {
             const m = /^M(\d+) (\d+)L(\d+) (\d+)$/.exec(path.getAttribute("d"));
             assert.ok(Math.min(Number(m[1]), Number(m[3])) >= corner,
@@ -898,12 +898,12 @@ test("escritorio: N.O.D.E. espera, el carril reparte el recorrido y RYUU queda c
         assert.ok(Math.abs(transformX(track) + RUN) < 1,
             "al final del recorrido el carril está entero, sin pasarse");
         // RYUU centrada: su centro cae en el centro de la ventana del carril.
-        const centroRyuu = -RUN + 9 * PANEL_W + PANEL_W / 2;
+        const centroRyuu = -RUN + (N - 1) * PANEL_W + PANEL_W / 2;
         assert.ok(Math.abs(centroRyuu - LIST_W / 2) < 1,
-            `el 10.º proyecto queda centrado (centro en ${centroRyuu}px de ${LIST_W}px)`);
+            `el 11.º proyecto queda centrado (centro en ${centroRyuu}px de ${LIST_W}px)`);
         const ticks = [...doc.querySelectorAll("#work .work-rail-tick")];
-        assert.ok(ticks[9].classList.contains("is-on") && !ticks[8].classList.contains("is-on"),
-            "al final la muesca encendida es la del proyecto 10");
+        assert.ok(ticks[N - 1].classList.contains("is-on") && !ticks[N - 2].classList.contains("is-on"),
+            "al final la muesca encendida es la del proyecto 11");
         // Pasado el borde de liberación la sección ya no está fija: el carril no
         // sigue avanzando (no se pasa) y el scroll vertical continúa normal.
         scrollTo(TOP + range + 600);
@@ -937,10 +937,10 @@ test("escritorio: el raíl enciende el proyecto en curso mientras se recorre", a
             assert.equal(ticks.filter((tick) => tick.classList.contains("is-on")).length, 1,
                 "solo una muesca encendida a la vez");
         }
-        assert.deepEqual(seen, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+        assert.deepEqual(seen, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         scrollTo(TOP + RUN);   // el último no llega a alinearse a la izquierda: se enciende al soltarse
         await frame();
-        assert.equal(encendida(), 9, "el último proyecto se enciende al final del recorrido");
+        assert.equal(encendida(), 10, "el último proyecto se enciende al final del recorrido");
         assert.ok(Math.abs(Number(transformX(track)) + RUN) < 1);
     } finally { dom.window.close(); }
 });
@@ -953,7 +953,7 @@ test("móvil y «reducir movimiento»: la lista sigue siendo vertical", async ()
             assert.ok(!section.classList.contains("hf-work-h"), JSON.stringify(options));
             assert.equal(section.style.getPropertyValue("--work-run"), "");
             assert.equal(track.style.transform, "");
-            assert.equal(doc.querySelectorAll("#work .work-rail-tick").length, 10,
+            assert.equal(doc.querySelectorAll("#work .work-rail-tick").length, 11,
                 "las muescas existen pero el raíl no se muestra");
         } finally { dom.window.close(); }
     }

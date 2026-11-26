@@ -19,7 +19,7 @@ for (const page of ['index.html', 'es/index.html']) {
     test(`${page}: each selected work has a real hover image`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8')).window.document;
         const rows = [...doc.querySelectorAll('#workList .work-row')];
-        assert.equal(rows.length, 10);
+        assert.equal(rows.length, 11);
         for (const row of rows) {
             assert.ok(row.dataset.img, `missing image on ${row.textContent.trim()}`);
             assert.ok(fs.existsSync(path.join(root, row.dataset.img)), row.dataset.img);
@@ -28,7 +28,7 @@ for (const page of ['index.html', 'es/index.html']) {
     });
 }
 
-test('all ten rows grow 15% plus 30px after photo and gradient begin, then close without delay', () => {
+test('all eleven rows grow 15% plus 30px after photo and gradient begin, then close without delay', () => {
     assert.match(css, /--work-row-pad: clamp\(1\.4rem, 3\.2vw, 2\.4rem\)/);
     assert.match(css, /--work-row-content-h: clamp\(1\.98rem, 3\.96vw, 2\.97rem\)/);
     assert.match(css, /transition: padding-block 0\.55s[^;]*, padding-left 0\.5s[^;]*, background 0\.5s;/);
@@ -70,7 +70,7 @@ test('3D entrance cascades on desktop and mobile, but respects reduced motion', 
             const blur = doc.querySelector(`#work filter[id="${id}"] feGaussianBlur`);
             assert.equal(blur?.getAttribute('stdDeviation'), `${x} 0`, `${page}: ${id} must blur horizontally only`);
         }
-        assert.match(html, /styles\.css\?v=228/);
+        assert.match(html, /styles\.css\?v=230/);
         assert.match(html, /script\.js\?v=64/);
     }
 });

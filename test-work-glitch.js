@@ -28,7 +28,7 @@ for (const page of ['index.html', 'es/index.html']) {
     test(`${page}: cada número de la sección de proyectos lleva su copia para el glitch`, () => {
         const doc = new JSDOM(fs.readFileSync(path.join(root, page), 'utf8')).window.document;
         const nums = [...doc.querySelectorAll('#workList .work-num')];
-        assert.equal(nums.length, 10, 'los diez proyectos siguen numerados');
+        assert.equal(nums.length, 11, 'los once proyectos siguen numerados');
         for (const num of nums) {
             assert.equal(num.dataset.num, num.textContent,
                 `data-num debe repetir el número visible (${num.textContent})`);
