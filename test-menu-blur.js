@@ -266,7 +266,7 @@ test('la animación del contenido del menú no se toca', () => {
 test('las páginas EN/ES piden styles.css con la versión de caché nueva', () => {
     for (const page of ['index.html', 'es/index.html']) {
         const html = fs.readFileSync(path.join(root, page), 'utf8');
-        assert.match(html, /styles\.css\?v=243/, `${page} debe pedir styles.css?v=243`);
+        assert.match(html, /styles\.css\?v=244/, `${page} debe pedir styles.css?v=244`);
         assert.doesNotMatch(html, /styles\.css\?v=228/, `${page} no puede quedarse en la versión vieja`);
     }
     // EN y ES comparten la misma hoja (es/styles.css es un symlink).
@@ -279,7 +279,7 @@ test('ninguna página se queda atrás con la versión de caché', () => {
     assert.ok(paginas.length >= 20, 'se han recorrido las páginas del repo');
     for (const pagina of paginas) {
         const html = fs.readFileSync(pagina, 'utf8');
-        assert.doesNotMatch(html, /styles\.css\?v=(?!243)\d+/,
+        assert.doesNotMatch(html, /styles\.css\?v=(?!244)\d+/,
             `${path.relative(root, pagina)} pide una versión vieja de styles.css`);
     }
 });
