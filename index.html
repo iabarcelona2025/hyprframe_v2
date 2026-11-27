@@ -334,6 +334,19 @@
                     </g>
                 </svg>
             </div>
+            <!-- Halo de 10 px alrededor de las letras (27/11/2026): copia muda
+                 de la frase, sin id, pintada con el color del fondo y un trazo
+                 grueso para que la retícula de puntos no se cuele bajo el
+                 texto y quede un hueco de 10 px siguiendo la forma de cada
+                 letra. Va por encima de los puntos y por debajo del texto
+                 real (ver «STATEMENT DOTS» en styles.css); script.js solo
+                 reparte en letras #statementText, así que esta copia no se
+                 toca. -->
+            <p class="statement-text statement-halo-text" aria-hidden="true">
+                <span>Synthesizing</span> <span>human</span> <span class="accent italic">vision</span>
+                <span>and</span> <span>artificial</span> <span class="accent italic">intelligence</span>
+                <span>to</span> <span>construct</span> <span>new</span> <span>visual</span> <span>realities.</span>
+            </p>
             <p class="statement-text" id="statementText">
                 <span>Synthesizing</span> <span>human</span> <span class="accent italic">vision</span>
                 <span>and</span> <span>artificial</span> <span class="accent italic">intelligence</span>

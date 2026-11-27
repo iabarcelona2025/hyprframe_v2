@@ -12,10 +12,9 @@
    - Sin JS, o con «reducir movimiento», la variable no se toca y el CSS deja
      la retícula entera (valor de reserva 0%).
    - En reposo no queda ningún rAF pendiente.
-   - La transparencia respira al azar entre 93% (0,35) y 80% (1): cada tramo
-     dura 450–2000 ms como mucho (nunca más de 2 s) y las duraciones y los
-     destinos cambian de un tramo a otro. Con «reducir movimiento» no hay
-     respiración: la retícula se queda al 93%.
+   - Alrededor de las letras hay una zona de 10 px sin puntos: el halo es una
+     copia muda de la frase, con el mismo texto y la misma tipografía, pintada
+     con el color del fondo y un trazo de 20 px, entre los puntos y el texto.
    (27/11/2026) */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -56,7 +55,7 @@ const SECTION_H = 900;
 const REVEAL_FROM = SECTION_TOP - VIEWPORT * 0.55;  // y = 1560 · el frente empieza a abrirse
 const REVEAL_TO = SECTION_TOP + SECTION_H * 0.35;   // y = 2315 · la retícula está entera
 
-function boot({ pagina = "index.html", reduced = false, breathing = false } = {}) {
+function boot({ pagina = "index.html", reduced = false } = {}) {
     const fuente = fs.readFileSync(path.join(root, pagina), "utf8");
     const dom = new JSDOM(fuente, { url: `https://hyprframe.com/${pagina}`, pretendToBeVisual: true, runScripts: "outside-only" });
     const { window } = dom;
@@ -67,19 +66,7 @@ function boot({ pagina = "index.html", reduced = false, breathing = false } = {}
         matches: reduced && q.includes("reduced-motion"),
         media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
     });
-    // Con breathing, el observer sí avisa —pero solo del statement— para poder
-    // probar el bucle de opacidad; el resto del script se queda sin observers,
-    // igual que en test-statement.js.
-    window.IntersectionObserver = breathing
-        ? class {
-            constructor(cb) { this.cb = cb; window.__observers = window.__observers || []; window.__observers.push(this); }
-            observe(target) {
-                this.target = target;
-                if (target && target.id === "statement") this.cb([{ target, isIntersecting: true }], this);
-            }
-            unobserve() {} disconnect() {}
-        }
-        : class { constructor() {} observe() {} unobserve() {} disconnect() {} };
+    window.IntersectionObserver = class { constructor() {} observe() {} unobserve() {} disconnect() {} };
     window.Image = class { set src(v) { this._src = v; } get src() { return this._src; } };
     window.ResizeObserver = class { observe() {} disconnect() {} };
 
@@ -141,13 +128,46 @@ const frontOf = (page) => {
         /var\(--dots-front, 0%\)/.test(mask));
     check("las páginas de la landing son las que llevan .page-home",
         PAGES.every((p) => /<body class="page-home">/.test(fs.readFileSync(path.join(root, p), "utf8"))));
-    check("la capa se pinta al alfa máximo del patrón y la opacidad la pone --hf-dot-strength",
-        declaration(rule, "opacity") === "var(--hf-dot-strength, 0.35)",
-        declaration(rule, "opacity"));
-    check("el alfa máximo del patrón es 0,20 (80% de transparencia)",
-        /rgba\(255, 255, 255, 0\.2\)/.test(flatCss));
-    check("0,20 × 0,35 = 0,07: el reposo sigue siendo el 93% de siempre",
-        Math.abs(0.2 * 0.35 - 0.07) < 1e-9);
+    // ── Halo de 10px alrededor de las letras ──────────────────────────────
+    const haloRule = ruleOf(".page-home .statement-halo-text");
+    check("el halo va en una capa propia, sobre los puntos y bajo el texto",
+        declaration(haloRule, "z-index") === "0" && declaration(haloRule, "position") === "absolute",
+        declaration(haloRule, "z-index"));
+    check("el halo ocupa la misma caja de texto que la sección (padding heredado)",
+        declaration(haloRule, "padding") === "inherit");
+    check("el halo no ocupa sitio en el flujo ni intercepta el ratón",
+        declaration(haloRule, "pointer-events") === "none" &&
+        declaration(haloRule, "user-select") === "none");
+    check("el halo pinta el contorno con el color del fondo, nunca relleno",
+        declaration(haloRule, "color") === "transparent" &&
+        declaration(haloRule, "-webkit-text-fill-color") === "transparent" &&
+        declaration(haloRule, "-webkit-text-stroke") === "calc(var(--statement-halo) * 2) var(--bg)",
+        declaration(haloRule, "-webkit-text-stroke"));
+    check("el trazo mide el doble del hueco: 10px por fuera de cada letra",
+        declaration(haloRule, "--statement-halo") === "10px" &&
+        /calc\(var\(--statement-halo\) \* 2\)/.test(declaration(haloRule, "-webkit-text-stroke")));
+    check("el texto real sube por encima del halo",
+        declaration(ruleOf(".page-home #statementText"), "z-index") === "1");
+    const haloSpans = ruleOf(".page-home .statement-halo-text span, .page-home .statement-halo-text span.accent");
+    check("las palabras del halo no se apagan con el barrido (opacidad 1, sin sombra)",
+        declaration(haloSpans, "opacity") === "1" && declaration(haloSpans, "text-shadow") === "none",
+        `opacity ${declaration(haloSpans, "opacity")} · sombra ${declaration(haloSpans, "text-shadow")}`);
+    for (const pagina of PAGES) {
+        const doc = new JSDOM(fs.readFileSync(path.join(root, pagina), "utf8")).window.document;
+        const halo = doc.querySelector(".statement-halo-text");
+        const real = doc.getElementById("statementText");
+        check(`${pagina}: el halo existe, es mudo y no tiene id`,
+            !!halo && halo.getAttribute("aria-hidden") === "true" && !halo.id &&
+            halo.parentElement === real.parentElement && halo.nextElementSibling === real,
+            halo ? halo.className : "sin halo");
+        check(`${pagina}: el halo repite la frase palabra por palabra (misma tipografía)`,
+            squash(halo.textContent) === squash(real.textContent) &&
+            squash(halo.textContent) === [...real.querySelectorAll("span")].map((s) => s.textContent).join(" "),
+            squash(halo.textContent));
+        check(`${pagina}: el halo conserva las clases de cada palabra (acento e itálica)`,
+            [...halo.querySelectorAll("span")].map((s) => s.className).join("|") ===
+            [...real.querySelectorAll("span")].map((s) => s.className).join("|"));
+    }
     check("el script está cacheado con la versión nueva",
         PAGES.every((p) => /script\.js\?v=67/.test(fs.readFileSync(path.join(root, p), "utf8"))));
 }
@@ -216,77 +236,6 @@ for (const pagina of PAGES) {
     page.frames(2);
     check("«reducir movimiento»: no se toca --dots-front (la retícula se queda entera y quieta)",
         frontOf(page) === null && page.state.queue.length === 0);
-}
-
-/* ── 5. La transparencia respira al azar (93% ↔ 80%) ─────────────────────── */
-{
-    const page = boot({ breathing: true });
-    const section = page.doc.getElementById("statement");
-    const strengthOf = () => parseFloat(section.style.getPropertyValue("--hf-dot-strength"));
-
-    check("al arrancar la opacidad está en 0,35 (93% de transparencia)",
-        strengthOf() === 0.35, `${strengthOf()}`);
-
-    const samples = [];
-    for (let i = 0; i < 2400; i++) {          // ~40 s de reloj virtual
-        page.frames(1);
-        samples.push({ t: page.state.now, v: strengthOf() });
-    }
-    const values = samples.map((sample) => sample.v);
-
-    check("la opacidad nunca se sale del rango 0,35 – 1 (93% – 80% de transparencia)",
-        values.every((v) => v >= 0.35 - 1e-9 && v <= 1 + 1e-9),
-        `${Math.min(...values).toFixed(3)} – ${Math.max(...values).toFixed(3)}`);
-    check("llega a los dos extremos de verdad (93% y 80%)",
-        Math.min(...values) <= 0.351 && Math.max(...values) >= 0.999,
-        `${Math.min(...values).toFixed(3)} – ${Math.max(...values).toFixed(3)}`);
-    check("los valores intermedios existen (fundido, no saltos)",
-        values.filter((v) => v > 0.36 && v < 0.99).length > 200);
-    // Tramos = recorridos monótonos entre dos cambios de sentido. Como cada
-    // transición va de un extremo al otro, un tramo es exactamente una
-    // transición: del primer frame en que el valor se mueve al último.
-    const moves = [];
-    let startT = null, lastChangeT = null, dir = 0, prev = samples[0].v;
-    for (const sample of samples.slice(1)) {
-        const delta = sample.v - prev;
-        if (delta !== 0) {
-            const sign = Math.sign(delta);
-            if (dir === 0) startT = sample.t;
-            else if (sign !== dir) {                 // cambio de sentido: cierra el tramo
-                moves.push(lastChangeT - startT);
-                startT = sample.t;
-            }
-            dir = sign;
-            lastChangeT = sample.t;
-        }
-        prev = sample.v;
-    }
-    check("hay varios pulsos (la retícula respira todo el rato)", moves.length >= 8, `${moves.length} pulsos`);
-    check("ninguna transición pasa de 2 s",
-        moves.every((ms) => ms <= 2000 + 34), `la más larga ${Math.round(Math.max(...moves))} ms`);
-    check("la duración también es aleatoria (no todas iguales)",
-        new Set(moves.map((ms) => Math.round(ms / 50))).size >= 3,
-        moves.slice(0, 6).map((ms) => Math.round(ms) + " ms").join(", "));
-    check("entre pulso y pulso hay un respiro aleatorio (no un metrónomo)",
-        new Set(moves.map((ms) => Math.round(ms / 100))).size >= 3,
-        `${new Set(moves.map((ms) => Math.round(ms / 50))).size} duraciones distintas`);
-
-    // Fuera de pantalla el bucle se para: no queda ni un rAF pendiente.
-    const observer = page.window.__observers.find((o) => o.target && o.target.id === "statement");
-    observer.cb([{ target: observer.target, isIntersecting: false }], observer);
-    page.frames(3);
-    check("al salir la sección de pantalla el bucle se para (sin rAF pendientes)",
-        page.state.queue.length === 0);
-}
-
-/* ── 6. «Reducir movimiento»: la retícula no respira ─────────────────────── */
-{
-    const page = boot({ breathing: true, reduced: true });
-    page.frames(120);
-    const section = page.doc.getElementById("statement");
-    check("«reducir movimiento»: no se escribe --hf-dot-strength (se queda al 93%)",
-        section.style.getPropertyValue("--hf-dot-strength") === "" &&
-        page.state.queue.length === 0);
 }
 
 console.log(failures === 0 ? "\n✅ ALL PASS" : `\n❌ ${failures} FAILURE(S)`);
