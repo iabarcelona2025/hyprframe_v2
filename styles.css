@@ -26,11 +26,10 @@
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
-    /* Retícula de puntos de la landing (27/11/2026): punto blanco de 3px de
+    /* Retícula de puntos de STATEMENT (27/11/2026): punto blanco de 3px de
        diámetro al 7% de opacidad (93% de transparencia) sobre una malla
-       continua de --hf-dot-gap.
-       --hf-dots es una sola capa de fondo que se apila encima del fondo que
-       ya tiene cada bloque; ver el bloque «LANDING DOTS» al final del archivo. */
+       continua de --hf-dot-gap. --hf-dots es la capa de fondo que usa ese
+       bloque; ver «STATEMENT DOTS» al final del archivo. */
     --hf-dot: 3px;
     --hf-dot-gap: 24px;
     --hf-dots: radial-gradient(circle at 50% 50%,
@@ -2696,57 +2695,31 @@ label.cookie-purpose-head { cursor: pointer; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LANDING DOTS — textura de fondo de la landing (27/11/2026)
+   STATEMENT DOTS — textura de fondo del manifiesto (27/11/2026)
    Puntos blancos de 3px al 7% (93% transparentes) sobre una retícula
-   continua de 24px (variables --hf-dot / --hf-dot-gap / --hf-dots en :root).
-   Se pinta SIEMPRE por encima del fondo que ya tenía cada bloque y
-   por debajo del contenido: en los bloques transparentes (hero, statement,
-   work, about, footer) la capa vive en <body>; en los que llevan fondo
-   propio y opaco (.services, .clb, .contact) se repite como primera capa
-   de su propio background, para que el patrón no desaparezca a rayas.
-   En el hero va en .hero-veil, que es la capa que tapa el vídeo.
-   Solo se enciende con .page-home en <body> (index.html y es/index.html):
-   fichas de proyecto, Captured, builder y páginas legales no cambian.
-   Es estático: no cuesta frames y no pelea con «reducir movimiento».
+   continua de 24px (variables --hf-dot / --hf-dot-gap / --hf-dots en
+   :root). Solo esta sección lleva el patrón: «Synthesizing human vision
+   and artificial intelligence…»; el resto de la landing vuelve a su
+   fondo liso.
+   Va en un ::before propio y no en el background de .statement porque
+   .statement-background::after pinta un viñeteado opaco (--bg) sobre el
+   borde superior, el inferior y el lateral izquierdo: si la retícula
+   fuera debajo, desaparecería justo en esas franjas. Aquí queda por
+   encima de esa viñeta y por debajo del texto (z-index 1).
+   Solo se enciende con .page-home en <body> (index.html y es/index.html).
+   Es estática: no cuesta frames y no pelea con «reducir movimiento».
    ═══════════════════════════════════════════════════════════ */
-body.page-home,
-.page-home .services,
-.page-home .clb {
+.page-home .statement::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
     background-image: var(--hf-dots);
     background-size: var(--hf-dot-gap) var(--hf-dot-gap);
     background-position: 0 0;
 }
-
-/* Hero: el vídeo cubre el fondo de la sección, así que la retícula sube a
-   la capa del velo (sobre el vídeo, bajo el texto y el terminal). */
-.page-home .hero-veil {
-    background-image:
-        var(--hf-dots),
-        radial-gradient(120% 90% at 50% 10%, transparent 30%, rgba(5, 5, 5, 0.75) 100%),
-        linear-gradient(to top, var(--bg) 2%, transparent 30%);
-    background-size:
-        var(--hf-dot-gap) var(--hf-dot-gap),
-        auto,
-        auto;
-    background-position: 0 0, 0 0, 0 0;
-}
-
-/* Contact lleva su propio degradado lila: se conserva y los puntos van
-   delante. El desenfoque cambia de posición en móvil (85% 72%), así que
-   se repite la capa dentro de su media query para no perder ese ajuste. */
-.page-home .contact {
-    background-image:
-        var(--hf-dots),
-        radial-gradient(80% 60% at 85% 65%, rgba(160, 100, 255, 0.16), transparent 60%);
-    background-size:
-        var(--hf-dot-gap) var(--hf-dot-gap),
-        auto;
-    background-position: 0 0, 0 0;
-}
-@media (max-width: 860px) {
-    .page-home .contact {
-        background-image:
-            var(--hf-dots),
-            radial-gradient(80% 60% at 85% 72%, rgba(160, 100, 255, 0.16), transparent 60%);
-    }
+.page-home .statement-text {
+    position: relative;
+    z-index: 1;
 }
