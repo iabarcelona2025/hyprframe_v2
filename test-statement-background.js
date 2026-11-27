@@ -158,8 +158,10 @@ for (const page of ["index.html", "es/index.html"]) {
     const edgeStrength = Number(background.style.getPropertyValue("--statement-edge-tv"));
     assert.ok(edgeStrength >= 0.98 && edgeStrength <= 1,
         "El borde conserva su nivel estático inicial, sin seguir el movimiento");
-    assert.equal(observers.some((observer) => observer.targets.includes(section)
-        || observer.targets.includes(background)), false,
+    // La sección sí tiene ahora un observador propio (la retícula de puntos que
+    // respira, ver test-statement-dots.js), pero el controlador de las bolas no
+    // registra nada sobre su fondo: las cuatro bolas siguen estáticas.
+    assert.equal(observers.some((observer) => observer.targets.includes(background)), false,
         "El controlador de movimiento no registra un observador para las bolas");
     dom.window.close();
     console.log(`PASS ${page}: estructura, bolas estáticas y texto intacto`);

@@ -27,13 +27,15 @@
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
     /* Retícula de puntos de STATEMENT (27/11/2026): punto blanco de 5px de
-       diámetro al 7% de opacidad (93% de transparencia) sobre una malla
-       continua de --hf-dot-gap. --hf-dots es la capa de fondo de ese
-       bloque, por debajo de su viñeta; ver «STATEMENT DOTS» al final. */
+       diámetro sobre una malla continua de --hf-dot-gap. El patrón se pinta
+       con su alfa MÁXIMO (0,20 = 80% de transparencia) y es la opacidad de la
+       capa —--hf-dot-strength, la escribe script.js §6c— la que lo deja en el
+       mínimo (0,20 × 0,35 = 0,07 = 93%) y lo pasea al azar entre los dos
+       extremos. Ver «STATEMENT DOTS» al final del archivo. */
     --hf-dot: 5px;
     --hf-dot-gap: 16px;
     --hf-dots: radial-gradient(circle at 50% 50%,
-            rgba(255, 255, 255, 0.07) calc(var(--hf-dot) / 2),
+            rgba(255, 255, 255, 0.2) calc(var(--hf-dot) / 2),
             transparent calc(var(--hf-dot) / 2 + 0.5px));
     /* Altos de referencia para estirar el log del hero de arriba abajo:
        · --header-h: cabecera en reposo = alto del logo + su padding (1.4rem × 2).
@@ -2696,11 +2698,17 @@ label.cookie-purpose-head { cursor: pointer; }
 
 /* ═══════════════════════════════════════════════════════════
    STATEMENT DOTS — textura de fondo del manifiesto (27/11/2026)
-   Puntos blancos de 5px al 7% (93% transparentes) sobre una retícula
-   continua de 16px (variables --hf-dot / --hf-dot-gap / --hf-dots en
-   :root). Solo esta sección lleva el patrón: «Synthesizing human vision
-   and artificial intelligence…»; el resto de la landing vuelve a su
-   fondo liso.
+   Puntos blancos de 5px sobre una retícula continua de 16px (variables
+   --hf-dot / --hf-dot-gap / --hf-dots en :root). Solo esta sección lleva el
+   patrón: «Synthesizing human vision and artificial intelligence…»; el resto
+   de la landing vuelve a su fondo liso.
+   La transparencia no es fija: la capa se pinta con el alfa máximo del
+   patrón y su opacidad (--hf-dot-strength) la pasea script.js §6c al azar
+   entre 0,35 —0,07 de alfa, 93% de transparencia— y 1 —0,20 de alfa, 80%—,
+   con transiciones de duración también aleatoria. Animando la opacidad de la
+   capa y no el alfa del degradado, el cambio lo compone la GPU y no obliga a
+   repintar la retícula en cada frame. Sin JS se queda en 0,35: los puntos
+   como estaban, al 93%.
    Dos capas de lectura, en este orden:
    1. La retícula va en un ::before con z-index -1, es decir POR DEBAJO de
       .statement-background::after (la viñeta opaca de --bg que entra por la
@@ -2722,6 +2730,8 @@ label.cookie-purpose-head { cursor: pointer; }
     background-image: var(--hf-dots);
     background-size: var(--hf-dot-gap) var(--hf-dot-gap);
     background-position: 0 0;
+    /* Transparencia variable: 0,35 = 93% (valor de reposo) → 1 = 80%. */
+    opacity: var(--hf-dot-strength, 0.35);
     /* El frente de puntos: una franja de 22% de ancho que se abre de derecha
        a izquierda. Los dos valores son el mismo % para que el borde no se
        despegue de la máscara al llegar a los extremos. */
