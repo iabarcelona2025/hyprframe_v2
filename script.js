@@ -1000,6 +1000,47 @@
         sweep();
     }
 
+    /* ── 6b. Statement: la retícula de puntos se descubre desde la derecha ──
+       La sección lleva un patrón de puntos (--hf-dots) bajo su viñeta, con una
+       máscara horizontal (ver «STATEMENT DOTS» en styles.css). Aquí solo se
+       escribe el frente de esa máscara: --dots-front va de 100% (nada visible)
+       a 0% (retícula entera) según la sección entra por abajo y se va yendo
+       por arriba. Sin amortiguado a propósito —es una máscara, no una
+       animación por letra— pero redondeado a 0,5% para no tocar el DOM en
+       cada frame cuando el valor no cambia.
+       Al salir por arriba se queda a 0%: lo que ya se ha descubierto no se
+       vuelve a cerrar mientras se sigue hacia abajo. Al subir se cierra otra
+       vez, igual que el barrido del texto. */
+    const dotsSection = document.getElementById("statement");
+    if (dotsSection && !reduced) {
+        let front = null;          // último % escrito (null = todavía nada)
+        let queued = false;
+
+        const syncDotsFront = () => {
+            queued = false;
+            const rect = dotsSection.getBoundingClientRect();
+            // 0 cuando la sección asoma por el borde inferior de la pantalla,
+            // 1 cuando el 35% de su alto ya ha pasado el borde superior.
+            const start = innerHeight * 0.9;
+            const travel = innerHeight * 0.9 + rect.height * 0.35;
+            const done = Math.min(Math.max((start - rect.top) / travel, 0), 1);
+            const next = Math.round((1 - done) * 200) / 2;   // 0 → 100, pasos de 0,5
+            if (next === front) return;
+            front = next;
+            dotsSection.style.setProperty("--dots-front", next + "%");
+        };
+
+        const queueDotsFront = () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(syncDotsFront);
+        };
+
+        addEventListener("scroll", queueDotsFront, { passive: true });
+        addEventListener("resize", queueDotsFront, { passive: true });
+        queueDotsFront();
+    }
+
     /* ── 7. Work rows: floating follower image ────────────── */
     const follower = document.getElementById("workFollower");
     const followerImg = document.getElementById("workFollowerImg");

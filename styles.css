@@ -2701,19 +2701,34 @@ label.cookie-purpose-head { cursor: pointer; }
    :root). Solo esta sección lleva el patrón: «Synthesizing human vision
    and artificial intelligence…»; el resto de la landing vuelve a su
    fondo liso.
-   Va en el background de la propia sección, y no en una capa propia: así
-   queda por DEBAJO del viñeteado de .statement-background::after (ese
-   degradado opaco de --bg que entra por la izquierda y por arriba/abajo),
-   y la retícula no se ve de golpe. Nace a la derecha del bloque de texto,
-   donde la viñeta ya es transparente, y se apaga hacia los bordes: el
-   mismo degradado que tenía el fondo antes de acotar el patrón a esta
-   sección. El texto no necesita z-index: la sección aísla su grupo de
-   fusión (isolation: isolate) y la viñeta queda siempre por encima.
+   Dos capas de lectura, en este orden:
+   1. La retícula va en un ::before con z-index -1, es decir POR DEBAJO de
+      .statement-background::after (la viñeta opaca de --bg que entra por la
+      izquierda y por arriba/abajo): por eso no se ve de golpe, nace a la
+      derecha del bloque de texto y se apaga hacia los bordes.
+   2. Esa capa lleva una máscara horizontal que la descubre desde el borde
+      DERECHO conforme se baja por la sección: --dots-front (100% = nada
+      visible, 0% = toda la retícula) la escribe script.js §6b con el scroll.
+      Sin JS o con «reducir movimiento» se queda en el valor de reserva, 0%,
+      y la retícula se ve entera y quieta.
    Solo se enciende con .page-home en <body> (index.html y es/index.html).
-   Es estática: no cuesta frames y no pelea con «reducir movimiento».
    ═══════════════════════════════════════════════════════════ */
-.page-home .statement {
+.page-home .statement::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image: var(--hf-dots);
     background-size: var(--hf-dot-gap) var(--hf-dot-gap);
     background-position: 0 0;
+    /* El frente de puntos: una franja de 22% de ancho que se abre de derecha
+       a izquierda. Los dos valores son el mismo % para que el borde no se
+       despegue de la máscara al llegar a los extremos. */
+    -webkit-mask-image: linear-gradient(to right,
+            transparent calc(var(--dots-front, 0%) - 22%),
+            #000 var(--dots-front, 0%));
+    mask-image: linear-gradient(to right,
+            transparent calc(var(--dots-front, 0%) - 22%),
+            #000 var(--dots-front, 0%));
 }
