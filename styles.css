@@ -26,11 +26,11 @@
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --pad: clamp(1.25rem, 4vw, 3.5rem);
-    /* Retícula de puntos de STATEMENT (27/11/2026): punto blanco de 3px de
+    /* Retícula de puntos de STATEMENT (27/11/2026): punto blanco de 4px de
        diámetro al 7% de opacidad (93% de transparencia) sobre una malla
        continua de --hf-dot-gap. --hf-dots es la capa de fondo de ese
        bloque, por debajo de su viñeta; ver «STATEMENT DOTS» al final. */
-    --hf-dot: 3px;
+    --hf-dot: 4px;
     --hf-dot-gap: 16px;
     --hf-dots: radial-gradient(circle at 50% 50%,
             rgba(255, 255, 255, 0.07) calc(var(--hf-dot) / 2),
@@ -2696,7 +2696,7 @@ label.cookie-purpose-head { cursor: pointer; }
 
 /* ═══════════════════════════════════════════════════════════
    STATEMENT DOTS — textura de fondo del manifiesto (27/11/2026)
-   Puntos blancos de 3px al 7% (93% transparentes) sobre una retícula
+   Puntos blancos de 4px al 7% (93% transparentes) sobre una retícula
    continua de 16px (variables --hf-dot / --hf-dot-gap / --hf-dots en
    :root). Solo esta sección lleva el patrón: «Synthesizing human vision
    and artificial intelligence…»; el resto de la landing vuelve a su
