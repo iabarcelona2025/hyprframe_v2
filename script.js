@@ -1019,10 +1019,13 @@
         const syncDotsFront = () => {
             queued = false;
             const rect = dotsSection.getBoundingClientRect();
-            // 0 cuando la sección asoma por el borde inferior de la pantalla,
-            // 1 cuando el 35% de su alto ya ha pasado el borde superior.
-            const start = innerHeight * 0.9;
-            const travel = innerHeight * 0.9 + rect.height * 0.35;
+            // 0 cuando la parte alta de la sección llega al 55% de la pantalla
+            // —no al asomar por abajo: la retícula espera a que la sección esté
+            // ya metida en pantalla—, 1 cuando el 35% de su alto ha pasado el
+            // borde superior. El recorrido se mide desde ese mismo 55%, así que
+            // retrasar el arranque no mueve el final.
+            const start = innerHeight * 0.55;
+            const travel = start + rect.height * 0.35;
             const done = Math.min(Math.max((start - rect.top) / travel, 0), 1);
             const next = Math.round((1 - done) * 200) / 2;   // 0 → 100, pasos de 0,5
             if (next === front) return;

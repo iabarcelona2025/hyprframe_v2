@@ -42,12 +42,14 @@ const check = (name, cond, extra = "") => {
 const PAGES = ["index.html", "es/index.html"];
 
 /* Misma geometría de mentira que test-statement.js: la sección empieza en
-   y = 2000 y mide 900. Con innerHeight = 800, el frente arranca cerrado
-   (rect.top = 720 → y = 1280) y se abre del todo en y = 2315. */
+   y = 2000 y mide 900. Con innerHeight = 800, el frente se queda cerrado
+   hasta que el alto de la sección llega al 55% de la pantalla (rect.top = 440
+   → y = 1560) y se abre del todo cuando el 35% de su alto ha pasado por
+   arriba (y = 2315): el arranque va retrasado a propósito. */
 const VIEWPORT = 800;
 const SECTION_TOP = 2000;
 const SECTION_H = 900;
-const REVEAL_FROM = SECTION_TOP - VIEWPORT * 0.9;   // y = 1280 · el frente empieza a abrirse
+const REVEAL_FROM = SECTION_TOP - VIEWPORT * 0.55;  // y = 1560 · el frente empieza a abrirse
 const REVEAL_TO = SECTION_TOP + SECTION_H * 0.35;   // y = 2315 · la retícula está entera
 
 function boot({ pagina = "index.html", reduced = false } = {}) {
@@ -124,7 +126,7 @@ const frontOf = (page) => {
     check("las páginas de la landing son las que llevan .page-home",
         PAGES.every((p) => /<body class="page-home">/.test(fs.readFileSync(path.join(root, p), "utf8"))));
     check("el script está cacheado con la versión nueva",
-        PAGES.every((p) => /script\.js\?v=65/.test(fs.readFileSync(path.join(root, p), "utf8"))));
+        PAGES.every((p) => /script\.js\?v=66/.test(fs.readFileSync(path.join(root, p), "utf8"))));
 }
 
 /* ── 2. El frente sigue al scroll ────────────────────────────────────────── */
@@ -136,8 +138,13 @@ for (const pagina of PAGES) {
     check(`${pagina}: fuera de pantalla (arriba del todo) el frente está cerrado`,
         frontOf(page) === 100, `${frontOf(page)}%`);
 
-    page.scrollTo(REVEAL_FROM - 300);
-    check(`${pagina}: justo antes de entrar sigue cerrado`, frontOf(page) === 100);
+    // La sección ya ha asomado 300px por abajo y el frente sigue cerrado:
+    // el arranque no coincide con la entrada en pantalla.
+    page.scrollTo(SECTION_TOP - VIEWPORT - 300);
+    check(`${pagina}: con la sección ya asomando, el frente sigue cerrado (arranque retrasado)`,
+        frontOf(page) === 100);
+    page.scrollTo(REVEAL_FROM - 40);
+    check(`${pagina}: justo antes del arranque, cerrado`, frontOf(page) === 100);
 
     page.scrollTo((REVEAL_FROM + REVEAL_TO) / 2);
     const middle = frontOf(page);
